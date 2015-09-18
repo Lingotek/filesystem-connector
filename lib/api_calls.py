@@ -6,6 +6,8 @@ import config
 #     def __init__(self):
 #         pass
 
+# todo: handle errors
+
 def list_communities():
     """ gets the communities that a user is in """
     uri = config.HOST + api_uri.API_CALLS['community']

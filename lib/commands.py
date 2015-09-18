@@ -10,7 +10,7 @@ def ltk():
 @click.option('--access_token', prompt='Enter your access token', help='your access token')
 @click.option('--host', type=click.Choice(['myaccount.lingotek.com', 'cms.lingotek.com']), default='cms.lingotek.com',
               help='defaults to cms.lingotek.com')
-@click.option('--path', help='the path to the project directory to be initialized, defaults to current directory')
+@click.option('--path', type=click.Path(exists=True), help='the path to the project directory to be initialized, defaults to current directory')
 @click.option('-n', '--project_name', help='the preferred project name, defaults to current directory name')
 def init(host, access_token, path, project_name):
     """ initializes a Lingotek project """
@@ -23,7 +23,8 @@ def init(host, access_token, path, project_name):
         path = os.getcwd()
     if not project_name:
         project_name = os.path.basename(os.path.normpath(path))
-    processes.init_process(host, access_token, path, project_name)
+    click.echo("project name: %s" % project_name)
+    # processes.init_process(host, access_token, path, project_name)
 
 @ltk.command()
 @click.option('-f', '--file_path', type=click.Path(exists=True), help='path to your file(s)')
