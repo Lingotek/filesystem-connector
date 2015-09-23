@@ -24,7 +24,7 @@ def init(host, access_token, path, project_name):
     if not project_name:
         project_name = os.path.basename(os.path.normpath(path))
     click.echo("project name: %s" % project_name)
-    # processes.init_process(host, access_token, path, project_name)
+    processes.init_process(host, access_token, path, project_name)
 
 @ltk.command()
 @click.option('-f', '--file_path', type=click.Path(exists=True), help='path to your file(s)')
