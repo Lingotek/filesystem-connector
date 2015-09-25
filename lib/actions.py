@@ -2,7 +2,7 @@ import ConfigParser
 import os
 import shutil
 import fnmatch
-from exceptions import UninitializedError
+import exceptions
 from apicalls import ApiCalls
 
 class Action:
@@ -15,7 +15,7 @@ class Action:
         self.workflow_id = ''  # default workflow id; MT phase only
         if not self._is_initialized():
             # todo prompt user to initialize project first, raise error and exit
-            raise UninitializedError("This project is not initialized. Please run init command.")
+            raise exceptions.UninitializedError("This project is not initialized. Please run init command.")
         self._initialize_self()
         self.api = ApiCalls(self.host, self.access_token)
 
@@ -39,6 +39,7 @@ class Action:
         self.workflow_id = conf_parser.get('main', 'workflow_id')
 
     def add_action(self, locale, file_pattern, file_path=None, document_name=None):
+        # todo should only add changed files..
         if not file_path:
             file_path = self.path
         matched_files = get_files(file_path, file_pattern)
@@ -52,6 +53,60 @@ class Action:
             if response.status_code != 202:
                 print 'Error when adding document'
 
+    def request_action(self, document_id, is_project, locales, due_date, workflow):
+        if is_project:
+            for locale in locales:
+                response = self.api.add_target_project(self.project_id, locale, due_date)
+                if response.status_code != 201:
+                    print 'Error when requesting translation for project'
+        else:
+            if not document_id:
+                raise exceptions.NoIdSpecified("No document id specified and not requesting for project")
+            for locale in locales:
+                response = self.api.add_target_document(document_id, locale, workflow, due_date)
+                if response.status_code == 404:
+                    raise exceptions.ResourceNotFound("This document doesn't exist")
+                if response.status_code != 201:
+                    print 'Error when requesting translation'
+
+    def list_ids_action(self, list_type, project_id=None):
+        """ lists ids of list_type specified """
+        if list_type == 'projects':
+            response = self.api.list_projects(self.community_id)
+            # todo organize and print response
+        elif list_type == 'documents':
+            response = self.api.list_documents(project_id)
+        elif list_type == 'workflows':
+            response = self.api.list_workflows(self.community_id)
+        else:
+            raise exceptions.ResourceNotFound("No such resource to list")
+
+        if response.status_code != 200:
+            print 'Error with listing'
+        else:
+            ids, titles = log_id_names(response.json())
+            print list_type
+            print 'id\t\t\t\t\t\ttitle'
+            for i in range(len(ids)):
+                print ids[i] + '\t\t' + titles[i]
+
+    def status_action(self, status_type, given_id):
+        if status_type == 'project':
+            response = self.api.project_status(given_id)
+        elif status_type == 'document':
+            response = self.api.document_status(given_id)
+        else:
+            raise exceptions.ResourceNotFound("No such resource to get status for")
+
+        if response.status_code != 200:
+            print 'Error trying to get status'
+        else:
+            title = response.json()['properties']['title']
+            progress = response.json()['properties']['progress']
+            print title + ': ' + str(progress) + '%'
+
+    def download_action(self, document_ids, locale_code, auto_format):
+        pass
 
 def init_action(host, access_token, project_path, project_name, workflow_id):
     api = ApiCalls(host, access_token)
@@ -126,3 +181,12 @@ def get_files(root, pattern):
             matched_files.append(os.path.join(path, name))
     return matched_files
 
+def log_id_names(json):
+    # entities array
+    # title, id in properties
+    ids = []
+    titles = []
+    for entity in json['entities']:
+        ids.append(entity['properties']['id'])
+        titles.append(entity['properties']['title'])
+    return ids, titles

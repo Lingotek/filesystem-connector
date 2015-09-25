@@ -2,7 +2,7 @@ import click
 import actions
 # from actions import Action
 import os
-from exceptions import UninitializedError
+from exceptions import UninitializedError, ResourceNotFound, NoIdSpecified
 
 
 @click.group()
@@ -41,7 +41,7 @@ def init(host, access_token, path, project_name, workflow_id):
 @click.argument('locale', required=True, nargs=1)
 @click.option('-n', '--name', help='the title of the document, defaults to file name')
 def add(file_path, locale, name, file_pattern):
-    """ command to add content """
+    """ add content """
     if not file_path:
         file_path = os.getcwd()
     try:
@@ -61,22 +61,67 @@ def push():
 
 
 @ltk.command()
-@click.option('-p', '--is_project', is_flag=True, flag_value=True, help='whether or not this is a project')
-@click.argument('id', nargs=1)
-@click.argument('locales', required=True, nargs=-1)  # can have unlimited number of locales
-@click.option('-d', '--due_date', help='the due date of the translation')
+@click.option('-p', '--is_project', flag_value=True, help='whether or not this is a project')
+@click.option('-d', '--document_id', help='the id of the document. please specify if project flag not set')
+@click.option('--due_date', help='the due date of the translation')
 @click.option('-w', '--workflow', help='the workflow of the translation')
-def request(id, locales, is_project, due_date, workflow):
-    # possibly want to be able to request multiple docs/locales at once?
-    print 'is project? ' + str(is_project)
-    for locale in locales:
-        click.echo("locale: %s" % locale)
-    click.echo("id: %s" % id)
+@click.argument('locales', required=True, nargs=-1)  # can have unlimited number of locales
+def request(document_id, locales, is_project, due_date, workflow):
+    """ add targets to document or project to start translation """
+    try:
+        action = actions.Action(os.getcwd())
+        action.request_action(document_id, is_project, locales, due_date, workflow)
+    except (UninitializedError, ResourceNotFound, NoIdSpecified) as e:
+        print e
+        return
 
 
-# todo come up with a better word for this
-# def list():
-#     pass
+
+@ltk.command()
+@click.option('-p', '--projects', flag_value=True, help='list project ids')
+@click.option('-pid', '--project_id', help='project id to filter document ids by')
+@click.option('-d', '--documents', flag_value=True, help='list document ids')
+@click.option('-w', '--workflows', flag_value=True, help='list available workflow ids')
+def ids(projects, documents, workflows, project_id):
+    """ lists ids and titles of resources """
+    # todo possibly add communities
+    try:
+        action = actions.Action(os.getcwd())
+        if projects:
+            # get projects
+            action.list_ids_action('projects', project_id)
+        if documents:
+            # get documents
+            action.list_ids_action('documents')
+        if workflows:
+            action.list_ids_action('workflows')
+    except UninitializedError as e:
+        print e
+        return
+
+@ltk.command()
+@click.option('-p', 'status_type', flag_value='project', help='gets status of project')
+@click.option('-d', 'status_type', flag_value='document', help='gets status of document')
+@click.argument('ids', required=True, nargs=-1)
+def status(status_type, ids):
+    """ gets the status of a project or document """
+    try:
+        action = actions.Action(os.getcwd())
+        for curr_id in ids:
+            if status_type == 'project':
+                action.status_action('project', curr_id)
+            if status_type == 'document':
+                action.status_action('document', curr_id)
+    except UninitializedError as e:
+        print e
+        return
+
+@ltk.command()
+@click.option('-a', '--auto_format', flag_value=True, help='flag to auto apply formatting during download')
+@click.option('-l', '--locale', help='specific locale to download, defaults to all added locale')
+@click.argument('ids', required=True, nargs=-1)
+def download():
+    pass
 
 def pull():
     pass
@@ -84,11 +129,6 @@ def pull():
 
 def delete():
     pass
-
-
-def status():
-    pass
-
 
 if __name__ == '__main__':
     # init_parser()
