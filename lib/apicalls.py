@@ -19,10 +19,10 @@ class ApiCalls:
         """ gets the projects a user has """
         pass
 
-    def add_project(self, project_name, communtiy_id):
+    def add_project(self, project_name, community_id, workflow_id):
         """ adds a project and returns the project id """
         uri = self.host + api_uri.API_URI['project']
-        payload = {'title': project_name, 'community_id': communtiy_id, 'workflow_id': config.WORKFLOW_ID}
+        payload = {'title': project_name, 'community_id': community_id, 'workflow_id': workflow_id}
         r = requests.post(uri, headers=self.headers, data=payload)
         return r
 
@@ -43,11 +43,13 @@ class ApiCalls:
         payload = {'title': document_name, 'locale_code': locale, 'project_id': project_id}
         files = {'content': (file_name, open(file_name, 'rb'))}
         r = requests.post(uri, headers=self.headers, data=payload, files=files)
+        return r
 
     def get_community_ids(self):
         response = self.list_communities()
         if response.status_code != 200:
             print response.json()
+            print 'error getting community ids'
             # todo raise error
         entities = response.json()['entities']
         ids = []

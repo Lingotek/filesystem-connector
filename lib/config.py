@@ -6,3 +6,4 @@ ACCESS_TOKEN = ''
 COMMUNITY_ID = ''
 PROJECT_ID = ''
 WORKFLOW_ID = 'c675bd20-0688-11e2-892e-0800200c9a66'  # default workflow id; MT phase only
+ROOT_PATH = ''

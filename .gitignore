@@ -3,3 +3,4 @@ venv/
 .idea/
 *.egg-info/
 .Lingotek/
+lib/.Lingotek/
