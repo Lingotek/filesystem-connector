@@ -4,6 +4,7 @@ import shutil
 import fnmatch
 import exceptions
 from apicalls import ApiCalls
+from constants import CONF_DIR, CONF_FN, TRANS_DIR
 
 class Action:
     def __init__(self, path):
@@ -21,7 +22,7 @@ class Action:
 
     def _is_initialized(self):
         if os.path.isdir(os.path.join(self.path, '.Lingotek')):
-            config_file_name = os.path.join(self.path, '.Lingotek', 'Lingotek.cfg')
+            config_file_name = os.path.join(self.path, CONF_DIR, CONF_FN)
             if os.path.isfile(config_file_name):
                 return True
             else:
@@ -29,7 +30,7 @@ class Action:
         return False
 
     def _initialize_self(self):
-        config_file_name = os.path.join(self.path, '.Lingotek', 'Lingotek.cfg')
+        config_file_name = os.path.join(self.path, CONF_DIR, CONF_FN)
         conf_parser = ConfigParser.ConfigParser()
         conf_parser.read(config_file_name)
         self.host = conf_parser.get('main', 'host')
@@ -105,14 +106,38 @@ class Action:
             progress = response.json()['properties']['progress']
             print title + ': ' + str(progress) + '%'
 
-    def download_action(self, document_ids, locale_code, auto_format):
-        pass
+    def download_action(self, document_id, locale_code, auto_format):
+        if not os.path.isdir(os.path.join(self.path, TRANS_DIR)):
+            os.mkdir(os.path.join(self.path, TRANS_DIR))
+        r = self.api.document_content(document_id, locale_code, auto_format)
+        if r.status_code == 200:
+            file_path = r.headers['content-disposition'].split('filename=')[1].strip("\"'")
+            base_name = os.path.basename(os.path.normpath(file_path))
+            name_parts = base_name.split('.')
+            if len(name_parts) > 1:
+                file_name = ''.join(x for x in name_parts[:-2]) + '-' + locale_code + '.' + name_parts[-1]
+            else:
+                file_name = name_parts[-1] + locale_code
+            download_path = os.path.join(self.path, TRANS_DIR, file_name)
+            with open(download_path, 'wb') as fh:
+                # shutil.copyfileobj(r.text, fh)
+                encoded = r.text.encode('utf_8')
+                fh.write(encoded)
+
+        else:
+            try:
+                error = r.json()['messages'][0]
+                raise exceptions.RequestFailedError(error)
+            except AttributeError:
+                raise exceptions.RequestFailedError("Failed to download content")
+        # print r.headers['content-disposition']
+        # print r.text
+
 
 def init_action(host, access_token, project_path, project_name, workflow_id):
     api = ApiCalls(host, access_token)
     # check if Lingotek directory already exists
-    if os.path.isdir(os.path.join(project_path, '.Lingotek')):
-        # todo: re-initialize
+    if os.path.isdir(os.path.join(project_path, CONF_DIR)):
         confirm = 'not confirmed'
         while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
             confirm = raw_input("Do you want to delete the existing project and create a new one? This will also delete the project in your community. [y/n]: ")
@@ -121,7 +146,7 @@ def init_action(host, access_token, project_path, project_name, workflow_id):
             return
         else:
             # delete the corresponding project online
-            config_file_name = os.path.join(project_path, '.Lingotek', 'Lingotek.cfg')
+            config_file_name = os.path.join(project_path, CONF_DIR, CONF_FN)
             if os.path.isfile(config_file_name):
                 old_config = ConfigParser.ConfigParser()
                 old_config.read(config_file_name)
@@ -131,16 +156,16 @@ def init_action(host, access_token, project_path, project_name, workflow_id):
                     # todo raise error
                     print 'not successfully deleted'
                 # delete existing folder
-                to_remove = os.path.join(project_path, '.Lingotek')
+                to_remove = os.path.join(project_path, CONF_DIR)
                 shutil.rmtree(to_remove)
             else:
                 # todo raise error
                 print 'no config file'
 
     # create a directory
-    os.mkdir(os.path.join(project_path, '.Lingotek'))
+    os.mkdir(os.path.join(project_path, CONF_DIR))
 
-    config_file_name = os.path.join(project_path, '.Lingotek', 'Lingotek.cfg')
+    config_file_name = os.path.join(project_path, CONF_DIR, CONF_FN)
     if not os.path.exists(config_file_name):
         # create the config file and add info
         config_file = open(config_file_name, 'w')
@@ -164,8 +189,11 @@ def init_action(host, access_token, project_path, project_name, workflow_id):
         # todo handle when project already exists online
         response = api.add_project(project_name, community_id, workflow_id)
         if response.status_code != 201:
-            # todo raise error
-            print 'error initializing project'
+            try:
+                print response.json()['messages'][0]
+            except AttributeError:
+                print "Something went wrong while adding project"
+                return
         project_id = response.json()['properties']['id']
         config_parser.set('main', 'project_id', project_id)
 

@@ -118,10 +118,17 @@ def status(status_type, ids):
 
 @ltk.command()
 @click.option('-a', '--auto_format', flag_value=True, help='flag to auto apply formatting during download')
-@click.option('-l', '--locale', help='specific locale to download, defaults to all added locale')
+@click.option('-l', '--locale', help='specific locale to download, defaults to source document')
 @click.argument('ids', required=True, nargs=-1)
-def download():
-    pass
+def download(auto_format, locale, ids):
+    """ downloads translated content of document(s) """
+    try:
+        action = actions.Action(os.getcwd())
+        for curr_id in ids:
+            action.download_action(curr_id, locale, auto_format)
+    except UninitializedError as e:
+        print e
+        return
 
 def pull():
     pass
