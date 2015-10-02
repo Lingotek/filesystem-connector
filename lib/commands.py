@@ -36,29 +36,49 @@ def init(host, access_token, path, project_name, workflow_id):
 
 
 @ltk.command()
-@click.option('-f', '--file_path', type=click.Path(exists=True), help='path to your file')
-@click.option('-p', '--file_pattern', help='name or pattern of files to look for')
+@click.argument('file_names', required=True, nargs=-1)
 @click.argument('locale', required=True, nargs=1)
-@click.option('-n', '--name', help='the title of the document, defaults to file name')
-def add(file_path, locale, name, file_pattern):
-    """ add content """
-    if not file_path:
-        file_path = os.getcwd()
+@click.option('--path', type=click.Path(exists=True), help='path to your file')
+@click.option('-t', '--title', help='the title of the document, defaults to file name')
+@click.option('-f', '--format', help='format of uploaded file(s), defaults to plaintext')
+@click.option('-s', '--srx', type=click.Path(exists=True), help='srx file')
+@click.option('-si', '--srx_id', help='srx id')
+@click.option('-i', '--its', type=click.Path(exists=True), help='its file')
+@click.option('-ii', '--its_id', help='its id')
+@click.option('-c', '--charset', help='file encoding')
+@click.option('-ff', '--fprm', type=click.Path(exists=True), help='fprm file')
+@click.option('-fi', '--fprm_id', help='fprm id')
+@click.option('-fs', '--fprm_subfilter', type=click.Path(exists=True), help='fprm subfilter file')
+@click.option('-fsi', '--fprm_subfilter_id', help='fprm subfilter id')
+@click.option('-v', '--vault_id', help='save-to TM vault id')
+@click.option('-e', '--external_url', help='source url')
+def add(path, file_names, locale, **kwargs):
+    """ adds content, could be one file or multiple files specified by Unix shell pattern """
+    if not path:
+        path = os.getcwd()
     try:
-        action = actions.Action(file_path)
-        action.add_action(locale, file_pattern, file_path, name)
+        action = actions.Action(path)
+        action.add_action(locale, file_names, **kwargs)
     except UninitializedError as e:
         # todo log the error somewhere
         print e
         return
-        # processes.add_action(locale, file_path, file_pattern)
 
+# @ltk.command()
+# @click.argument('-p', 'update_type', flag_value='project', prompt='Update type?', help='update a project')
+# @click.argument('-d', 'update_type', flag_value='document', help='update a document')
+# def update(update_type, title, update_id, due_date, workflow, callback, **kwargs):
+#     pass
 
 @ltk.command()
 def push():
-    """ push all your added content to Lingotek """
-    pass
-
+    """ patch all documents that have been added to TMS through tool """
+    try:
+        action = actions.Action(os.getcwd())
+        action.push_action()
+    except UninitializedError as e:
+        print e
+        return
 
 @ltk.command()
 @click.option('-p', '--is_project', flag_value=True, help='whether or not this is a project')
@@ -74,8 +94,6 @@ def request(document_id, locales, is_project, due_date, workflow):
     except (UninitializedError, ResourceNotFound, NoIdSpecified) as e:
         print e
         return
-
-
 
 @ltk.command()
 @click.option('-p', '--projects', flag_value=True, help='list project ids')
@@ -130,9 +148,17 @@ def download(auto_format, locale, ids):
         print e
         return
 
-def pull():
-    pass
-
+@ltk.command()
+@click.option('-a', '--auto_format', flag_value=True, help='flag to auto apply formatting during download')
+@click.option('-l', '--locale', help='specific locale to download, defaults to source document')
+def pull(auto_format, locale):
+    """ pulls all translations for added documents """
+    try:
+        action = actions.Action(os.getcwd())
+        action.pull_action(locale, auto_format)
+    except UninitializedError as e:
+        print e
+        return
 
 def delete():
     pass

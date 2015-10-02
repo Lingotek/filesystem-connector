@@ -2,8 +2,10 @@ import ConfigParser
 import os
 import shutil
 import fnmatch
+import time
 import exceptions
 from apicalls import ApiCalls
+from managers import DocumentManager
 from constants import CONF_DIR, CONF_FN, TRANS_DIR
 
 class Action:
@@ -19,6 +21,7 @@ class Action:
             raise exceptions.UninitializedError("This project is not initialized. Please run init command.")
         self._initialize_self()
         self.api = ApiCalls(self.host, self.access_token)
+        self.doc_manager = DocumentManager(path)
 
     def _is_initialized(self):
         if os.path.isdir(os.path.join(self.path, '.Lingotek')):
@@ -39,20 +42,80 @@ class Action:
         self.community_id = conf_parser.get('main', 'community_id')
         self.workflow_id = conf_parser.get('main', 'workflow_id')
 
-    def add_action(self, locale, file_pattern, file_path=None, document_name=None):
+    def _add_document(self, file_name, title, json):
+        """ adds a document to db """
+        now = time.time()
+        doc_id = json['properties']['id']
+        last_modified = os.stat(file_name).st_mtime
+        self.doc_manager.add_document(title, now, doc_id, last_modified, now, file_name)
+
+    def _update_document(self, file_name, title):
+        """ updates a document in the db """
+        now = time.time()
+        sys_last_modified = os.stat(file_name).st_mtime
+        doc_entry = self.doc_manager.get_doc_by_prop('file_name', file_name)
+        doc_id = doc_entry['id']
+        self.doc_manager.update_document(doc_id, now, sys_last_modified, file_name, title)
+
+    def add_action(self, locale, file_pattern, **kwargs):
         # todo should only add changed files..
-        if not file_path:
-            file_path = self.path
-        matched_files = get_files(file_path, file_pattern)
+        # todo automatically detect format?
+        matched_files = get_files(self.path, file_pattern)
         for file_name in matched_files:
-            if document_name:
-                title = document_name
+            if kwargs['title']:
+                title = kwargs['title']
             else:
-                base_name = os.path.basename(os.path.normpath(file_name))
-                title = base_name.split('.')[0]
-            response = self.api.add_document(title, file_name, locale, self.project_id)
+                title = os.path.basename(os.path.normpath(file_name)).split('.')[0]
+            del kwargs['title']
+            if not self.doc_manager.is_doc_new(file_name, title) and self.doc_manager.is_doc_modified(file_name, title):
+                confirm = 'not confirmed'
+                while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
+                    confirm = raw_input("This document already exists. Would you like to overwrite it? [y/n]: ")
+                # confirm if would like to overwrite existing document in TMS
+                if not confirm or confirm in ['n', 'N']:
+                    return
+                else:
+                    self.update_document_action(file_name, title, **kwargs)
+                    continue
+            response = self.api.add_document(file_name, locale, self.project_id, title, **kwargs)
             if response.status_code != 202:
-                print 'Error when adding document'
+                try:
+                    error = response.json()['messages'][0]
+                    raise exceptions.RequestFailedError(error)
+                except (AttributeError, IndexError):
+                    raise exceptions.RequestFailedError("Failed to add document")
+            else:
+                self._add_document(file_name, title, response.json())
+
+    def push_action(self):
+        document_ids = self.doc_manager.get_doc_ids()
+        for document_id in document_ids:
+            entry = self.doc_manager.get_doc_by_prop('id', document_id)[0]
+            if not self.doc_manager.is_doc_modified(entry['file_name'], entry['name']):
+                continue
+            response = self.api.document_update(document_id, entry['file_name'])
+            if response.status_code != 202:
+                try:
+                    error = response.json()['messages'][0]
+                    raise exceptions.RequestFailedError(error)
+                except (AttributeError, IndexError):
+                    raise exceptions.RequestFailedError("Failed to update document")
+            self._update_document(entry['file_name'], entry['name'])
+
+    def update_document_action(self, file_name, title=None, **kwargs):
+        entries = self.doc_manager.get_doc_by_prop('file_name', file_name)
+        document_id = entries[0]['id']
+        if title:
+            response = self.api.document_update(document_id, file_name, title=title, **kwargs)
+        else:
+            response = self.api.document_update(document_id, file_name)
+        if response.status_code != 202:
+            try:
+                error = response.json()['messages'][0]
+                raise exceptions.RequestFailedError(error)
+            except (AttributeError, IndexError):
+                raise exceptions.RequestFailedError("Failed to update document")
+        self._update_document(file_name, title)
 
     def request_action(self, document_id, is_project, locales, due_date, workflow):
         if is_project:
@@ -109,9 +172,10 @@ class Action:
     def download_action(self, document_id, locale_code, auto_format):
         if not os.path.isdir(os.path.join(self.path, TRANS_DIR)):
             os.mkdir(os.path.join(self.path, TRANS_DIR))
-        r = self.api.document_content(document_id, locale_code, auto_format)
-        if r.status_code == 200:
-            file_path = r.headers['content-disposition'].split('filename=')[1].strip("\"'")
+        response = self.api.document_content(document_id, locale_code, auto_format)
+        print response
+        if response.status_code == 200:
+            file_path = response.headers['content-disposition'].split('filename=')[1].strip("\"'")
             base_name = os.path.basename(os.path.normpath(file_path))
             name_parts = base_name.split('.')
             if len(name_parts) > 1:
@@ -120,18 +184,21 @@ class Action:
                 file_name = name_parts[-1] + locale_code
             download_path = os.path.join(self.path, TRANS_DIR, file_name)
             with open(download_path, 'wb') as fh:
-                # shutil.copyfileobj(r.text, fh)
-                encoded = r.text.encode('utf_8')
+                # todo handle when file too large; can't keep entire file in memory
+                encoded = response.text.encode('utf_8')
+                # shutil.copyfileobj(encoded, fh)
                 fh.write(encoded)
-
         else:
             try:
-                error = r.json()['messages'][0]
+                error = response.json()['messages'][0]
                 raise exceptions.RequestFailedError(error)
-            except AttributeError:
+            except (AttributeError, IndexError):
                 raise exceptions.RequestFailedError("Failed to download content")
-        # print r.headers['content-disposition']
-        # print r.text
+
+    def pull_action(self, locale_code, auto_format):
+        document_ids = self.doc_manager.get_doc_ids()
+        for document_id in document_ids:
+            self.download_action(document_id, locale_code, auto_format)
 
 
 def init_action(host, access_token, project_path, project_name, workflow_id):

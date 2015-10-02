@@ -1,6 +1,5 @@
 import requests
 import api_uri
-import config
 
 # todo: handle errors
 
@@ -50,10 +49,13 @@ class ApiCalls:
         r = requests.delete(uri, headers=self.headers)
         return r.status_code
 
-    def add_document(self, document_name, file_name, locale, project_id):  # todo add all those optional params
+    def add_document(self, file_name, locale, project_id, title, **kwargs):
         """ adds a document """
         uri = self.host + api_uri.API_URI['document']
-        payload = {'title': document_name, 'locale_code': locale, 'project_id': project_id}
+        payload = {'locale_code': locale, 'project_id': project_id, 'title': title}
+        for key, value in kwargs.iteritems():
+            if kwargs[key]:
+                payload[key] = value
         files = {'content': (file_name, open(file_name, 'rb'))}
         r = requests.post(uri, headers=self.headers, data=payload, files=files)
         return r
@@ -91,10 +93,22 @@ class ApiCalls:
         payload = {}
         if locale_code:
             payload['locale_code'] = locale_code
-        # todo find out how auto format flag is requested
-        # if auto_format:
-        #     payload['auto_format'] = auto_format
+        if auto_format:
+            payload['auto_format'] = auto_format
         r = requests.get(uri, headers=self.headers, params=payload)
+        return r
+
+    def document_update(self, document_id, file_name=None, **kwargs):
+        uri = self.host + (api_uri.API_URI['document_id'] % locals())
+        payload = {'id': document_id}
+        for key, value in kwargs.iteritems():
+            if kwargs[key]:
+                payload[key] = value
+        if file_name:
+            files = {'content': (file_name, open(file_name, 'rb'))}
+            r = requests.patch(uri, headers=self.headers, data=payload, files=files)
+        else:
+            r = requests.patch(uri, headers=self.headers, data=payload)
         return r
 
     def list_workflows(self, community_id):
@@ -114,7 +128,6 @@ class ApiCalls:
         for entity in entities:
             ids.append(entity['properties']['id'])
         return ids
-
 
 # def test(project_id):
     # project_id = "123"
