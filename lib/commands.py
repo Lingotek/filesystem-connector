@@ -2,7 +2,7 @@ import click
 import actions
 # from actions import Action
 import os
-from exceptions import UninitializedError, ResourceNotFound, NoIdSpecified
+from exceptions import UninitializedError, ResourceNotFound, RequestFailedError
 
 
 @click.group()
@@ -39,7 +39,6 @@ def init(host, access_token, path, project_name, workflow_id):
 @click.argument('file_names', required=True, nargs=-1)
 @click.argument('locale', required=True, nargs=1)
 @click.option('--path', type=click.Path(exists=True), help='path to your file')
-@click.option('-t', '--title', help='the title of the document, defaults to file name')
 @click.option('-f', '--format', help='format of uploaded file(s), defaults to plaintext')
 @click.option('-s', '--srx', type=click.Path(exists=True), help='srx file')
 @click.option('-si', '--srx_id', help='srx id')
@@ -59,7 +58,7 @@ def add(path, file_names, locale, **kwargs):
     try:
         action = actions.Action(path)
         action.add_action(locale, file_names, **kwargs)
-    except UninitializedError as e:
+    except (UninitializedError, RequestFailedError) as e:
         # todo log the error somewhere
         print e
         return
@@ -81,70 +80,56 @@ def push():
         return
 
 @ltk.command()
-@click.option('-p', '--is_project', flag_value=True, help='whether or not this is a project')
-@click.option('-d', '--document_id', help='the id of the document. please specify if project flag not set')
+@click.option('-n', '--doc_name', help='the name of the document, specify for one document')
 @click.option('--due_date', help='the due date of the translation')
 @click.option('-w', '--workflow', help='the workflow of the translation')
 @click.argument('locales', required=True, nargs=-1)  # can have unlimited number of locales
-def request(document_id, locales, is_project, due_date, workflow):
-    """ add targets to document or project to start translation """
+def request(doc_name, locales, due_date, workflow):
+    """ add targets to document(s) to start translation, defaults to all """
     try:
         action = actions.Action(os.getcwd())
-        action.request_action(document_id, is_project, locales, due_date, workflow)
-    except (UninitializedError, ResourceNotFound, NoIdSpecified) as e:
+        action.request_action(doc_name, locales, due_date, workflow)
+    except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
         print e
         return
 
 @ltk.command()
-@click.option('-p', '--projects', flag_value=True, help='list project ids')
-@click.option('-pid', '--project_id', help='project id to filter document ids by')
-@click.option('-d', '--documents', flag_value=True, help='list document ids')
-@click.option('-w', '--workflows', flag_value=True, help='list available workflow ids')
-def ids(projects, documents, workflows, project_id):
-    """ lists ids and titles of resources """
-    # todo possibly add communities
+@click.option('-d', 'id_type', flag_value='document', help='list document ids')
+@click.option('-w', 'id_type', flag_value='workflow', help='list available workflow ids')
+def ids(id_type):
+    """ lists ids and titles of documents added with tool, or available workflows """
     try:
         action = actions.Action(os.getcwd())
-        if projects:
-            # get projects
-            action.list_ids_action('projects', project_id)
-        if documents:
-            # get documents
-            action.list_ids_action('documents')
-        if workflows:
+        if id_type == 'workflow':
             action.list_ids_action('workflows')
-    except UninitializedError as e:
+        else:
+            action.list_ids_action('documents')
+    except (UninitializedError, RequestFailedError) as e:
         print e
         return
 
 @ltk.command()
-@click.option('-p', 'status_type', flag_value='project', help='gets status of project')
-@click.option('-d', 'status_type', flag_value='document', help='gets status of document')
-@click.argument('ids', required=True, nargs=-1)
-def status(status_type, ids):
-    """ gets the status of a project or document """
+@click.option('-n', '--doc_name', help='specific document name to get status of')
+def status(doc_name):
+    """ gets the status of a specific document or all documents """
     try:
         action = actions.Action(os.getcwd())
-        for curr_id in ids:
-            if status_type == 'project':
-                action.status_action('project', curr_id)
-            if status_type == 'document':
-                action.status_action('document', curr_id)
-    except UninitializedError as e:
+        action.status_action(doc_name)
+    except (UninitializedError, ResourceNotFound) as e:
         print e
         return
 
 @ltk.command()
 @click.option('-a', '--auto_format', flag_value=True, help='flag to auto apply formatting during download')
 @click.option('-l', '--locale', help='specific locale to download, defaults to source document')
-@click.argument('ids', required=True, nargs=-1)
-def download(auto_format, locale, ids):
+@click.argument('document_names', required=True, nargs=-1)
+def download(auto_format, locale, document_names):
     """ downloads translated content of document(s) """
     try:
         action = actions.Action(os.getcwd())
-        for curr_id in ids:
-            action.download_action(curr_id, locale, auto_format)
-    except UninitializedError as e:
+        for name in document_names:
+            action.download_by_name(name, locale, auto_format)
+    except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
         print e
         return
 
@@ -164,6 +149,4 @@ def delete():
     pass
 
 if __name__ == '__main__':
-    # init_parser()
-    # request_parser()
     ltk()

@@ -62,12 +62,8 @@ class Action:
         # todo automatically detect format?
         matched_files = get_files(self.path, file_pattern)
         for file_name in matched_files:
-            if kwargs['title']:
-                title = kwargs['title']
-            else:
-                title = os.path.basename(os.path.normpath(file_name)).split('.')[0]
-            del kwargs['title']
-            if not self.doc_manager.is_doc_new(file_name, title) and self.doc_manager.is_doc_modified(file_name, title):
+            title = os.path.basename(os.path.normpath(file_name)).split('.')[0]
+            if not self.doc_manager.is_doc_new(file_name) and self.doc_manager.is_doc_modified(file_name):
                 confirm = 'not confirmed'
                 while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
                     confirm = raw_input("This document already exists. Would you like to overwrite it? [y/n]: ")
@@ -91,7 +87,7 @@ class Action:
         document_ids = self.doc_manager.get_doc_ids()
         for document_id in document_ids:
             entry = self.doc_manager.get_doc_by_prop('id', document_id)[0]
-            if not self.doc_manager.is_doc_modified(entry['file_name'], entry['name']):
+            if not self.doc_manager.is_doc_modified(entry['file_name']):
                 continue
             response = self.api.document_update(document_id, entry['file_name'])
             if response.status_code != 202:
@@ -117,69 +113,94 @@ class Action:
                 raise exceptions.RequestFailedError("Failed to update document")
         self._update_document(file_name, title)
 
-    def request_action(self, document_id, is_project, locales, due_date, workflow):
-        if is_project:
+    def request_action(self, document_name, locales, due_date, workflow):
+        if not document_name:
             for locale in locales:
                 response = self.api.add_target_project(self.project_id, locale, due_date)
                 if response.status_code != 201:
-                    print 'Error when requesting translation for project'
+                    try:
+                        error = response.json()['messages'][0]
+                        raise exceptions.RequestFailedError(error)
+                    except (AttributeError, IndexError):
+                        raise exceptions.RequestFailedError("Failed to add a target to project")
         else:
-            if not document_id:
-                raise exceptions.NoIdSpecified("No document id specified and not requesting for project")
+            try:
+                entry = self.doc_manager.get_doc_by_prop('name', document_name)[0]
+            except IndexError:
+                raise exceptions.ResourceNotFound("Document name specified doesn't exist")
+            document_id = entry['id']
             for locale in locales:
                 response = self.api.add_target_document(document_id, locale, workflow, due_date)
-                if response.status_code == 404:
-                    raise exceptions.ResourceNotFound("This document doesn't exist")
                 if response.status_code != 201:
-                    print 'Error when requesting translation'
+                    try:
+                        error = response.json()['messages'][0]
+                        raise exceptions.RequestFailedError(error)
+                    except (AttributeError, IndexError):
+                        raise exceptions.RequestFailedError("Failed to add a target to document")
 
-    def list_ids_action(self, list_type, project_id=None):
+    def list_ids_action(self, list_type):
         """ lists ids of list_type specified """
-        if list_type == 'projects':
-            response = self.api.list_projects(self.community_id)
-            # todo organize and print response
-        elif list_type == 'documents':
-            response = self.api.list_documents(project_id)
+        ids = []
+        titles = []
+        if list_type == 'documents':
+            entries = self.doc_manager.get_all_entries()
+            for entry in entries:
+                ids.append(entry['id'])
+                titles.append(entry['name'])
         elif list_type == 'workflows':
             response = self.api.list_workflows(self.community_id)
-        else:
-            raise exceptions.ResourceNotFound("No such resource to list")
-
-        if response.status_code != 200:
-            print 'Error with listing'
-        else:
+            if response.status_code != 200:
+                try:
+                    error = response.json()['messages'][0]
+                    raise exceptions.RequestFailedError(error)
+                except (AttributeError, IndexError):
+                    raise exceptions.RequestFailedError("Failed to list workflows")
             ids, titles = log_id_names(response.json())
-            print list_type
-            print 'id\t\t\t\t\t\ttitle'
-            for i in range(len(ids)):
-                print ids[i] + '\t\t' + titles[i]
+        print list_type
+        print 'id\t\t\t\t\t\ttitle'
+        for i in range(len(ids)):
+            print ids[i] + '\t\t' + titles[i]
 
-    def status_action(self, status_type, given_id):
-        if status_type == 'project':
-            response = self.api.project_status(given_id)
-        elif status_type == 'document':
-            response = self.api.document_status(given_id)
+    def status_action(self, doc_name=None):
+        if doc_name is not None:
+            try:
+                doc_ids = [self.doc_manager.get_doc_by_prop('title', doc_name)[0]['id']]
+            except IndexError:
+                raise exceptions.ResourceNotFound("Document name specified doesn't exist")
         else:
-            raise exceptions.ResourceNotFound("No such resource to get status for")
+            doc_ids = self.doc_manager.get_doc_ids()
+        for doc_id in doc_ids:
+            response = self.api.document_status(doc_id)
+            if response.status_code != 200:
+                try:
+                    error = response.json()['messages'][0]
+                    raise exceptions.RequestFailedError(error)
+                except (AttributeError, IndexError):
+                    raise exceptions.RequestFailedError("Failed to get status of document")
+            else:
+                title = response.json()['properties']['title']
+                progress = response.json()['properties']['progress']
+                print title + ': ' + str(progress) + '%'
 
-        if response.status_code != 200:
-            print 'Error trying to get status'
-        else:
-            title = response.json()['properties']['title']
-            progress = response.json()['properties']['progress']
-            print title + ': ' + str(progress) + '%'
+    def download_by_name(self, doc_name, locale_code, auto_format):
+        try:
+            document_id = self.doc_manager.get_doc_by_prop('name', doc_name)[0]['id']
+        except IndexError:
+            raise exceptions.ResourceNotFound("Document name specified doesn't exist")
+        self.download_action(document_id, locale_code, auto_format)
 
     def download_action(self, document_id, locale_code, auto_format):
         if not os.path.isdir(os.path.join(self.path, TRANS_DIR)):
             os.mkdir(os.path.join(self.path, TRANS_DIR))
         response = self.api.document_content(document_id, locale_code, auto_format)
-        print response
         if response.status_code == 200:
+            if not locale_code:
+                locale_code = ''
             file_path = response.headers['content-disposition'].split('filename=')[1].strip("\"'")
             base_name = os.path.basename(os.path.normpath(file_path))
             name_parts = base_name.split('.')
             if len(name_parts) > 1:
-                file_name = ''.join(x for x in name_parts[:-2]) + '-' + locale_code + '.' + name_parts[-1]
+                file_name = '.'.join(x for x in name_parts[:-1]) + '-' + locale_code + '.' + name_parts[-1]
             else:
                 file_name = name_parts[-1] + locale_code
             download_path = os.path.join(self.path, TRANS_DIR, file_name)

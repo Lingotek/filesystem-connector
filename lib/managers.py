@@ -14,22 +14,16 @@ class DocumentManager:
         else:
             return False
 
-    def is_doc_new(self, file_name, title):
+    def is_doc_new(self, file_name):
         file_name_exists = self._db.search(where('file_name') == file_name)
-        title_exists = self._db.search(where('name') == title)
-        if not file_name and not title_exists:
-            return True
         if not file_name_exists:
             return True
         return False
 
-    def is_doc_modified(self, file_name, title):
+    def is_doc_modified(self, file_name):
         entries = self._db.search(where('file_name') == file_name)
-        title_exists = self._db.search(where('name') == title)
         last_modified = os.stat(file_name).st_mtime
-        if entries[0]['added'] < last_modified:
-            return True
-        if entries and title_exists:
+        if entries and entries[0]['added'] < last_modified:
             return True
         return False
 
@@ -44,14 +38,20 @@ class DocumentManager:
             entry['name'] = title
         self._db.update(entry, where('id') == doc_id)
 
+    def update_document_locale(self, file_name, locales):
+        pass
+
     def get_doc_by_prop(self, prop, expected_value):
         """ get documents by the specified property """
         entries = self._db.search(where(prop) == expected_value)
         return entries
 
+    def get_all_entries(self):
+        return self._db.all()
+
     def get_doc_ids(self):
         """ returns all the ids of documents that user has added """
         doc_ids = []
         for entry in self._db.all():
-            doc_ids.append(entry.id)
+            doc_ids.append(entry['id'])
         return doc_ids
