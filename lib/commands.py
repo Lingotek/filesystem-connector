@@ -152,9 +152,20 @@ def pull(auto_format, locales):
         print e
         return
 
+@ltk.command()
+@click.argument('document_names', required=True, nargs=-1)
+def delete(document_names):
+    """
+    deletes document(s)
+    """
+    try:
+        action = actions.Action(os.getcwd())
+        for name in document_names:
+            action.delete_action(name)
+    except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
+        print e
+        return
 
-def delete():
-    pass
 
 
 if __name__ == '__main__':

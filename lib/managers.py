@@ -49,8 +49,8 @@ class DocumentManager:
 
     def get_doc_by_prop(self, prop, expected_value):
         """ get documents by the specified property """
-        entries = self._db.search(where(prop) == expected_value)
-        return entries
+        entry = self._db.get(where(prop) == expected_value)
+        return entry
 
     def get_all_entries(self):
         return self._db.all()
@@ -62,6 +62,8 @@ class DocumentManager:
             doc_ids.append(entry['id'])
         return doc_ids
 
+    def remove_element(self, doc_id):
+        self._db.remove(where('id') == doc_id)
 
 def _update_entry_list(field, new_val):
     """

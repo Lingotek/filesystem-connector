@@ -113,6 +113,11 @@ class ApiCalls:
             r = requests.patch(uri, headers=self.headers, data=payload)
         return r
 
+    def delete_document(self, document_id):
+        uri = self.host + (api_uri.API_URI['document_id'] % locals())
+        r = requests.delete(uri, headers=self.headers)
+        return r
+
     def list_workflows(self, community_id):
         uri = self.host + api_uri.API_URI['workflow']
         payload = {'community_id': community_id}

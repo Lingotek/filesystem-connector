@@ -55,15 +55,15 @@ class Action:
         """ updates a document in the db """
         now = time.time()
         sys_last_modified = os.stat(file_name).st_mtime
-        doc_entries = self.doc_manager.get_doc_by_prop('file_name', file_name)
-        for doc_entry in doc_entries:
-            doc_id = doc_entry['id']
-            self.doc_manager.update_document('last_mod', now, doc_id)
-            self.doc_manager.update_document('sys_last_mod', sys_last_modified, doc_id)
+        entry = self.doc_manager.get_doc_by_prop('file_name', file_name)
+        doc_id = entry['id']
+        self.doc_manager.update_document('last_mod', now, doc_id)
+        self.doc_manager.update_document('sys_last_mod', sys_last_modified, doc_id)
 
     def add_action(self, locale, file_pattern, **kwargs):
         # todo should only add changed files..
         # format will be automatically detected by extension but may not be what user expects
+        # todo expecting file pattern, if enter multiple files, nothing happens since can't match tuple
         matched_files = get_files(self.path, file_pattern)
         for file_name in matched_files:
             title = os.path.basename(os.path.normpath(file_name)).split('.')[0]
@@ -103,8 +103,11 @@ class Action:
             self._update_document(entry['file_name'], entry['name'])
 
     def update_document_action(self, file_name, title=None, **kwargs):
-        entries = self.doc_manager.get_doc_by_prop('file_name', file_name)
-        document_id = entries[0]['id']
+        entry = self.doc_manager.get_doc_by_prop('file_name', file_name)
+        try:
+            document_id = entry['id']
+        except TypeError:
+            raise exceptions.ResourceNotFound("Document name specified doesn't exist")
         if title:
             response = self.api.document_update(document_id, file_name, title=title, **kwargs)
         else:
@@ -131,11 +134,11 @@ class Action:
             for document_id in document_ids:
                 self.doc_manager.update_document('locales', list(locales), document_id)
         else:
+            entry = self.doc_manager.get_doc_by_prop('name', document_name)
             try:
-                entry = self.doc_manager.get_doc_by_prop('name', document_name)[0]
-            except IndexError:
+                document_id = entry['id']
+            except TypeError:
                 raise exceptions.ResourceNotFound("Document name specified doesn't exist")
-            document_id = entry['id']
             for locale in locales:
                 response = self.api.add_target_document(document_id, locale, workflow, due_date)
                 if response.status_code != 201:
@@ -171,9 +174,10 @@ class Action:
 
     def status_action(self, doc_name=None):
         if doc_name is not None:
+            entry = self.doc_manager.get_doc_by_prop('name', doc_name)
             try:
-                doc_ids = [self.doc_manager.get_doc_by_prop('title', doc_name)[0]['id']]
-            except IndexError:
+                doc_ids = [entry['id']]
+            except TypeError:
                 raise exceptions.ResourceNotFound("Document name specified doesn't exist")
         else:
             doc_ids = self.doc_manager.get_doc_ids()
@@ -192,8 +196,8 @@ class Action:
 
     def download_by_name(self, doc_name, locale_code, auto_format):
         try:
-            document_id = self.doc_manager.get_doc_by_prop('name', doc_name)[0]['id']
-        except IndexError:
+            document_id = self.doc_manager.get_doc_by_prop('name', doc_name)['id']
+        except TypeError:
             raise exceptions.ResourceNotFound("Document name specified doesn't exist")
         self.download_action(document_id, locale_code, auto_format)
 
@@ -246,6 +250,23 @@ class Action:
             document_ids = self.doc_manager.get_doc_ids()
             for document_id in document_ids:
                 self.download_action(document_id, locale_code, auto_format)
+
+    def delete_action(self, document_name):
+        try:
+            entry = self.doc_manager.get_doc_by_prop('name', document_name)
+            document_id = entry['id']
+        except TypeError:
+            raise exceptions.ResourceNotFound("Document name specified doesn't exist")
+        response = self.api.delete_document(document_id)
+        self.doc_manager.remove_element(document_id)
+        if response.status_code != 204:
+            try:
+                error = response.json()['messages'][0]
+                raise exceptions.RequestFailedError(error)
+            except (AttributeError, IndexError):
+                raise exceptions.RequestFailedError("Failed to delete document")
+        else:
+            print "%s has been deleted." % document_name
 
 
 def init_action(host, access_token, project_path, project_name, workflow_id):
@@ -314,13 +335,15 @@ def init_action(host, access_token, project_path, project_name, workflow_id):
         config_parser.write(config_file)
         config_file.close()
 
-def get_files(root, pattern):
+def get_files(root, patterns):
     """ gets all files matching pattern from root
         pattern supports any unix shell-style wildcards (not same as RE) """
     matched_files = []
     for path, subdirs, files in os.walk(root):
-        for name in fnmatch.filter(files, pattern):
-            matched_files.append(os.path.join(path, name))
+        # matched_files = any(fnmatch.fnmatch(files, p) for p in patterns)
+        for pattern in patterns:
+            for name in fnmatch.filter(files, pattern):
+                matched_files.append(os.path.join(path, name))
     return matched_files
 
 def log_id_names(json):
