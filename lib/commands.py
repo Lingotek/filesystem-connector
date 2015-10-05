@@ -28,10 +28,6 @@ def init(host, access_token, path, project_name, workflow_id):
         project_name = os.path.basename(os.path.normpath(path))
     if not workflow_id:
         workflow_id = 'c675bd20-0688-11e2-892e-0800200c9a66'
-    click.echo("project name: %s" % project_name)
-    # action = actions.Action(path)
-    # action.init_action(host, access_token, project_name)
-    # processes.init_action(host, access_token, path, project_name)
     actions.init_action(host, access_token, path, project_name, workflow_id)
 
 
@@ -39,7 +35,8 @@ def init(host, access_token, path, project_name, workflow_id):
 @click.argument('file_names', required=True, nargs=-1)
 @click.argument('locale', required=True, nargs=1)
 @click.option('--path', type=click.Path(exists=True), help='path to your file')
-@click.option('-f', '--format', help='format of uploaded file(s), defaults to plaintext')
+@click.option('-f', '--format',
+              help='format of file; if not specified, will use extension to detect; defaults to plaintext')
 @click.option('-s', '--srx', type=click.Path(exists=True), help='srx file')
 @click.option('-si', '--srx_id', help='srx id')
 @click.option('-i', '--its', type=click.Path(exists=True), help='its file')
@@ -63,6 +60,7 @@ def add(path, file_names, locale, **kwargs):
         print e
         return
 
+
 # @ltk.command()
 # @click.argument('-p', 'update_type', flag_value='project', prompt='Update type?', help='update a project')
 # @click.argument('-d', 'update_type', flag_value='document', help='update a document')
@@ -79,6 +77,7 @@ def push():
         print e
         return
 
+
 @ltk.command()
 @click.option('-n', '--doc_name', help='the name of the document, specify for one document')
 @click.option('--due_date', help='the due date of the translation')
@@ -92,6 +91,7 @@ def request(doc_name, locales, due_date, workflow):
     except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
         print e
         return
+
 
 @ltk.command()
 @click.option('-d', 'id_type', flag_value='document', help='list document ids')
@@ -108,6 +108,7 @@ def ids(id_type):
         print e
         return
 
+
 @ltk.command()
 @click.option('-n', '--doc_name', help='specific document name to get status of')
 def status(doc_name):
@@ -118,6 +119,7 @@ def status(doc_name):
     except (UninitializedError, ResourceNotFound) as e:
         print e
         return
+
 
 @ltk.command()
 @click.option('-a', '--auto_format', flag_value=True, help='flag to auto apply formatting during download')
@@ -133,20 +135,27 @@ def download(auto_format, locale, document_names):
         print e
         return
 
+
 @ltk.command()
 @click.option('-a', '--auto_format', flag_value=True, help='flag to auto apply formatting during download')
-@click.option('-l', '--locale', help='specific locale to download, defaults to source document')
-def pull(auto_format, locale):
+@click.argument('locales', nargs=-1)
+def pull(auto_format, locales):
     """ pulls all translations for added documents """
     try:
         action = actions.Action(os.getcwd())
-        action.pull_action(locale, auto_format)
+        if locales:
+            for locale in locales:
+                action.pull_action(locale, auto_format)
+        else:
+            action.pull_action(None, auto_format)
     except UninitializedError as e:
         print e
         return
 
+
 def delete():
     pass
+
 
 if __name__ == '__main__':
     ltk()

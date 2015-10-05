@@ -1,7 +1,6 @@
 import requests
 import api_uri
-
-# todo: handle errors
+import utils
 
 class ApiCalls:
     def __init__(self, host, access_token):
@@ -56,6 +55,9 @@ class ApiCalls:
         for key, value in kwargs.iteritems():
             if kwargs[key]:
                 payload[key] = value
+        detected_format = utils.detect_format(file_name)
+        if not kwargs['format'] and detected_format != 'PLAINTEXT_OKAPI':
+            payload['format'] = detected_format
         files = {'content': (file_name, open(file_name, 'rb'))}
         r = requests.post(uri, headers=self.headers, data=payload, files=files)
         return r
@@ -95,7 +97,7 @@ class ApiCalls:
             payload['locale_code'] = locale_code
         if auto_format:
             payload['auto_format'] = auto_format
-        r = requests.get(uri, headers=self.headers, params=payload)
+        r = requests.get(uri, headers=self.headers, params=payload, stream=True)
         return r
 
     def document_update(self, document_id, file_name=None, **kwargs):

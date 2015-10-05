@@ -8,6 +8,8 @@ from apicalls import ApiCalls
 from managers import DocumentManager
 from constants import CONF_DIR, CONF_FN, TRANS_DIR
 
+# todo handle errors/log them
+
 class Action:
     def __init__(self, path):
         self.host = ''
@@ -49,17 +51,19 @@ class Action:
         last_modified = os.stat(file_name).st_mtime
         self.doc_manager.add_document(title, now, doc_id, last_modified, now, file_name)
 
-    def _update_document(self, file_name, title):
+    def _update_document(self, file_name):
         """ updates a document in the db """
         now = time.time()
         sys_last_modified = os.stat(file_name).st_mtime
-        doc_entry = self.doc_manager.get_doc_by_prop('file_name', file_name)
-        doc_id = doc_entry['id']
-        self.doc_manager.update_document(doc_id, now, sys_last_modified, file_name, title)
+        doc_entries = self.doc_manager.get_doc_by_prop('file_name', file_name)
+        for doc_entry in doc_entries:
+            doc_id = doc_entry['id']
+            self.doc_manager.update_document('last_mod', now, doc_id)
+            self.doc_manager.update_document('sys_last_mod', sys_last_modified, doc_id)
 
     def add_action(self, locale, file_pattern, **kwargs):
         # todo should only add changed files..
-        # todo automatically detect format?
+        # format will be automatically detected by extension but may not be what user expects
         matched_files = get_files(self.path, file_pattern)
         for file_name in matched_files:
             title = os.path.basename(os.path.normpath(file_name)).split('.')[0]
@@ -84,12 +88,12 @@ class Action:
                 self._add_document(file_name, title, response.json())
 
     def push_action(self):
-        document_ids = self.doc_manager.get_doc_ids()
-        for document_id in document_ids:
-            entry = self.doc_manager.get_doc_by_prop('id', document_id)[0]
+        entries = self.doc_manager.get_all_entries()
+        for entry in entries:
             if not self.doc_manager.is_doc_modified(entry['file_name']):
                 continue
-            response = self.api.document_update(document_id, entry['file_name'])
+            print 'uploading...' + str(entry['name'])
+            response = self.api.document_update(entry['id'], entry['file_name'])
             if response.status_code != 202:
                 try:
                     error = response.json()['messages'][0]
@@ -120,9 +124,12 @@ class Action:
                 if response.status_code != 201:
                     try:
                         error = response.json()['messages'][0]
-                        raise exceptions.RequestFailedError(error)
+                        raise exceptions.RequestFailedError('Error: ' + error)
                     except (AttributeError, IndexError):
                         raise exceptions.RequestFailedError("Failed to add a target to project")
+            document_ids = self.doc_manager.get_doc_ids()
+            for document_id in document_ids:
+                self.doc_manager.update_document('locales', list(locales), document_id)
         else:
             try:
                 entry = self.doc_manager.get_doc_by_prop('name', document_name)[0]
@@ -137,6 +144,7 @@ class Action:
                         raise exceptions.RequestFailedError(error)
                     except (AttributeError, IndexError):
                         raise exceptions.RequestFailedError("Failed to add a target to document")
+            self.doc_manager.update_document('locales', list(locales), document_id)
 
     def list_ids_action(self, list_type):
         """ lists ids of list_type specified """
@@ -194,21 +202,29 @@ class Action:
             os.mkdir(os.path.join(self.path, TRANS_DIR))
         response = self.api.document_content(document_id, locale_code, auto_format)
         if response.status_code == 200:
-            if not locale_code:
-                locale_code = ''
+            # if not locale_code:
+            #     locale_code = ''
             file_path = response.headers['content-disposition'].split('filename=')[1].strip("\"'")
             base_name = os.path.basename(os.path.normpath(file_path))
             name_parts = base_name.split('.')
-            if len(name_parts) > 1:
-                file_name = '.'.join(x for x in name_parts[:-1]) + '-' + locale_code + '.' + name_parts[-1]
+            if not locale_code and len(name_parts) < 3:
+                print 'Downloaded ' + str(name_parts[0]) + ' in its source language: ' + str(base_name)
             else:
-                file_name = name_parts[-1] + locale_code
-            download_path = os.path.join(self.path, TRANS_DIR, file_name)
+                print 'Downloaded ' + str(name_parts[0]) + ' for locale ' + str(name_parts[1]) + ': ' + str(base_name)
+            # name_parts = base_name.split('.')
+            # if len(name_parts) > 1:
+            #     file_name = '.'.join(x for x in name_parts[:-1]) + '-' + locale_code + '.' + name_parts[-1]
+            # else:
+            #     file_name = name_parts[-1] + locale_code
+            # todo possibly put downloaded file next to original file
+            # download_path = os.path.join(self.path, TRANS_DIR, file_name)
+            download_path = os.path.join(self.path, TRANS_DIR, base_name)
             with open(download_path, 'wb') as fh:
                 # todo handle when file too large; can't keep entire file in memory
-                encoded = response.text.encode('utf_8')
-                # shutil.copyfileobj(encoded, fh)
-                fh.write(encoded)
+                for chunk in response.iter_content(1024):
+                    fh.write(chunk)
+                # encoded = response.text.encode('utf_8')
+                # fh.write(encoded)
         else:
             try:
                 error = response.json()['messages'][0]
@@ -217,9 +233,19 @@ class Action:
                 raise exceptions.RequestFailedError("Failed to download content")
 
     def pull_action(self, locale_code, auto_format):
-        document_ids = self.doc_manager.get_doc_ids()
-        for document_id in document_ids:
-            self.download_action(document_id, locale_code, auto_format)
+        if not locale_code:
+            entries = self.doc_manager.get_all_entries()
+            for entry in entries:
+                try:
+                    locales = entry['locales']
+                    for locale in locales:
+                        self.download_action(entry['id'], locale, auto_format)
+                except KeyError:
+                    self.download_action(entry['id'], None, auto_format)
+        else:
+            document_ids = self.doc_manager.get_doc_ids()
+            for document_id in document_ids:
+                self.download_action(document_id, locale_code, auto_format)
 
 
 def init_action(host, access_token, project_path, project_name, workflow_id):
