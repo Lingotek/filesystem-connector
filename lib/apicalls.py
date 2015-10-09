@@ -6,11 +6,13 @@ class ApiCalls:
     def __init__(self, host, access_token):
         self.host = host
         self.headers = {'Authorization': 'bearer ' + access_token}
+        # self.cert = ('lingotek.crt', 'lingotek.key')
 
     def list_communities(self):
         """ gets the communities that a user is in """
         uri = self.host + api_uri.API_URI['community']
-        r = requests.get(uri, headers=self.headers)
+        payload = {'limit': 100}
+        r = requests.get(uri, headers=self.headers, params=payload)
         return r
 
     def list_projects(self, community_id):
@@ -46,7 +48,7 @@ class ApiCalls:
         """ deletes a project """
         uri = self.host + (api_uri.API_URI['project_id'] % locals())
         r = requests.delete(uri, headers=self.headers)
-        return r.status_code
+        return r
 
     def add_document(self, file_name, locale, project_id, title, **kwargs):
         """ adds a document """
@@ -124,17 +126,22 @@ class ApiCalls:
         r = requests.get(uri, headers=self.headers, params=payload)
         return r
 
-    def get_community_ids(self):
+    def get_communities_info(self):
         response = self.list_communities()
         if response.status_code != 200:
             print response.json()
             print 'error getting community ids'
             # todo raise error
         entities = response.json()['entities']
-        ids = []
+        # ids = []
+        # titles = []
+        info = {}
         for entity in entities:
-            ids.append(entity['properties']['id'])
-        return ids
+            info[entity['properties']['id']] = entity['properties']['title']
+            # ids.append(entity['properties']['id'])
+            # titles.append(entity['properties']['title'])
+        # return ids, titles
+        return info
 
 # def test(project_id):
     # project_id = "123"

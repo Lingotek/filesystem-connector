@@ -75,5 +75,6 @@ def _update_entry_list(field, new_val):
         except KeyError:
             element[field] = []
         element[field].extend(new_val)
+        element[field] = list(set(element[field]))
 
     return transform
