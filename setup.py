@@ -8,7 +8,7 @@ setup(
     install_requires=[
         'click',
         'requests',
-        'requests[security]'
+        # 'requests[security]',
         'tinydb',
     ],
     entry_points='''

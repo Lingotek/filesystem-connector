@@ -6,7 +6,7 @@ import time
 import exceptions
 from apicalls import ApiCalls
 from managers import DocumentManager
-from constants import CONF_DIR, CONF_FN, TRANS_DIR, LOG_FN
+from constants import CONF_DIR, CONF_FN, LOG_FN
 import logging
 
 # todo handle errors/log them
@@ -19,6 +19,7 @@ class Action:
         self.path = path
         self.community_id = ''
         self.workflow_id = ''  # default workflow id; MT phase only
+        self.locale = ''
         if not self._is_initialized():
             # todo prompt user to initialize project first, raise error and exit
             raise exceptions.UninitializedError("This project is not initialized. Please run init command.")
@@ -28,7 +29,7 @@ class Action:
         logging.basicConfig(filename=LOG_FN, level=logging.DEBUG)
 
     def _is_initialized(self):
-        if os.path.isdir(os.path.join(self.path, '.Lingotek')):
+        if os.path.isdir(os.path.join(self.path, CONF_DIR)):
             config_file_name = os.path.join(self.path, CONF_DIR, CONF_FN)
             if os.path.isfile(config_file_name):
                 return True
@@ -45,6 +46,7 @@ class Action:
         self.project_id = conf_parser.get('main', 'project_id')
         self.community_id = conf_parser.get('main', 'community_id')
         self.workflow_id = conf_parser.get('main', 'workflow_id')
+        self.locale = conf_parser.get('main', 'default_locale')
 
     def _add_document(self, file_name, title, doc_id):
         """ adds a document to db """
@@ -62,33 +64,63 @@ class Action:
         self.doc_manager.update_document('last_mod', now, doc_id)
         self.doc_manager.update_document('sys_last_mod', sys_last_modified, doc_id)
 
+    def config_action(self, locale, workflow_id):
+        config_file_name = os.path.join(self.path, CONF_DIR, CONF_FN)
+        conf_parser = ConfigParser.ConfigParser()
+        conf_parser.read(config_file_name)
+        if locale:
+            conf_parser.set('main', 'default_locale', locale)
+            with open(config_file_name, 'wb') as new_file:
+                conf_parser.write(new_file)
+            print 'Project default locale has been updated to {0}'.format(locale)
+            logging.info('Project default locale has been updated to {0}'.format(locale))
+        elif workflow_id:
+            response = self.api.patch_project(self.project_id, workflow_id)
+            if response.status_code != 204:
+                raise_error(response.json(), 'Something went wrong trying to update workflow id of project')
+            conf_parser.set('main', 'workflow_id', workflow_id)
+            with open(config_file_name, 'wb') as new_file:
+                conf_parser.write(new_file)
+            print 'Project default workflow has been updated to {0}'.format(workflow_id)
+            logging.info('Project default workflow has been updated to {0}'.format(workflow_id))
+        else:
+            # conf_parser.read(config_file_name)
+            print 'host: {0}'.format(self.host)
+            print 'access_token: {0}'.format(self.access_token)
+            print 'project id: {0}'.format(self.project_id)
+            print 'community id: {0}'.format(self.community_id)
+            print 'workflow id: {0}'.format(self.workflow_id)
+            print 'locale: {0}'.format(self.locale)
+
     def add_action(self, locale, file_patterns, **kwargs):
+        if not locale:
+            locale = self.locale
         # todo should only add changed files..
         # format will be automatically detected by extension but may not be what user expects
-        # todo expecting file pattern, if enter multiple files, nothing happens since can't match tuple
+        # todo file pattern not matching subdirectory
         matched_files = get_files(self.path, file_patterns)
         if not matched_files:
             raise exceptions.ResourceNotFound("Could not find the specified file/pattern")
         for file_name in matched_files:
-            title = os.path.basename(os.path.normpath(file_name)).split('.')[0]
-            if not self.doc_manager.is_doc_new(file_name) and self.doc_manager.is_doc_modified(file_name):
-                confirm = 'not confirmed'
-                while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-                    confirm = raw_input("This document already exists. Would you like to overwrite it? [y/n]: ")
-                # confirm if would like to overwrite existing document in TMS
-                if not confirm or confirm in ['n', 'N']:
-                    return
+            # title = os.path.basename(os.path.normpath(file_name)).split('.')[0]
+            title = os.path.basename(os.path.normpath(file_name))
+            if not self.doc_manager.is_doc_new(file_name):
+                if self.doc_manager.is_doc_modified(file_name):
+                    confirm = 'not confirmed'
+                    while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
+                        confirm = raw_input("This document already exists. Would you like to overwrite it? [y/n]: ")
+                    # confirm if would like to overwrite existing document in TMS
+                    if not confirm or confirm in ['n', 'N']:
+                        return
+                    else:
+                        logging.info('Overwriting document: {0} in TMS...'.format(title))
+                        self.update_document_action(file_name, title, **kwargs)
+                        continue
                 else:
-                    logging.info('Overwriting current document in TMS...%s', title)
-                    self.update_document_action(file_name, title, **kwargs)
-                    continue
+                    raise exceptions.AlreadyExistsError("This document has already been added: {0}".format(title))
             response = self.api.add_document(file_name, locale, self.project_id, title, **kwargs)
             if response.status_code != 202:
-                try:
-                    error = response.json()['messages'][0]
-                    raise exceptions.RequestFailedError(error)
-                except (AttributeError, IndexError):
-                    raise exceptions.RequestFailedError("Failed to add document %s", title)
+                raise_error(response.json(), "Failed to add document {0}".format(title))
             else:
                 self._add_document(file_name, title, response.json()['properties']['id'])
 
@@ -101,11 +133,7 @@ class Action:
             logging.info('Updating...' + entry['name'])
             response = self.api.document_update(entry['id'], entry['file_name'])
             if response.status_code != 202:
-                try:
-                    error = response.json()['messages'][0]
-                    raise exceptions.RequestFailedError(error)
-                except (AttributeError, IndexError):
-                    raise exceptions.RequestFailedError("Failed to update document %s", entry['name'])
+                raise_error(response.json(), "Failed to update document {0}".format(entry['name']))
             self._update_document(entry['file_name'])
 
     def update_document_action(self, file_name, title=None, **kwargs):
@@ -113,17 +141,13 @@ class Action:
         try:
             document_id = entry['id']
         except TypeError:
-            raise exceptions.ResourceNotFound("Document name specified (%s) doesn't exist", file_name)
+            raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(title))
         if title:
             response = self.api.document_update(document_id, file_name, title=title, **kwargs)
         else:
             response = self.api.document_update(document_id, file_name)
         if response.status_code != 202:
-            try:
-                error = response.json()['messages'][0]
-                raise exceptions.RequestFailedError(error)
-            except (AttributeError, IndexError):
-                raise exceptions.RequestFailedError("Failed to update document %s", file_name)
+            raise_error(response.json(), "Failed to update document {0}".format(file_name))
         self._update_document(file_name, title)
 
     def request_action(self, document_name, locales, due_date, workflow):
@@ -131,11 +155,9 @@ class Action:
             for locale in locales:
                 response = self.api.add_target_project(self.project_id, locale, due_date)
                 if response.status_code != 201:
-                    try:
-                        error = response.json()['messages'][0]
-                        raise exceptions.RequestFailedError('Error: ' + error)
-                    except (AttributeError, IndexError):
-                        raise exceptions.RequestFailedError("Failed to add target %s to project", locale)
+                    raise_error(response.json(), "Failed to add target {0} to project".format(locale))
+                print 'Requested locale {0} for project'.format(locale)
+                logging.info('Requested locale {0} for project {1}'.format(locale, self.project_id))
             document_ids = self.doc_manager.get_doc_ids()
             for document_id in document_ids:
                 self.doc_manager.update_document('locales', list(locales), document_id)
@@ -144,67 +166,87 @@ class Action:
             try:
                 document_id = entry['id']
             except TypeError:
-                raise exceptions.ResourceNotFound("Document name specified (%s) doesn't exist", document_name)
+                raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
             for locale in locales:
                 response = self.api.add_target_document(document_id, locale, workflow, due_date)
                 if response.status_code != 201:
-                    try:
-                        error = response.json()['messages'][0]
-                        raise exceptions.RequestFailedError(error)
-                    except (AttributeError, IndexError):
-                        raise exceptions.RequestFailedError("Failed to add target %s to document", locale)
+                    raise_error(response.json(), "Failed to add target {0} to document".format(locale))
+                print 'Requested locale {0} for document {1}'.format(locale, document_name)
+                logging.info('Requested locale {0} for document {1}'.format(locale, document_name))
             self.doc_manager.update_document('locales', list(locales), document_id)
 
     def list_ids_action(self, list_type):
         """ lists ids of list_type specified """
         ids = []
         titles = []
+        locales = []
         if list_type == 'documents':
             entries = self.doc_manager.get_all_entries()
             for entry in entries:
                 ids.append(entry['id'])
                 titles.append(entry['name'])
+                try:
+                    locales.append(entry['locales'])
+                except KeyError:
+                    locales.append(['No locales'])
         elif list_type == 'workflows':
             response = self.api.list_workflows(self.community_id)
             if response.status_code != 200:
-                try:
-                    error = response.json()['messages'][0]
-                    raise exceptions.RequestFailedError(error)
-                except (AttributeError, IndexError):
-                    raise exceptions.RequestFailedError("Failed to list workflows")
+                raise_error(response.json(), "Failed to list workflows")
             ids, titles = log_id_names(response.json())
         print list_type
-        print 'id\t\t\t\t\t\ttitle'
+        # print 'id\t\t\t\t\t\ttitle'
         for i in range(len(ids)):
-            print ids[i] + '\t\t' + titles[i]
+            print ids[i] + '\t' + titles[i] + '\t\t' + ', '.join(locale for locale in locales[i])
 
-    def status_action(self, doc_name=None):
-        if doc_name is not None:
-            entry = self.doc_manager.get_doc_by_prop('name', doc_name)
+    def list_locale_action(self):
+        locale_info = []
+        response = self.api.list_locales()
+        if response.status_code != 200:
+            raise exceptions.RequestFailedError("Failed to get locale codes")
+        locale_json = response.json()
+        for entry in locale_json:
+            locale_code = locale_json[entry]['locale']
+            language = locale_json[entry]['language_name']
+            country = locale_json[entry]['country_name']
+            locale_info.append((locale_code, language, country))
+        for locale in sorted(locale_info):
+            print "{0} ({1}, {2})".format(locale[0], locale[1], locale[2])
+
+    def status_action(self, detailed, document_name=None):
+        if document_name is not None:
+            entry = self.doc_manager.get_doc_by_prop('name', document_name)
             try:
                 doc_ids = [entry['id']]
             except TypeError:
-                raise exceptions.ResourceNotFound("Document name specified (%s) doesn't exist", doc_name)
+                raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
         else:
             doc_ids = self.doc_manager.get_doc_ids()
         for doc_id in doc_ids:
             response = self.api.document_status(doc_id)
             if response.status_code != 200:
-                try:
-                    error = response.json()['messages'][0]
-                    raise exceptions.RequestFailedError(error)
-                except (AttributeError, IndexError):
-                    raise exceptions.RequestFailedError("Failed to get status of document")
+                raise_error(response.json(), "Failed to get status of document")
             else:
                 title = response.json()['properties']['title']
                 progress = response.json()['properties']['progress']
                 print title + ': ' + str(progress) + '%'
+                # for each doc id, also call /document/id/translation and get % of each locale
+            if detailed:
+                response = self.api.document_translation_status(doc_id)
+                if response.status_code != 200:
+                    pass
+                try:
+                    for entry in response.json()['entities']:
+                        print '\tlocale: {0} \t percent complete: {1}%'.format(entry['properties']['locale_code'],
+                                                                               entry['properties']['percent_complete'])
+                except KeyError:
+                    continue
 
-    def download_by_name(self, doc_name, locale_code, auto_format):
+    def download_by_name(self, document_name, locale_code, auto_format):
         try:
-            document_id = self.doc_manager.get_doc_by_prop('name', doc_name)['id']
+            document_id = self.doc_manager.get_doc_by_prop('name', document_name)['id']
         except TypeError:
-            raise exceptions.ResourceNotFound("Document name specified (%s) doesn't exist", doc_name)
+            raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
         self.download_action(document_id, locale_code, auto_format)
 
     def download_action(self, document_id, locale_code, auto_format):
@@ -238,32 +280,11 @@ class Action:
                 download_path = os.path.join(download_dir, downloaded_name)
                 print "Downloaded {0} for locale {1}: {2}".format(name_parts[0], locale_code, downloaded_name)
                 logging.info("Downloaded {0} for locale {1}: {2}".format(name_parts[0], locale_code, downloaded_name))
-            # # if not locale_code:
-            # #     locale_code = ''
-            # file_path = response.headers['content-disposition'].split('filename=')[1].strip("\"'")
-            # base_name = os.path.basename(os.path.normpath(file_path))
-            # name_parts = base_name.split('.')
-            # if not locale_code and len(name_parts) < 3:
-            #     print 'Downloaded ' + str(name_parts[0]) + ' in its source language: ' + str(base_name)
-            #     logging.info('Downloaded ' + str(name_parts[0]) + ' in its source language: ' + str(base_name))
-            # else:
-            #     print 'Downloaded ' + str(name_parts[0]) + ' for locale ' + str(name_parts[1]) + ': ' + str(base_name)
-            #     logging.info('Downloaded ' + str(name_parts[0]) + ' for locale ' + str(name_parts[1]) + ': ' + str(base_name))
-            # # name_parts = base_name.split('.')
-            # # if len(name_parts) > 1:
-            # #     file_name = '.'.join(x for x in name_parts[:-1]) + '-' + locale_code + '.' + name_parts[-1]
-            # # else:
-            # #     file_name = name_parts[-1] + locale_code
-            # # todo possibly put downloaded file next to original file
-            # # download_path = os.path.join(self.path, TRANS_DIR, file_name)
-            # download_path = os.path.join(self.path, TRANS_DIR, base_name)
-            # # download_path = os.path.join(self.path, base_name)
-            # # with open(download_path, 'wb') as fh:
             with open(download_path, 'wb') as fh:
                 for chunk in response.iter_content(1024):
                     fh.write(chunk)
-                # encoded = response.text.encode('utf_8')
-                # fh.write(encoded)
+                    # encoded = response.text.encode('utf_8')
+                    # fh.write(encoded)
             return download_path
         else:
             try:
@@ -292,18 +313,14 @@ class Action:
             entry = self.doc_manager.get_doc_by_prop('name', document_name)
             document_id = entry['id']
         except TypeError:
-            raise exceptions.ResourceNotFound("Document name specified doesn't exist")
+            raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
         response = self.api.delete_document(document_id)
         self.doc_manager.remove_element(document_id)
         if response.status_code != 204:
-            try:
-                error = response.json()['messages'][0]
-                raise exceptions.RequestFailedError(error)
-            except (AttributeError, IndexError):
-                raise exceptions.RequestFailedError("Failed to delete document %s", document_name)
+            raise_error(response.json(), "Failed to delete document {0}".format(document_name))
         else:
-            print "%s has been deleted." % document_name
-            logging.info("%s has been deleted." % document_name)
+            print "{0} has been deleted.".format(document_name)
+            logging.info("{0} has been deleted.".format(document_name))
 
     def sync_action(self, force, update):
         # upload_date in get document tells which day but not specific time
@@ -323,7 +340,7 @@ class Action:
         if not ids_to_delete and not ids_not_local:
             # todo need to check if content also up to date?
             logging.info('Local documents up to date with documents in TMS')
-            print 'Local up to date with TMS'
+            print 'Already up-to-date'
             return
         if ids_to_delete:
             for curr_id in ids_to_delete:
@@ -339,13 +356,23 @@ class Action:
                 self._add_document(download_path, title, curr_id)
 
 
-def init_action(host, access_token, project_path, project_name, workflow_id):
+def raise_error(json, error_message):
+    try:
+        error = json['messages'][0]
+        raise exceptions.RequestFailedError(error)
+    except (AttributeError, IndexError):
+        raise exceptions.RequestFailedError(error_message)
+
+
+def init_action(host, access_token, project_path, project_name, workflow_id, locale):
     api = ApiCalls(host, access_token)
     # check if Lingotek directory already exists
     if os.path.isdir(os.path.join(project_path, CONF_DIR)):
         confirm = 'not confirmed'
         while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-            confirm = raw_input("Do you want to delete the existing project and create a new one? This will also delete the project in your community. [y/n]: ")
+            confirm = raw_input(
+                "Do you want to delete the existing project and create a new one? "
+                "This will also delete the project in your community. [y/n]: ")
         # confirm if would like to delete existing folder
         if not confirm or confirm in ['n', 'N']:
             return
@@ -384,6 +411,7 @@ def init_action(host, access_token, project_path, project_name, workflow_id):
         config_parser.set('main', 'host', host)
         config_parser.set('main', 'root_path', project_path)
         config_parser.set('main', 'workflow_id', workflow_id)
+        config_parser.set('main', 'default_locale', locale)
         # get community id
         # community_ids = api.get_communities_info()
         community_info = api.get_communities_info()
@@ -398,19 +426,36 @@ def init_action(host, access_token, project_path, project_name, workflow_id):
             community_id = community_info.iterkeys().next()
         config_parser.set('main', 'community_id', community_id)
 
-        # todo handle when project already exists online?
+        # todo handle when mult projects in community -- allow to choose or create new
+        response = api.list_projects(community_id)
+        if response.status_code != 200:
+            raise_error(response.json(), 'Something went wrong trying to find projects in your community')
+        project_info = api.get_project_info(community_id)
+        if len(project_info) > 0:
+            confirm = 'none'
+            while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
+                confirm = raw_input(
+                    'It looks like you have existing projects -- would you like to create a new one? [y/n]:')
+            if not confirm or confirm in ['n', 'N', 'no', 'No']:
+                choice = 'none'
+                for k, v in project_info.iteritems():
+                    print k, v
+                while choice not in project_info.iterkeys():
+                    choice = raw_input('Which existing project to use, please enter project id:')
+                project_id = choice
+                config_parser.set('main', 'project_id', project_id)
+                config_parser.write(config_file)
+                config_file.close()
+                return
         response = api.add_project(project_name, community_id, workflow_id)
         if response.status_code != 201:
-            try:
-                error = response.json()['messages'][0]
-                raise exceptions.RequestFailedError(error)
-            except AttributeError:
-                raise exceptions.RequestFailedError('Failed to add current project to TMS')
+            raise_error(response.json(), 'Failed to add current project to TMS')
         project_id = response.json()['properties']['id']
         config_parser.set('main', 'project_id', project_id)
 
         config_parser.write(config_file)
         config_file.close()
+
 
 def get_files(root, patterns):
     """ gets all files matching pattern from root
@@ -433,17 +478,18 @@ def get_files(root, patterns):
             #     for subdir_file in subdir_files:
             #         if fnmatch.fnmatch(subdir_file, os.path.join(path, os.path.basename(pattern))):
             #             print 'found, with subdir'
-                # for name in fnmatch.fnmatch(subdir_files, pattern):
-                #     print 'found, with subdir'
-                    # matched_files.append(os.path.join(path, name))
+            # for name in fnmatch.fnmatch(subdir_files, pattern):
+            #     print 'found, with subdir'
+            # matched_files.append(os.path.join(path, name))
             # else:
             for name in fnmatch.filter(files, pattern):
                 # print 'found without subdir'
                 # print os.path.join(path, name)
                 matched_files.append(os.path.join(path, name))
-    print patterns
-    print matched_files
+    # print patterns
+    # print matched_files
     return matched_files
+
 
 def log_id_names(json):
     # entities array

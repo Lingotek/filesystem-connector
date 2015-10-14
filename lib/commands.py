@@ -2,7 +2,7 @@ import click
 import actions
 # from actions import Action
 import os
-from exceptions import UninitializedError, ResourceNotFound, RequestFailedError
+from exceptions import UninitializedError, ResourceNotFound, RequestFailedError, AlreadyExistsError
 from constants import LOG_FN
 import logging
 
@@ -20,9 +20,10 @@ def ltk():
 @click.option('--path', type=click.Path(exists=True),
               help='the path to the project directory to be initialized, defaults to current directory')
 @click.option('-n', '--project_name', help='the preferred project name, defaults to current directory name')
-@click.option('-w', '--workflow_id',
+@click.option('-w', '--workflow_id', default='c675bd20-0688-11e2-892e-0800200c9a66',
               help='the id of the workflow to use for this project, defaults to machine translate only.')
-def init(host, access_token, path, project_name, workflow_id):
+@click.option('-l', '--locale', default='en_US', help='the default source locale for the project; defaults to en_US')
+def init(host, access_token, path, project_name, workflow_id, locale):
     """ initializes a Lingotek project """
     try:
         host = 'https://' + host
@@ -30,18 +31,31 @@ def init(host, access_token, path, project_name, workflow_id):
             path = os.getcwd()
         if not project_name:
             project_name = os.path.basename(os.path.normpath(path))
-        if not workflow_id:
-            workflow_id = 'c675bd20-0688-11e2-892e-0800200c9a66'
-        actions.init_action(host, access_token, path, project_name, workflow_id)
+        if not access_token:
+            # get access token from username/password
+            pass
+        actions.init_action(host, access_token, path, project_name, workflow_id, locale)
     except (ResourceNotFound, RequestFailedError) as e:
         print e
         logging.error(e)
         return
 
+@ltk.command()
+@click.option('-l', '--locale', help='change the default source locale for project')
+@click.option('-w', '--workflow_id', help='change the default workflow id for project')
+def config(locale, workflow_id):
+    """ view or change project configurations """
+    try:
+        action = actions.Action(os.getcwd())
+        action.config_action(locale, workflow_id)
+    except (UninitializedError, RequestFailedError) as e:
+        print e
+        logging.error(e)
+        return
 
 @ltk.command()
-@click.argument('locale', required=True, nargs=1)
 @click.argument('file_names', required=True, nargs=-1)
+@click.option('-l', '--locale', help='if source locale is different from the default configuration')
 @click.option('-f', '--format',
               help='format of file; if not specified, will use extension to detect; defaults to plaintext')
 @click.option('-s', '--srx', type=click.Path(exists=True), help='srx file')
@@ -60,7 +74,7 @@ def add(file_names, locale, **kwargs):
     try:
         action = actions.Action(os.getcwd())
         action.add_action(locale, file_names, **kwargs)
-    except (UninitializedError, RequestFailedError, ResourceNotFound) as e:
+    except (UninitializedError, RequestFailedError, ResourceNotFound, AlreadyExistsError) as e:
         # todo log the error somewhere
         print e
         logging.error(e)
@@ -101,15 +115,18 @@ def request(doc_name, locales, due_date, workflow):
         return
 
 
-@ltk.command()
+@ltk.command(name='list')
 @click.option('-d', 'id_type', flag_value='document', help='list document ids')
 @click.option('-w', 'id_type', flag_value='workflow', help='list available workflow ids')
+@click.option('-l', 'id_type', flag_value='locale', help='list supported locale codes')
 def list_ids(id_type):
     """ lists ids and titles of documents added with tool, or available workflows """
     try:
         action = actions.Action(os.getcwd())
         if id_type == 'workflow':
             action.list_ids_action('workflows')
+        elif id_type == 'locale':
+            action.list_locale_action()
         else:
             action.list_ids_action('documents')
     except (UninitializedError, RequestFailedError) as e:
@@ -120,11 +137,12 @@ def list_ids(id_type):
 
 @ltk.command()
 @click.option('-n', '--doc_name', help='specific document name to get status of')
-def status(doc_name):
+@click.option('-d', '--detailed', flag_value=True, help='detailed status of each locale for document')
+def status(doc_name, detailed):
     """ gets the status of a specific document or all documents """
     try:
         action = actions.Action(os.getcwd())
-        action.status_action(doc_name)
+        action.status_action(detailed, doc_name)
     except (UninitializedError, ResourceNotFound) as e:
         print e
         logging.error(e)

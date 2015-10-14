@@ -4,6 +4,7 @@ venv/
 *.egg-info/
 .Lingotek/
 lib/.Lingotek/
+.ltk/
 Lingotek Translations/
 lib/Lingotek Translations/
 .lingotek-logs

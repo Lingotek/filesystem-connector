@@ -18,15 +18,24 @@ class ApiCalls:
     def list_projects(self, community_id):
         """ gets the projects a user has """
         uri = self.host + api_uri.API_URI['project']
-        payload = {'community_id': community_id}
+        payload = {'community_id': community_id, 'limit': 100}
         r = requests.get(uri, headers=self.headers, params=payload)
         return r
 
     def add_project(self, project_name, community_id, workflow_id):
-        """ adds a project and returns the project id """
+        """ adds a project """
         uri = self.host + api_uri.API_URI['project']
         payload = {'title': project_name, 'community_id': community_id, 'workflow_id': workflow_id}
         r = requests.post(uri, headers=self.headers, data=payload)
+        return r
+
+    def patch_project(self, project_id, workflow_id):
+        """ updates a project """
+        uri = self.host + (api_uri.API_URI['project_id'] % locals())
+        payload = {'project_id': project_id}
+        if workflow_id:
+            payload['workflow_id'] = workflow_id
+        r = requests.patch(uri, headers=self.headers, data=payload)
         return r
 
     def add_target_project(self, project_id, locale, due_date):
@@ -91,6 +100,12 @@ class ApiCalls:
         r = requests.get(uri, headers=self.headers, params=payload)
         return r
 
+    def document_translation_status(self, document_id):
+        """ gets the status of document translations """
+        uri = self.host + (api_uri.API_URI['document_translation'] % locals())
+        r = requests.get(uri, headers=self.headers)
+        return r
+
     def document_content(self, document_id, locale_code, auto_format):
         """ downloads the translated document """
         uri = self.host + (api_uri.API_URI['document_content'] % locals())
@@ -125,6 +140,25 @@ class ApiCalls:
         payload = {'community_id': community_id}
         r = requests.get(uri, headers=self.headers, params=payload)
         return r
+
+    def list_locales(self):
+        uri = 'http://gmc.lingotek.com/v1/locales'
+        r = requests.get(uri)
+        return r
+
+    def get_project_info(self, community_id):
+        response = self.list_projects(community_id)
+        if response.status_code != 200:
+            print 'error when listing projects for community'
+            # todo raise error
+        else:
+            info = {}
+            if int(response.json()['properties']['total']) == 0:
+                return info
+            entities = response.json()['entities']
+            for entity in entities:
+                info[entity['properties']['id']] = entity['properties']['title']
+            return info
 
     def get_communities_info(self):
         response = self.list_communities()
