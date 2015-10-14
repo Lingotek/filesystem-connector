@@ -259,7 +259,7 @@ class Action:
             entry = self.doc_manager.get_doc_by_prop('id', document_id)
             if not entry:
                 file_path = response.headers['content-disposition'].split('filename=')[1].strip("\"'")
-                print file_path
+                # print file_path
                 base_name = os.path.basename(file_path)
                 download_path = os.path.join(self.path, base_name)
                 print "Downloaded {0}".format(base_name)
@@ -283,15 +283,9 @@ class Action:
             with open(download_path, 'wb') as fh:
                 for chunk in response.iter_content(1024):
                     fh.write(chunk)
-                    # encoded = response.text.encode('utf_8')
-                    # fh.write(encoded)
             return download_path
         else:
-            try:
-                error = response.json()['messages'][0]
-                raise exceptions.RequestFailedError(error)
-            except (AttributeError, IndexError):
-                raise exceptions.RequestFailedError("Failed to download content")
+            raise_error(response.json(), 'Failed to download content for id: {0}'.format(document_id))
 
     def pull_action(self, locale_code, auto_format):
         if not locale_code:
@@ -354,6 +348,15 @@ class Action:
                 download_path = self.download_action(curr_id, None, None)
                 title = os.path.basename(download_path).split('.')[0]
                 self._add_document(download_path, title, curr_id)
+                # todo check if the document has locales, and add to db
+                response = self.api.document_translation_status(curr_id)
+                locales = []
+                try:
+                    for entity in response.json()['entities']:
+                        locales.append(entity['properties']['locale_code'])
+                except KeyError:
+                    continue
+                self.doc_manager.update_document('locales', list(locales), curr_id)
 
 
 def raise_error(json, error_message):
@@ -364,6 +367,7 @@ def raise_error(json, error_message):
         raise exceptions.RequestFailedError(error_message)
 
 
+# todo refactor so this isn't an almost 100 line function
 def init_action(host, access_token, project_path, project_name, workflow_id, locale):
     api = ApiCalls(host, access_token)
     # check if Lingotek directory already exists
