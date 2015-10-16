@@ -9,13 +9,13 @@ import logging
 
 @click.group()
 def ltk():
-    logging.basicConfig(filename=LOG_FN, filemode='w', level=logging.DEBUG)
+    logging.basicConfig(filename=LOG_FN, filemode='w', format='%(levelname)s:%(message)s', level=logging.DEBUG)
     logging.info('Started tool')
 
 @ltk.command()
 @click.option('--access_token', prompt='Enter your access token', help='your access token')
 @click.option('--host', type=click.Choice(['myaccount.lingotek.com', 'cms.lingotek.com']), default='cms.lingotek.com',
-              help='environment: myaccount for production, cms for sandbox; defaults is sandbox')
+              help='environment: myaccount for production, cms for sandbox; default is sandbox')
 # @click.option('--host', help='host')
 @click.option('--path', type=click.Path(exists=True),
               help='the path to the project directory to be initialized, defaults to current directory')
@@ -115,6 +115,7 @@ def request(doc_name, locales, due_date, workflow):
         return
 
 
+# todo add a --all option to see all document ids once only show relative to cwd is implemented
 @ltk.command(name='list')
 @click.option('-d', 'id_type', flag_value='document', help='list document ids')
 @click.option('-w', 'id_type', flag_value='workflow', help='list available workflow ids')

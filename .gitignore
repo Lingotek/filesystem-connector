@@ -8,3 +8,4 @@ lib/.Lingotek/
 Lingotek Translations/
 lib/Lingotek Translations/
 .lingotek-logs
+.ltk-logs

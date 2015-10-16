@@ -8,6 +8,7 @@ from apicalls import ApiCalls
 from managers import DocumentManager
 from constants import CONF_DIR, CONF_FN, LOG_FN
 import logging
+import warnings
 
 # todo handle errors/log them
 
@@ -21,21 +22,33 @@ class Action:
         self.workflow_id = ''  # default workflow id; MT phase only
         self.locale = ''
         if not self._is_initialized():
-            # todo prompt user to initialize project first, raise error and exit
             raise exceptions.UninitializedError("This project is not initialized. Please run init command.")
         self._initialize_self()
         self.api = ApiCalls(self.host, self.access_token)
-        self.doc_manager = DocumentManager(path)
+        self.doc_manager = DocumentManager(self.path)
         logging.basicConfig(filename=LOG_FN, level=logging.DEBUG)
+        warnings.formatwarning = formatted_warning
 
+    # todo -- should be true if parent directory is initialized
+    # how deep into subdirectory will users go..
+    # idea: recurse up until root and check for conf dir?
+    # set self.path to wherever conf dir is found?
     def _is_initialized(self):
-        if os.path.isdir(os.path.join(self.path, CONF_DIR)):
-            config_file_name = os.path.join(self.path, CONF_DIR, CONF_FN)
-            if os.path.isfile(config_file_name):
-                return True
-            else:
-                return False
-        return False
+        actual_path = find_conf(self.path)
+        if not actual_path:
+            return False
+        self.path = actual_path
+        config_file_name = os.path.join(self.path, CONF_DIR, CONF_FN)
+        if not os.path.isfile(config_file_name):
+            return False
+        return True
+        # if os.path.isdir(os.path.join(self.path, CONF_DIR)):
+        #     config_file_name = os.path.join(self.path, CONF_DIR, CONF_FN)
+        #     if os.path.isfile(config_file_name):
+        #         return True
+        #     else:
+        #         return False
+        # return False
 
     def _initialize_self(self):
         config_file_name = os.path.join(self.path, CONF_DIR, CONF_FN)
@@ -84,13 +97,9 @@ class Action:
             print 'Project default workflow has been updated to {0}'.format(workflow_id)
             logging.info('Project default workflow has been updated to {0}'.format(workflow_id))
         else:
-            # conf_parser.read(config_file_name)
-            print 'host: {0}'.format(self.host)
-            print 'access_token: {0}'.format(self.access_token)
-            print 'project id: {0}'.format(self.project_id)
-            print 'community id: {0}'.format(self.community_id)
-            print 'workflow id: {0}'.format(self.workflow_id)
-            print 'locale: {0}'.format(self.locale)
+            print 'host: {0}\naccess_token: {1}\nproject id: {2}\ncommunity id: {3}\nworkflow id: {4}\n' \
+                  'locale: {5}'.format(self.host, self.access_token, self.project_id, self.community_id,
+                                       self.workflow_id, self.locale)
 
     def add_action(self, locale, file_patterns, **kwargs):
         if not locale:
@@ -117,11 +126,15 @@ class Action:
                         self.update_document_action(file_name, title, **kwargs)
                         continue
                 else:
-                    raise exceptions.AlreadyExistsError("This document has already been added: {0}".format(title))
+                    warnings.warn("This document has already been added: {0}".format(title))
+                    logging.warn("This document has already been added: {0}".format(title))
+                    return
+                    # raise exceptions.AlreadyExistsError("This document has already been added: {0}".format(title))
             response = self.api.add_document(file_name, locale, self.project_id, title, **kwargs)
             if response.status_code != 202:
-                raise_error(response.json(), "Failed to add document {0}".format(title))
+                raise_error(response.json(), "Failed to add document {0}".format(title), True)
             else:
+                print 'Added document {0}'.format(title)
                 self._add_document(file_name, title, response.json()['properties']['id'])
 
     def push_action(self):
@@ -133,7 +146,7 @@ class Action:
             logging.info('Updating...' + entry['name'])
             response = self.api.document_update(entry['id'], entry['file_name'])
             if response.status_code != 202:
-                raise_error(response.json(), "Failed to update document {0}".format(entry['name']))
+                raise_error(response.json(), "Failed to update document {0}".format(entry['name']), True)
             self._update_document(entry['file_name'])
 
     def update_document_action(self, file_name, title=None, **kwargs):
@@ -141,21 +154,25 @@ class Action:
         try:
             document_id = entry['id']
         except TypeError:
-            raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(title))
+            warnings.warn("Document name specified doesn't exist: {0}".format(title))
+            logging.warn("Document name specified doesn't exist: {0}".format(title))
+            return
+            # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(title))
         if title:
             response = self.api.document_update(document_id, file_name, title=title, **kwargs)
         else:
             response = self.api.document_update(document_id, file_name)
         if response.status_code != 202:
-            raise_error(response.json(), "Failed to update document {0}".format(file_name))
+            raise_error(response.json(), "Failed to update document {0}".format(file_name), True)
         self._update_document(file_name, title)
 
     def request_action(self, document_name, locales, due_date, workflow):
         if not document_name:
+            print 'not document name'
             for locale in locales:
                 response = self.api.add_target_project(self.project_id, locale, due_date)
                 if response.status_code != 201:
-                    raise_error(response.json(), "Failed to add target {0} to project".format(locale))
+                    raise_error(response.json(), "Failed to add target {0} to project".format(locale), True)
                 print 'Requested locale {0} for project'.format(locale)
                 logging.info('Requested locale {0} for project {1}'.format(locale, self.project_id))
             document_ids = self.doc_manager.get_doc_ids()
@@ -166,11 +183,15 @@ class Action:
             try:
                 document_id = entry['id']
             except TypeError:
-                raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
+                warnings.warn("Document name specified doesn't exist: {0}".format(document_name))
+                logging.warn("Document name specified doesn't exist: {0}".format(document_name))
+                return
+                # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
             for locale in locales:
                 response = self.api.add_target_document(document_id, locale, workflow, due_date)
                 if response.status_code != 201:
-                    raise_error(response.json(), "Failed to add target {0} to document".format(locale))
+                    print 'status code != 201, raising error/warning'
+                    raise_error(response.json(), "Failed to add target {0} to document".format(locale), True)
                 print 'Requested locale {0} for document {1}'.format(locale, document_name)
                 logging.info('Requested locale {0} for document {1}'.format(locale, document_name))
             self.doc_manager.update_document('locales', list(locales), document_id)
@@ -225,7 +246,7 @@ class Action:
         for doc_id in doc_ids:
             response = self.api.document_status(doc_id)
             if response.status_code != 200:
-                raise_error(response.json(), "Failed to get status of document")
+                raise_error(response.json(), "Failed to get status of document", True)
             else:
                 title = response.json()['properties']['title']
                 progress = response.json()['properties']['progress']
@@ -246,7 +267,10 @@ class Action:
         try:
             document_id = self.doc_manager.get_doc_by_prop('name', document_name)['id']
         except TypeError:
-            raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
+            warnings.warn("Document name specified doesn't exist: {0}".format(document_name))
+            logging.warn("Document name specified doesn't exist: {0}".format(document_name))
+            return
+            # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
         self.download_action(document_id, locale_code, auto_format)
 
     def download_action(self, document_id, locale_code, auto_format):
@@ -285,7 +309,7 @@ class Action:
                     fh.write(chunk)
             return download_path
         else:
-            raise_error(response.json(), 'Failed to download content for id: {0}'.format(document_id))
+            raise_error(response.json(), 'Failed to download content for id: {0}'.format(document_id), True)
 
     def pull_action(self, locale_code, auto_format):
         if not locale_code:
@@ -307,11 +331,14 @@ class Action:
             entry = self.doc_manager.get_doc_by_prop('name', document_name)
             document_id = entry['id']
         except TypeError:
-            raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
+            warnings.warn("Document name specified doesn't exist: {0}".format(document_name))
+            logging.warn("Document name specified doesn't exist: {0}".format(document_name))
+            return
+            # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
         response = self.api.delete_document(document_id)
         self.doc_manager.remove_element(document_id)
         if response.status_code != 204:
-            raise_error(response.json(), "Failed to delete document {0}".format(document_name))
+            raise_error(response.json(), "Failed to delete document {0}".format(document_name), True)
         else:
             print "{0} has been deleted.".format(document_name)
             logging.info("{0} has been deleted.".format(document_name))
@@ -359,12 +386,16 @@ class Action:
                 self.doc_manager.update_document('locales', list(locales), curr_id)
 
 
-def raise_error(json, error_message):
+def raise_error(json, error_message, is_warning=False):
     try:
         error = json['messages'][0]
-        raise exceptions.RequestFailedError(error)
+        if not is_warning:
+            raise exceptions.RequestFailedError(error)
+        warnings.warn(error)
     except (AttributeError, IndexError):
-        raise exceptions.RequestFailedError(error_message)
+        if not is_warning:
+            raise exceptions.RequestFailedError(error_message)
+        warnings.warn(error_message)
 
 
 # todo refactor so this isn't an almost 100 line function
@@ -460,6 +491,17 @@ def init_action(host, access_token, project_path, project_name, workflow_id, loc
         config_parser.write(config_file)
         config_file.close()
 
+def find_conf(curr_path):
+    """
+    check if the conf folder exists in current directory's parent directories
+    """
+    if os.path.isdir(os.path.join(curr_path, CONF_DIR)):
+        # todo error checking for actual conf file
+        return curr_path
+    elif curr_path == os.path.abspath(os.sep):
+        return None
+    else:
+        return os.path.abspath(os.path.join(curr_path, os.pardir))
 
 def get_files(root, patterns):
     """ gets all files matching pattern from root
@@ -468,24 +510,6 @@ def get_files(root, patterns):
     for path, subdirs, files in os.walk(root):
         # matched_files = any(fnmatch.fnmatch(files, p) for p in patterns)
         for pattern in patterns:
-            # if os.path.exists(pattern):
-            #     # print 'files----'
-            #     # print files
-            #     # print '----'
-            #     subdir_files = []
-            #     for file_name in files:
-            #         subdir_files.extend([os.path.join(path, subdir, file_name) for subdir in subdirs])
-            #     print subdir_files
-            #     if 'test_content' in subdir_files:
-            #         print 'test_content'
-            #         print subdir_files
-            #     for subdir_file in subdir_files:
-            #         if fnmatch.fnmatch(subdir_file, os.path.join(path, os.path.basename(pattern))):
-            #             print 'found, with subdir'
-            # for name in fnmatch.fnmatch(subdir_files, pattern):
-            #     print 'found, with subdir'
-            # matched_files.append(os.path.join(path, name))
-            # else:
             for name in fnmatch.filter(files, pattern):
                 # print 'found without subdir'
                 # print os.path.join(path, name)
@@ -504,3 +528,6 @@ def log_id_names(json):
         ids.append(entity['properties']['id'])
         titles.append(entity['properties']['title'])
     return ids, titles
+
+def formatted_warning(message, category, filename, lineno, file=None, line=None):
+    return 'Error: {0}\n'.format(message)  # % (filename, lineno, category.__name__, message)
