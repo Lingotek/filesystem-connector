@@ -5,12 +5,32 @@ import os
 from exceptions import UninitializedError, ResourceNotFound, RequestFailedError, AlreadyExistsError
 from constants import LOG_FN
 import logging
+import sys
 
-
+logger = logging.getLogger()
 @click.group()
-def ltk():
-    logging.basicConfig(filename=LOG_FN, filemode='w', format='%(levelname)s:%(message)s', level=logging.DEBUG)
-    logging.info('Started tool')
+@click.option('-q', 'loudness', flag_value='quiet', help='will only show warnings')
+@click.option('-v', 'loudness', flag_value='verbose', help='lots of information')
+def ltk(loudness):
+    logger.setLevel(logging.DEBUG)
+    file_handler = logging.FileHandler(LOG_FN)  # todo maybe have path to where logs stored
+    console_handler = logging.StreamHandler(sys.stdout)
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(logging.Formatter('%(asctime)s  %(levelname)s: %(message)s'))
+    if loudness == 'quiet':
+        print 'loudness is quiet'
+        console_handler.setLevel(logging.WARNING)
+    elif loudness == 'verbose':
+        print 'verbose'
+        console_handler.setLevel(logging.DEBUG)
+    else:
+        console_handler.setLevel(logging.INFO)
+    console_handler.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
+    logger.addHandler(file_handler)
+    logger.addHandler(console_handler)
+    actions.set_logger(logger)
+    logger.info('Starting Lingotek tool..')
+
 
 @ltk.command()
 @click.option('--access_token', prompt='Enter your access token', help='your access token')
@@ -36,8 +56,9 @@ def init(host, access_token, path, project_name, workflow_id, locale):
             pass
         actions.init_action(host, access_token, path, project_name, workflow_id, locale)
     except (ResourceNotFound, RequestFailedError) as e:
-        print e
-        logging.error(e)
+        # print e
+        # logging.error(e)
+        logger.error(e)
         return
 
 @ltk.command()
@@ -49,8 +70,9 @@ def config(locale, workflow_id):
         action = actions.Action(os.getcwd())
         action.config_action(locale, workflow_id)
     except (UninitializedError, RequestFailedError) as e:
-        print e
-        logging.error(e)
+        # print e
+        # logging.error(e)
+        logger.error(e)
         return
 
 @ltk.command()
@@ -75,9 +97,9 @@ def add(file_names, locale, **kwargs):
         action = actions.Action(os.getcwd())
         action.add_action(locale, file_names, **kwargs)
     except (UninitializedError, RequestFailedError, ResourceNotFound, AlreadyExistsError) as e:
-        # todo log the error somewhere
-        print e
-        logging.error(e)
+        # print e
+        # logging.error(e)
+        logger.error(e)
         return
 
 
@@ -94,8 +116,9 @@ def push():
         action = actions.Action(os.getcwd())
         action.push_action()
     except UninitializedError as e:
-        print e
-        logging.error(e)
+        # print e
+        # logging.error(e)
+        logger.error(e)
         return
 
 
@@ -110,8 +133,9 @@ def request(doc_name, locales, due_date, workflow):
         action = actions.Action(os.getcwd())
         action.request_action(doc_name, locales, due_date, workflow)
     except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
-        print e
-        logging.error(e)
+        # print e
+        # logging.error(e)
+        logger.error(e)
         return
 
 
@@ -131,8 +155,9 @@ def list_ids(id_type):
         else:
             action.list_ids_action('documents')
     except (UninitializedError, RequestFailedError) as e:
-        print e
-        logging.error(e)
+        # print e
+        # logging.error(e)
+        logger.error(e)
         return
 
 
@@ -145,8 +170,9 @@ def status(doc_name, detailed):
         action = actions.Action(os.getcwd())
         action.status_action(detailed, doc_name)
     except (UninitializedError, ResourceNotFound) as e:
-        print e
-        logging.error(e)
+        # print e
+        # logging.error(e)
+        logger.error(e)
         return
 
 
@@ -161,8 +187,9 @@ def download(auto_format, locale, document_names):
         for name in document_names:
             action.download_by_name(name, locale, auto_format)
     except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
-        print e
-        logging.error(e)
+        # print e
+        # logging.error(e)
+        logger.error(e)
         return
 
 
@@ -179,8 +206,9 @@ def pull(auto_format, locales):
         else:
             action.pull_action(None, auto_format)
     except UninitializedError as e:
-        print e
-        logging.error(e)
+        # print e
+        # logging.error(e)
+        logger.error(e)
         return
 
 @ltk.command()
@@ -194,8 +222,9 @@ def delete(document_names):
         for name in document_names:
             action.delete_action(name)
     except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
-        print e
-        logging.error(e)
+        # print e
+        # logging.error(e)
+        logger.error(e)
         return
 
 # possibly some option to delete or keep local docs?
@@ -210,8 +239,9 @@ def sync(force, update):
         action = actions.Action(os.getcwd())
         action.sync_action(force, update)
     except (UninitializedError, RequestFailedError) as e:
-        print e
-        logging.error(e)
+        # print e
+        # logging.error(e)
+        logger.error(e)
         return
 
 if __name__ == '__main__':
