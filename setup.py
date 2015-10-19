@@ -7,10 +7,12 @@ setup(
     include_package_data=True,
     install_requires=[
         'click',
-        'requests',
-        # 'requests[security]',
+        'requests[security]',
         'tinydb',
     ],
+    extras_require={
+        'security': ['pyOpenSSL', 'ndg-httpsclient', 'pyasn1'],
+    },
     entry_points='''
         [console_scripts]
         ltk=lib.commands:ltk

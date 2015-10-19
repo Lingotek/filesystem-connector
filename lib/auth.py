@@ -1,0 +1,65 @@
+import requests
+
+import socket
+import sys
+
+# from six.moves import BaseHTTPServer
+# from six.moves import urllib
+import BaseHTTPServer
+import urlparse
+
+class ClientRedirectServer(BaseHTTPServer.HTTPServer):
+    """A server to handle OAuth 2.0 redirects back to localhost.
+    Waits for a single request and parses the query parameters
+    into query_params and then stops serving.
+    """
+    query_params = {}
+
+class ClientRedirectHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+    """A handler for OAuth 2.0 redirects back to localhost.
+    Waits for a single request and parses the query parameters
+    into the servers query_params and then stops serving.
+    """
+
+    def do_GET(self):
+        """Handle a GET request.
+        Parses the query parameters and prints a message
+        if the flow has completed. Note that we can't detect
+        if an error occurred.
+        """
+        self.send_response(200)
+        self.send_header("Content-type", "text/html")
+        self.end_headers()
+        query = self.path.split('#', 1)[-1]
+        query = dict(urlparse.parse_qsl(query))
+        self.server.query_params = query
+        self.wfile.write(
+            b"<html><head><title>Authentication Status</title></head>")
+        self.wfile.write(
+            b"<body><p>The authentication flow has completed.</p>")
+        self.wfile.write(b"</body></html>")
+
+def run_oauth(host):
+    r_host = 'localhost'  # host to redirect to
+    r_port = '9001'
+    httpd = None
+    try:
+        httpd = ClientRedirectServer((r_host, r_port), ClientRedirectHandler)
+    except socket.error:
+        pass
+    # todo some error checking about if webserver was able to start on 9001
+    oauth_callback = 'http://{0}:{1}/'.format(r_host, r_port)
+    client_id = ''
+    payload = {'client_id': client_id, 'redirect_uri': oauth_callback, 'response_type': 'token'}
+    r = requests.get(host + '/auth/authorize.html?', params=payload)
+    authorize_url = r.url
+    import webbrowser
+    webbrowser.open_new(authorize_url)
+    print 'Your browser has been opened to visit: \n{0}\n'.format(authorize_url)
+
+    token = None
+    httpd.handle_request()
+    if 'error' in httpd.query_params:
+        sys.exit('Authentication request was rejected.')
+    if 'access_token' in httpd.query_params:
+        token = httpd.query_params['access_token']
