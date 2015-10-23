@@ -33,7 +33,7 @@ def ltk(loudness):
 
 
 @ltk.command()
-@click.option('--access_token', prompt='Enter your access token', help='your access token')
+@click.option('--access_token', help='your access token')
 @click.option('--host', type=click.Choice(['myaccount.lingotek.com', 'cms.lingotek.com']), default='cms.lingotek.com',
               help='environment: myaccount for production, cms for sandbox; default is sandbox')
 # @click.option('--host', help='host')
@@ -53,7 +53,7 @@ def init(host, access_token, path, project_name, workflow_id, locale):
             project_name = os.path.basename(os.path.normpath(path))
         if not access_token:
             # get access token from username/password
-            pass
+            access_token = run_oauth(host, path)
         actions.init_action(host, access_token, path, project_name, workflow_id, locale)
     except (ResourceNotFound, RequestFailedError) as e:
         # print e

@@ -1,64 +1,74 @@
 import socket
 import sys
+import os
 
 # from six.moves import BaseHTTPServer
 # from six.moves import urllib
-import BaseHTTPServer
+from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 import urlparse
 import urllib
 
-class ClientRedirectServer(BaseHTTPServer.HTTPServer):
+class ClientRedirectServer(HTTPServer):
     """ A server to handle OAuth 2.0 redirects back to localhost.
     Waits for a single request and parses the query parameters
     into query_params and then stops serving.
     """
     query_params = {}
 
-class ClientRedirectHandler(BaseHTTPServer.BaseHTTPRequestHandler):
-    """ A handler for OAuth 2.0 redirects back to localhost.
-    Waits for a single request and parses the query parameters
-    into the servers query_params and then stops serving.
-    """
-
-    def do_GET(self):
-        """ Handle a GET request.
-        Parses the query parameters and prints a message
-        if the flow has completed. Note that we can't detect
-        if an error occurred.
+def MakeHandlerClass(root_path):
+    class ClientRedirectHandler(BaseHTTPRequestHandler, object):
+        """ A handler for OAuth 2.0 redirects back to localhost.
+        Waits for two requests and parses the access token
+        into the servers query_params and then stops serving.
         """
-        print 'self path before send response: {0}'.format(self.path)
-        # todo path is currently '/'
-        print self.headers
-        self.send_response(200)
-        self.send_header("Content-type", "text/html")
-        self.end_headers()
-        query = self.path.split('#', 1)[-1]
-        print 'query: {0}'.format(query)
-        query = dict(urlparse.parse_qsl(query))
-        self.server.query_params = query
-        self.wfile.write(
-            b"<html><head><title>Authentication Status</title></head>")
-        self.wfile.write(
-            b"<body><p>Authentication has completed.</p>")
-        self.wfile.write(b"</body></html>")
+        def __init__(self, *args, **kwargs):
+            self.root_path = root_path
+            super(ClientRedirectHandler, self).__init__(*args, **kwargs)
 
-    def do_POST(self):
-        """ Handle a POST request.
-        """
-        print self.headers
+        def do_GET(self):
+            """ Handle a GET request.
+                opens index.html and try to parse token
+            """
+            try:
+                # f = open('static' + self.path)
+                f = open(os.path.join(self.root_path, 'lib', 'static', self.path[1:]))
+                self.send_response(200)
+                self.send_header("Content-type", "text/html")
+                self.end_headers()
+                self.wfile.write(f.read())
+                f.close()
+                return
+            except IOError:
+                self.send_error(404, 'File Not Found: {0}'.format(self.path))
+
+        def do_POST(self):
+            """ Handle a POST request.
+                Should only ever be sending self urlencoded so
+            """
+            length = int(self.headers['content-length'])
+            post_vars = urlparse.parse_qsl(self.rfile.read(length))
+            self.server.query_params = dict(post_vars)
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.wfile.write(
+                b"<html><head><title>Authentication Status</title></head>")
+            self.wfile.write(
+                b"<body><p>Authentication has completed.</p>")
+            self.wfile.write(b"</body></html>")
+    return ClientRedirectHandler
 
 
-
-def run_oauth(host=None):
+def run_oauth(host, root_path):
     r_host = 'localhost'  # host to redirect to
     r_port = 9001
     httpd = None
     try:
+        ClientRedirectHandler = MakeHandlerClass(root_path)
         httpd = ClientRedirectServer((r_host, r_port), ClientRedirectHandler)
     except socket.error:
         pass
     # todo some error checking about if webserver was able to start on 9001
-    oauth_callback = 'http://{0}:{1}/'.format(r_host, r_port)
+    oauth_callback = 'http://{0}:{1}/index.html'.format(r_host, r_port)
     client_id = 'ab33b8b9-4c01-43bd-a209-b59f933e4fc4'
     response_type = 'token'
     payload = {'client_id': client_id, 'redirect_uri': oauth_callback, 'response_type': response_type}
@@ -67,15 +77,15 @@ def run_oauth(host=None):
     webbrowser.open_new(authorize_url)
     print 'Your browser has been opened to visit: \n{0}\n'.format(authorize_url)
 
-    token = None
-    httpd.handle_request()
-    print httpd.query_params
-    if 'error' in httpd.query_params:
-        sys.exit('Authentication request was rejected.')
-    if 'access_token' in httpd.query_params:
-        token = httpd.query_params['access_token']
-        print token
-    # store the token because apparently it doesn't expire..
+    httpd.handle_request()  # handle the GET redirect
+    httpd.handle_request()  # handle the POST for token info
+    # print httpd.query_params
+    # if 'error' in httpd.query_params:
 
-run_oauth('https://cms.lingotek.com')
-# run_oauth()
+    if 'access_token' in httpd.query_params:
+        print 'found token, you may now close the browser'
+        token = httpd.query_params['access_token']
+        return token
+    # store the token because apparently it doesn't expire..
+    sys.exit('Something went wrong with the authentication request, please try again.')
+# run_oauth('https://cms.lingotek.com')
