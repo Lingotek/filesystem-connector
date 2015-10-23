@@ -8,7 +8,8 @@ from apicalls import ApiCalls
 from managers import DocumentManager
 from constants import CONF_DIR, CONF_FN, LOG_FN
 
-logger = None
+from logger import logger
+# logger = None
 
 class Action:
     def __init__(self, path):
@@ -347,10 +348,10 @@ class Action:
                     continue
                 self.doc_manager.update_document('locales', list(locales), curr_id)
 
-def set_logger(in_logger):
-    # todo not sure if this is best way..
-    global logger
-    logger = in_logger
+# def set_logger(in_logger):
+#     # todo not sure if this is best way..
+#     global logger
+#     logger = in_logger
 
 def raise_error(json, error_message, is_warning=False):
     try:

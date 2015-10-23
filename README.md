@@ -3,7 +3,7 @@
 * May have to open browser briefly for OAuth
 
 ### Set up ###
-* You should have `pip` and `virtualenv` installed
+* You should have `pip` installed. Having `virtualenv` is strongly suggested.
 * `pip` is a tool for installing python packages from the Python Package Index, where open-source third party python packages are hosted. 
 * I suggest using a virtual environment -- this will let you install dependencies required for the tool without changing anything system-wide. 
 * Create the virtual environment:

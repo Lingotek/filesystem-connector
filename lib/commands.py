@@ -5,9 +5,11 @@ import os
 from exceptions import UninitializedError, ResourceNotFound, RequestFailedError, AlreadyExistsError
 from constants import LOG_FN
 import logging
+from logger import logger
 import sys
 
-logger = logging.getLogger()
+from auth import run_oauth
+
 @click.group()
 @click.option('-q', 'loudness', flag_value='quiet', help='will only show warnings')
 @click.option('-v', 'loudness', flag_value='verbose', help='lots of information')
@@ -18,17 +20,15 @@ def ltk(loudness):
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(logging.Formatter('%(asctime)s  %(levelname)s: %(message)s'))
     if loudness == 'quiet':
-        print 'loudness is quiet'
         console_handler.setLevel(logging.WARNING)
     elif loudness == 'verbose':
-        print 'verbose'
         console_handler.setLevel(logging.DEBUG)
     else:
         console_handler.setLevel(logging.INFO)
     console_handler.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)
-    actions.set_logger(logger)
+    # actions.set_logger(logger)
     logger.info('Starting Lingotek tool..')
 
 

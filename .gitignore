@@ -9,3 +9,5 @@ Lingotek Translations/
 lib/Lingotek Translations/
 .lingotek-logs
 .ltk-logs
+static/
+info.py
