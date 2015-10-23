@@ -7,8 +7,6 @@ import BaseHTTPServer
 import urlparse
 import urllib
 
-from info import CLIENT_ID
-
 class ClientRedirectServer(BaseHTTPServer.HTTPServer):
     """ A server to handle OAuth 2.0 redirects back to localhost.
     Waits for a single request and parses the query parameters
@@ -44,6 +42,13 @@ class ClientRedirectHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             b"<body><p>Authentication has completed.</p>")
         self.wfile.write(b"</body></html>")
 
+    def do_POST(self):
+        """ Handle a POST request.
+        """
+        print self.headers
+
+
+
 def run_oauth(host=None):
     r_host = 'localhost'  # host to redirect to
     r_port = 9001
@@ -54,7 +59,7 @@ def run_oauth(host=None):
         pass
     # todo some error checking about if webserver was able to start on 9001
     oauth_callback = 'http://{0}:{1}/'.format(r_host, r_port)
-    client_id = CLIENT_ID
+    client_id = 'ab33b8b9-4c01-43bd-a209-b59f933e4fc4'
     response_type = 'token'
     payload = {'client_id': client_id, 'redirect_uri': oauth_callback, 'response_type': response_type}
     authorize_url = host + '/auth/authorize.html?' + urllib.urlencode(payload)
