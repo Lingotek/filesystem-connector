@@ -29,7 +29,7 @@ def ltk(loudness):
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)
     # actions.set_logger(logger)
-    logger.info('Starting Lingotek tool..')
+    # logger.info('Starting Lingotek tool..')
 
 
 @ltk.command()

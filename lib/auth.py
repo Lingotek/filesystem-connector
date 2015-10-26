@@ -60,14 +60,24 @@ def MakeHandlerClass(root_path):
 
 def run_oauth(host, root_path):
     r_host = 'localhost'  # host to redirect to
-    r_port = 9001
+    r_ports = [9000, 9001, 9002]
     httpd = None
-    try:
-        ClientRedirectHandler = MakeHandlerClass(root_path)
-        httpd = ClientRedirectServer((r_host, r_port), ClientRedirectHandler)
-    except socket.error:
-        pass
-    # todo some error checking about if webserver was able to start on 9001
+    server_started = False
+    r_port = 0
+    for port in r_ports:
+        r_port = port
+        try:
+            ClientRedirectHandler = MakeHandlerClass(root_path)
+            httpd = ClientRedirectServer((r_host, port), ClientRedirectHandler)
+        except socket.error:
+            pass
+        else:
+            server_started = True
+            break
+    if not server_started:
+        sys.exit('Unable to start a local webserver listening on port 9000, 9001, or 9002. '
+                 'Please unblock one of these ports for authorizing with Lingotek. '
+                 'This local webserver will stop serving after two requests and free the port up again.')
     oauth_callback = 'http://{0}:{1}/index.html'.format(r_host, r_port)
     client_id = 'ab33b8b9-4c01-43bd-a209-b59f933e4fc4'
     response_type = 'token'
@@ -79,13 +89,12 @@ def run_oauth(host, root_path):
 
     httpd.handle_request()  # handle the GET redirect
     httpd.handle_request()  # handle the POST for token info
-    # print httpd.query_params
-    # if 'error' in httpd.query_params:
 
     if 'access_token' in httpd.query_params:
-        print 'found token, you may now close the browser'
+        print 'Found token, you may now close the browser.\n'
         token = httpd.query_params['access_token']
+        # store the token because apparently it doesn't expire..
         return token
-    # store the token because apparently it doesn't expire..
     sys.exit('Something went wrong with the authentication request, please try again.')
+
 # run_oauth('https://cms.lingotek.com')

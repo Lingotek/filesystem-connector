@@ -136,7 +136,7 @@ class Action:
         try:
             document_id = entry['id']
         except TypeError:
-            logger.warn("Document name specified doesn't exist: {0}".format(title))
+            logger.error("Document name specified doesn't exist: {0}".format(title))
             return
         if title:
             response = self.api.document_update(document_id, file_name, title=title, **kwargs)
@@ -314,17 +314,21 @@ class Action:
 
     def sync_action(self, force, update):
         response = self.api.list_documents(self.project_id)
-        tms_documents = response.json()['entities']
-        local_ids = self.doc_manager.get_doc_ids()
         tms_doc_ids = []
-        for entity in tms_documents:
-            tms_doc_ids.append(entity['properties']['id'])
+        local_ids = self.doc_manager.get_doc_ids()
+        if response.status_code == 200:
+            tms_documents = response.json()['entities']
+            for entity in tms_documents:
+                tms_doc_ids.append(entity['properties']['id'])
+        elif response.status_code == 204:
+            pass
+        else:
+            raise_error(response.json(), 'Error trying to find current documents in TMS')
         ids_to_delete = [x for x in local_ids if x not in tms_doc_ids]
         ids_not_local = [x for x in tms_doc_ids if x not in local_ids]
         if not ids_to_delete and not ids_not_local:
             # todo need to check if content also up to date?
             logger.info('Local documents already up-to-date with documents in TMS')
-            # print 'Already up-to-date'
             return
         if ids_to_delete:
             for curr_id in ids_to_delete:
@@ -338,7 +342,6 @@ class Action:
                 download_path = self.download_action(curr_id, None, None)
                 title = os.path.basename(download_path).split('.')[0]
                 self._add_document(download_path, title, curr_id)
-                # todo check if the document has locales, and add to db
                 response = self.api.document_translation_status(curr_id)
                 locales = []
                 try:
@@ -348,10 +351,6 @@ class Action:
                     continue
                 self.doc_manager.update_document('locales', list(locales), curr_id)
 
-# def set_logger(in_logger):
-#     # todo not sure if this is best way..
-#     global logger
-#     logger = in_logger
 
 def raise_error(json, error_message, is_warning=False):
     try:
@@ -430,7 +429,6 @@ def init_action(host, access_token, project_path, project_name, workflow_id, loc
             community_id = community_info.iterkeys().next()
         config_parser.set('main', 'community_id', community_id)
 
-        # todo handle when mult projects in community -- allow to choose or create new
         response = api.list_projects(community_id)
         if response.status_code != 200:
             raise_error(response.json(), 'Something went wrong trying to find projects in your community')
