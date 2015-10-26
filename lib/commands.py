@@ -51,9 +51,9 @@ def init(host, access_token, path, project_name, workflow_id, locale):
             path = os.getcwd()
         if not project_name:
             project_name = os.path.basename(os.path.normpath(path))
-        if not access_token:
-            # get access token from username/password
-            access_token = run_oauth(host, path)
+        # if not access_token:
+        #     # get access token from username/password
+        #     access_token = run_oauth(host)
         actions.init_action(host, access_token, path, project_name, workflow_id, locale)
     except (ResourceNotFound, RequestFailedError) as e:
         # print e

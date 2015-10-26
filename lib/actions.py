@@ -368,7 +368,7 @@ def raise_error(json, error_message, is_warning=False):
 
 # todo refactor so this isn't an almost 100 line function
 def init_action(host, access_token, project_path, project_name, workflow_id, locale):
-    api = ApiCalls(host, access_token)
+    api = None
     # check if Lingotek directory already exists
     if os.path.isdir(os.path.join(project_path, CONF_DIR)):
         confirm = 'not confirmed'
@@ -387,6 +387,8 @@ def init_action(host, access_token, project_path, project_name, workflow_id, loc
                 old_config = ConfigParser.ConfigParser()
                 old_config.read(config_file_name)
                 project_id = old_config.get('main', 'project_id')
+                access_token = old_config.get('main', 'access_token')
+                api = ApiCalls(host, access_token)
                 response = api.delete_project(project_id)
                 if response.status_code != 204:
                     try:
@@ -400,6 +402,11 @@ def init_action(host, access_token, project_path, project_name, workflow_id, loc
             else:
                 raise exceptions.ResourceNotFound("Cannot find config file, please re-initialize project")
 
+    if not access_token:
+        from auth import run_oauth
+        access_token = run_oauth(host)
+    if not api:
+        api = ApiCalls(host, access_token)
     # create a directory
     os.mkdir(os.path.join(project_path, CONF_DIR))
 
