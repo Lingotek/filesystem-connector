@@ -36,16 +36,16 @@ class ClientRedirectHandler(BaseHTTPRequestHandler, object):
         self.wfile.write(
             b'<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script></head>')
         self.wfile.write(
-            b"<body><p>Retrieving your access token..</p>")
+            b'<body style=\'font-size: 1.5em; padding: 50px; background: #eee;\'>')
+        self.wfile.write(b'<p id="message">Retrieving your access token...</p>')
         self.wfile.write(b'<script> \
             $(document).ready(function(){ \
-                console.log("document ready"); \
                 var self_url = window.location.href; \
                 var token_info = self_url.split("#")[1]; \
                 var params = {}; \
                 params[token_info.split("=")[0]] = token_info.split("=")[1]; \
                 $.post("index.html", params).done(function(data) { \
-                    console.log("posted stuff"); \
+                    $("#message").html("<div><p style=\'font-weight: bold;\'>Your access token has been successfully stored!</p><p style=\'color: #666;\'>You may now close this browser window.</p><p style=\'color: #aaa\'>" + params["access_token"] + "</p></div>"); \
                 }); \
             }); \
         </script>')
@@ -60,11 +60,9 @@ class ClientRedirectHandler(BaseHTTPRequestHandler, object):
         self.server.query_params = dict(post_vars)
         self.send_response(200)
         self.send_header("Content-type", "text/html")
-        self.end_headers()
-        self.wfile.write(
-            b"<html><head><title>Authentication Status</title></head>")
-        self.wfile.write(
-            b"<body><p>Authentication has completed.</p>")
+        self.end_headers()        
+        self.wfile.write(b"<html><head><title>Authentication Response Status</title></head><body>")
+        self.wfile.write(b"<p>Authentication has completed.</p>")
         self.wfile.write(b"</body></html>")
 
 
@@ -100,7 +98,7 @@ def run_oauth(host):
     httpd.handle_request()  # handle the POST for token info
 
     if 'access_token' in httpd.query_params:
-        print 'Found token, you may now close the browser.\n'
+        print 'Access token has been successfully stored! (If you haven\'t already, you may close your browser.)\n'
         token = httpd.query_params['access_token']
         # store the token because apparently it doesn't expire..
         return token
