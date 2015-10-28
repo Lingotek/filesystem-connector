@@ -40,7 +40,7 @@ class ClientRedirectHandler(BaseHTTPRequestHandler, object):
                 var params = {}; \
                 params[token_info.split("=")[0]] = token_info.split("=")[1]; \
                 $.post("index.html", params).done(function(data) { \
-                    $("#message").html("<div><p>Your access token has been successfully stored!</p><p style=\'color: #666\'>" + params["access_token"] + "</p></div>"); \
+                    $("#message").html("<div><p style=\'font-weight: bold;\'>Your access token has been successfully stored!</p><p style=\'color: #666;\'>You may now close this browser window.</p><p style=\'color: #aaa\'>" + params["access_token"] + "</p></div>"); \
                 }); \
             }); \
         </script>')
