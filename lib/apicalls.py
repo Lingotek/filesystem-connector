@@ -15,9 +15,7 @@ class ApiCalls:
         uri = api_uri.API_URI['community']
         payload = {'limit': 100}
         r = requests.get(self.host + uri, headers=self.headers, params=payload)
-        api_log = '{method} {api} {status} {content_length}'.format(method='GET', api=uri, status=r.status_code,
-                                                                    content_length=r.headers['content-length'])
-        logger.api_call(api_log)
+        log_api('GET', uri, r)
         return r
 
     def list_projects(self, community_id):
@@ -25,9 +23,7 @@ class ApiCalls:
         uri = api_uri.API_URI['project']
         payload = {'community_id': community_id, 'limit': 100}
         r = requests.get(self.host + uri, headers=self.headers, params=payload)
-        api_log = '{method} {api} {status} {content_length}'.format(method='GET', api=uri, status=r.status_code,
-                                                                    content_length=r.headers['content-length'])
-        logger.api_call(api_log)
+        log_api('GET', uri, r)
         return r
 
     def add_project(self, project_name, community_id, workflow_id):
@@ -35,9 +31,7 @@ class ApiCalls:
         uri = api_uri.API_URI['project']
         payload = {'title': project_name, 'community_id': community_id, 'workflow_id': workflow_id}
         r = requests.post(self.host + uri, headers=self.headers, data=payload)
-        api_log = '{method} {api} {status} {content_length}'.format(method='POST', api=uri, status=r.status_code,
-                                                                    content_length=r.headers['content-length'])
-        logger.api_call(api_log)
+        log_api('POST', uri, r)
         return r
 
     def patch_project(self, project_id, workflow_id):
@@ -47,9 +41,7 @@ class ApiCalls:
         if workflow_id:
             payload['workflow_id'] = workflow_id
         r = requests.patch(self.host + uri, headers=self.headers, data=payload)
-        api_log = '{method} {api} {status} {content_length}'.format(method='PATCH', api=uri, status=r.status_code,
-                                                                    content_length=r.headers['content-length'])
-        logger.api_call(api_log)
+        log_api('PATCH', uri, r)
         return r
 
     def add_target_project(self, project_id, locale, due_date):
@@ -59,27 +51,21 @@ class ApiCalls:
         if due_date:
             payload['due_date'] = due_date
         r = requests.post(self.host + uri, headers=self.headers, data=payload)
-        api_log = '{method} {api} {status} {content_length}'.format(method='POST', api=uri, status=r.status_code,
-                                                                    content_length=r.headers['content-length'])
-        logger.api_call(api_log)
+        log_api('POST', uri, r)
         return r
 
     def project_status(self, project_id):
         """ gets the status of a project """
         uri = (api_uri.API_URI['project_status'] % locals())
         r = requests.get(self.host + uri, headers=self.headers)
-        api_log = '{method} {api} {status} {content_length}'.format(method='GET', api=uri, status=r.status_code,
-                                                                    content_length=r.headers['content-length'])
-        logger.api_call(api_log)
+        log_api('GET', uri, r)
         return r
 
     def delete_project(self, project_id):
         """ deletes a project """
         uri = (api_uri.API_URI['project_id'] % locals())
         r = requests.delete(self.host + uri, headers=self.headers)
-        api_log = '{method} {api} {status} {content_length}'.format(method='DELETE', api=uri, status=r.status_code,
-                                                                    content_length=r.headers['content-length'])
-        logger.api_call(api_log)
+        log_api('DELETE', uri, r)
         return r
 
     def add_document(self, file_name, locale, project_id, title, **kwargs):
@@ -94,9 +80,7 @@ class ApiCalls:
             payload['format'] = detected_format
         files = {'content': (file_name, open(file_name, 'rb'))}
         r = requests.post(self.host + uri, headers=self.headers, data=payload, files=files)
-        api_log = '{method} {api} {status} {content_length}'.format(method='POST', api=uri, status=r.status_code,
-                                                                    content_length=r.headers['content-length'])
-        logger.api_call(api_log)
+        log_api('POST', uri, r)
         return r
 
     def add_target_document(self, document_id, locale, workflow_id=None, due_date=None):
@@ -108,9 +92,7 @@ class ApiCalls:
         if due_date:
             payload['due_date'] = due_date
         r = requests.post(self.host + uri, headers=self.headers, data=payload)
-        api_log = '{method} {api} {status} {content_length}'.format(method='POST', api=uri, status=r.status_code,
-                                                                    content_length=r.headers['content-length'])
-        logger.api_call(api_log)
+        log_api('POST', uri, r)
         return r
 
     def list_documents(self, project_id):
@@ -120,9 +102,7 @@ class ApiCalls:
         if project_id:
             payload = {'project_id': project_id}
         r = requests.get(self.host + uri, headers=self.headers, params=payload)
-        api_log = '{method} {api} {status} {content_length}'.format(method='GET', api=uri, status=r.status_code,
-                                                                    content_length=r.headers['content-length'])
-        logger.api_call(api_log)
+        log_api('GET', uri, r)
         return r
 
     def document_status(self, document_id):
@@ -131,18 +111,14 @@ class ApiCalls:
         payload = {'document_id': document_id}
         r = requests.get(self.host + uri, headers=self.headers, params=payload)
         # logger.debug(r.url)
-        api_log = '{method} {api} {status} {content_length}'.format(method='GET', api=uri, status=r.status_code,
-                                                                    content_length=r.headers['content-length'])
-        logger.api_call(api_log)
+        log_api('GET', uri, r)
         return r
 
     def document_translation_status(self, document_id):
         """ gets the status of document translations """
         uri = (api_uri.API_URI['document_translation'] % locals())
         r = requests.get(self.host + uri, headers=self.headers)
-        api_log = '{method} {api} {status} {content_length}'.format(method='GET', api=uri, status=r.status_code,
-                                                                    content_length=r.headers['content-length'])
-        logger.api_call(api_log)
+        log_api('GET', uri, r)
         return r
 
     def document_content(self, document_id, locale_code, auto_format):
@@ -154,9 +130,7 @@ class ApiCalls:
         if auto_format:
             payload['auto_format'] = auto_format
         r = requests.get(self.host + uri, headers=self.headers, params=payload, stream=True)
-        api_log = '{method} {api} {status} {content_length}'.format(method='GET', api=uri, status=r.status_code,
-                                                                    content_length=r.headers['content-length'])
-        logger.api_call(api_log)
+        log_api('GET', uri, r)
         return r
 
     def document_update(self, document_id, file_name=None, **kwargs):
@@ -170,26 +144,20 @@ class ApiCalls:
             r = requests.patch(self.host + uri, headers=self.headers, data=payload, files=files)
         else:
             r = requests.patch(self.host + uri, headers=self.headers, data=payload)
-        api_log = '{method} {api} {status} {content_length}'.format(method='PATCH', api=uri, status=r.status_code,
-                                                                    content_length=r.headers['content-length'])
-        logger.api_call(api_log)
+        log_api('PATCH', uri, r)
         return r
 
     def delete_document(self, document_id):
         uri = (api_uri.API_URI['document_id'] % locals())
         r = requests.delete(self.host + uri, headers=self.headers)
-        api_log = '{method} {api} {status} {content_length}'.format(method='DELETE', api=uri, status=r.status_code,
-                                                                    content_length=r.headers['content-length'])
-        logger.api_call(api_log)
+        log_api('DELETE', uri, r)
         return r
 
     def list_workflows(self, community_id):
         uri = api_uri.API_URI['workflow']
         payload = {'community_id': community_id}
         r = requests.get(self.host + uri, headers=self.headers, params=payload)
-        api_log = '{method} {api} {status} {content_length}'.format(method='GET', api=uri, status=r.status_code,
-                                                                    content_length=r.headers['content-length'])
-        logger.api_call(api_log)
+        log_api('GET', uri, r)
         return r
 
     def list_locales(self):
@@ -218,23 +186,17 @@ class ApiCalls:
             print 'error getting community ids'
             # todo raise error
         entities = response.json()['entities']
-        # ids = []
-        # titles = []
         info = {}
         for entity in entities:
             info[entity['properties']['id']] = entity['properties']['title']
-            # ids.append(entity['properties']['id'])
-            # titles.append(entity['properties']['title'])
-        # return ids, titles
         return info
 
-    # def test(project_id):
-    # project_id = "123"
-    # print (api_uri.API_CALLS['project_id'] % locals())
 
-    # if __name__ == '__main__':
-    #     code = delete_project('5daa76ff-3a88-4466-a970-812edc79cb66')
-    #     print code
-    # test('9873249283')
-
-# list_communities()
+def log_api(method, uri, response):
+    try:
+        content_length = response.headers['content-length']
+    except KeyError:
+        content_length = 'No content-length header'
+    log = '{method} {uri} {status} {length}'.format(method=method, uri=uri, status=response.status_code,
+                                                    length=content_length)
+    logger.api_call(log)

@@ -147,15 +147,19 @@ class Action:
         self._update_document(file_name)
 
     def request_action(self, document_name, locales, due_date, workflow):
+        add_to_db = True
         if not document_name:
             for locale in locales:
                 response = self.api.add_target_project(self.project_id, locale, due_date)
                 if response.status_code != 201:
                     raise_error(response.json(), "Failed to add target {0} to project".format(locale), True)
+                    add_to_db = False
+                    continue
                 logger.info('Requested locale {0} for project {1}'.format(locale, self.project_id))
             document_ids = self.doc_manager.get_doc_ids()
-            for document_id in document_ids:
-                self.doc_manager.update_document('locales', list(locales), document_id)
+            if add_to_db:
+                for document_id in document_ids:
+                    self.doc_manager.update_document('locales', list(locales), document_id)
         else:
             entry = self.doc_manager.get_doc_by_prop('name', document_name)
             try:
@@ -168,8 +172,11 @@ class Action:
                 response = self.api.add_target_document(document_id, locale, workflow, due_date)
                 if response.status_code != 201:
                     raise_error(response.json(), "Failed to add target {0} to document".format(locale), True)
+                    add_to_db = False
+                    continue
                 logger.info('Requested locale {0} for document {1}'.format(locale, document_name))
-            self.doc_manager.update_document('locales', list(locales), document_id)
+            if add_to_db:
+                self.doc_manager.update_document('locales', list(locales), document_id)
 
     def list_ids_action(self, list_type):
         """ lists ids of list_type specified """
@@ -370,7 +377,9 @@ def raise_error(json, error_message, is_warning=False):
 def init_action(host, access_token, project_path, project_name, workflow_id, locale):
     api = None
     # check if Lingotek directory already exists
-    if os.path.isdir(os.path.join(project_path, CONF_DIR)):
+    ltk_path = os.path.join(project_path, CONF_DIR)
+    if os.path.isdir(ltk_path) and os.path.isfile(os.path.join(ltk_path, CONF_FN)) and \
+            os.stat(os.path.join(ltk_path, CONF_FN)).st_size:
         confirm = 'not confirmed'
         while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
             confirm = raw_input(
@@ -408,62 +417,65 @@ def init_action(host, access_token, project_path, project_name, workflow_id, loc
     if not api:
         api = ApiCalls(host, access_token)
     # create a directory
-    os.mkdir(os.path.join(project_path, CONF_DIR))
+    try:
+        os.mkdir(os.path.join(project_path, CONF_DIR))
+    except OSError:
+        pass
 
     config_file_name = os.path.join(project_path, CONF_DIR, CONF_FN)
-    if not os.path.exists(config_file_name):
+    # if not os.path.exists(config_file_name):
         # create the config file and add info
-        config_file = open(config_file_name, 'w')
+    config_file = open(config_file_name, 'w')
 
-        config_parser = ConfigParser.ConfigParser()
-        config_parser.add_section('main')
-        config_parser.set('main', 'access_token', access_token)
-        config_parser.set('main', 'host', host)
-        config_parser.set('main', 'root_path', project_path)
-        config_parser.set('main', 'workflow_id', workflow_id)
-        config_parser.set('main', 'default_locale', locale)
-        # get community id
-        # community_ids = api.get_communities_info()
-        community_info = api.get_communities_info()
-        if len(community_info) > 1:
-            choice = 'none-chosen'
-            for k, v in community_info.iteritems():
+    config_parser = ConfigParser.ConfigParser()
+    config_parser.add_section('main')
+    config_parser.set('main', 'access_token', access_token)
+    config_parser.set('main', 'host', host)
+    config_parser.set('main', 'root_path', project_path)
+    config_parser.set('main', 'workflow_id', workflow_id)
+    config_parser.set('main', 'default_locale', locale)
+    # get community id
+    # community_ids = api.get_communities_info()
+    community_info = api.get_communities_info()
+    if len(community_info) > 1:
+        choice = 'none-chosen'
+        for k, v in community_info.iteritems():
+            print k, v
+        while choice not in community_info.iterkeys():
+            choice = raw_input('Which community should this project belong to? Please enter community id:')
+        community_id = choice
+    else:
+        community_id = community_info.iterkeys().next()
+    config_parser.set('main', 'community_id', community_id)
+
+    response = api.list_projects(community_id)
+    if response.status_code != 200:
+        raise_error(response.json(), 'Something went wrong trying to find projects in your community')
+    project_info = api.get_project_info(community_id)
+    if len(project_info) > 0:
+        confirm = 'none'
+        while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
+            confirm = raw_input(
+                'It looks like you have existing projects -- would you like to create a new one? [y/n]:')
+        if not confirm or confirm in ['n', 'N', 'no', 'No']:
+            choice = 'none'
+            for k, v in project_info.iteritems():
                 print k, v
-            while choice not in community_info.iterkeys():
-                choice = raw_input('Which community should this project belong to? Please enter community id:')
-            community_id = choice
-        else:
-            community_id = community_info.iterkeys().next()
-        config_parser.set('main', 'community_id', community_id)
+            while choice not in project_info.iterkeys():
+                choice = raw_input('Which existing project to use, please enter project id:')
+            project_id = choice
+            config_parser.set('main', 'project_id', project_id)
+            config_parser.write(config_file)
+            config_file.close()
+            return
+    response = api.add_project(project_name, community_id, workflow_id)
+    if response.status_code != 201:
+        raise_error(response.json(), 'Failed to add current project to TMS')
+    project_id = response.json()['properties']['id']
+    config_parser.set('main', 'project_id', project_id)
 
-        response = api.list_projects(community_id)
-        if response.status_code != 200:
-            raise_error(response.json(), 'Something went wrong trying to find projects in your community')
-        project_info = api.get_project_info(community_id)
-        if len(project_info) > 0:
-            confirm = 'none'
-            while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-                confirm = raw_input(
-                    'It looks like you have existing projects -- would you like to create a new one? [y/n]:')
-            if not confirm or confirm in ['n', 'N', 'no', 'No']:
-                choice = 'none'
-                for k, v in project_info.iteritems():
-                    print k, v
-                while choice not in project_info.iterkeys():
-                    choice = raw_input('Which existing project to use, please enter project id:')
-                project_id = choice
-                config_parser.set('main', 'project_id', project_id)
-                config_parser.write(config_file)
-                config_file.close()
-                return
-        response = api.add_project(project_name, community_id, workflow_id)
-        if response.status_code != 201:
-            raise_error(response.json(), 'Failed to add current project to TMS')
-        project_id = response.json()['properties']['id']
-        config_parser.set('main', 'project_id', project_id)
-
-        config_parser.write(config_file)
-        config_file.close()
+    config_parser.write(config_file)
+    config_file.close()
 
 def find_conf(curr_path):
     """

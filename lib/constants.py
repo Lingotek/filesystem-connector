@@ -1,5 +1,5 @@
 CONF_DIR = '.ltk'
-CONF_FN = 'lingotek.cfg'
+CONF_FN = 'config'
 TRANS_DIR = 'Lingotek Translations'
 DB_FN = 'lingotek-docs.json'
 LOG_FN = '.ltk-logs'

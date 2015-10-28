@@ -8,8 +8,6 @@ import logging
 from logger import logger
 import sys
 
-from auth import run_oauth
-
 @click.group()
 @click.option('-q', 'loudness', flag_value='quiet', help='will only show warnings')
 @click.option('-v', 'loudness', flag_value='verbose', help='lots of information')
