@@ -7,8 +7,10 @@ from constants import LOG_FN
 import logging
 from logger import logger
 import sys
+from lib import __version__
 
 @click.group()
+@click.version_option(version=__version__, message='%(prog)s version %(version)s (Lingotek CLT)')
 @click.option('-q', 'loudness', flag_value='quiet', help='will only show warnings')
 @click.option('-v', 'loudness', flag_value='verbose', help='lots of information')
 def ltk(loudness):

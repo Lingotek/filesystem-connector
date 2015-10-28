@@ -100,7 +100,7 @@ class ApiCalls:
         uri = api_uri.API_URI['document']
         payload = {}
         if project_id:
-            payload = {'project_id': project_id}
+            payload = {'project_id': project_id, 'limit': 1000}
         r = requests.get(self.host + uri, headers=self.headers, params=payload)
         log_api('GET', uri, r)
         return r

@@ -6,6 +6,11 @@ import sys
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 import urlparse
 import urllib
+# import warnings
+#
+# with warnings.catch_warnings():
+#     warnings.filterwarnings("ignore")
+#     import webbrowser
 
 class ClientRedirectServer(HTTPServer):
     """ A server to handle OAuth 2.0 redirects back to localhost.
@@ -55,6 +60,7 @@ class ClientRedirectHandler(BaseHTTPRequestHandler, object):
         self.server.query_params = dict(post_vars)
         self.send_response(200)
         self.send_header("Content-type", "text/html")
+        self.end_headers()
         self.wfile.write(
             b"<html><head><title>Authentication Status</title></head>")
         self.wfile.write(

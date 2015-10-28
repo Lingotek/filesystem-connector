@@ -102,9 +102,10 @@ class Action:
                 if self.doc_manager.is_doc_modified(file_name):
                     confirm = 'not confirmed'
                     while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-                        confirm = raw_input("This document already exists. Would you like to overwrite it? [y/n]: ")
+                        confirm = raw_input("This document already exists. Would you like to overwrite it? [y/N]: ")
                     # confirm if would like to overwrite existing document in TMS
                     if not confirm or confirm in ['n', 'N']:
+                        # todo may want to change return to continue?
                         return
                     else:
                         logger.info('Overwriting document: {0} in TMS...'.format(title))
@@ -122,14 +123,18 @@ class Action:
 
     def push_action(self):
         entries = self.doc_manager.get_all_entries()
+        updated = False
         for entry in entries:
             if not self.doc_manager.is_doc_modified(entry['file_name']):
                 continue
-            logger.info('Updating...' + entry['name'])
             response = self.api.document_update(entry['id'], entry['file_name'])
             if response.status_code != 202:
                 raise_error(response.json(), "Failed to update document {0}".format(entry['name']), True)
+            updated = True
+            logger.info('Updated ' + entry['name'])
             self._update_document(entry['file_name'])
+        if not updated:
+            logger.info('All documents up to date with TMS. ')
 
     def update_document_action(self, file_name, title=None, **kwargs):
         entry = self.doc_manager.get_doc_by_prop('file_name', file_name)
@@ -201,7 +206,12 @@ class Action:
         print list_type
         # print 'id\t\t\t\t\t\ttitle'
         for i in range(len(ids)):
-            print ids[i] + '\t' + titles[i] + '\t\t' + ', '.join(locale for locale in locales[i])
+            if list_type != 'documents':
+                info = '{id} \t {title}'.format(id=ids[i], title=titles[i])
+            else:
+                info = '{id} \t {title} \t\t {locales}'.format(id=ids[i], title=titles[i],
+                                                               locales=', '.join(locale for locale in locales[i]))
+            print info
 
     def list_locale_action(self):
         locale_info = []
@@ -261,6 +271,8 @@ class Action:
         if response.status_code == 200:
             entry = self.doc_manager.get_doc_by_prop('id', document_id)
             if not entry:
+                # todo -- possibly should GET document, use title/field and the extension specified for file name
+                # according to w3 receiving agent shouldn't respect the directory path info
                 file_path = response.headers['content-disposition'].split('filename=')[1].strip("\"'")
                 # print file_path
                 base_name = os.path.basename(file_path)
@@ -274,7 +286,7 @@ class Action:
                 download_dir = os.path.dirname(file_name)
                 base_name = os.path.basename(os.path.normpath(file_name))
                 name_parts = base_name.split('.')
-                if name_parts > 1:
+                if len(name_parts) > 1:
                     name_parts.insert(-1, locale_code)
                     downloaded_name = '.'.join(part for part in name_parts)
                 else:
@@ -347,7 +359,8 @@ class Action:
             # download files from TMS
             for curr_id in ids_not_local:
                 download_path = self.download_action(curr_id, None, None)
-                title = os.path.basename(download_path).split('.')[0]
+                # title = os.path.basename(download_path).split('.')[0]
+                title = os.path.basename(download_path)
                 self._add_document(download_path, title, curr_id)
                 response = self.api.document_translation_status(curr_id)
                 locales = []
@@ -384,7 +397,7 @@ def init_action(host, access_token, project_path, project_name, workflow_id, loc
         while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
             confirm = raw_input(
                 "Do you want to delete the existing project and create a new one? "
-                "This will also delete the project in your community. [y/n]: ")
+                "This will also delete the project in your community. [y/N]: ")
         # confirm if would like to delete existing folder
         if not confirm or confirm in ['n', 'N']:
             return
@@ -456,7 +469,7 @@ def init_action(host, access_token, project_path, project_name, workflow_id, loc
         confirm = 'none'
         while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
             confirm = raw_input(
-                'It looks like you have existing projects -- would you like to create a new one? [y/n]:')
+                'It looks like you have existing projects -- would you like to create a new one? [y/N]:')
         if not confirm or confirm in ['n', 'N', 'no', 'No']:
             choice = 'none'
             for k, v in project_info.iteritems():

@@ -1,8 +1,9 @@
 from setuptools import setup, find_packages
+from lib import __version__
 
 setup(
     name='',
-    version='',
+    version=__version__,
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
