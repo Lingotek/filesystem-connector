@@ -16,7 +16,12 @@ def init_logger(path):
     if not path:
         file_handler = logging.FileHandler(LOG_FN)
     else:
-        file_handler = logging.FileHandler(os.path.join(path, CONF_DIR, LOG_FN))
+        try:
+            file_handler = logging.FileHandler(os.path.join(path, CONF_DIR, LOG_FN))
+        except IOError:
+            # todo error check when running init without existing conf dir
+            os.mkdir(os.path.join(path, CONF_DIR))
+            file_handler = logging.FileHandler(os.path.join(path, CONF_DIR, LOG_FN))
     console_handler = logging.StreamHandler(sys.stdout)
     file_handler.setLevel(API_LOG_LEVEL)
     file_handler.setFormatter(logging.Formatter('%(asctime)s  %(levelname)s: %(message)s'))
