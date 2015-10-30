@@ -200,3 +200,9 @@ def log_api(method, uri, response):
     log = '{method} {uri} {status} {length}'.format(method=method, uri=uri, status=response.status_code,
                                                     length=content_length)
     logger.api_call(log)
+    try:
+        import json
+        response_info = json.dumps(response.json(), indent=4, separators=(',', ': '))
+    except ValueError:
+        response_info = 'No json response available'
+    logger.api_response(response_info)

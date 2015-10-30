@@ -5,24 +5,27 @@ import os
 from exceptions import UninitializedError, ResourceNotFound, RequestFailedError, AlreadyExistsError
 from constants import LOG_FN
 import logging
-from logger import logger
+from logger import logger, API_LOG_LEVEL, API_RESPONSE_LOG_LEVEL
 import sys
 from lib import __version__
 
 @click.group()
 @click.version_option(version=__version__, message='%(prog)s version %(version)s (Lingotek CLT)')
-@click.option('-q', 'loudness', flag_value='quiet', help='will only show warnings')
-@click.option('-v', 'loudness', flag_value='verbose', help='lots of information')
-def ltk(loudness):
+@click.option('-q', 'quiet', flag_value=True, help='will only show warnings')
+@click.option('-v', 'verbosity', count=True, help='show API calls. -vv for API responses.')
+def ltk(quiet, verbosity):
     logger.setLevel(logging.DEBUG)
     file_handler = logging.FileHandler(LOG_FN)  # todo maybe have path to where logs stored
     console_handler = logging.StreamHandler(sys.stdout)
-    file_handler.setLevel(logging.DEBUG)
+    file_handler.setLevel(API_LOG_LEVEL)
     file_handler.setFormatter(logging.Formatter('%(asctime)s  %(levelname)s: %(message)s'))
-    if loudness == 'quiet':
+    if quiet:
         console_handler.setLevel(logging.WARNING)
-    elif loudness == 'verbose':
-        console_handler.setLevel(logging.DEBUG)
+    elif verbosity:
+        if verbosity > 1:
+            console_handler.setLevel(API_RESPONSE_LOG_LEVEL)
+        else:
+            console_handler.setLevel(API_LOG_LEVEL)
     else:
         console_handler.setLevel(logging.INFO)
     console_handler.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
