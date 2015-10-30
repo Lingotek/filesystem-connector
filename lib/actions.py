@@ -6,10 +6,9 @@ import time
 import exceptions
 from apicalls import ApiCalls
 from managers import DocumentManager
-from constants import CONF_DIR, CONF_FN, LOG_FN
+from constants import CONF_DIR, CONF_FN
 
 from logger import logger
-# logger = None
 
 class Action:
     def __init__(self, path):
@@ -487,12 +486,6 @@ def init_action(host, access_token, project_path, project_name, workflow_id, loc
     if len(community_info) == 0:
         raise exceptions.ResourceNotFound('You are not part of any communities in the Lingotek TMS')
     if len(community_info) > 1:
-        # choice = 'none-chosen'
-        # for k, v in community_info.iteritems():
-        #     print k, v
-        # while choice not in community_info.iterkeys():
-        #     choice = raw_input('Which community should this project belong to? Please enter community id:')
-        # community_id = choice
         community_id = display_choice('community', community_info)
     else:
         community_id = community_info.iterkeys().next()

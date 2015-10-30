@@ -20,4 +20,5 @@ logging.Logger.api_call = log_api
 logging.Logger.api_response = log_api_response
 
 logger = logging.getLogger('lib')
+# logger.addHandler(logging.NullHandler())
 # logger = logging.getLogger('requests')

@@ -1,21 +1,22 @@
 import click
 import actions
-# from actions import Action
 import os
 from exceptions import UninitializedError, ResourceNotFound, RequestFailedError, AlreadyExistsError
-from constants import LOG_FN
+from constants import LOG_FN, CONF_DIR
 import logging
 from logger import logger, API_LOG_LEVEL, API_RESPONSE_LOG_LEVEL
 import sys
 from lib import __version__
 
-@click.group()
-@click.version_option(version=__version__, message='%(prog)s version %(version)s (Lingotek CLT)')
-@click.option('-q', 'quiet', flag_value=True, help='will only show warnings')
-@click.option('-v', 'verbosity', count=True, help='show API calls. -vv for API responses.')
-def ltk(quiet, verbosity):
+def init_logger(path):
+    """
+    Initializes logger based on path
+    """
     logger.setLevel(logging.DEBUG)
-    file_handler = logging.FileHandler(LOG_FN)  # todo maybe have path to where logs stored
+    if not path:
+        file_handler = logging.FileHandler(LOG_FN)
+    else:
+        file_handler = logging.FileHandler(os.path.join(path, CONF_DIR, LOG_FN))
     console_handler = logging.StreamHandler(sys.stdout)
     file_handler.setLevel(API_LOG_LEVEL)
     file_handler.setFormatter(logging.Formatter('%(asctime)s  %(levelname)s: %(message)s'))
@@ -31,8 +32,24 @@ def ltk(quiet, verbosity):
     console_handler.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)
-    # actions.set_logger(logger)
-    # logger.info('Starting Lingotek tool..')
+
+def print_log(error):
+    """
+    prints the error before logger is initialized
+    """
+    if not len(logger.handlers):
+        print 'Error: {0}'.format(error)
+        sys.exit()
+    return
+
+@click.group()
+@click.version_option(version=__version__, message='%(prog)s version %(version)s (Lingotek CLT)')
+@click.option('-q', 'is_quiet', flag_value=True, help='will only show warnings')
+@click.option('-v', 'verbosity_lvl', count=True, help='show API calls. -vv for API responses.')
+def ltk(is_quiet, verbosity_lvl):
+    global quiet, verbosity
+    quiet = is_quiet
+    verbosity = verbosity_lvl
 
 
 @ltk.command()
@@ -55,11 +72,10 @@ def init(host, access_token, path, project_name, workflow_id, locale, delete):
             path = os.getcwd()
         if not project_name:
             project_name = os.path.basename(os.path.normpath(path))
-        # if not access_token:
-        #     # get access token from username/password
-        #     access_token = run_oauth(host)
+        init_logger(path)
         actions.init_action(host, access_token, path, project_name, workflow_id, locale, delete)
     except (ResourceNotFound, RequestFailedError) as e:
+        print_log(e)
         logger.error(e)
         return
 
@@ -70,10 +86,10 @@ def config(locale, workflow_id):
     """ view or change project configurations """
     try:
         action = actions.Action(os.getcwd())
+        init_logger(action.path)
         action.config_action(locale, workflow_id)
     except (UninitializedError, RequestFailedError) as e:
-        # print e
-        # logging.error(e)
+        print_log(e)
         logger.error(e)
         return
 
@@ -97,29 +113,22 @@ def add(file_names, locale, **kwargs):
     """ adds content, could be one file or multiple files specified by Unix shell pattern """
     try:
         action = actions.Action(os.getcwd())
+        init_logger(action.path)
         action.add_action(locale, file_names, **kwargs)
     except (UninitializedError, RequestFailedError, ResourceNotFound, AlreadyExistsError) as e:
-        # print e
-        # logging.error(e)
+        print_log(e)
         logger.error(e)
         return
-
-
-# @ltk.command()
-# @click.argument('-p', 'update_type', flag_value='project', prompt='Update type?', help='update a project')
-# @click.argument('-d', 'update_type', flag_value='document', help='update a document')
-# def update(update_type, title, update_id, due_date, workflow, callback, **kwargs):
-#     pass
 
 @ltk.command()
 def push():
     """ patch all documents that have been added to TMS through tool """
     try:
         action = actions.Action(os.getcwd())
+        init_logger(action.path)
         action.push_action()
     except UninitializedError as e:
-        # print e
-        # logging.error(e)
+        print_log(e)
         logger.error(e)
         return
 
@@ -133,10 +142,10 @@ def request(doc_name, locales, due_date, workflow):
     """ add targets to document(s) to start translation, defaults to all """
     try:
         action = actions.Action(os.getcwd())
+        init_logger(action.path)
         action.request_action(doc_name, locales, due_date, workflow)
     except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
-        # print e
-        # logging.error(e)
+        print_log(e)
         logger.error(e)
         return
 
@@ -150,6 +159,7 @@ def list_ids(id_type):
     """ lists ids and titles of documents added with tool, or available workflows """
     try:
         action = actions.Action(os.getcwd())
+        init_logger(action.path)
         if id_type == 'workflow':
             action.list_ids_action('workflows')
         elif id_type == 'locale':
@@ -157,8 +167,7 @@ def list_ids(id_type):
         else:
             action.list_ids_action('documents')
     except (UninitializedError, RequestFailedError) as e:
-        # print e
-        # logging.error(e)
+        print_log(e)
         logger.error(e)
         return
 
@@ -170,10 +179,10 @@ def status(doc_name, detailed):
     """ gets the status of a specific document or all documents """
     try:
         action = actions.Action(os.getcwd())
+        init_logger(action.path)
         action.status_action(detailed, doc_name)
     except (UninitializedError, ResourceNotFound) as e:
-        # print e
-        # logging.error(e)
+        print_log(e)
         logger.error(e)
         return
 
@@ -186,11 +195,11 @@ def download(auto_format, locale, document_names):
     """ downloads translated content of document(s) """
     try:
         action = actions.Action(os.getcwd())
+        init_logger(action.path)
         for name in document_names:
             action.download_by_name(name, locale, auto_format)
     except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
-        # print e
-        # logging.error(e)
+        print_log(e)
         logger.error(e)
         return
 
@@ -202,14 +211,14 @@ def pull(auto_format, locales):
     """ pulls all translations for added documents """
     try:
         action = actions.Action(os.getcwd())
+        init_logger(action.path)
         if locales:
             for locale in locales:
                 action.pull_action(locale, auto_format)
         else:
             action.pull_action(None, auto_format)
     except UninitializedError as e:
-        # print e
-        # logging.error(e)
+        print_log(e)
         logger.error(e)
         return
 
@@ -221,11 +230,11 @@ def delete(document_names):
     """
     try:
         action = actions.Action(os.getcwd())
+        init_logger(action.path)
         for name in document_names:
             action.delete_action(name)
     except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
-        # print e
-        # logging.error(e)
+        print_log(e)
         logger.error(e)
         return
 
@@ -239,10 +248,10 @@ def sync(force, update):
     """
     try:
         action = actions.Action(os.getcwd())
+        init_logger(action.path)
         action.sync_action(force, update)
     except (UninitializedError, RequestFailedError) as e:
-        # print e
-        # logging.error(e)
+        print_log(e)
         logger.error(e)
         return
 
