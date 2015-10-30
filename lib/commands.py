@@ -43,7 +43,8 @@ def ltk(loudness):
 @click.option('-w', '--workflow_id', default='c675bd20-0688-11e2-892e-0800200c9a66',
               help='the id of the workflow to use for this project, defaults to machine translate only.')
 @click.option('-l', '--locale', default='en_US', help='the default source locale for the project; defaults to en_US')
-def init(host, access_token, path, project_name, workflow_id, locale):
+@click.option('-d', '--delete', flag_value=True, help='delete the current project and re-initialize')
+def init(host, access_token, path, project_name, workflow_id, locale, delete):
     """ initializes a Lingotek project """
     try:
         host = 'https://' + host
@@ -54,10 +55,8 @@ def init(host, access_token, path, project_name, workflow_id, locale):
         # if not access_token:
         #     # get access token from username/password
         #     access_token = run_oauth(host)
-        actions.init_action(host, access_token, path, project_name, workflow_id, locale)
+        actions.init_action(host, access_token, path, project_name, workflow_id, locale, delete)
     except (ResourceNotFound, RequestFailedError) as e:
-        # print e
-        # logging.error(e)
         logger.error(e)
         return
 

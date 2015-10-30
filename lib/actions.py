@@ -31,8 +31,7 @@ class Action:
         if not actual_path:
             return False
         self.path = actual_path
-        config_file_name = os.path.join(self.path, CONF_DIR, CONF_FN)
-        if not os.path.isfile(config_file_name):
+        if not is_initialized(self.path):
             return False
         return True
 
@@ -385,22 +384,26 @@ def raise_error(json, error_message, is_warning=False):
         # warnings.warn(error_message)
         logger.error(error_message)
 
-
-# todo refactor so this isn't an almost 100 line function
-def init_action(host, access_token, project_path, project_name, workflow_id, locale):
-    api = None
-    # check if Lingotek directory already exists
+def is_initialized(project_path):
     ltk_path = os.path.join(project_path, CONF_DIR)
     if os.path.isdir(ltk_path) and os.path.isfile(os.path.join(ltk_path, CONF_FN)) and \
             os.stat(os.path.join(ltk_path, CONF_FN)).st_size:
+        return True
+    return False
+
+def reinit(host, project_path, delete):
+    if is_initialized(project_path):
+        logger.warning('This project is already initialized!')
+        if not delete:
+            return False
         confirm = 'not confirmed'
         while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
             confirm = raw_input(
-                "Do you want to delete the existing project and create a new one? "
+                "Are you sure you want to delete the current project? "
                 "This will also delete the project in your community. [y/N]: ")
         # confirm if would like to delete existing folder
         if not confirm or confirm in ['n', 'N']:
-            return
+            return False
         else:
             # delete the corresponding project online
             logger.info('Deleting old project folder and creating new one..')
@@ -423,12 +426,45 @@ def init_action(host, access_token, project_path, project_name, workflow_id, loc
                 shutil.rmtree(to_remove)
             else:
                 raise exceptions.ResourceNotFound("Cannot find config file, please re-initialize project")
+            return access_token
+    return True
+
+def display_choice(display_type, info):
+    if display_type == 'community':
+        input_prompt = 'Which community should this project belong to? [index]:'
+    elif display_type == 'project':
+        input_prompt = 'Which existing project should be used? [index]:'
+    else:
+        raise exceptions.ResourceNotFound("Cannot display info asked for")
+    choice = 'none-chosen'
+    import operator
+    sorted_info = sorted(info.iteritems(), key=operator.itemgetter(1))
+    mapper = {}
+    index = 0
+    for entry in sorted_info:
+        mapper[index] = {entry[0]: entry[1]}
+        index += 1
+    for k, v in mapper.iteritems():
+        print '{0} {1} ({2})'.format(k, v.itervalues().next(), v.iterkeys().next())
+    while choice not in mapper.iterkeys():
+        choice = int(raw_input(input_prompt))
+    logger.info('Selected {0} {1}.'.format(display_type, mapper[choice].itervalues().next()))
+    return mapper[choice].iterkeys().next()
+
+
+def init_action(host, access_token, project_path, project_name, workflow_id, locale, delete):
+    # check if Lingotek directory already exists
+    to_init = reinit(host, project_path, delete)
+    if not to_init:
+        return
+    elif to_init is not True:
+        access_token = to_init
 
     if not access_token:
         from auth import run_oauth
         access_token = run_oauth(host)
-    if not api:
-        api = ApiCalls(host, access_token)
+
+    api = ApiCalls(host, access_token)
     # create a directory
     try:
         os.mkdir(os.path.join(project_path, CONF_DIR))
@@ -436,8 +472,7 @@ def init_action(host, access_token, project_path, project_name, workflow_id, loc
         pass
 
     config_file_name = os.path.join(project_path, CONF_DIR, CONF_FN)
-    # if not os.path.exists(config_file_name):
-        # create the config file and add info
+    # create the config file and add info
     config_file = open(config_file_name, 'w')
 
     config_parser = ConfigParser.ConfigParser()
@@ -448,15 +483,17 @@ def init_action(host, access_token, project_path, project_name, workflow_id, loc
     config_parser.set('main', 'workflow_id', workflow_id)
     config_parser.set('main', 'default_locale', locale)
     # get community id
-    # community_ids = api.get_communities_info()
     community_info = api.get_communities_info()
+    if len(community_info) == 0:
+        raise exceptions.ResourceNotFound('You are not part of any communities in the Lingotek TMS')
     if len(community_info) > 1:
-        choice = 'none-chosen'
-        for k, v in community_info.iteritems():
-            print k, v
-        while choice not in community_info.iterkeys():
-            choice = raw_input('Which community should this project belong to? Please enter community id:')
-        community_id = choice
+        # choice = 'none-chosen'
+        # for k, v in community_info.iteritems():
+        #     print k, v
+        # while choice not in community_info.iterkeys():
+        #     choice = raw_input('Which community should this project belong to? Please enter community id:')
+        # community_id = choice
+        community_id = display_choice('community', community_info)
     else:
         community_id = community_info.iterkeys().next()
     config_parser.set('main', 'community_id', community_id)
@@ -471,12 +508,7 @@ def init_action(host, access_token, project_path, project_name, workflow_id, loc
             confirm = raw_input(
                 'It looks like you have existing projects -- would you like to create a new one? [y/N]:')
         if not confirm or confirm in ['n', 'N', 'no', 'No']:
-            choice = 'none'
-            for k, v in project_info.iteritems():
-                print k, v
-            while choice not in project_info.iterkeys():
-                choice = raw_input('Which existing project to use, please enter project id:')
-            project_id = choice
+            project_id = display_choice('project', project_info)
             config_parser.set('main', 'project_id', project_id)
             config_parser.write(config_file)
             config_file.close()
@@ -495,7 +527,6 @@ def find_conf(curr_path):
     check if the conf folder exists in current directory's parent directories
     """
     if os.path.isdir(os.path.join(curr_path, CONF_DIR)):
-        # todo error checking for actual conf file
         return curr_path
     elif curr_path == os.path.abspath(os.sep):
         return None
@@ -513,8 +544,6 @@ def get_files(root, patterns):
                 # print 'found without subdir'
                 # print os.path.join(path, name)
                 matched_files.append(os.path.join(path, name))
-    # print patterns
-    # print matched_files
     return matched_files
 
 
