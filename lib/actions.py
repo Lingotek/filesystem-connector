@@ -86,10 +86,10 @@ class Action:
     def add_action(self, locale, file_patterns, **kwargs):
         if not locale:
             locale = self.locale
-        # todo should only add changed files..
         # format will be automatically detected by extension but may not be what user expects
         # todo file pattern not matching subdirectory
         # matched_files = get_files(self.path, file_patterns)
+        # use current working directory as root for files instead of project root
         matched_files = get_files(os.getcwd(), file_patterns)
         if not matched_files:
             raise exceptions.ResourceNotFound("Could not find the specified file/pattern")
@@ -270,7 +270,7 @@ class Action:
             entry = self.doc_manager.get_doc_by_prop('id', document_id)
             if not entry:
                 # todo -- possibly should GET document, use title/field and the extension specified for file name
-                # according to w3 receiving agent shouldn't respect the directory path info
+                # according to w3 / rfc 1806 receiving agent shouldn't respect the directory path info
                 file_path = response.headers['content-disposition'].split('filename=')[1].strip("\"'")
                 # print file_path
                 base_name = os.path.basename(file_path)
@@ -470,6 +470,7 @@ def init_action(host, access_token, project_path, project_name, workflow_id, loc
     except OSError:
         pass
 
+    logger.info('Initializing project...')
     config_file_name = os.path.join(project_path, CONF_DIR, CONF_FN)
     # create the config file and add info
     config_file = open(config_file_name, 'w')
