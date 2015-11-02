@@ -20,5 +20,33 @@ logging.Logger.api_call = log_api
 logging.Logger.api_response = log_api_response
 
 logger = logging.getLogger('lib')
+
+class CustomFormatter(logging.Formatter):
+    default_format = '%(levelname)s: %(message)s'
+    info_format = '%(message)s'
+
+    def __init__(self, fmt="%(levelno)s: %(message)s"):
+        logging.Formatter.__init__(self, fmt)
+
+    def format(self, record):
+        # Save the original format configured by the user
+        # when the logger formatter was instantiated
+        format_orig = self._fmt
+
+        # Replace the original format with one customized by logging level
+        if record.levelno == logging.INFO:
+            self._fmt = CustomFormatter.info_format
+        else:
+            self._fmt = CustomFormatter.default_format
+
+        # Call the original formatter class to do the grunt work
+        result = logging.Formatter.format(self, record)
+
+        # Restore the original format configured by the user
+        self._fmt = format_orig
+
+        return result
+
+
 # logger.addHandler(logging.NullHandler())
 # logger = logging.getLogger('requests')

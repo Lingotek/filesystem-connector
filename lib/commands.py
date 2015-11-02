@@ -4,7 +4,7 @@ import os
 from exceptions import UninitializedError, ResourceNotFound, RequestFailedError, AlreadyExistsError
 from constants import LOG_FN, CONF_DIR
 import logging
-from logger import logger, API_LOG_LEVEL, API_RESPONSE_LOG_LEVEL
+from logger import logger, API_LOG_LEVEL, API_RESPONSE_LOG_LEVEL, CustomFormatter
 import sys
 from lib import __version__
 
@@ -34,7 +34,8 @@ def init_logger(path):
             console_handler.setLevel(API_LOG_LEVEL)
     else:
         console_handler.setLevel(logging.INFO)
-    console_handler.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
+    custom_formatter = CustomFormatter()
+    console_handler.setFormatter(custom_formatter)
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)
 
