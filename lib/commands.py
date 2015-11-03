@@ -89,7 +89,7 @@ def init(host, access_token, path, project_name, workflow_id, locale, delete):
 @click.option('-l', '--locale', help='change the default source locale for project')
 @click.option('-w', '--workflow_id', help='change the default workflow id for project')
 def config(locale, workflow_id):
-    """ view or change project configurations """
+    """ view or change local configuration """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
@@ -128,7 +128,7 @@ def add(file_names, locale, **kwargs):
 
 @ltk.command()
 def push():
-    """ patch all documents that have been added to TMS through tool """
+    """ sends updated content to Lingotek for documents that have been added """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
@@ -232,7 +232,7 @@ def pull(auto_format, locales):
 @click.argument('document_names', required=True, nargs=-1)
 def delete(document_names):
     """
-    deletes document(s)
+    disassociate local document(s) from remote document on Lingotek and deletes remote copy
     """
     try:
         action = actions.Action(os.getcwd())
@@ -246,11 +246,11 @@ def delete(document_names):
 
 # possibly some option to delete or keep local docs?
 @ltk.command()
-@click.option('-f', 'force', flag_value=True, help='delete any local documents out of sync with TMS')
-@click.option('-u', 'update', flag_value=True, help='overwrites any local files with content from TMS')
+@click.option('-f', 'force', flag_value=True, help='delete any local documents out of sync with Lingotek')
+@click.option('-u', 'update', flag_value=True, help='overwrites any local files with content from Lingotek')
 def sync(force, update):
     """
-    syncs the current project with project in TMS -- deletes and downloads documents.
+    syncs the current project with project in Lingotek -- deletes and downloads documents.
     """
     try:
         action = actions.Action(os.getcwd())

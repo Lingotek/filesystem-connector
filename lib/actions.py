@@ -73,7 +73,7 @@ class Action:
         elif workflow_id:
             response = self.api.patch_project(self.project_id, workflow_id)
             if response.status_code != 204:
-                raise_error(response.json(), 'Something went wrong trying to update workflow id of project')
+                raise_error(response.json(), 'Something went wrong trying to update workflow_id of project')
             conf_parser.set('main', 'workflow_id', workflow_id)
             with open(config_file_name, 'wb') as new_file:
                 conf_parser.write(new_file)
@@ -195,18 +195,23 @@ class Action:
                     try:
                         locales.append(entry['locales'])
                     except KeyError:
-                        locales.append(['No locales'])
+                        locales.append(['none'])
         elif list_type == 'workflows':
             response = self.api.list_workflows(self.community_id)
             if response.status_code != 200:
                 raise_error(response.json(), "Failed to list workflows")
             ids, titles = log_id_names(response.json())
-        print list_type
+        if len(ids) == 0:
+            print "no", list_type
         # print 'id\t\t\t\t\t\ttitle'
         for i in range(len(ids)):
             if list_type != 'documents':
+                if i==0:
+                    print "%s: id, title"%list_type
                 info = '{id} \t {title}'.format(id=ids[i], title=titles[i])
             else:
+                if i==0:
+                    print "documents: id, title, locales"
                 info = '{id} \t {title} \t\t {locales}'.format(id=ids[i], title=titles[i],
                                                                locales=', '.join(locale for locale in locales[i]))
             print info
@@ -223,7 +228,10 @@ class Action:
             country = locale_json[entry]['country_name']
             locale_info.append((locale_code, language, country))
         for locale in sorted(locale_info):
-            print "{0} ({1}, {2})".format(locale[0], locale[1], locale[2])
+            if not len(locale[2]): # Arabic
+                print "{0} ({1})".format(locale[0], locale[1])
+            else:
+                print "{0} ({1}, {2})".format(locale[0], locale[1], locale[2])
 
     def status_action(self, detailed, document_name=None):
         if document_name is not None:
@@ -451,7 +459,7 @@ def display_choice(display_type, info):
     return mapper[choice].iterkeys().next()
 
 
-def init_action(host, access_token, project_path, project_name, workflow_id, locale, delete):
+def init_action(host, access_token, project_path, folder_name, workflow_id, locale, delete):
     # check if Lingotek directory already exists
     to_init = reinit(host, project_path, delete)
     if not to_init:
@@ -500,13 +508,16 @@ def init_action(host, access_token, project_path, project_name, workflow_id, loc
         confirm = 'none'
         while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
             confirm = raw_input(
-                'It looks like you have existing projects -- would you like to create a new one? [y/N]:')
-        if not confirm or confirm in ['n', 'N', 'no', 'No']:
+                'Would you like to use an existing Lingotek project? [y/N]:')
+        if confirm or confirm in ['y', 'Y', 'yes', 'Yes']:
             project_id = display_choice('project', project_info)
             config_parser.set('main', 'project_id', project_id)
             config_parser.write(config_file)
             config_file.close()
             return
+    project_name = raw_input("Please enter a new Lingotek project name: %s"%folder_name + chr(8)*len(folder_name))
+    if not project_name:
+        project_name = folder_name
     response = api.add_project(project_name, community_id, workflow_id)
     if response.status_code != 201:
         raise_error(response.json(), 'Failed to add current project to TMS')
