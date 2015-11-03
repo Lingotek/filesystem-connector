@@ -36,8 +36,8 @@ class ClientRedirectHandler(BaseHTTPRequestHandler, object):
         self.wfile.write(
             b'<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script></head>')
         self.wfile.write(
-            b'<body style=\'font-size: 1.5em; padding: 50px; background: #eee;\'>')
-        self.wfile.write(b'<p id="message">Retrieving your access token...</p>')
+            b'<body style=\'font-size: 1.5em; padding: 50px;\'>')
+        self.wfile.write(b'<p id="message" style="background-color: #eee; border: 1px solid #5cb85e; padding: 5px 20px 20px 20px;">Retrieving your access token...</p>')
         self.wfile.write(b'<script> \
             $(document).ready(function(){ \
                 var self_url = window.location.href; \
@@ -45,10 +45,11 @@ class ClientRedirectHandler(BaseHTTPRequestHandler, object):
                 var params = {}; \
                 params[token_info.split("=")[0]] = token_info.split("=")[1]; \
                 $.post("index.html", params).done(function(data) { \
-                    $("#message").html("<div><p style=\'font-weight: bold;\'>'
+                    $("#message").css("background-color","#dff0d9"); \
+                    $("#message").html("<div><p style=\'font-weight: bold; color: darkgreen;\'>'
                          b'Your access token has been successfully stored!</p>'
-                         b'<p style=\'color: #666;\'>You may now close this browser window.</p>'
-                         b'<p style=\'color: #aaa\'>" + params["access_token"] + "</p></div>"); \
+                         b'<p style=\'color: #666; font-size: .8em\'>You may now close this browser window and return to the terminal.</p>'
+                         b'<p style=\'color: #aaa; font-size: .5em\'>" + params["access_token"] + "</p></div>"); \
                 }); \
             }); \
         </script>')
@@ -96,12 +97,13 @@ def run_oauth(host):
     import webbrowser
     webbrowser.open_new(authorize_url)
     print 'Your browser has been opened to visit: \n{0}\n'.format(authorize_url)
-
+    print '--------------------------------------'
     httpd.handle_request()  # handle the GET redirect
     httpd.handle_request()  # handle the POST for token info
-
+    print '--------------------------------------\n'
     if 'access_token' in httpd.query_params:
-        print 'Access token has been successfully stored! (If you haven\'t already, you may close your browser.)\n'
+        print 'Access token has been successfully stored!'
+        print '(If you haven\'t already, you may close your browser.)\n'
         token = httpd.query_params['access_token']
         # store the token because apparently it doesn't expire..
         return token

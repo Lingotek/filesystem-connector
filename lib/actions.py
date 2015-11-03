@@ -438,9 +438,9 @@ def reinit(host, project_path, delete):
 
 def display_choice(display_type, info):
     if display_type == 'community':
-        input_prompt = 'Which community should this project belong to? [index]:'
+        input_prompt = 'Which community should this project belong to? '
     elif display_type == 'project':
-        input_prompt = 'Which existing project should be used? [index]:'
+        input_prompt = 'Which existing project should be used? '
     else:
         raise exceptions.ResourceNotFound("Cannot display info asked for")
     choice = 'none-chosen'
@@ -452,10 +452,14 @@ def display_choice(display_type, info):
         mapper[index] = {entry[0]: entry[1]}
         index += 1
     for k, v in mapper.iteritems():
-        print '{0} {1} ({2})'.format(k, v.itervalues().next(), v.iterkeys().next())
+        print '({0}) {1} ({2})'.format(k, v.itervalues().next(), v.iterkeys().next())
     while choice not in mapper.iterkeys():
-        choice = int(raw_input(input_prompt))
-    logger.info('Selected {0} {1}.'.format(display_type, mapper[choice].itervalues().next()))
+        choice = raw_input(input_prompt)
+        try:
+            choice = int(choice)
+        except ValueError:
+            print("That's not a valid option!")
+    logger.info('Selected "{0}" {1}.'.format(mapper[choice].itervalues().next(), display_type))
     return mapper[choice].iterkeys().next()
 
 
