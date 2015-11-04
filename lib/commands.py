@@ -261,5 +261,20 @@ def sync(force, update):
         logger.error(e)
         return
 
+@ltk.command(name='import')
+@click.option('-a', '--all', 'import_all', flag_value=True, help='import all documents from TMS')
+def import_command(import_all):
+    """
+    import documents from Lingotek
+    """
+    try:
+        action = actions.Action(os.getcwd())
+        init_logger(action.path)
+        action.import_action(import_all)
+    except(UninitializedError, RequestFailedError) as e:
+        print_log(e)
+        logger.error(e)
+        return
+
 if __name__ == '__main__':
     ltk()

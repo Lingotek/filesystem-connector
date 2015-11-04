@@ -346,6 +346,7 @@ class Action:
             self.doc_manager.remove_element(document_id)
 
     def sync_action(self, force, update):
+        # todo redo sync as different action since added import
         response = self.api.list_documents(self.project_id)
         tms_doc_ids = []
         local_ids = self.doc_manager.get_doc_ids()
@@ -383,6 +384,49 @@ class Action:
                 except KeyError:
                     continue
                 self.doc_manager.update_document('locales', list(locales), curr_id)
+
+    def _import(self, document_id, document_info):
+        # todo be able to check if file is already there and rename the title
+        response = self.api.document_content(document_id, None, None)
+        title, extension = os.path.splitext(document_info['title'])
+        if not extension:
+            extension = document_info['extension']
+            extension = '.' + extension
+        if extension and extension != '.none':
+            title += extension
+        file_path = os.path.join(os.getcwd(), title)  # import to current working directory
+        logger.info("Imported {0}".format(title))
+        with open(file_path, 'wb') as fh:
+            for chunk in response.iter_content(1024):
+                fh.write(chunk)
+        self._add_document(file_path, title, document_id)
+
+    def import_action(self, import_all):
+        response = self.api.list_documents(self.project_id)
+        tms_doc_info = {}
+        local_ids = self.doc_manager.get_doc_ids()
+        if response.status_code == 200:
+            tms_documents = response.json()['entities']
+            for entity in tms_documents:
+                doc_info = {'title': entity['properties']['title'], 'extension': entity['properties']['extension']}
+                tms_doc_info[entity['properties']['id']] = doc_info
+        elif response.status_code == 204:
+            pass
+        else:
+            raise_error(response.json(), 'Error trying to find current documents in TMS')
+        ids_not_local = [x for x in tms_doc_info.iterkeys() if x not in local_ids]
+        if not ids_not_local:
+            logger.info('No new documents from TMS to import.')
+            return
+        if import_all:
+            ids_to_import = ids_not_local
+        else:
+            import_doc_info = {}
+            for k, v in tms_doc_info.iteritems():
+                import_doc_info[k] = v['title']
+            ids_to_import = get_import_ids(import_doc_info)
+        for curr_id in ids_to_import:
+            self._import(curr_id, tms_doc_info[curr_id])
 
 
 def raise_error(json, error_message, is_warning=False):
@@ -443,6 +487,30 @@ def reinit(host, project_path, delete):
             return access_token
     return True
 
+def choice_mapper(info):
+    mapper = {}
+    import operator
+    sorted_info = sorted(info.iteritems(), key=operator.itemgetter(1))
+
+    index = 0
+    for entry in sorted_info:
+        mapper[index] = {entry[0]: entry[1]}
+        index += 1
+    for k, v in mapper.iteritems():
+        print '({0}) {1} ({2})'.format(k, v.itervalues().next(), v.iterkeys().next())
+    return mapper
+
+def get_import_ids(info):
+    mapper = choice_mapper(info)
+    chosen_indices = ['none-chosen']
+    while not set(chosen_indices) < set(mapper.iterkeys()):
+        choice = raw_input('Which documents to import? (Separate indices by comma) ')
+        try:
+            chosen_indices = map(int, choice.split(','))
+        except ValueError:
+            print 'Some unexpected, non-integer value was included'
+    return [mapper[index].iterkeys().next() for index in chosen_indices]
+
 def display_choice(display_type, info):
     if display_type == 'community':
         input_prompt = 'Which community should this project belong to? '
@@ -450,16 +518,8 @@ def display_choice(display_type, info):
         input_prompt = 'Which existing project should be used? '
     else:
         raise exceptions.ResourceNotFound("Cannot display info asked for")
+    mapper = choice_mapper(info)
     choice = 'none-chosen'
-    import operator
-    sorted_info = sorted(info.iteritems(), key=operator.itemgetter(1))
-    mapper = {}
-    index = 0
-    for entry in sorted_info:
-        mapper[index] = {entry[0]: entry[1]}
-        index += 1
-    for k, v in mapper.iteritems():
-        print '({0}) {1} ({2})'.format(k, v.itervalues().next(), v.iterkeys().next())
     while choice not in mapper.iterkeys():
         choice = raw_input(input_prompt)
         try:
@@ -518,8 +578,7 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
     if len(project_info) > 0:
         confirm = 'none'
         while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-            confirm = raw_input(
-                'Would you like to use an existing Lingotek project? [y/N]:')
+            confirm = raw_input('Would you like to use an existing Lingotek project? [y/N]:')
         if confirm or confirm in ['y', 'Y', 'yes', 'Yes']:
             project_id = display_choice('project', project_info)
             config_parser.set('main', 'project_id', project_id)
