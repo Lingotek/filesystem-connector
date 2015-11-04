@@ -258,7 +258,7 @@ class Action:
         try:
             document_id = self.doc_manager.get_doc_by_prop('name', document_name)['id']
         except TypeError:
-            logger.warn("Document name specified doesn't exist: {0}".format(document_name))
+            logger.error("Document name specified doesn't exist: {0}".format(document_name))
             return
         self.download_action(document_id, locale_code, auto_format)
 
@@ -269,13 +269,21 @@ class Action:
         if response.status_code == 200:
             entry = self.doc_manager.get_doc_by_prop('id', document_id)
             if not entry:
-                # todo -- possibly should GET document, use title/field and the extension specified for file name
-                # according to w3 / rfc 1806 receiving agent shouldn't respect the directory path info
-                file_path = response.headers['content-disposition'].split('filename=')[1].strip("\"'")
-                # print file_path
-                base_name = os.path.basename(file_path)
-                download_path = os.path.join(self.path, base_name)  # todo should this be project base path or user cwd
-                logger.info("Downloaded {0}".format(base_name))
+                doc_info = self.api.get_document(document_id)
+                try:
+                    file_title = doc_info.json()['properties']['title']
+                    title, extension = os.path.splitext(file_title)
+                    if not extension:
+                        extension = doc_info.json()['properties']['extension']
+                        extension = '.' + extension
+                    if extension and extension != '.none':
+                        title += extension
+                except KeyError:
+                    raise_error(doc_info.json(),
+                                'Something went wrong trying to import document: {0}'.format(document_id), True)
+                    return
+                download_path = os.path.join(self.path, title)
+                logger.info("Downloaded {0}".format(title))
             elif not locale_code:
                 logger.info("Tried to download an existing document, did nothing")
                 return
@@ -357,7 +365,6 @@ class Action:
             # download files from TMS
             for curr_id in ids_not_local:
                 download_path = self.download_action(curr_id, None, None)
-                # title = os.path.basename(download_path).split('.')[0]
                 title = os.path.basename(download_path)
                 self._add_document(download_path, title, curr_id)
                 response = self.api.document_translation_status(curr_id)

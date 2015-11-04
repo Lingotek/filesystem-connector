@@ -22,35 +22,21 @@ def detect_format(file_name):
         '.dita': 'DITA',
         '.ditamap': 'DITAMAP',
         '.docx': 'DOCX_OKAPI',
-        # 'dox': 'DOXYGEN', # c, h, cpp
         '.dtd': 'DTD',
-        '.xslx': 'EXCEL_OKAPI', #xslx, xltx
-        # 'html': 'HTML_OKAPI', #htm
-        # 'HTML5_ITS',
+        '.xslx': 'EXCEL_OKAPI',  # xslx, xltx
         '.idml': 'IDML',
         '.properties': 'JAVA_PROPERTIES_OKAPI',
         '.json': 'JSON',
-        # 'KV_PAIR',
-        # 'odp': 'ODP', # otp
-        # 'ods': 'ODS', # ots
-        # 'odt': 'ODT', # ott
         '.pdf': 'PDF',
         '.txt': 'PLAINTEXT_OKAPI',
         '.po': 'PO',
         '.ppt': 'PPT_OKAPI',
         '.pptx': 'PPTX_OKAPI',
-        # 'yml': 'RAILS_YAML', # yaml
         '.resx': 'RESX',
         '.rtf': 'RTF_OKAPI',
         '.srt': 'SUBTITLE_RIP',
-        '.tsv': 'TABLE', #catkeys?
+        '.tsv': 'TABLE',  # catkeys?
         '.ts': 'TS',
-        # 'WIKI_OKAPI',
-        # 'WIKITEXT',
-        # 'WORD_OKAPI', ?
-        # 'xliff': 'XLIFF_OKAPI', #xlf
-        # 'XLIFF',
-        # 'XLSX_OKAPI',
         '.xml': 'XML_OKAPI'
     }
 

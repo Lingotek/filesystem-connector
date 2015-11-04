@@ -68,6 +68,13 @@ class ApiCalls:
         log_api('DELETE', uri, r)
         return r
 
+    def get_document(self, document_id):
+        """ gets a document by id """
+        uri = (api_uri.API_URI['document_id'] % locals())
+        r = requests.get(self.host + uri, headers=self.headers)
+        log_api('GET', uri, r)
+        return r
+
     def add_document(self, file_name, locale, project_id, title, **kwargs):
         """ adds a document """
         uri = api_uri.API_URI['document']
