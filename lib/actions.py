@@ -10,6 +10,7 @@ from constants import CONF_DIR, CONF_FN
 
 from logger import logger
 
+
 class Action:
     def __init__(self, path):
         self.host = ''
@@ -206,11 +207,11 @@ class Action:
         # print 'id\t\t\t\t\t\ttitle'
         for i in range(len(ids)):
             if list_type != 'documents':
-                if i==0:
-                    print "%s: id, title"%list_type
+                if i == 0:
+                    print "%s: id, title" % list_type
                 info = '{id} \t {title}'.format(id=ids[i], title=titles[i])
             else:
-                if i==0:
+                if i == 0:
                     print "documents: id, title, locales"
                 info = '{id} \t {title} \t\t {locales}'.format(id=ids[i], title=titles[i],
                                                                locales=', '.join(locale for locale in locales[i]))
@@ -228,7 +229,7 @@ class Action:
             country = locale_json[entry]['country_name']
             locale_info.append((locale_code, language, country))
         for locale in sorted(locale_info):
-            if not len(locale[2]): # Arabic
+            if not len(locale[2]):  # Arabic
                 print "{0} ({1})".format(locale[0], locale[1])
             else:
                 print "{0} ({1}, {2})".format(locale[0], locale[1], locale[2])
@@ -442,12 +443,14 @@ def raise_error(json, error_message, is_warning=False):
         # warnings.warn(error_message)
         logger.error(error_message)
 
+
 def is_initialized(project_path):
     ltk_path = os.path.join(project_path, CONF_DIR)
     if os.path.isdir(ltk_path) and os.path.isfile(os.path.join(ltk_path, CONF_FN)) and \
             os.stat(os.path.join(ltk_path, CONF_FN)).st_size:
         return True
     return False
+
 
 def reinit(host, project_path, delete):
     if is_initialized(project_path):
@@ -487,9 +490,11 @@ def reinit(host, project_path, delete):
             return access_token
     return True
 
+
 def choice_mapper(info):
     mapper = {}
     import operator
+
     sorted_info = sorted(info.iteritems(), key=operator.itemgetter(1))
 
     index = 0
@@ -499,6 +504,7 @@ def choice_mapper(info):
     for k, v in mapper.iteritems():
         print '({0}) {1} ({2})'.format(k, v.itervalues().next(), v.iterkeys().next())
     return mapper
+
 
 def get_import_ids(info):
     mapper = choice_mapper(info)
@@ -510,6 +516,7 @@ def get_import_ids(info):
         except ValueError:
             print 'Some unexpected, non-integer value was included'
     return [mapper[index].iterkeys().next() for index in chosen_indices]
+
 
 def display_choice(display_type, info):
     if display_type == 'community':
@@ -540,6 +547,7 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
 
     if not access_token:
         from auth import run_oauth
+
         access_token = run_oauth(host)
 
     api = ApiCalls(host, access_token)
@@ -579,13 +587,13 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
         confirm = 'none'
         while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
             confirm = raw_input('Would you like to use an existing Lingotek project? [y/N]:')
-        if confirm or confirm in ['y', 'Y', 'yes', 'Yes']:
+        if confirm and confirm in ['y', 'Y', 'yes', 'Yes']:
             project_id = display_choice('project', project_info)
             config_parser.set('main', 'project_id', project_id)
             config_parser.write(config_file)
             config_file.close()
             return
-    project_name = raw_input("Please enter a new Lingotek project name: %s"%folder_name + chr(8)*len(folder_name))
+    project_name = raw_input("Please enter a new Lingotek project name: %s" % folder_name + chr(8) * len(folder_name))
     if not project_name:
         project_name = folder_name
     response = api.add_project(project_name, community_id, workflow_id)
@@ -597,6 +605,7 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
     config_parser.write(config_file)
     config_file.close()
 
+
 def find_conf(curr_path):
     """
     check if the conf folder exists in current directory's parent directories
@@ -607,6 +616,7 @@ def find_conf(curr_path):
         return None
     else:
         return os.path.abspath(os.path.join(curr_path, os.pardir))
+
 
 def get_files(root, patterns):
     """ gets all files matching pattern from root
