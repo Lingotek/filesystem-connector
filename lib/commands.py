@@ -244,37 +244,35 @@ def delete(document_names):
         logger.error(e)
         return
 
-# possibly some option to delete or keep local docs?
-@ltk.command()
-@click.option('-f', 'force', flag_value=True, help='delete any local documents out of sync with Lingotek')
-@click.option('-u', 'update', flag_value=True, help='overwrites any local files with content from Lingotek')
-def sync(force, update):
-    """
-    syncs the current project with project in Lingotek -- deletes and downloads documents.
-    """
-    try:
-        action = actions.Action(os.getcwd())
-        init_logger(action.path)
-        action.sync_action(force, update)
-    except (UninitializedError, RequestFailedError) as e:
-        print_log(e)
-        logger.error(e)
-        return
-
 @ltk.command(name='import')
 @click.option('-a', '--all', 'import_all', flag_value=True, help='import all documents from TMS')
-def import_command(import_all):
+@click.option('-f', '--force', flag_value=True, help='overwrites existing documents without prompt')
+def import_command(import_all, force):
     """
     import documents from Lingotek
     """
+    # todo import should show all documents
+    # add a force option so can import all force -- overwrites all existing documents without prompting
+    # check if doc id
+        # if exist, prompt for overwrite
+        # else automatically re-name
+            # possibly have to patch title in TMS?
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
-        action.import_action(import_all)
+        action.import_action(import_all, force)
     except(UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
         return
+
+
+@ltk.command()
+def clean():
+    """
+    cleans up the associations between local documents and documents in Lingotek
+    """
+    # will first only delete associations
 
 if __name__ == '__main__':
     ltk()

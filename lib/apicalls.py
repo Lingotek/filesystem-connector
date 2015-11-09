@@ -1,6 +1,7 @@
 import requests
 import api_uri
 import utils
+from exceptions import RequestFailedError
 from logger import logger
 
 
@@ -174,24 +175,23 @@ class ApiCalls:
 
     def get_project_info(self, community_id):
         response = self.list_projects(community_id)
-        if response.status_code != 200:
-            print 'error when listing projects for community'
-            # todo raise error
-        else:
-            info = {}
+        info = {}
+        if response.status_code == 200:
             if int(response.json()['properties']['total']) == 0:
                 return info
             entities = response.json()['entities']
             for entity in entities:
                 info[entity['properties']['id']] = entity['properties']['title']
             return info
+        elif response.status_code == 204:
+            return info
+        else:
+            raise RequestFailedError("Unable to get existing projects")
 
     def get_communities_info(self):
         response = self.list_communities()
         if response.status_code != 200:
-            print response.json()
-            print 'error getting community ids'
-            # todo raise error
+            raise RequestFailedError("Unable to get user's list of communities")
         entities = response.json()['entities']
         info = {}
         for entity in entities:

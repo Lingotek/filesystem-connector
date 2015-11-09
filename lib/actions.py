@@ -346,48 +346,19 @@ class Action:
             logger.info("{0} has been deleted.".format(document_name))
             self.doc_manager.remove_element(document_id)
 
-    def sync_action(self, force, update):
-        # todo redo sync as different action since added import
-        response = self.api.list_documents(self.project_id)
-        tms_doc_ids = []
-        local_ids = self.doc_manager.get_doc_ids()
-        if response.status_code == 200:
-            tms_documents = response.json()['entities']
-            for entity in tms_documents:
-                tms_doc_ids.append(entity['properties']['id'])
-        elif response.status_code == 204:
-            pass
-        else:
-            raise_error(response.json(), 'Error trying to find current documents in TMS')
-        ids_to_delete = [x for x in local_ids if x not in tms_doc_ids]
-        ids_not_local = [x for x in tms_doc_ids if x not in local_ids]
-        if not ids_to_delete and not ids_not_local:
-            # todo need to check if content also up to date?
-            logger.info('Local documents already up-to-date with documents in TMS')
-            return
-        if ids_to_delete:
-            for curr_id in ids_to_delete:
-                if force:
-                    file_name = self.doc_manager.get_doc_by_prop('id', curr_id)['file_name']
-                    os.remove(file_name)
-                self.doc_manager.remove_element(curr_id)
-        if ids_not_local:
-            # download files from TMS
-            for curr_id in ids_not_local:
-                download_path = self.download_action(curr_id, None, None)
-                title = os.path.basename(download_path)
-                self._add_document(download_path, title, curr_id)
-                response = self.api.document_translation_status(curr_id)
-                locales = []
-                try:
-                    for entity in response.json()['entities']:
-                        locales.append(entity['properties']['locale_code'])
-                except KeyError:
-                    continue
-                self.doc_manager.update_document('locales', list(locales), curr_id)
+    def get_new_name(self, file_name, curr_path):
+        i = 1
+        file_path = os.path.join(curr_path, file_name)
+        name, extension = os.path.splitext(file_name)
+        while os.path.isfile(file_path):
+            new_name = '{name}({i}){ext}'.format(name=name, i=i, ext=extension)
+            file_path = os.path.join(curr_path, new_name)
+            i += 1
+        return file_path
 
-    def _import(self, document_id, document_info):
+    def _import(self, document_id, document_info, force):
         # todo be able to check if file is already there and rename the title
+        local_ids = self.doc_manager.get_doc_ids()
         response = self.api.document_content(document_id, None, None)
         title, extension = os.path.splitext(document_info['title'])
         if not extension:
@@ -396,16 +367,30 @@ class Action:
         if extension and extension != '.none':
             title += extension
         file_path = os.path.join(os.getcwd(), title)  # import to current working directory
-        logger.info("Imported {0}".format(title))
+        logger.info("Importing {0}..".format(title))
+        if not force:
+            if document_id in local_ids:
+                confirm = 'none'
+                while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
+                    confirm = raw_input('Would you like to overwrite the existing document? [y/N]:')
+                if not confirm or confirm in ['n', 'N', 'no', 'No', 'NO']:
+                    logger.info('Import for {0} canceled'.format(title))
+                    return
+            else:
+                if self.doc_manager.get_doc_by_prop('file_name', file_path):
+                    # change file_path
+                    file_path = self.get_new_name(title, os.getcwd())
+                    orig_title = title
+                    title = os.path.basename(os.path.normpath(file_path))
+                    logger.warning('Imported {0} as {1} because {0} already exists locally'.format(orig_title, title))
         with open(file_path, 'wb') as fh:
             for chunk in response.iter_content(1024):
                 fh.write(chunk)
         self._add_document(file_path, title, document_id)
 
-    def import_action(self, import_all):
+    def import_action(self, import_all, force):
         response = self.api.list_documents(self.project_id)
         tms_doc_info = {}
-        local_ids = self.doc_manager.get_doc_ids()
         if response.status_code == 200:
             tms_documents = response.json()['entities']
             for entity in tms_documents:
@@ -415,20 +400,18 @@ class Action:
             pass
         else:
             raise_error(response.json(), 'Error trying to find current documents in TMS')
-        ids_not_local = [x for x in tms_doc_info.iterkeys() if x not in local_ids]
-        if not ids_not_local:
-            logger.info('No new documents from TMS to import.')
-            return
         if import_all:
-            ids_to_import = ids_not_local
+            ids_to_import = tms_doc_info.iterkeys()
         else:
             import_doc_info = {}
             for k, v in tms_doc_info.iteritems():
                 import_doc_info[k] = v['title']
             ids_to_import = get_import_ids(import_doc_info)
         for curr_id in ids_to_import:
-            self._import(curr_id, tms_doc_info[curr_id])
+            self._import(curr_id, tms_doc_info[curr_id], force)
 
+    def clean_action(self):
+        local_ids = self.doc_manager.get_doc_ids()
 
 def raise_error(json, error_message, is_warning=False):
     try:
