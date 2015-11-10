@@ -36,8 +36,10 @@ class ClientRedirectHandler(BaseHTTPRequestHandler, object):
         self.wfile.write(
             b'<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script></head>')
         self.wfile.write(
+            b"<link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>")
+        self.wfile.write(
             b'<body style=\'font-size: 1.5em; padding: 50px;\'>')
-        self.wfile.write(b'<p id="message" style="background-color: #eee; border: 1px solid #5cb85e; padding: 5px 20px 20px 20px;">Retrieving your access token...</p>')
+        self.wfile.write(b'<p id="message" style="font-family: Open Sans, Arial; background-color: #eee; text-align: center; border: 1px solid #5cb85e; padding: 5px 20px 25px 20px;">Retrieving your access token...</p>')
         self.wfile.write(b'<script> \
             $(document).ready(function(){ \
                 var self_url = window.location.href; \

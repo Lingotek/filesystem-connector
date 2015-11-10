@@ -1,6 +1,6 @@
 CONF_DIR = '.ltk'
 CONF_FN = 'config'
 TRANS_DIR = 'Lingotek Translations'
-DB_FN = 'lingotek-docs.json'
-LOG_FN = '.ltk-logs'
+DB_FN = 'docs.json'
+LOG_FN = 'log'
 APP_ID = 'ab33b8b9-4c01-43bd-a209-b59f933e4fc4'

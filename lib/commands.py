@@ -49,7 +49,7 @@ def print_log(error):
     return
 
 @click.group()
-@click.version_option(version=__version__, message='%(prog)s version %(version)s (Lingotek CLT)')
+@click.version_option(version=__version__, message='%(prog)s version %(version)s (Lingotek Client)')
 @click.option('-q', 'is_quiet', flag_value=True, help='will only show warnings')
 @click.option('-v', 'verbosity_lvl', count=True, help='show API calls. -vv for API responses.')
 def ltk(is_quiet, verbosity_lvl):
@@ -116,7 +116,7 @@ def config(locale, workflow_id):
 @click.option('-v', '--vault_id', help='save-to TM vault id')
 @click.option('-e', '--external_url', help='source url')
 def add(file_names, locale, **kwargs):
-    """ adds content, could be one file or multiple files specified by Unix shell pattern """
+    """ adds content, could be one or multiple files specified by Unix shell pattern """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
@@ -162,7 +162,7 @@ def request(doc_name, locales, due_date, workflow):
 @click.option('-w', 'id_type', flag_value='workflow', help='list available workflow ids')
 @click.option('-l', 'id_type', flag_value='locale', help='list supported locale codes')
 def list_ids(id_type):
-    """ lists ids and titles of documents added with tool, or available workflows """
+    """ shows added docs, available workflows, and locales """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
@@ -232,7 +232,7 @@ def pull(auto_format, locales):
 @click.argument('document_names', required=True, nargs=-1)
 def delete(document_names):
     """
-    disassociate local document(s) from remote document on Lingotek and deletes remote copy
+    disassociate local doc(s) from Lingotek cloud and deletes remote copy
     """
     try:
         action = actions.Action(os.getcwd())
@@ -245,7 +245,7 @@ def delete(document_names):
         return
 
 @ltk.command(name='import')
-@click.option('-a', '--all', 'import_all', flag_value=True, help='import all documents from TMS')
+@click.option('-a', '--all', 'import_all', flag_value=True, help='import all documents from Lingotek Cloud')
 @click.option('-f', '--force', flag_value=True, help='overwrites existing documents without prompt')
 def import_command(import_all, force):
     """
@@ -256,7 +256,7 @@ def import_command(import_all, force):
     # check if doc id
         # if exist, prompt for overwrite
         # else automatically re-name
-            # possibly have to patch title in TMS?
+            # possibly have to patch title in Lingotek Cloud?
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)

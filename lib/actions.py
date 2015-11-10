@@ -102,12 +102,12 @@ class Action:
                     confirm = 'not confirmed'
                     while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
                         confirm = raw_input("This document already exists. Would you like to overwrite it? [y/N]: ")
-                    # confirm if would like to overwrite existing document in TMS
+                    # confirm if would like to overwrite existing document in Lingotek Cloud
                     if not confirm or confirm in ['n', 'N']:
                         # todo may want to change return to continue?
                         return
                     else:
-                        logger.info('Overwriting document: {0} in TMS...'.format(title))
+                        logger.info('Overwriting document: {0} in Lingotek Cloud...'.format(title))
                         self.update_document_action(file_name, title, **kwargs)
                         continue
                 else:
@@ -133,7 +133,7 @@ class Action:
             logger.info('Updated ' + entry['name'])
             self._update_document(entry['file_name'])
         if not updated:
-            logger.info('All documents up to date with TMS. ')
+            logger.info('All documents up-to-date with Lingotek Cloud. ')
 
     def update_document_action(self, file_name, title=None, **kwargs):
         entry = self.doc_manager.get_doc_by_prop('file_name', file_name)
@@ -307,7 +307,7 @@ class Action:
                 else:
                     downloaded_name = name_parts[0] + '.' + locale_code
                 download_path = os.path.join(download_dir, downloaded_name)
-                logger.info("Downloaded {0} for locale {1}: {2}".format(name_parts[0], locale_code, downloaded_name))
+                logger.info('Downloaded "{0}" for locale {1}: {2}'.format(name_parts[0], locale_code, downloaded_name))
             with open(download_path, 'wb') as fh:
                 for chunk in response.iter_content(1024):
                     fh.write(chunk)
@@ -367,14 +367,14 @@ class Action:
         if extension and extension != '.none':
             title += extension
         file_path = os.path.join(os.getcwd(), title)  # import to current working directory
-        logger.info("Importing {0}..".format(title))
+        logger.info('Importing "{0}"'.format(title))
         if not force:
             if document_id in local_ids:
                 confirm = 'none'
                 while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
                     confirm = raw_input('Would you like to overwrite the existing document? [y/N]:')
                 if not confirm or confirm in ['n', 'N', 'no', 'No', 'NO']:
-                    logger.info('Import for {0} canceled'.format(title))
+                    logger.info('Skipped importing "{0}"'.format(title))
                     return
             else:
                 if self.doc_manager.get_doc_by_prop('file_name', file_path):
@@ -382,7 +382,8 @@ class Action:
                     file_path = self.get_new_name(title, os.getcwd())
                     orig_title = title
                     title = os.path.basename(os.path.normpath(file_path))
-                    logger.warning('Imported {0} as {1} because {0} already exists locally'.format(orig_title, title))
+                    logger.warning('Imported "{0}" as "{1}" because "{0}" already exists locally'.format(orig_title, title))
+        # logger.info('Imported "{0}"'.format(title))
         with open(file_path, 'wb') as fh:
             for chunk in response.iter_content(1024):
                 fh.write(chunk)
@@ -399,7 +400,7 @@ class Action:
         elif response.status_code == 204:
             pass
         else:
-            raise_error(response.json(), 'Error trying to find current documents in TMS')
+            raise_error(response.json(), 'Error finding current documents in Lingotek Cloud')
         if import_all:
             ids_to_import = tms_doc_info.iterkeys()
         else:
@@ -555,7 +556,7 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
     # get community id
     community_info = api.get_communities_info()
     if len(community_info) == 0:
-        raise exceptions.ResourceNotFound('You are not part of any communities in the Lingotek TMS')
+        raise exceptions.ResourceNotFound('You are not part of any communities in Lingotek Cloud')
     if len(community_info) > 1:
         community_id = display_choice('community', community_info)
     else:
@@ -581,7 +582,7 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
         project_name = folder_name
     response = api.add_project(project_name, community_id, workflow_id)
     if response.status_code != 201:
-        raise_error(response.json(), 'Failed to add current project to TMS')
+        raise_error(response.json(), 'Failed to add current project to Lingotek Cloud')
     project_id = response.json()['properties']['id']
     config_parser.set('main', 'project_id', project_id)
 
