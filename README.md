@@ -28,9 +28,9 @@ $ python get-pip.py
 
 Running `ltk` without a command will show all of the commands availble: add, clean, config, delete, download, import, init, list, pull, push, request, status
 
-<a href="http://www.youtube.com/watch?feature=player_embedded&v=CbsvVar2rFs
-" target="_blank"><img src="http://img.youtube.com/vi/CbsvVar2rFs/0.jpg" 
-alt="Lingotek Client (Command Line Tool)" width="240" height="180" border="10" /></a>
+Here is video that shows the basics...
+
+[![Lingotek Client (Command Line Tool)](http://img.youtube.com/vi/CbsvVar2rFs/0.jpg)](http://www.youtube.com/watch?v=CbsvVar2rFs)
 
 ## Tips ##
 The Lingotek Client is written in Python, so it runs on most systems. Should you run into any issues, below are some suggestions and troubleshooting tips.
