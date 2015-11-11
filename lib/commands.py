@@ -268,11 +268,19 @@ def import_command(import_all, force):
 
 
 @ltk.command()
-def clean():
+@click.option('-f', '--force', flag_value=True, help='deletes local documents that no longer exists in Lingotek')
+def clean(force):
     """
     cleans up the associations between local documents and documents in Lingotek
     """
-    # will first only delete associations
+    try:
+        action = actions.Action(os.getcwd())
+        init_logger(action.path)
+        action.clean_action(force)
+    except (UninitializedError, RequestFailedError) as e:
+        print_log(e)
+        logger.error(e)
+        return
 
 if __name__ == '__main__':
     ltk()

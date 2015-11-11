@@ -411,8 +411,45 @@ class Action:
         for curr_id in ids_to_import:
             self._import(curr_id, tms_doc_info[curr_id], force)
 
-    def clean_action(self):
+    def clean_action(self, force):
+        response = self.api.list_documents(self.project_id)
         local_ids = self.doc_manager.get_doc_ids()
+        tms_doc_ids = []
+        if response.status_code == 200:
+            tms_documents = response.json()['entities']
+            for entity in tms_documents:
+                tms_doc_ids.append(entity['properties']['id'])
+        elif response.status_code == 204:
+            pass
+        else:
+            raise_error(response.json(), 'Error trying to list documents in TMS for cleaning')
+        locals_to_delete = [x for x in local_ids if x not in tms_doc_ids]
+
+        # check local files
+        db_entries = self.doc_manager.get_all_entries()
+        for entry in db_entries:
+            # if local file doesn't exist, remove entry
+            if not os.path.isfile(entry['file_name']):
+                locals_to_delete.append(entry['id'])
+
+        # remove entry for local doc -- possibly delete local file too?
+        if local_ids:
+            for curr_id in locals_to_delete:
+                removed_title = self.doc_manager.get_doc_by_prop('id', curr_id)['name']
+                if force:
+                    file_name = self.doc_manager.get_doc_by_prop('id', curr_id)['file_name']
+                    try:
+                        os.remove(file_name)
+                        logger.info('Removed local file {0}'.format(removed_title))
+                    except OSError:
+                        pass
+                self.doc_manager.remove_element(curr_id)
+                logger.info('Removing association for document {0}'.format(removed_title))
+        else:
+            logger.info('Local documents already up-to-date with Lingotek cloud')
+            return
+        logger.info('Cleaned up associations between local documents and Lingotek cloud')
+
 
 def raise_error(json, error_message, is_warning=False):
     try:
