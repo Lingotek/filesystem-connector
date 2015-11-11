@@ -26,7 +26,7 @@ $ python get-pip.py
 
 ## Getting Started ##
 
-Running `ltk` without a command will show all of the commands availble: add, clean, config, delete, download, import, init, list, pull, push, request, status
+Running `ltk` without a command will show all of the commands available: add, clean, config, delete, import, init, list, pull, push, request, and status
 
 Here is video that shows the basics...
 
