@@ -4,7 +4,7 @@ The Lingotek Client (`ltk`) is a command line tool that connects your content to
 
 The Lingotek Client allows you to quickly add content, request translations, and pull translations from the Lingotek Cloud.  
 
-Content can be sent up in any a variety of formats including csv, dita, ditamap, docx, doxygen, dtd, excel, html, idml, java_properties, json, odp, ods, odt, pdf, plaintext, po, pptx, ppt, rails_yaml, resx, rtf, subtitle_rip, table, ts, xliff, and xml.
+Content can be sent up in any a variety of formats including: `csv`, `dita`, `ditamap`, `docx`, `doxygen`, `dtd`, `excel`, `html`, `idml`, `java_properties`, `json`, `odp`, `ods`, `odt`, `pdf`, `plaintext`, `po`, `pptx`, `ppt`, `rails_yaml`, `resx`, `rtf`, `subtitle_rip`, `table`, `ts`, `xliff`, and `xml`.
 
 Developers love how easily it can be used to interact with the Translation Network™.  Using the `-v` and `-vv` switches shows exactly which API calls are being used to help developers code custom connectors.
 
