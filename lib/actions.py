@@ -8,6 +8,7 @@ from apicalls import ApiCalls
 from utils import detect_format
 from managers import DocumentManager
 from constants import CONF_DIR, CONF_FN
+from collections import Counter
 
 from logger import logger
 
@@ -394,7 +395,8 @@ class Action:
         with open(file_path, 'wb') as fh:
             for chunk in response.iter_content(1024):
                 fh.write(chunk)
-        self._add_document(file_path, title, document_id)
+        if document_id not in local_ids:
+            self._add_document(file_path, title, document_id)
 
     def import_action(self, import_all, force):
         response = self.api.list_documents(self.project_id)
@@ -421,6 +423,11 @@ class Action:
     def clean_action(self, force):
         response = self.api.list_documents(self.project_id)
         local_ids = self.doc_manager.get_doc_ids()
+        # clean database for any repeating doc ids
+        # duplicate_ids = [item for item, count in Counter(local_ids).items() if count > 1]
+        # for duplicate_id in duplicate_ids:
+        #     # todo seems like remove element removes all elements with matching id?
+        #     self.doc_manager.remove_element(duplicate_id)
         tms_doc_ids = []
         if response.status_code == 200:
             tms_documents = response.json()['entities']
@@ -456,6 +463,7 @@ class Action:
             logger.info('Local documents already up-to-date with Lingotek cloud')
             return
         logger.info('Cleaned up associations between local documents and Lingotek cloud')
+
 
 
 def raise_error(json, error_message, is_warning=False):
