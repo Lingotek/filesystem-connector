@@ -161,6 +161,7 @@ def request(doc_name, locales, due_date, workflow):
 @click.option('-d', 'id_type', flag_value='document', help='list document ids')
 @click.option('-w', 'id_type', flag_value='workflow', help='list available workflow ids')
 @click.option('-l', 'id_type', flag_value='locale', help='list supported locale codes')
+@click.option('-f', 'id_type', flag_value='format', help='list supported formats')
 def list_ids(id_type):
     """ shows added docs, available workflows, and locales """
     try:
@@ -170,6 +171,8 @@ def list_ids(id_type):
             action.list_ids_action('workflows')
         elif id_type == 'locale':
             action.list_locale_action()
+        elif id_type == 'format':
+            action.list_format_action()
         else:
             action.list_ids_action('documents')
     except (UninitializedError, RequestFailedError) as e:

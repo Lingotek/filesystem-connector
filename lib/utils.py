@@ -15,8 +15,7 @@ class Enum(set):
 
 
 # todo possibly put dictionary outside so not built with every function call
-def detect_format(file_name):
-    name, extension = os.path.splitext(file_name)
+def detect_format(file_name, get_mapper=False):
     format_mapper = {
         '.csv': 'CSV',
         '.dita': 'DITA',
@@ -47,4 +46,7 @@ def detect_format(file_name):
     format_mapper.update(dict.fromkeys(['.odt', '.ott'], 'ODT'))
     format_mapper.update(dict.fromkeys(['.yaml', '.yml'], 'RAILS_YAML'))
     format_mapper.update(dict.fromkeys(['.xliff', '.xlf'], 'XLIFF_OKAPI'))
+    if get_mapper:
+        return format_mapper
+    name, extension = os.path.splitext(file_name)
     return format_mapper.get(extension, 'PLAINTEXT_OKAPI')

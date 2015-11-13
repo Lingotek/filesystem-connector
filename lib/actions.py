@@ -5,6 +5,7 @@ import fnmatch
 import time
 import exceptions
 from apicalls import ApiCalls
+from utils import detect_format
 from managers import DocumentManager
 from constants import CONF_DIR, CONF_FN
 
@@ -233,6 +234,11 @@ class Action:
                 print "{0} ({1})".format(locale[0], locale[1])
             else:
                 print "{0} ({1}, {2})".format(locale[0], locale[1], locale[2])
+
+    def list_format_action(self):
+        format_mapper = detect_format(None, True)
+        for format_name in sorted(set(format_mapper.itervalues())):
+            print format_name
 
     def status_action(self, detailed, document_name=None):
         if document_name is not None:
