@@ -237,6 +237,7 @@ class Action:
 
     def list_format_action(self):
         format_mapper = detect_format(None, True)
+        print 'Formats Lingotek supports:'
         for format_name in sorted(set(format_mapper.itervalues())):
             print format_name
 
