@@ -1,10 +1,12 @@
 # Lingotek Client #
 
-The Lingotek Client (`ltk`) is a command line tool that enables you to connect your content to the Lingotek Translation Network.  It provides yet another way to continuously globalization of your translatable content.
+The Lingotek Client (`ltk`) is a command line tool that connects your content to the Translation Network™.  It provides yet another way for continuously globalizing all of your translatable content.
 
-The Lingotek Client allows you to quickly add content (e.g., HTML, JSON, properties, TXT), request translations, and pull translations from the Lingotek Cloud.  
+The Lingotek Client allows you to quickly add content, request translations, and pull translations from the Lingotek Cloud.  
 
-Developers love using it to interact with the Lingotek Translation Network.  Using the `-v` (and `-vv`) switches API calls are displayed for convenience in seeing API calls that can be used to develop custom connectors.
+Content can be sent up in any a variety of formats including csv, dita, ditamap, docx, doxygen, dtd, excel, html, idml, java_properties, json, odp, ods, odt, pdf, plaintext, po, pptx, ppt, rails_yaml, resx, rtf, subtitle_rip, table, ts, xliff, and xml.
+
+Developers love how easily it can be used to interact with the Translation Network™.  Using the `-v` and `-vv` switches shows exactly which API calls are being used to help developers code custom connectors.
 
 ## Installation ##
 
