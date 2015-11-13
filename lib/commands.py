@@ -71,7 +71,7 @@ def ltk(is_quiet, verbosity_lvl):
 @click.option('-l', '--locale', default='en_US', help='the default source locale for the project; defaults to en_US')
 @click.option('-d', '--delete', flag_value=True, help='delete the current project and re-initialize')
 def init(host, access_token, path, project_name, workflow_id, locale, delete):
-    """ initializes a Lingotek project """
+    """ connects a local project to Lingotek """
     try:
         host = 'https://' + host
         if not path:
@@ -158,12 +158,12 @@ def request(doc_name, locales, due_date, workflow):
 
 # todo add a --all option to see all document ids once only show relative to cwd is implemented
 @ltk.command(name='list')
-@click.option('-d', 'id_type', flag_value='document', help='list document ids')
-@click.option('-w', 'id_type', flag_value='workflow', help='list available workflow ids')
+@click.option('-d', 'id_type', flag_value='document', help='list added documents')
+@click.option('-w', 'id_type', flag_value='workflow', help='list available workflows')
 @click.option('-l', 'id_type', flag_value='locale', help='list supported locale codes')
 @click.option('-f', 'id_type', flag_value='format', help='list supported formats')
 def list_ids(id_type):
-    """ shows added docs, available workflows, and locales """
+    """ shows docs, workflows, locales, or formats """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
