@@ -16,7 +16,7 @@ You can install the latest version by downloading this repository and then, from
 pip install .
 ```
 
-If you don't have `pip` installed, then you can [install it|https://pip.pypa.io/en/latest/installing/#using-get-pip] using the following:
+If you don't have `pip` installed, then you can [install it](https://pip.pypa.io/en/latest/installing/#using-get-pip) using the following:
 
 ```bash
 $ curl -O https://raw.github.com/pypa/pip/master/contrib/get-pip.py
@@ -28,7 +28,7 @@ $ python get-pip.py
 
 ## Getting Started ##
 
-Running `ltk` without a command will show all of the commands available: add, clean, config, delete, import, init, list, pull, push, request, and status
+Running `ltk` without any parameters will show all of the commands available: add, clean, config, delete, import, init, list, pull, push, request, and status
 
 Here is video that shows the basics...
 
