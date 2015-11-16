@@ -141,15 +141,16 @@ def push():
 
 @ltk.command()
 @click.option('-n', '--doc_name', help='the name of the document, specify for one document')
+@click.option('-d', '--delete', 'to_delete', flag_value=True, help='deletes a specified target locale')
 @click.option('--due_date', help='the due date of the translation')
 @click.option('-w', '--workflow', help='the workflow of the translation')
 @click.argument('locales', required=True, nargs=-1)  # can have unlimited number of locales
-def request(doc_name, locales, due_date, workflow):
-    """ add targets to document(s) to start translation, defaults to all """
+def request(doc_name, locales, to_delete, due_date, workflow):
+    """ add targets to document(s) to start translation, defaults to entire project """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
-        action.request_action(doc_name, locales, due_date, workflow)
+        action.target_action(doc_name, locales, to_delete, due_date, workflow)
     except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
         print_log(e)
         logger.error(e)

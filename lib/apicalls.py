@@ -1,5 +1,5 @@
 import requests
-import api_uri
+from api_uri import API_URI
 import utils
 from exceptions import RequestFailedError
 from logger import logger
@@ -13,7 +13,7 @@ class ApiCalls:
 
     def list_communities(self):
         """ gets the communities that a user is in """
-        uri = api_uri.API_URI['community']
+        uri = API_URI['community']
         payload = {'limit': 100}
         r = requests.get(self.host + uri, headers=self.headers, params=payload)
         log_api('GET', uri, r)
@@ -21,7 +21,7 @@ class ApiCalls:
 
     def list_projects(self, community_id):
         """ gets the projects a user has """
-        uri = api_uri.API_URI['project']
+        uri = API_URI['project']
         payload = {'community_id': community_id, 'limit': 100}
         r = requests.get(self.host + uri, headers=self.headers, params=payload)
         log_api('GET', uri, r)
@@ -29,7 +29,7 @@ class ApiCalls:
 
     def add_project(self, project_name, community_id, workflow_id):
         """ adds a project """
-        uri = api_uri.API_URI['project']
+        uri = API_URI['project']
         payload = {'title': project_name, 'community_id': community_id, 'workflow_id': workflow_id}
         r = requests.post(self.host + uri, headers=self.headers, data=payload)
         log_api('POST', uri, r)
@@ -37,7 +37,7 @@ class ApiCalls:
 
     def patch_project(self, project_id, workflow_id):
         """ updates a project """
-        uri = (api_uri.API_URI['project_id'] % locals())
+        uri = (API_URI['project_id'] % locals())
         payload = {'project_id': project_id}
         if workflow_id:
             payload['workflow_id'] = workflow_id
@@ -45,9 +45,9 @@ class ApiCalls:
         log_api('PATCH', uri, r)
         return r
 
-    def add_target_project(self, project_id, locale, due_date):
+    def project_add_target(self, project_id, locale, due_date):
         """ adds a target to all documents within a project """
-        uri = (api_uri.API_URI['project_translation'] % locals())
+        uri = (API_URI['project_translation'] % locals())
         payload = {'id': project_id, 'locale_code': locale}
         if due_date:
             payload['due_date'] = due_date
@@ -57,28 +57,34 @@ class ApiCalls:
 
     def project_status(self, project_id):
         """ gets the status of a project """
-        uri = (api_uri.API_URI['project_status'] % locals())
+        uri = (API_URI['project_status'] % locals())
         r = requests.get(self.host + uri, headers=self.headers)
         log_api('GET', uri, r)
         return r
 
+    def project_delete_target(self, project_id, locale):
+        uri = (API_URI['project_translation_locale'] % locals())
+        r = requests.delete(self.host + uri, headers=self.headers)
+        log_api('DELETE', uri, r)
+        return r
+
     def delete_project(self, project_id):
         """ deletes a project """
-        uri = (api_uri.API_URI['project_id'] % locals())
+        uri = (API_URI['project_id'] % locals())
         r = requests.delete(self.host + uri, headers=self.headers)
         log_api('DELETE', uri, r)
         return r
 
     def get_document(self, document_id):
         """ gets a document by id """
-        uri = (api_uri.API_URI['document_id'] % locals())
+        uri = (API_URI['document_id'] % locals())
         r = requests.get(self.host + uri, headers=self.headers)
         log_api('GET', uri, r)
         return r
 
     def add_document(self, file_name, locale, project_id, title, **kwargs):
         """ adds a document """
-        uri = api_uri.API_URI['document']
+        uri = API_URI['document']
         payload = {'locale_code': locale, 'project_id': project_id, 'title': title}
         for key, value in kwargs.iteritems():
             if kwargs[key]:
@@ -91,9 +97,9 @@ class ApiCalls:
         log_api('POST', uri, r)
         return r
 
-    def add_target_document(self, document_id, locale, workflow_id=None, due_date=None):
+    def document_add_target(self, document_id, locale, workflow_id=None, due_date=None):
         """ adds a target to existing document, starts the workflow """
-        uri = (api_uri.API_URI['document_translation'] % locals())
+        uri = (API_URI['document_translation'] % locals())
         payload = {'locale_code': locale, 'id': document_id}
         if workflow_id:
             payload['workflow_id'] = workflow_id
@@ -105,7 +111,7 @@ class ApiCalls:
 
     def list_documents(self, project_id):
         """ lists all documents a user has access to, could be filtered by project id """
-        uri = api_uri.API_URI['document']
+        uri = API_URI['document']
         payload = {}
         if project_id:
             payload = {'project_id': project_id, 'limit': 1000}
@@ -115,7 +121,7 @@ class ApiCalls:
 
     def document_status(self, document_id):
         """ gets the status of a document """
-        uri = (api_uri.API_URI['document_status'] % locals())
+        uri = (API_URI['document_status'] % locals())
         payload = {'document_id': document_id}
         r = requests.get(self.host + uri, headers=self.headers, params=payload)
         # logger.debug(r.url)
@@ -124,14 +130,14 @@ class ApiCalls:
 
     def document_translation_status(self, document_id):
         """ gets the status of document translations """
-        uri = (api_uri.API_URI['document_translation'] % locals())
+        uri = (API_URI['document_translation'] % locals())
         r = requests.get(self.host + uri, headers=self.headers)
         log_api('GET', uri, r)
         return r
 
     def document_content(self, document_id, locale_code, auto_format):
         """ downloads the translated document """
-        uri = (api_uri.API_URI['document_content'] % locals())
+        uri = (API_URI['document_content'] % locals())
         payload = {}
         if locale_code:
             payload['locale_code'] = locale_code
@@ -142,7 +148,7 @@ class ApiCalls:
         return r
 
     def document_update(self, document_id, file_name=None, **kwargs):
-        uri = (api_uri.API_URI['document_id'] % locals())
+        uri = (API_URI['document_id'] % locals())
         payload = {'id': document_id}
         for key, value in kwargs.iteritems():
             if kwargs[key]:
@@ -155,14 +161,20 @@ class ApiCalls:
         log_api('PATCH', uri, r)
         return r
 
-    def delete_document(self, document_id):
-        uri = (api_uri.API_URI['document_id'] % locals())
+    def document_delete_target(self, document_id, locale):
+        uri = (API_URI['document_translation_locale'] % locals())
+        r = requests.delete(self.host + uri, headers=self.headers)
+        log_api('DELETE', uri, r)
+        return r
+
+    def document_delete(self, document_id):
+        uri = (API_URI['document_id'] % locals())
         r = requests.delete(self.host + uri, headers=self.headers)
         log_api('DELETE', uri, r)
         return r
 
     def list_workflows(self, community_id):
-        uri = api_uri.API_URI['workflow']
+        uri = API_URI['workflow']
         payload = {'community_id': community_id}
         r = requests.get(self.host + uri, headers=self.headers, params=payload)
         log_api('GET', uri, r)

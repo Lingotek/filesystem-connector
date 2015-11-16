@@ -36,6 +36,8 @@ class DocumentManager:
         if type(new_val) is list:
             self._db.update(_update_entry_list(field, new_val), where('id') == doc_id)
         else:
+            if type(new_val) is set:
+                new_val = list(new_val)
             self._db.update({field: new_val}, where('id') == doc_id)
 
     def get_doc_by_prop(self, prop, expected_value):

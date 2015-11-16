@@ -106,8 +106,7 @@ class Action:
                         confirm = raw_input("This document already exists. Would you like to overwrite it? [y/N]: ")
                     # confirm if would like to overwrite existing document in Lingotek Cloud
                     if not confirm or confirm in ['n', 'N']:
-                        # todo may want to change return to continue?
-                        return
+                        continue
                     else:
                         logger.info('Overwriting document: {0} in Lingotek Cloud...'.format(title))
                         self.update_document_action(file_name, title, **kwargs)
@@ -152,37 +151,60 @@ class Action:
             raise_error(response.json(), "Failed to update document {0}".format(file_name), True)
         self._update_document(file_name)
 
-    def request_action(self, document_name, locales, due_date, workflow):
-        add_to_db = True
+    def _target_action_db(self, to_delete, locales, document_id):
+        if to_delete:
+                curr_locales = self.doc_manager.get_doc_by_prop('id', document_id)['locales']
+                updated_locales = set(curr_locales) - set(locales)
+                self.doc_manager.update_document('locales', updated_locales, document_id)
+        else:
+            self.doc_manager.update_document('locales', list(locales), document_id)
+
+    def target_action(self, document_name, locales, to_delete, due_date, workflow):
+        change_db_entry = True
+        if to_delete:
+            expected_code = 204
+            failure_message = 'Failed to delete target'
+            info_message = 'Deleted locale'
+        else:
+            expected_code = 201
+            failure_message = 'Failed to add target'
+            info_message = 'Added target'
         if not document_name:
             for locale in locales:
-                response = self.api.add_target_project(self.project_id, locale, due_date)
-                if response.status_code != 201:
-                    raise_error(response.json(), "Failed to add target {0} to project".format(locale), True)
-                    add_to_db = False
+                response = self.api.project_add_target(self.project_id, locale, due_date) if not to_delete \
+                    else self.api.project_delete_target(self.project_id, locale)
+                if response.status_code != expected_code:
+                    raise_error(response.json(), '{message} {locale} for project'.format(message=failure_message,
+                                                                                         locale=locale), True)
+                    change_db_entry = False
                     continue
-                logger.info('Requested locale {0} for project {1}'.format(locale, self.project_id))
+                logger.info('{message} {locale} for project {id}'.format(message=info_message, locale=locale,
+                                                                         id=self.project_id))
             document_ids = self.doc_manager.get_doc_ids()
-            if add_to_db:
+            if change_db_entry:
                 for document_id in document_ids:
-                    self.doc_manager.update_document('locales', list(locales), document_id)
+                    self._target_action_db(to_delete, locales, document_id)
         else:
+            # todo: document name or file name? since file name will be relative to root
             entry = self.doc_manager.get_doc_by_prop('name', document_name)
             try:
                 document_id = entry['id']
             except TypeError:
-                logger.warning("Document name specified doesn't exist: {0}".format(document_name))
+                logger.error('Document name specified doesn\'t exist: {0}'.format(document_name))
                 return
                 # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
             for locale in locales:
-                response = self.api.add_target_document(document_id, locale, workflow, due_date)
-                if response.status_code != 201:
-                    raise_error(response.json(), "Failed to add target {0} to document".format(locale), True)
-                    add_to_db = False
+                response = self.api.document_add_target(document_id, locale, workflow, due_date) if not to_delete \
+                    else self.api.document_delete_target(document_id, locale)
+                if response.status_code != expected_code:
+                    raise_error(response.json(), '{message} {locale} for document'.format(message=failure_message,
+                                                                                          locale=locale), True)
+                    change_db_entry = False
                     continue
-                logger.info('Requested locale {0} for document {1}'.format(locale, document_name))
-            if add_to_db:
-                self.doc_manager.update_document('locales', list(locales), document_id)
+                logger.info('{message} {locale} for document {name}'.format(message=info_message,
+                                                                            locale=locale, name=document_name))
+            if change_db_entry:
+                self._target_action_db(to_delete, locales, document_id)
 
     def list_ids_action(self, list_type):
         """ lists ids of list_type specified """
@@ -346,7 +368,7 @@ class Action:
             logger.warn("Document name specified doesn't exist: {0}".format(document_name))
             return
             # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
-        response = self.api.delete_document(document_id)
+        response = self.api.document_delete(document_id)
         if response.status_code != 204:
             # raise_error(response.json(), "Failed to delete document {0}".format(document_name), True)
             logger.error("Failed to delete document {0}".format(document_name))
@@ -447,7 +469,7 @@ class Action:
                 locals_to_delete.append(entry['id'])
 
         # remove entry for local doc -- possibly delete local file too?
-        if local_ids:
+        if locals_to_delete:
             for curr_id in locals_to_delete:
                 removed_title = self.doc_manager.get_doc_by_prop('id', curr_id)['name']
                 if force:
