@@ -8,7 +8,6 @@ from apicalls import ApiCalls
 from utils import detect_format
 from managers import DocumentManager
 from constants import CONF_DIR, CONF_FN, SYSTEM_FILE
-from collections import Counter
 
 from logger import logger
 
@@ -32,7 +31,7 @@ class Action:
         actual_path = find_conf(self.path)
         if not actual_path:
             return False
-        self.path = actual_path
+        self.path = os.path.join(actual_path, '')
         if not is_initialized(self.path):
             return False
         return True
@@ -52,7 +51,8 @@ class Action:
         """ adds a document to db """
         now = time.time()
         # doc_id = json['properties']['id']
-        last_modified = os.stat(file_name).st_mtime
+        full_path = os.path.join(self.path, file_name)
+        last_modified = os.stat(full_path).st_mtime
         self.doc_manager.add_document(title, now, doc_id, last_modified, now, file_name)
 
     def _update_document(self, file_name):
@@ -99,8 +99,9 @@ class Action:
         for file_name in matched_files:
             # title = os.path.basename(os.path.normpath(file_name)).split('.')[0]
             title = os.path.basename(os.path.normpath(file_name))
-            if not self.doc_manager.is_doc_new(file_name):
-                if self.doc_manager.is_doc_modified(file_name):
+            relative_path = file_name.replace(self.path, '')
+            if not self.doc_manager.is_doc_new(relative_path):
+                if self.doc_manager.is_doc_modified(relative_path):
                     confirm = 'not confirmed'
                     while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
                         confirm = raw_input("This document already exists. Would you like to overwrite it? [y/N]: ")
@@ -119,7 +120,7 @@ class Action:
                 raise_error(response.json(), "Failed to add document {0}".format(title), True)
             else:
                 logger.info('Added document {0}'.format(title))
-                self._add_document(file_name, title, response.json()['properties']['id'])
+                self._add_document(relative_path, title, response.json()['properties']['id'])
 
     def push_action(self):
         entries = self.doc_manager.get_all_entries()
@@ -127,7 +128,7 @@ class Action:
         for entry in entries:
             if not self.doc_manager.is_doc_modified(entry['file_name']):
                 continue
-            response = self.api.document_update(entry['id'], entry['file_name'])
+            response = self.api.document_update(entry['id'], os.path.join(self.path, entry['file_name']))
             if response.status_code != 202:
                 raise_error(response.json(), "Failed to update document {0}".format(entry['name']), True)
             updated = True
@@ -137,7 +138,8 @@ class Action:
             logger.info('All documents up-to-date with Lingotek Cloud. ')
 
     def update_document_action(self, file_name, title=None, **kwargs):
-        entry = self.doc_manager.get_doc_by_prop('file_name', file_name)
+        relative_path = file_name.replace(self.path, '')
+        entry = self.doc_manager.get_doc_by_prop('file_name', relative_path)
         try:
             document_id = entry['id']
         except TypeError:
@@ -149,7 +151,7 @@ class Action:
             response = self.api.document_update(document_id, file_name)
         if response.status_code != 202:
             raise_error(response.json(), "Failed to update document {0}".format(file_name), True)
-        self._update_document(file_name)
+        self. _update_document(relative_path)
 
     def _target_action_db(self, to_delete, locales, document_id):
         if to_delete:
@@ -213,10 +215,12 @@ class Action:
         locales = []
         if list_type == 'documents':
             entries = self.doc_manager.get_all_entries()
+            cwd = os.path.join(os.getcwd(), '')
             for entry in entries:
-                if entry['file_name'].startswith(os.getcwd()):
+                if entry['file_name'].startswith(cwd.replace(self.path, '')):
                     ids.append(entry['id'])
-                    titles.append(entry['name'])
+                    relative_path = entry['file_name'].replace(cwd.replace(self.path, ''), '')
+                    titles.append(relative_path)
                     try:
                         locales.append(entry['locales'])
                     except KeyError:
@@ -328,7 +332,7 @@ class Action:
                 return
             else:
                 file_name = entry['file_name']
-                download_dir = os.path.dirname(file_name)
+                download_dir = os.path.join(self.path, os.path.dirname(file_name))
                 base_name = os.path.basename(os.path.normpath(file_name))
                 name_parts = base_name.split('.')
                 if len(name_parts) > 1:
@@ -407,7 +411,7 @@ class Action:
                     logger.info('Skipped importing "{0}"'.format(title))
                     return
             else:
-                if self.doc_manager.get_doc_by_prop('file_name', file_path):
+                if self.doc_manager.get_doc_by_prop('file_name', file_path.replace(self.path, '')):
                     # change file_path
                     file_path = self.get_new_name(title, os.getcwd())
                     orig_title = title
@@ -418,7 +422,8 @@ class Action:
             for chunk in response.iter_content(1024):
                 fh.write(chunk)
         if document_id not in local_ids:
-            self._add_document(file_path, title, document_id)
+            relative_path = file_path.replace(self.path, '')
+            self._add_document(relative_path, title, document_id)
 
     def import_action(self, import_all, force):
         response = self.api.list_documents(self.project_id)
@@ -445,11 +450,6 @@ class Action:
     def clean_action(self, force):
         response = self.api.list_documents(self.project_id)
         local_ids = self.doc_manager.get_doc_ids()
-        # clean database for any repeating doc ids
-        # duplicate_ids = [item for item, count in Counter(local_ids).items() if count > 1]
-        # for duplicate_id in duplicate_ids:
-        #     # todo seems like remove element removes all elements with matching id?
-        #     self.doc_manager.remove_element(duplicate_id)
         tms_doc_ids = []
         if response.status_code == 200:
             tms_documents = response.json()['entities']
@@ -465,7 +465,7 @@ class Action:
         db_entries = self.doc_manager.get_all_entries()
         for entry in db_entries:
             # if local file doesn't exist, remove entry
-            if not os.path.isfile(entry['file_name']):
+            if not os.path.isfile(os.path.join(self.path, entry['file_name'])):
                 locals_to_delete.append(entry['id'])
 
         # remove entry for local doc -- possibly delete local file too?
@@ -475,7 +475,7 @@ class Action:
                 if force:
                     file_name = self.doc_manager.get_doc_by_prop('id', curr_id)['file_name']
                     try:
-                        os.remove(file_name)
+                        os.remove(os.path.join(self.path, file_name))
                         logger.info('Removed local file {0}'.format(removed_title))
                     except OSError:
                         pass
@@ -708,7 +708,7 @@ def find_conf(curr_path):
     elif curr_path == os.path.abspath(os.sep):
         return None
     else:
-        return os.path.abspath(os.path.join(curr_path, os.pardir))
+        return find_conf(os.path.abspath(os.path.join(curr_path, os.pardir)))
 
 
 def get_files(root, patterns):
