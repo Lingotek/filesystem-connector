@@ -219,7 +219,8 @@ class Action:
             for entry in entries:
                 if entry['file_name'].startswith(cwd.replace(self.path, '')):
                     ids.append(entry['id'])
-                    titles.append(entry['name'])
+                    relative_path = entry['file_name'].replace(cwd.replace(self.path, ''), '')
+                    titles.append(relative_path)
                     try:
                         locales.append(entry['locales'])
                     except KeyError:
@@ -672,7 +673,7 @@ def find_conf(curr_path):
     elif curr_path == os.path.abspath(os.sep):
         return None
     else:
-        return os.path.abspath(os.path.join(curr_path, os.pardir))
+        return find_conf(os.path.abspath(os.path.join(curr_path, os.pardir)))
 
 
 def get_files(root, patterns):
