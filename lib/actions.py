@@ -623,7 +623,7 @@ def create_global(access_token):
 
 
 def init_action(host, access_token, project_path, folder_name, workflow_id, locale, delete, reset):
-    # check if Lingotek d    irectory already exists
+    # check if Lingotek directory already exists
     to_init = reinit(host, project_path, delete, reset)
     if not to_init:
         return
