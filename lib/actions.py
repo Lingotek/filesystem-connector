@@ -7,7 +7,7 @@ import exceptions
 from apicalls import ApiCalls
 from utils import detect_format
 from managers import DocumentManager
-from constants import CONF_DIR, CONF_FN
+from constants import CONF_DIR, CONF_FN, SYSTEM_FILE
 from collections import Counter
 
 from logger import logger
@@ -594,8 +594,15 @@ def display_choice(display_type, info):
     logger.info('Selected "{0}" {1}.'.format(mapper[choice].itervalues().next(), display_type))
     return mapper[choice].iterkeys().next()
 
+def check_global():
+    # check for a global config file
+    return None
 
-def init_action(host, access_token, project_path, folder_name, workflow_id, locale, delete):
+def create_global():
+    # create a global .lingotek file
+    pass
+
+def init_action(host, access_token, project_path, folder_name, workflow_id, locale, delete, reset):
     # check if Lingotek directory already exists
     to_init = reinit(host, project_path, delete)
     if not to_init:
@@ -603,10 +610,18 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
     elif to_init is not True:
         access_token = to_init
 
+    ran_oauth = False
     if not access_token:
-        from auth import run_oauth
+        access_token = check_global()
+        if not access_token or reset:
+            from auth import run_oauth
 
-        access_token = run_oauth(host)
+            access_token = run_oauth(host)
+            ran_oauth = True
+
+    if ran_oauth:
+        # create or overwrite global file
+        create_global()
 
     api = ApiCalls(host, access_token)
     # create a directory
@@ -691,8 +706,9 @@ def get_files(root, patterns):
 
 
 def log_id_names(json):
-    # entities array
-    # title, id in properties
+    """
+    logs the id and titles from a json object
+    """
     ids = []
     titles = []
     for entity in json['entities']:
