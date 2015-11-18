@@ -99,8 +99,9 @@ class Action:
         for file_name in matched_files:
             # title = os.path.basename(os.path.normpath(file_name)).split('.')[0]
             title = os.path.basename(os.path.normpath(file_name))
-            if not self.doc_manager.is_doc_new(file_name):
-                if self.doc_manager.is_doc_modified(file_name):
+            relative_path = file_name.replace(self.path, '')
+            if not self.doc_manager.is_doc_new(relative_path):
+                if self.doc_manager.is_doc_modified(relative_path):
                     confirm = 'not confirmed'
                     while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
                         confirm = raw_input("This document already exists. Would you like to overwrite it? [y/N]: ")
@@ -119,7 +120,6 @@ class Action:
                 raise_error(response.json(), "Failed to add document {0}".format(title), True)
             else:
                 logger.info('Added document {0}'.format(title))
-                relative_path = file_name.replace(self.path, '')
                 self._add_document(relative_path, title, response.json()['properties']['id'])
 
     def push_action(self):
