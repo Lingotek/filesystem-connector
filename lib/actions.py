@@ -510,8 +510,8 @@ def is_initialized(project_path):
     return False
 
 
-def reinit(host, project_path, delete):
-    if is_initialized(project_path):
+def reinit(host, project_path, delete, reset):
+    if is_initialized(project_path) and not reset:
         logger.warning('This project is already initialized!')
         if not delete:
             return False
@@ -596,15 +596,35 @@ def display_choice(display_type, info):
 
 def check_global():
     # check for a global config file
-    return None
+    home_path = os.path.expanduser('~')
+    sys_file = os.path.join(home_path, SYSTEM_FILE)
+    if os.path.isfile(sys_file):
+        # get the access token
+        conf_parser = ConfigParser.ConfigParser()
+        conf_parser.read(sys_file)
+        return conf_parser.get('main', 'access_token')
+    else:
+        return None
 
-def create_global():
-    # create a global .lingotek file
-    pass
+def create_global(access_token):
+    """
+    create a .lingotek file in user's $HOME directory
+    """
+    # go to the home dir
+    home_path = os.path.expanduser('~')
+    file_name = os.path.join(home_path, SYSTEM_FILE)
+    sys_file = open(file_name, 'w')
+
+    config_parser = ConfigParser.ConfigParser()
+    config_parser.add_section('main')
+    config_parser.set('main', 'access_token', access_token)
+    config_parser.write(sys_file)
+    sys_file.close()
+
 
 def init_action(host, access_token, project_path, folder_name, workflow_id, locale, delete, reset):
-    # check if Lingotek directory already exists
-    to_init = reinit(host, project_path, delete)
+    # check if Lingotek d    irectory already exists
+    to_init = reinit(host, project_path, delete, reset)
     if not to_init:
         return
     elif to_init is not True:
@@ -621,7 +641,7 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
 
     if ran_oauth:
         # create or overwrite global file
-        create_global()
+        create_global(access_token)
 
     api = ApiCalls(host, access_token)
     # create a directory
