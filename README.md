@@ -47,19 +47,19 @@ Like most Python development tools, you might consider installing inside a virtu
 ```
 virtualenv venv
 ```
-* Where venv is the name of the virtual environment -- it can be anything you want. 
-* Start the virtual environment:
+Where venv is the name of the virtual environment -- it can be anything you want. 
+Start the virtual environment:
 
 ```
 . venv/bin/activate
 ```
-* To exit the virtual environment:
+To exit the virtual environment:
 
 ```
 deactivate
 ```
 
-* Once virtualenv is activated, install the tool and its dependencies:
+Once virtualenv is activated, install the tool and its dependencies:
 ```
 pip install ltk
 ```
@@ -67,12 +67,12 @@ pip install ltk
 
 ### Insecure Platform Warnings ###
 
-* If you are on Ubuntu/Debian and there are build errors or Insecure Platform warning/errors, your system may be missing some packages needed for secure http requests:
+If you are on Ubuntu/Debian and there are build errors or Insecure Platform warning/errors, your system may be missing some packages needed for secure http requests:
 
 ```
 sudo apt-get install python-dev libffi-dev libssl-dev
 ```
-* If there are still Insecure Platform warning/errors, you may need to upgrade existing packages:
+If there are still Insecure Platform warning/errors, you may need to upgrade existing packages:
 
 ```
 
