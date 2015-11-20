@@ -13,7 +13,7 @@ Developers love how easily it can be used to interact with the Translation Netwo
 pip install ltk
 ```
 
-You can also install the latest version by downloading this repository and then, from the root directly, running:
+You can also install the latest version by downloading this repository and then, from the root directly, run:
 
 ```bash
 pip install .
@@ -61,10 +61,9 @@ deactivate
 
 * Once virtualenv is activated, install the tool and its dependencies:
 ```
-pip install --editable .
+pip install ltk
 ```
 
-* The above command is temporary, it installs the tool in development mode
 
 ### Insecure Platform Warnings ###
 
