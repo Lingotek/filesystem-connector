@@ -2,12 +2,9 @@ venv/
 *.pyc
 .idea/
 *.egg-info/
-.Lingotek/
-lib/.Lingotek/
-.ltk/
-Lingotek Translations/
-lib/Lingotek Translations/
+*.ltk/
 .lingotek-logs
 .ltk-logs
 info.py
 dist/
+**/config

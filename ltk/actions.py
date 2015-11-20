@@ -72,19 +72,20 @@ class Action:
             conf_parser.set('main', 'default_locale', locale)
             with open(config_file_name, 'wb') as new_file:
                 conf_parser.write(new_file)
+            self._initialize_self()
             logger.info('Project default locale has been updated to {0}'.format(locale))
-        elif workflow_id:
+        if workflow_id:
             response = self.api.patch_project(self.project_id, workflow_id)
             if response.status_code != 204:
                 raise_error(response.json(), 'Something went wrong trying to update workflow_id of project')
             conf_parser.set('main', 'workflow_id', workflow_id)
             with open(config_file_name, 'wb') as new_file:
                 conf_parser.write(new_file)
+            self._initialize_self()
             logger.info('Project default workflow has been updated to {0}'.format(workflow_id))
-        else:
-            print 'host: {0}\naccess_token: {1}\nproject id: {2}\ncommunity id: {3}\nworkflow id: {4}\n' \
-                  'locale: {5}'.format(self.host, self.access_token, self.project_id, self.community_id,
-                                       self.workflow_id, self.locale)
+        print 'host: {0}\naccess_token: {1}\nproject id: {2}\ncommunity id: {3}\nworkflow id: {4}\n' \
+              'locale: {5}'.format(self.host, self.access_token, self.project_id, self.community_id,
+                                   self.workflow_id, self.locale)
 
     def add_action(self, locale, file_patterns, **kwargs):
         if not locale:
@@ -659,7 +660,7 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
     config_parser.add_section('main')
     config_parser.set('main', 'access_token', access_token)
     config_parser.set('main', 'host', host)
-    config_parser.set('main', 'root_path', project_path)
+    # config_parser.set('main', 'root_path', project_path)
     config_parser.set('main', 'workflow_id', workflow_id)
     config_parser.set('main', 'default_locale', locale)
     # get community id

@@ -1,5 +1,5 @@
 from setuptools import setup, find_packages
-from lib import __version__
+from ltk import __version__
 
 setup(
     name='ltk',
@@ -21,6 +21,6 @@ setup(
     },
     entry_points='''
         [console_scripts]
-        ltk=lib.commands:ltk
+        ltk=ltk.commands:ltk
     ''',
 )

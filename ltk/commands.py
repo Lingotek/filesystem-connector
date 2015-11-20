@@ -6,7 +6,7 @@ from constants import LOG_FN, CONF_DIR
 import logging
 from logger import logger, API_LOG_LEVEL, API_RESPONSE_LOG_LEVEL, CustomFormatter
 import sys
-from lib import __version__
+from ltk import __version__
 
 def init_logger(path):
     """
