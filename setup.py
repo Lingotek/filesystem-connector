@@ -6,6 +6,8 @@ setup(
     version=__version__,
     url='https://github.com/Lingotek/client',
     description='Command line tool that connects your content to the Lingotek Translation Network',
+    author='Lingotek',
+    author_email='integrations@lingotek.com',
     license='MIT',
     packages=find_packages(),
     include_package_data=True,

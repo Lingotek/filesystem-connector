@@ -10,4 +10,4 @@ lib/Lingotek Translations/
 .lingotek-logs
 .ltk-logs
 info.py
-.pypirc
+dist/
