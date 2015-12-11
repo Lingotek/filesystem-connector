@@ -106,7 +106,8 @@ def run_oauth(host):
     if 'access_token' in httpd.query_params:
         print 'Access token has been successfully stored!'
         print '(If you haven\'t already, you may close your browser.)\n'
-        token = httpd.query_params['access_token']
+        init_token = httpd.query_params['access_token']
+        token = init_token.split('&')[0]
         # store the token because apparently it doesn't expire..
         return token
     sys.exit('Something went wrong with the authentication request, please try again.')
