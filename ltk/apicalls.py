@@ -185,6 +185,12 @@ class ApiCalls:
         r = requests.get(uri)
         return r
 
+    def list_filters(self):
+        uri = API_URI['filter']
+        r = requests.get(self.host + uri, headers=self.headers)
+        log_api('GET', uri, r)
+        return r
+
     def get_project_info(self, community_id):
         response = self.list_projects(community_id)
         info = {}

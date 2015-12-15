@@ -152,13 +152,13 @@ class Action:
             response = self.api.document_update(document_id, file_name)
         if response.status_code != 202:
             raise_error(response.json(), "Failed to update document {0}".format(file_name), True)
-        self. _update_document(relative_path)
+        self._update_document(relative_path)
 
     def _target_action_db(self, to_delete, locales, document_id):
         if to_delete:
-                curr_locales = self.doc_manager.get_doc_by_prop('id', document_id)['locales']
-                updated_locales = set(curr_locales) - set(locales)
-                self.doc_manager.update_document('locales', updated_locales, document_id)
+            curr_locales = self.doc_manager.get_doc_by_prop('id', document_id)['locales']
+            updated_locales = set(curr_locales) - set(locales)
+            self.doc_manager.update_document('locales', updated_locales, document_id)
         else:
             self.doc_manager.update_document('locales', list(locales), document_id)
 
@@ -209,41 +209,42 @@ class Action:
             if change_db_entry:
                 self._target_action_db(to_delete, locales, document_id)
 
-    def list_ids_action(self, list_type):
+    def list_ids_action(self):
         """ lists ids of list_type specified """
         ids = []
         titles = []
         locales = []
-        if list_type == 'documents':
-            entries = self.doc_manager.get_all_entries()
-            cwd = os.path.join(os.getcwd(), '')
-            for entry in entries:
-                if entry['file_name'].startswith(cwd.replace(self.path, '')):
-                    ids.append(entry['id'])
-                    relative_path = entry['file_name'].replace(cwd.replace(self.path, ''), '')
-                    titles.append(relative_path)
-                    try:
-                        locales.append(entry['locales'])
-                    except KeyError:
-                        locales.append(['none'])
-        elif list_type == 'workflows':
-            response = self.api.list_workflows(self.community_id)
-            if response.status_code != 200:
-                raise_error(response.json(), "Failed to list workflows")
-            ids, titles = log_id_names(response.json())
-        if len(ids) == 0:
-            print "no", list_type
-        # print 'id\t\t\t\t\t\ttitle'
+        entries = self.doc_manager.get_all_entries()
+        cwd = os.path.join(os.getcwd(), '')
+        for entry in entries:
+            if entry['file_name'].startswith(cwd.replace(self.path, '')):
+                ids.append(entry['id'])
+                relative_path = entry['file_name'].replace(cwd.replace(self.path, ''), '')
+                titles.append(relative_path)
+                try:
+                    locales.append(entry['locales'])
+                except KeyError:
+                    locales.append(['none'])
+        if not ids:
+            print 'no documents'
+            return
+        print 'documents: id, title, locales'
         for i in range(len(ids)):
-            if list_type != 'documents':
-                if i == 0:
-                    print "%s: id, title" % list_type
-                info = '{id} \t {title}'.format(id=ids[i], title=titles[i])
-            else:
-                if i == 0:
-                    print "documents: id, title, locales"
-                info = '{id} \t {title} \t\t {locales}'.format(id=ids[i], title=titles[i],
-                                                               locales=', '.join(locale for locale in locales[i]))
+            info = '{id} \t {title} \t\t {locales}'.format(id=ids[i], title=titles[i],
+                                                           locales=', '.join(locale for locale in locales[i]))
+            print info
+
+    def list_workflow_action(self):
+        response = self.api.list_workflows(self.community_id)
+        if response.status_code != 200:
+            raise_error(response.json(), "Failed to list workflows")
+        ids, titles = log_id_names(response.json())
+        if not ids:
+            print 'no workflows'
+            return
+        print 'workflows: id, title'
+        for i in range(len(ids)):
+            info = '{id} \t {title}'.format(id=ids[i], title=titles[i])
             print info
 
     def list_locale_action(self):
@@ -268,6 +269,19 @@ class Action:
         print 'Formats Lingotek supports:'
         for format_name in sorted(set(format_mapper.itervalues())):
             print format_name
+
+    def list_filter_action(self):
+        response = self.api.list_filters()
+        if response.status_code != 200:
+            raise_error(response.json(), 'Failed to get filters')
+        filter_entities = response.json()['entities']
+        print 'filters: id, title'
+        for entry in filter_entities:
+            properties = entry['properties']
+            title = properties['title']
+            filter_id = properties['id']
+            print '{0}\t{1}\t'.format(filter_id, title)
+
 
     def status_action(self, detailed, document_name=None):
         if document_name is not None:
@@ -417,7 +431,8 @@ class Action:
                     file_path = self.get_new_name(title, os.getcwd())
                     orig_title = title
                     title = os.path.basename(os.path.normpath(file_path))
-                    logger.warning('Imported "{0}" as "{1}" because "{0}" already exists locally'.format(orig_title, title))
+                    logger.warning(
+                        'Imported "{0}" as "{1}" because "{0}" already exists locally'.format(orig_title, title))
         # logger.info('Imported "{0}"'.format(title))
         with open(file_path, 'wb') as fh:
             for chunk in response.iter_content(1024):
@@ -486,7 +501,6 @@ class Action:
             logger.info('Local documents already up-to-date with Lingotek cloud')
             return
         logger.info('Cleaned up associations between local documents and Lingotek cloud')
-
 
 
 def raise_error(json, error_message, is_warning=False):
@@ -595,6 +609,7 @@ def display_choice(display_type, info):
     logger.info('Selected "{0}" {1}.'.format(mapper[choice].itervalues().next(), display_type))
     return mapper[choice].iterkeys().next()
 
+
 def check_global():
     # check for a global config file
     home_path = os.path.expanduser('~')
@@ -606,6 +621,7 @@ def check_global():
         return conf_parser.get('main', 'access_token')
     else:
         return None
+
 
 def create_global(access_token):
     """

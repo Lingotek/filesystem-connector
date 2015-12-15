@@ -160,23 +160,26 @@ def request(doc_name, locales, to_delete, due_date, workflow):
 
 # todo add a --all option to see all document ids once only show relative to cwd is implemented
 @ltk.command(name='list')
-@click.option('-d', 'id_type', flag_value='document', help='list added documents')
-@click.option('-w', 'id_type', flag_value='workflow', help='list available workflows')
-@click.option('-l', 'id_type', flag_value='locale', help='list supported locale codes')
-@click.option('-f', 'id_type', flag_value='format', help='list supported formats')
+@click.option('-d', '--documents', 'id_type', flag_value='document', help='list added documents')
+@click.option('-w', '--workflows', 'id_type', flag_value='workflow', help='list available workflows')
+@click.option('-l', '--locales', 'id_type', flag_value='locale', help='list supported locale codes')
+@click.option('-f', '--formats', 'id_type', flag_value='format', help='list supported formats')
+@click.option('--filters', 'id_type', flag_value='filter', help='list default and custom filters')
 def list_ids(id_type):
     """ shows docs, workflows, locales, or formats """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
         if id_type == 'workflow':
-            action.list_ids_action('workflows')
+            action.list_workflow_action()
         elif id_type == 'locale':
             action.list_locale_action()
         elif id_type == 'format':
             action.list_format_action()
+        elif id_type == 'filter':
+            action.list_filter_action()
         else:
-            action.list_ids_action('documents')
+            action.list_ids_action()
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
