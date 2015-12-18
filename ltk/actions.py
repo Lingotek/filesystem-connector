@@ -88,6 +88,7 @@ class Action:
                                    self.workflow_id, self.locale)
 
     def add_action(self, locale, file_patterns, **kwargs):
+        print 'add action, file_pattern: ', file_patterns
         if not locale:
             locale = self.locale
         # format will be automatically detected by extension but may not be what user expects
