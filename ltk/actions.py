@@ -88,7 +88,6 @@ class Action:
                                    self.workflow_id, self.locale)
 
     def add_action(self, locale, file_patterns, **kwargs):
-        print 'add action, file_pattern: ', file_patterns
         if not locale:
             locale = self.locale
         # format will be automatically detected by extension but may not be what user expects
@@ -283,7 +282,6 @@ class Action:
             filter_id = properties['id']
             print '{0}\t{1}\t'.format(filter_id, title)
 
-
     def status_action(self, detailed, document_name=None):
         if document_name is not None:
             entry = self.doc_manager.get_doc_by_prop('name', document_name)
@@ -300,7 +298,8 @@ class Action:
             else:
                 title = response.json()['properties']['title']
                 progress = response.json()['properties']['progress']
-                print title + ': ' + str(progress) + '%'
+                print '{0}: {1}%'.format(title, progress)
+                # print title + ': ' + str(progress) + '%'
                 # for each doc id, also call /document/id/translation and get % of each locale
             if detailed:
                 response = self.api.document_translation_status(doc_id)

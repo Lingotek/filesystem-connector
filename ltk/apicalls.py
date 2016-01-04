@@ -90,7 +90,7 @@ class ApiCalls:
             if kwargs[key]:
                 payload[key] = value
         detected_format = utils.detect_format(file_name)
-        if not kwargs['format'] and detected_format != 'PLAINTEXT_OKAPI':
+        if 'format' not in kwargs and detected_format != 'PLAINTEXT_OKAPI':
             payload['format'] = detected_format
         files = {'content': (file_name, open(file_name, 'rb'))}
         r = requests.post(self.host + uri, headers=self.headers, data=payload, files=files)

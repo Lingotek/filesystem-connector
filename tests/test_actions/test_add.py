@@ -8,10 +8,12 @@ def test_add_db():
     action = Action(os.getcwd())
     file_name = 'sample.txt'
     text_file_path = create_txt_file(file_name)
-    action.add_action(None, file_name)
+    action.add_action(None, [file_name])
     # check that document added in db
     assert action.doc_manager.get_doc_by_prop('name', file_name)
-    os.remove(text_file_path)
+    action.delete_action(file_name)
+    action.clean_action(True)
+    # os.remove(text_file_path)
     cleanup()
 
 def test_add_remote():
@@ -20,11 +22,14 @@ def test_add_remote():
     action = Action(os.getcwd())
     file_name = 'sample.txt'
     text_file_path = create_txt_file(file_name)
-    action.add_action(None, file_name)
+    action.add_action(None, [file_name])
     doc_id = action.doc_manager.get_doc_ids()[0]
-    response = action.api.get_document(doc_id)
-    assert response.status_code == 200
-    os.remove(text_file_path)
+    # response = action.api.get_document(doc_id)
+    # assert response.status_code == 200
+    assert poll_doc(action, doc_id)
+    action.delete_action(file_name)
+    action.clean_action(True)
+    # os.remove(text_file_path)
     cleanup()
 
 def test_add_pattern_db():
@@ -35,11 +40,14 @@ def test_add_pattern_db():
     file_paths = []
     for fn in files:
         file_paths.append(create_txt_file(fn))
-    action.add_action(None, 'sample*.txt')
+    action.add_action(None, ['sample*.txt'])
     for fn in files:
         assert action.doc_manager.get_doc_by_prop('name', fn)
-    for file_path in file_paths:
-        os.remove(file_path)
+    # for file_path in file_paths:
+    #     os.remove(file_path)
+    for fn in files:
+        action.delete_action(fn)
+    action.clean_action(True)
     cleanup()
 
 def test_add_pattern_remote():
@@ -50,13 +58,15 @@ def test_add_pattern_remote():
     file_paths = []
     for fn in files:
         file_paths.append(create_txt_file(fn))
-    action.add_action(None, 'sample*.txt')
+    action.add_action(None, ['sample*.txt'])
     doc_ids = action.doc_manager.get_doc_ids()
     for doc_id in doc_ids:
-        response = action.api.get_document(doc_id)
-        assert response.status_code == 200
-    for file_path in file_paths:
-        os.remove(file_path)
+        assert poll_doc(action, doc_id)
+    # for file_path in file_paths:
+    #     os.remove(file_path)
+    for fn in files:
+        action.delete_action(fn)
+    action.clean_action(True)
     cleanup()
 
 # todo test all those other args
