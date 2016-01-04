@@ -13,10 +13,34 @@ class TestList(unittest.TestCase):
         cleanup()
 
     def test_list_doc(self):
-        # add some documents
-        # list them
-        # check they in list
-        pass
+        files = ['sample.txt', 'sample1.txt', 'sample2.txt']
+        file_paths = []
+        for fn in files:
+            file_paths.append(create_txt_file(fn))
+        self.action.add_action(None, ['sample*.txt'])
+        doc_ids = self.action.doc_manager.get_doc_ids()
+        try:
+            out = BytesIO()
+            sys.stdout = out
+            self.action.list_ids_action()
+            info = out.getvalue()
+            for doc_id in doc_ids:
+                assert doc_id in info
+        finally:
+            sys.stdout = sys.__stdout__
+        for fn in files:
+            self.action.delete_action(fn)
+        self.action.clean_action(True)
+
+    def test_list_no_docs(self):
+        try:
+            out = BytesIO()
+            sys.stdout = out
+            self.action.list_ids_action()
+            info = out.getvalue()
+            assert 'no documents' in info
+        finally:
+            sys.stdout = sys.__stdout__
 
     def test_list_workflow(self):
         try:
