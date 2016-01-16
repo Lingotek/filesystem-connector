@@ -7,6 +7,7 @@ import logging
 from logger import logger, API_LOG_LEVEL, API_RESPONSE_LOG_LEVEL, CustomFormatter
 import sys
 from ltk import __version__
+from watch import WatchAction
 
 def init_logger(path):
     """
@@ -289,6 +290,19 @@ def clean(force):
         print_log(e)
         logger.error(e)
         return
+
+@ltk.command()
+def watch():
+    """
+    keeps track of local files
+    """
+    try:
+        action = WatchAction(os.getcwd())
+        init_logger(action.path)
+        action.watch_action()
+    except (UninitializedError, RequestFailedError) as e:
+        print_log(e)
+        logger.error(e)
 
 if __name__ == '__main__':
     ltk()

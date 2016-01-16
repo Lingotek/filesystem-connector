@@ -22,6 +22,12 @@ def create_txt_file(file_name):
         txt_file.write('This is a sample text file. ')
     return file_path
 
+def append_file(file_name):
+    file_path = os.path.join(os.getcwd(), file_name)
+    with open(file_path, 'a') as txt_file:
+        txt_file.write('Appended text. ')
+    return file_path
+
 def poll_doc(action, doc_id):
     """polls lingotek for the status of a document given id
         :returns True if document imported within 3min, else False

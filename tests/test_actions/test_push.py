@@ -4,22 +4,34 @@ import unittest
 
 class TestPush(unittest.TestCase):
     def setUp(self):
-        self.files = []
         create_config()
         self.action = Action(os.getcwd())
-        self.files.append(create_txt_file('test.txt'))
-        self.files.append(create_txt_file('test2.txt'))
-        self.action.add_action(None, 'test*.txt')
+        self.files = ['sample.txt', 'sample1.txt', 'sample2.txt']
+        for fn in self.files:
+            create_txt_file(fn)
+        self.action.add_action(None, 'sample*.txt')
+        self.doc_ids = self.action.doc_manager.get_doc_ids()
+        for doc_id in self.doc_ids:
+            assert poll_doc(self.action, doc_id)
 
     def tearDown(self):
         for curr_file in self.files:
-            os.remove(curr_file)
+            self.action.delete_action(curr_file)
+        self.action.clean_action(True)
         cleanup()
 
     def test_push_1(self):
-        pass
+        # update one document
+        # push
+        # check results
+        append_file(self.files[0])
+        self.action.push_action()
+        # todo check results
 
     def test_push_mult(self):
+        # update mult docs
+        # push
+        # check
         pass
 
     def test_push_none(self):
