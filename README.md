@@ -28,6 +28,15 @@ $ python get-pip.py
 
 * Start the tool by using `ltk`
 
+### Windows Installation ###
+Note: These instructions are for Windows Powershell
+
+Because python is not shipped with Windows, you must first install python. 
+
+If your python version is higher than 2.7.9, you can skip installing pip. If not, download get-pip.py from the link above and run `python get-pip.py`
+
+Then, just follow the above instructions to start `ltk`.
+
 
 ## Getting Started ##
 
