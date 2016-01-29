@@ -582,7 +582,7 @@ def choice_mapper(info):
 def get_import_ids(info):
     mapper = choice_mapper(info)
     chosen_indices = ['none-chosen']
-    while not set(chosen_indices) < set(mapper.iterkeys()):
+    while not set(chosen_indices) <= set(mapper.iterkeys()):
         choice = raw_input('Which documents to import? (Separate indices by comma) ')
         try:
             chosen_indices = map(int, choice.split(','))
