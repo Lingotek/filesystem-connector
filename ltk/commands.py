@@ -275,23 +275,26 @@ def import_command(import_all, force):
         logger.error(e)
         return
 
-
 @ltk.command(short_help="cleans up the associations between local documents and documents in Lingotek")
+@click.option('-a', '--all', 'dis_all', flag_value=True, help='removes all associations between local and remote')
+@click.option('-n', '--doc_name', help='removes disassociation of specified document name')
 @click.option('-f', '--force', flag_value=True, help='deletes local documents that no longer exists in Lingotek')
-def clean(force):
+def clean(force, dis_all, doc_name):
     """
-    cleans up the associations between local documents and documents in Lingotek
+    cleans up the associations between local documents and documents in Lingotek.
+    by default, checks that local documents and remote documents line up.
+    use different options for different use cases
     """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
-        action.clean_action(force)
+        action.clean_action(force, dis_all, doc_name)
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
         return
 
-@ltk.command()
+@ltk.command(short_help="keeps track of local files")
 def watch():
     """
     keeps track of local files

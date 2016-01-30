@@ -463,7 +463,21 @@ class Action:
         for curr_id in ids_to_import:
             self._import(curr_id, tms_doc_info[curr_id], force)
 
-    def clean_action(self, force):
+    def clean_action(self, force, dis_all, document_name):
+        if dis_all:
+            # disassociate everything
+            self.doc_manager.clear_all()
+            return
+
+        if document_name:
+            try:
+                entry = self.doc_manager.get_doc_by_prop('name', document_name)
+                document_id = entry['id']
+                self.doc_manager.remove_element(document_id)
+            except TypeError:
+                logger.warn("Document name specified doesn't exist: {0}".format(document_name))
+            return
+
         response = self.api.list_documents(self.project_id)
         local_ids = self.doc_manager.get_doc_ids()
         tms_doc_ids = []
