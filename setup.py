@@ -15,6 +15,7 @@ setup(
         'click',
         'requests[security]',
         'tinydb',
+        'watchdog',
     ],
     extras_require={
         'security': ['pyOpenSSL', 'ndg-httpsclient', 'pyasn1'],

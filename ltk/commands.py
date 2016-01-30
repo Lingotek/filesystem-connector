@@ -101,7 +101,7 @@ def config(locale, workflow_id):
         logger.error(e)
         return
 
-@ltk.command()
+@ltk.command(short_help="adds content, could be one or multiple files specified by Unix shell pattern")
 @click.argument('file_names', required=True, nargs=-1)
 @click.option('-l', '--locale', help='if source locale is different from the default configuration')
 @click.option('-f', '--format',
@@ -128,7 +128,7 @@ def add(file_names, locale, **kwargs):
         logger.error(e)
         return
 
-@ltk.command()
+@ltk.command(short_help="sends updated content to Lingotek for documents that have been added")
 def push():
     """ sends updated content to Lingotek for documents that have been added """
     try:
@@ -141,7 +141,7 @@ def push():
         return
 
 
-@ltk.command()
+@ltk.command(short_help="add targets to document(s) to start translation, defaults to entire project")
 @click.option('-n', '--doc_name', help='the name of the document, specify for one document')
 @click.option('-d', '--delete', 'to_delete', flag_value=True, help='deletes a specified target locale')
 @click.option('--due_date', help='the due date of the translation')
@@ -187,7 +187,7 @@ def list_ids(id_type):
         return
 
 
-@ltk.command()
+@ltk.command(short_help="gets the status of a specific document or all documents")
 @click.option('-n', '--doc_name', help='specific document name to get status of')
 @click.option('-d', '--detailed', flag_value=True, help='detailed status of each locale for document')
 def status(doc_name, detailed):
@@ -237,7 +237,7 @@ def pull(auto_format, locales):
         logger.error(e)
         return
 
-@ltk.command()
+@ltk.command(short_help="disassociate local doc(s) from Lingotek cloud and deletes remote copy")
 @click.argument('document_names', required=True, nargs=-1)
 def delete(document_names):
     """
@@ -275,23 +275,26 @@ def import_command(import_all, force):
         logger.error(e)
         return
 
-
-@ltk.command()
+@ltk.command(short_help="cleans up the associations between local documents and documents in Lingotek")
+@click.option('-a', '--all', 'dis_all', flag_value=True, help='removes all associations between local and remote')
+@click.option('-n', '--doc_name', help='removes disassociation of specified document name')
 @click.option('-f', '--force', flag_value=True, help='deletes local documents that no longer exists in Lingotek')
-def clean(force):
+def clean(force, dis_all, doc_name):
     """
-    cleans up the associations between local documents and documents in Lingotek
+    cleans up the associations between local documents and documents in Lingotek.
+    by default, checks that local documents and remote documents line up.
+    use different options for different use cases
     """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
-        action.clean_action(force)
+        action.clean_action(force, dis_all, doc_name)
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
         return
 
-@ltk.command()
+@ltk.command(short_help="keeps track of local files")
 def watch():
     """
     keeps track of local files

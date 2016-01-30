@@ -58,6 +58,9 @@ class DocumentManager:
     def remove_element(self, doc_id):
         self._db.remove(where('id') == doc_id)
 
+    def clear_all(self):
+        self._db.purge()
+
 def _update_entry_list(field, new_val):
     """
     updates a list in an entry
