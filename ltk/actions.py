@@ -453,6 +453,11 @@ class Action:
             pass
         else:
             raise_error(response.json(), 'Error finding current documents in Lingotek Cloud')
+
+        if not tms_doc_info:
+            logger.error('No documents to import!')
+            return
+
         if import_all:
             ids_to_import = tms_doc_info.iterkeys()
         else:
