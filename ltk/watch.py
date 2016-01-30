@@ -1,6 +1,7 @@
 from ltk.actions import Action
 from logger import logger
 import time
+import os
 from watchdog.observers import Observer
 from ltk.watchhandler import WatchHandler
 
@@ -29,6 +30,8 @@ class WatchAction(Action):
                 in_db = True
         if not event.is_directory and in_db:
             logger.info('{0} has been modified'.format(fn))
+            self.update_document_action(fn)
+            logger.info('PATCHing remote {0}..'.format(fn))
 
     def poll_remote(self):
         # poll lingotek servers for any updates to existing files
