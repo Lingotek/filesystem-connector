@@ -25,12 +25,12 @@ class WatchAction(Action):
             logger.info('{0} has been modified'.format(fn))
 
     def watch_action(self):
-        print self.path
+        print "Watching for updates: {0}".format(self.path)
         self.observer.schedule(self.handler, path=self.path, recursive=True)
         self.observer.start()
         try:
             while True:
-                print 'Watching..'
+                # print 'Watching...'
                 time.sleep(5)
         except KeyboardInterrupt:
             self.observer.stop()
