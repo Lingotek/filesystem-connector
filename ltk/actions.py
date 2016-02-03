@@ -406,7 +406,9 @@ class Action:
         return file_path
 
     def _import(self, document_id, document_info, force):
-        # todo be able to check if file is already there and rename the title
+        # todo also get locale when importing
+        # response = self.api.get_document(document_id)
+        # doc_info_more = response.json()
         local_ids = self.doc_manager.get_doc_ids()
         response = self.api.document_content(document_id, None, None)
         title, extension = os.path.splitext(document_info['title'])
@@ -450,6 +452,7 @@ class Action:
                 doc_info = {'title': entity['properties']['title'], 'extension': entity['properties']['extension']}
                 tms_doc_info[entity['properties']['id']] = doc_info
         elif response.status_code == 204:
+            # todo could maybe put the logger error 'No documents to import' here.
             pass
         else:
             raise_error(response.json(), 'Error finding current documents in Lingotek Cloud')
@@ -507,13 +510,14 @@ class Action:
         if locals_to_delete:
             for curr_id in locals_to_delete:
                 removed_title = self.doc_manager.get_doc_by_prop('id', curr_id)['name']
+                # todo somehow this line^ doc is null..after delete files remotely, then delete locally
                 if force:
                     file_name = self.doc_manager.get_doc_by_prop('id', curr_id)['file_name']
                     try:
                         os.remove(os.path.join(self.path, file_name))
                         logger.info('Removed local file {0}'.format(removed_title))
                     except OSError:
-                        pass
+                        logger.info('Something went wrong trying to delete the local file.')
                 self.doc_manager.remove_element(curr_id)
                 logger.info('Removing association for document {0}'.format(removed_title))
         else:

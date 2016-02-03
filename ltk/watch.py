@@ -41,6 +41,7 @@ class WatchAction(Action):
 
     def watch_action(self):
         # print self.path
+        print "Watching for updates: {0}".format(self.path)
         self.observer.schedule(self.handler, path=self.path, recursive=True)
         self.observer.start()
         try:

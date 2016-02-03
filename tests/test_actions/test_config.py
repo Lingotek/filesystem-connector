@@ -28,5 +28,6 @@ class TestConfig(unittest.TestCase):
         assert self.action.locale == 'de_DE'
 
     def test_change_workflow(self):
-        self.action.config_action(None, '6ff1b470-33fd-11e2-81c1-0800200c9a66')
-        assert self.action.workflow_id == '6ff1b470-33fd-11e2-81c1-0800200c9a66'
+        new_workflow = '6ff1b470-33fd-11e2-81c1-0800200c9a66'
+        self.action.config_action(None, new_workflow)
+        assert self.action.workflow_id == new_workflow
