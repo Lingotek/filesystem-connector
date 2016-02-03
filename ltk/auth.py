@@ -42,10 +42,19 @@ class ClientRedirectHandler(BaseHTTPRequestHandler, object):
         self.wfile.write(b'<p id="message" style="font-family: Open Sans, Arial; background-color: #eee; text-align: center; border: 1px solid #5cb85e; padding: 5px 20px 25px 20px;">Retrieving your access token...</p>')
         self.wfile.write(b'<script> \
             $(document).ready(function(){ \
+                function getParamFromHash(url, param) { \
+                    var re = new RegExp("#.*" + param + "=([^&]+)(&|$)"); \
+                    var match = url.match(re); \
+                    return(match ? match[1] : ""); \
+                } \
                 var self_url = window.location.href; \
                 var token_info = self_url.split("#")[1]; \
-                var params = {}; \
-                params[token_info.split("=")[0]] = token_info.split("=")[1]; \
+                var params = { \
+                    access_token: getParamFromHash(self_url, "access_token"), \
+                    expires_in: getParamFromHash(self_url, "expires_in"), \
+                    token_type: getParamFromHash(self_url, "token_type") \
+                }; \
+                console.log(params); \
                 $.post("index.html", params).done(function(data) { \
                     $("#message").css("background-color","#dff0d9"); \
                     $("#message").html("<div><p style=\'font-weight: bold; color: darkgreen;\'>'
