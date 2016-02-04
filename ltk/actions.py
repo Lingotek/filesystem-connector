@@ -63,6 +63,8 @@ class Action:
         doc_id = entry['id']
         self.doc_manager.update_document('last_mod', now, doc_id)
         self.doc_manager.update_document('sys_last_mod', sys_last_modified, doc_id)
+        # whenever a document is updated, it should have new translations
+        self.doc_manager.update_document('downloaded', [], doc_id)
 
     def config_action(self, locale, workflow_id):
         config_file_name = os.path.join(self.path, CONF_DIR, CONF_FN)
@@ -291,6 +293,7 @@ class Action:
                 raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
         else:
             doc_ids = self.doc_manager.get_doc_ids()
+        # detailed_status = {}
         for doc_id in doc_ids:
             response = self.api.document_status(doc_id)
             if response.status_code != 200:
@@ -307,10 +310,13 @@ class Action:
                     raise_error(response.json(), 'Failed to get detailed status of document', True)
                 try:
                     for entry in response.json()['entities']:
-                        print '\tlocale: {0} \t percent complete: {1}%'.format(entry['properties']['locale_code'],
-                                                                               entry['properties']['percent_complete'])
+                        curr_locale = entry['properties']['locale_code']
+                        curr_progress = entry['properties']['percent_complete']
+                        print '\tlocale: {0} \t percent complete: {1}%'.format(curr_locale, curr_progress)
+                        # detailed_status[doc_id] = (curr_locale, curr_progress)
                 except KeyError:
                     continue
+        # return detailed_status
 
     def download_by_name(self, document_name, locale_code, auto_format):
         try:
@@ -357,6 +363,7 @@ class Action:
                     downloaded_name = name_parts[0] + '.' + locale_code
                 download_path = os.path.join(download_dir, downloaded_name)
                 logger.info('Downloaded "{0}" for locale {1}: {2}'.format(name_parts[0], locale_code, downloaded_name))
+                self.doc_manager.update_document('downloaded', [locale_code], document_id)
             with open(download_path, 'wb') as fh:
                 for chunk in response.iter_content(1024):
                     fh.write(chunk)
@@ -405,10 +412,25 @@ class Action:
             i += 1
         return file_path
 
+    def import_locale_info(self, document_id, poll=False):
+        locale_progress = {}
+        response = self.api.document_translation_status(document_id)
+        if response.status_code != 200:
+            if poll:
+                return {}
+            else:
+                raise_error(response.json(), 'Failed to get locale details of document', True)
+        try:
+            for entry in response.json()['entities']:
+                curr_locale = entry['properties']['locale_code']
+                curr_progress = int(entry['properties']['percent_complete'])
+                curr_locale = curr_locale.replace('-', '_')
+                locale_progress[curr_locale] = curr_progress
+        except KeyError:
+            pass
+        return locale_progress
+
     def _import(self, document_id, document_info, force):
-        # todo also get locale when importing
-        # response = self.api.get_document(document_id)
-        # doc_info_more = response.json()
         local_ids = self.doc_manager.get_doc_ids()
         response = self.api.document_content(document_id, None, None)
         title, extension = os.path.splitext(document_info['title'])
@@ -419,6 +441,8 @@ class Action:
             title += extension
         file_path = os.path.join(os.getcwd(), title)  # import to current working directory
         logger.info('Importing "{0}"'.format(title))
+        # use status action to get locale info for importing
+        locale_info = self.import_locale_info(document_id)
         if not force:
             if document_id in local_ids:
                 confirm = 'none'
@@ -442,6 +466,7 @@ class Action:
         if document_id not in local_ids:
             relative_path = file_path.replace(self.path, '')
             self._add_document(relative_path, title, document_id)
+            self.doc_manager.update_document('locales', list(locale_info.iterkeys()), document_id)
 
     def import_action(self, import_all, force):
         response = self.api.list_documents(self.project_id)

@@ -294,10 +294,11 @@ def clean(force, dis_all, doc_name):
         logger.error(e)
         return
 
-@ltk.command(short_help="keeps track of local files")
+@ltk.command(short_help="watches local and remote files")
 def watch():
     """
-    keeps track of local files
+    Watches local files added or imported by ltk, and sends a PATCH when a document is changed.
+    Also watches remote files, and automatically downloads finished translations.
     """
     try:
         action = WatchAction(os.getcwd())

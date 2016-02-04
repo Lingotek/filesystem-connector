@@ -7,16 +7,29 @@ from ltk.watchhandler import WatchHandler
 
 import threading
 
+# class WatchThread:
+#     def __init__(self, interval=5):
+#         self.interval = interval
+#
+#         self.thread = threading.Thread(target=self.run, args=())
+#         self.thread.daemon = True
+#         self.thread.start()
+#
+#     def run(self):
+#         while True:
+#             time.sleep(self.interval)
+
 class WatchAction(Action):
-    def __init__(self, path, remote=False):
+    def __init__(self, path):
+    # def __init__(self, path, remote=False):
         Action.__init__(self, path)
         self.observer = Observer()  # watchdog observer that will watch the files
         self.handler = WatchHandler()
         self.handler.on_modified = self._on_modified
-        if remote:  # poll lingotek cloud periodically if this option enabled
-            self.remote_thread = threading.Thread()
-            self.remote_thread.daemon = True
-            self.remote_thread.start()
+        # if remote:  # poll lingotek cloud periodically if this option enabled
+        # self.remote_thread = threading.Thread(target=self.poll_remote(), args=())
+        # self.remote_thread.daemon = True
+        # self.remote_thread.start()
 
     def _on_modified(self, event):
         db_entries = self.doc_manager.get_all_entries()
@@ -34,10 +47,18 @@ class WatchAction(Action):
             logger.info('PATCHing remote {0}..'.format(fn))
 
     def poll_remote(self):
-        # poll lingotek servers for any updates to existing files
-        # or, poll for jobs that take a while (MT, prefill, analyze, etc..)
-        
-        pass
+        # poll lingotek servers to check if MT finished
+        # todo eventually: poll for other jobs (prefill, analyze, etc..)
+        # print 'polling remote..'
+        documents = self.doc_manager.get_all_entries()
+        for doc in documents:
+            doc_id = doc['id']
+            locale_progress = self.import_locale_info(doc_id, True)
+            downloaded = doc['downloaded']
+            for locale, progress in locale_progress.iteritems():
+                if progress == 100 and locale not in downloaded:
+                    logger.info('A document has finished translating! Downloading..')
+                    self.download_action(doc_id, locale, False)
 
     def watch_action(self):
         # print self.path
@@ -47,6 +68,7 @@ class WatchAction(Action):
         try:
             while True:
                 # print 'Watching..'
+                self.poll_remote()
                 time.sleep(5)
         except KeyboardInterrupt:
             self.observer.stop()

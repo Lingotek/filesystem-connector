@@ -29,7 +29,8 @@ class DocumentManager:
 
     def add_document(self, title, create_date, doc_id, sys_mtime, last_mod, file_name):
         entry = {'name': title, 'added': create_date, 'id': doc_id,
-                 'sys_last_mod': sys_mtime, 'last_mod': last_mod, 'file_name': file_name}
+                 'sys_last_mod': sys_mtime, 'last_mod': last_mod, 'file_name': file_name,
+                 'downloaded': []}
         self._db.insert(entry)
 
     def update_document(self, field, new_val, doc_id):
@@ -70,8 +71,11 @@ def _update_entry_list(field, new_val):
             element[field]
         except KeyError:
             element[field] = []
-        # element[field].extend(new_val)
-        element[field].extend([val.replace('-', '_') for val in new_val])
-        element[field] = list(set(element[field]))
+        if new_val:
+            # element[field].extend(new_val)
+            element[field].extend([val.replace('-', '_') for val in new_val])
+            element[field] = list(set(element[field]))
+        else:
+            element[field] = []
 
     return transform
