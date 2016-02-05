@@ -54,7 +54,11 @@ class WatchAction(Action):
         for doc in documents:
             doc_id = doc['id']
             locale_progress = self.import_locale_info(doc_id, True)
-            downloaded = doc['downloaded']
+            try:
+                downloaded = doc['downloaded']
+            except KeyError:
+                downloaded = []
+                self.doc_manager.update_document('downloaded', downloaded, doc_id)
             for locale, progress in locale_progress.iteritems():
                 if progress == 100 and locale not in downloaded:
                     logger.info('A document has finished translating! Downloading..')

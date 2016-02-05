@@ -554,6 +554,9 @@ class Action:
 def raise_error(json, error_message, is_warning=False):
     try:
         error = json['messages'][0]
+        # Sometimes api returns vague errors like 'Unknown error'
+        if error == 'Unknown error':
+            error = error_message
         if not is_warning:
             raise exceptions.RequestFailedError(error)
         # warnings.warn(error)
