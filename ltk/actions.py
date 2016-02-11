@@ -347,7 +347,7 @@ class Action:
                                 'Something went wrong trying to import document: {0}'.format(document_id), True)
                     return
                 download_path = os.path.join(self.path, title)
-                logger.info("Downloaded {0}".format(title))
+                logger.info("Downloaded: {0}".format(title))
             elif not locale_code:
                 logger.info("Tried to download an existing document, did nothing")
                 return
@@ -362,7 +362,7 @@ class Action:
                 else:
                     downloaded_name = name_parts[0] + '.' + locale_code
                 download_path = os.path.join(download_dir, downloaded_name)
-                logger.info('Downloaded "{0}" for locale {1}: {2}'.format(name_parts[0], locale_code, downloaded_name))
+                logger.info('Downloaded: {0} ({1} - {2})'.format(downloaded_name, name_parts[0], locale_code))
                 self.doc_manager.update_document('downloaded', [locale_code], document_id)
             with open(download_path, 'wb') as fh:
                 for chunk in response.iter_content(1024):
@@ -535,7 +535,7 @@ class Action:
         if locals_to_delete:
             for curr_id in locals_to_delete:
                 removed_title = self.doc_manager.get_doc_by_prop('id', curr_id)['name']
-                # todo somehow this line^ doc is null..after delete files remotely, then delete locally
+                # todo somehow this line^ doc is null... after delete files remotely, then delete locally
                 if force:
                     file_name = self.doc_manager.get_doc_by_prop('id', curr_id)['file_name']
                     try:
@@ -591,7 +591,7 @@ def reinit(host, project_path, delete, reset):
             return False
         else:
             # delete the corresponding project online
-            logger.info('Deleting old project folder and creating new one..')
+            logger.info('Deleting old project folder and creating new one...')
             config_file_name = os.path.join(project_path, CONF_DIR, CONF_FN)
             if os.path.isfile(config_file_name):
                 old_config = ConfigParser.ConfigParser()
