@@ -46,6 +46,14 @@ class WatchAction(Action):
             self.update_document_action(fn)
             logger.info('PATCHing remote {0}..'.format(fn))
 
+    def _on_create(self, event):
+        # get path
+        # add action
+        file_path = event.src_path
+        title = os.path.basename(os.path.normpath(file_path))
+        self.add_document(self.locale, file_path, title)
+
+
     def poll_remote(self):
         # poll lingotek servers to check if MT finished
         # todo eventually: poll for other jobs (prefill, analyze, etc..)

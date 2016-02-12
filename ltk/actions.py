@@ -89,6 +89,15 @@ class Action:
               'locale: {5}'.format(self.host, self.access_token, self.project_id, self.community_id,
                                    self.workflow_id, self.locale)
 
+    def add_document(self, locale, file_name, title, **kwargs):
+        response = self.api.add_document(file_name, locale, self.project_id, title, **kwargs)
+        if response.status_code != 202:
+            raise_error(response.json(), "Failed to add document {0}".format(title), True)
+        else:
+            logger.info('Added document {0}'.format(title))
+            relative_path = file_name.replace(self.path, '')
+            self._add_document(relative_path, title, response.json()['properties']['id'])
+
     def add_action(self, locale, file_patterns, **kwargs):
         if not locale:
             locale = self.locale
@@ -118,12 +127,14 @@ class Action:
                 else:
                     logger.error("This document has already been added: {0}".format(title))
                     return
-            response = self.api.add_document(file_name, locale, self.project_id, title, **kwargs)
-            if response.status_code != 202:
-                raise_error(response.json(), "Failed to add document {0}".format(title), True)
-            else:
-                logger.info('Added document {0}'.format(title))
-                self._add_document(relative_path, title, response.json()['properties']['id'])
+            # todo separate function somewhere around here maybe..
+            self.add_document(locale, file_name, title, **kwargs)
+            # response = self.api.add_document(file_name, locale, self.project_id, title, **kwargs)
+            # if response.status_code != 202:
+            #     raise_error(response.json(), "Failed to add document {0}".format(title), True)
+            # else:
+            #     logger.info('Added document {0}'.format(title))
+            #     self._add_document(relative_path, title, response.json()['properties']['id'])
 
     def push_action(self):
         entries = self.doc_manager.get_all_entries()
