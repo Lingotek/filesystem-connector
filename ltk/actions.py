@@ -783,13 +783,33 @@ def get_files(root, patterns):
     """ gets all files matching pattern from root
         pattern supports any unix shell-style wildcards (not same as RE) """
     matched_files = []
-    for path, subdirs, files in os.walk(root):
-        # matched_files = any(fnmatch.fnmatch(files, p) for p in patterns)
-        for pattern in patterns:
-            for name in fnmatch.filter(files, pattern):
-                # print 'found without subdir'
-                # print os.path.join(path, name)
-                matched_files.append(os.path.join(path, name))
+    # print root
+    for pattern in patterns:
+        # check if pattern contains subdirectory
+        subdir_pat, fn_pat = os.path.split(pattern)
+        if not subdir_pat:
+            for path, subdirs, files in os.walk(root):
+                for fn in fnmatch.filter(files, pattern):
+                    matched_files.append(os.path.join(path, fn))
+        else:
+            for path, subdirs, files in os.walk(root):
+                # print os.path.split(path)
+                # subdir = os.path.split(path)[1]  # get current subdir
+                search_root = os.path.join(root, '')
+                subdir = path.replace(search_root, '')
+                # print subdir, subdir_pat
+                if fnmatch.fnmatch(subdir, subdir_pat):
+                    for fn in fnmatch.filter(files, fn_pat):
+                        matched_files.append(os.path.join(path, fn))
+
+    # for path, subdirs, files in os.walk(root):
+    #     # matched_files = any(fnmatch.fnmatch(files, p) for p in patterns)
+    #     for pattern in patterns:
+    #         for name in fnmatch.filter(files, pattern):
+    #             # print 'found without subdir'
+    #             # print os.path.join(path, name)
+    #             matched_files.append(os.path.join(path, name))
+    # print matched_files
     return matched_files
 
 
