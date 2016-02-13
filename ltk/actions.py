@@ -17,6 +17,7 @@ class Action:
         self.host = ''
         self.access_token = ''
         self.project_id = ''
+        self.project_name = ''
         self.path = path
         self.community_id = ''
         self.workflow_id = ''  # default workflow id; MT phase only
@@ -43,6 +44,7 @@ class Action:
         self.host = conf_parser.get('main', 'host')
         self.access_token = conf_parser.get('main', 'access_token')
         self.project_id = conf_parser.get('main', 'project_id')
+        self.project_name = conf_parser.get('main', 'project_name')
         self.community_id = conf_parser.get('main', 'community_id')
         self.workflow_id = conf_parser.get('main', 'workflow_id')
         self.locale = conf_parser.get('main', 'default_locale')
@@ -85,9 +87,9 @@ class Action:
                 conf_parser.write(new_file)
             self._initialize_self()
             logger.info('Project default workflow has been updated to {0}'.format(workflow_id))
-        print 'host: {0}\naccess_token: {1}\nproject id: {2}\ncommunity id: {3}\nworkflow id: {4}\n' \
+        print 'host: {0}\naccess_token: {1}\nproject id: {2}\nproject name: {6}\ncommunity id: {3}\nworkflow id: {4}\n' \
               'locale: {5}'.format(self.host, self.access_token, self.project_id, self.community_id,
-                                   self.workflow_id, self.locale)
+                                   self.workflow_id, self.locale, self.project_name)
 
     def add_action(self, locale, file_patterns, **kwargs):
         if not locale:
@@ -658,7 +660,7 @@ def display_choice(display_type, info):
         except ValueError:
             print("That's not a valid option!")
     logger.info('Selected "{0}" {1}.'.format(mapper[choice].itervalues().next(), display_type))
-    return mapper[choice].iterkeys().next()
+    return mapper[choice].iterkeys().next(), mapper[choice].itervalues().next()
 
 
 def check_global():
@@ -735,7 +737,7 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
     if len(community_info) == 0:
         raise exceptions.ResourceNotFound('You are not part of any communities in Lingotek Cloud')
     if len(community_info) > 1:
-        community_id = display_choice('community', community_info)
+        community_id, community_name = display_choice('community', community_info)
     else:
         community_id = community_info.iterkeys().next()
     config_parser.set('main', 'community_id', community_id)
@@ -749,8 +751,9 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
         while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
             confirm = raw_input('Would you like to use an existing Lingotek project? [y/N]:')
         if confirm and confirm in ['y', 'Y', 'yes', 'Yes']:
-            project_id = display_choice('project', project_info)
+            project_id, project_name = display_choice('project', project_info)
             config_parser.set('main', 'project_id', project_id)
+            config_parser.set('main', 'project_name', project_name)
             config_parser.write(config_file)
             config_file.close()
             return
@@ -762,6 +765,7 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
         raise_error(response.json(), 'Failed to add current project to Lingotek Cloud')
     project_id = response.json()['properties']['id']
     config_parser.set('main', 'project_id', project_id)
+    config_parser.set('main', 'project_name', project_name)
 
     config_parser.write(config_file)
     config_file.close()
