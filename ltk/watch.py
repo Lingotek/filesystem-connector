@@ -42,14 +42,14 @@ class WatchAction(Action):
                 fn = entry['file_name']
                 in_db = True
         if not event.is_directory and in_db:
-            logger.info('{0} has been modified'.format(fn))
+            logger.info('Detected local content modified: {0}'.format(fn))
             self.update_document_action(fn)
-            logger.info('PATCHing remote {0}..'.format(fn))
+            logger.info('Updating remote content: {0}'.format(fn))
 
     def poll_remote(self):
         # poll lingotek servers to check if MT finished
-        # todo eventually: poll for other jobs (prefill, analyze, etc..)
-        # print 'polling remote..'
+        # todo eventually: poll for other jobs (prefill, analyze, etc...)
+        # print 'polling remote...'
         documents = self.doc_manager.get_all_entries()
         for doc in documents:
             doc_id = doc['id']
@@ -61,7 +61,7 @@ class WatchAction(Action):
                 self.doc_manager.update_document('downloaded', downloaded, doc_id)
             for locale, progress in locale_progress.iteritems():
                 if progress == 100 and locale not in downloaded:
-                    logger.info('A document has finished translating! Downloading..')
+                    logger.info('Translation completed ({0} - {1})'.format(doc_id,locale))
                     self.download_action(doc_id, locale, False)
 
     def watch_action(self):
@@ -71,7 +71,7 @@ class WatchAction(Action):
         self.observer.start()
         try:
             while True:
-                # print 'Watching..'
+                # print 'Watching....'
                 self.poll_remote()
                 time.sleep(5)
         except KeyboardInterrupt:
