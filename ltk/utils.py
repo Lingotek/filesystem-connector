@@ -1,5 +1,4 @@
 import os
-# import requests
 # from constants import APP_ID
 
 class Enum(set):
@@ -11,8 +10,6 @@ class Enum(set):
 # def get_access_token(host, username, password):
 #     auth_uri = host + '/auth/authorize.html'
 #     auth_params = {'client_id': APP_ID, 'redirect_uri': '', 'response_type': 'token'}
-#
-
 
 # todo possibly put dictionary outside so not built with every function call
 def detect_format(file_name, get_mapper=False):

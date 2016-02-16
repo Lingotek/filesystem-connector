@@ -1,6 +1,7 @@
 from ltk.actions import Action
 from logger import logger
 import time
+import requests
 import os
 from watchdog.observers import Observer
 from ltk.watchhandler import WatchHandler
@@ -18,6 +19,28 @@ import threading
 #     def run(self):
 #         while True:
 #             time.sleep(self.interval)
+
+# retry decorator to retry connections
+def retry(logger, timeout=5, exec_type=None):
+    if not exec_type:
+        exec_type = [requests.exceptions.ConnectionError]
+
+    def decorator(function):
+        def wrapper(*args, **kwargs):
+            while True:
+                try:
+                    return function(*args, **kwargs)
+                except Exception as e:
+                    if e.__class__ in exec_type:
+                        # some logging error here
+                        logger.error("Connection has timed out. Retrying..")
+                        # sleep for some time then retry
+                        time.sleep(timeout)
+                    else:
+                        raise e
+        return wrapper
+    return decorator
+
 
 class WatchAction(Action):
     def __init__(self, path):
@@ -55,6 +78,7 @@ class WatchAction(Action):
         self.add_document(self.locale, file_path, title)
         # logger.info('Added new document {0}'.format(title))
 
+    @retry(logger)
     def poll_remote(self):
         # poll lingotek servers to check if MT finished
         # todo eventually: poll for other jobs (prefill, analyze, etc...)
