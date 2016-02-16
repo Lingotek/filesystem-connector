@@ -17,6 +17,7 @@ class Action:
         self.host = ''
         self.access_token = ''
         self.project_id = ''
+        self.project_name = ''
         self.path = path
         self.community_id = ''
         self.workflow_id = ''  # default workflow id; MT phase only
@@ -43,6 +44,7 @@ class Action:
         self.host = conf_parser.get('main', 'host')
         self.access_token = conf_parser.get('main', 'access_token')
         self.project_id = conf_parser.get('main', 'project_id')
+        self.project_name = conf_parser.get('main', 'project_name')
         self.community_id = conf_parser.get('main', 'community_id')
         self.workflow_id = conf_parser.get('main', 'workflow_id')
         self.locale = conf_parser.get('main', 'default_locale')
@@ -85,9 +87,9 @@ class Action:
                 conf_parser.write(new_file)
             self._initialize_self()
             logger.info('Project default workflow has been updated to {0}'.format(workflow_id))
-        print 'host: {0}\naccess_token: {1}\nproject id: {2}\ncommunity id: {3}\nworkflow id: {4}\n' \
+        print 'host: {0}\naccess_token: {1}\nproject id: {2}\nproject name: {6}\ncommunity id: {3}\nworkflow id: {4}\n' \
               'locale: {5}'.format(self.host, self.access_token, self.project_id, self.community_id,
-                                   self.workflow_id, self.locale)
+                                   self.workflow_id, self.locale, self.project_name)
 
     def add_document(self, locale, file_name, title, **kwargs):
         response = self.api.add_document(file_name, locale, self.project_id, title, **kwargs)
@@ -358,7 +360,7 @@ class Action:
                                 'Something went wrong trying to import document: {0}'.format(document_id), True)
                     return
                 download_path = os.path.join(self.path, title)
-                logger.info("Downloaded {0}".format(title))
+                logger.info("Downloaded: {0}".format(title))
             elif not locale_code:
                 logger.info("Tried to download an existing document, did nothing")
                 return
@@ -373,7 +375,7 @@ class Action:
                 else:
                     downloaded_name = name_parts[0] + '.' + locale_code
                 download_path = os.path.join(download_dir, downloaded_name)
-                logger.info('Downloaded "{0}" for locale {1}: {2}'.format(name_parts[0], locale_code, downloaded_name))
+                logger.info('Downloaded: {0} ({1} - {2})'.format(downloaded_name, name_parts[0], locale_code))
                 self.doc_manager.update_document('downloaded', [locale_code], document_id)
             with open(download_path, 'wb') as fh:
                 for chunk in response.iter_content(1024):
@@ -546,7 +548,7 @@ class Action:
         if locals_to_delete:
             for curr_id in locals_to_delete:
                 removed_title = self.doc_manager.get_doc_by_prop('id', curr_id)['name']
-                # todo somehow this line^ doc is null..after delete files remotely, then delete locally
+                # todo somehow this line^ doc is null... after delete files remotely, then delete locally
                 if force:
                     file_name = self.doc_manager.get_doc_by_prop('id', curr_id)['file_name']
                     try:
@@ -602,7 +604,7 @@ def reinit(host, project_path, delete, reset):
             return False
         else:
             # delete the corresponding project online
-            logger.info('Deleting old project folder and creating new one..')
+            logger.info('Deleting old project folder and creating new one...')
             config_file_name = os.path.join(project_path, CONF_DIR, CONF_FN)
             if os.path.isfile(config_file_name):
                 old_config = ConfigParser.ConfigParser()
@@ -669,7 +671,7 @@ def display_choice(display_type, info):
         except ValueError:
             print("That's not a valid option!")
     logger.info('Selected "{0}" {1}.'.format(mapper[choice].itervalues().next(), display_type))
-    return mapper[choice].iterkeys().next()
+    return mapper[choice].iterkeys().next(), mapper[choice].itervalues().next()
 
 
 def check_global():
@@ -746,7 +748,7 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
     if len(community_info) == 0:
         raise exceptions.ResourceNotFound('You are not part of any communities in Lingotek Cloud')
     if len(community_info) > 1:
-        community_id = display_choice('community', community_info)
+        community_id, community_name = display_choice('community', community_info)
     else:
         community_id = community_info.iterkeys().next()
     config_parser.set('main', 'community_id', community_id)
@@ -760,8 +762,9 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
         while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
             confirm = raw_input('Would you like to use an existing Lingotek project? [y/N]:')
         if confirm and confirm in ['y', 'Y', 'yes', 'Yes']:
-            project_id = display_choice('project', project_info)
+            project_id, project_name = display_choice('project', project_info)
             config_parser.set('main', 'project_id', project_id)
+            config_parser.set('main', 'project_name', project_name)
             config_parser.write(config_file)
             config_file.close()
             return
@@ -773,6 +776,7 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
         raise_error(response.json(), 'Failed to add current project to Lingotek Cloud')
     project_id = response.json()['properties']['id']
     config_parser.set('main', 'project_id', project_id)
+    config_parser.set('main', 'project_name', project_name)
 
     config_parser.write(config_file)
     config_file.close()
@@ -794,13 +798,33 @@ def get_files(root, patterns):
     """ gets all files matching pattern from root
         pattern supports any unix shell-style wildcards (not same as RE) """
     matched_files = []
-    for path, subdirs, files in os.walk(root):
-        # matched_files = any(fnmatch.fnmatch(files, p) for p in patterns)
-        for pattern in patterns:
-            for name in fnmatch.filter(files, pattern):
-                # print 'found without subdir'
-                # print os.path.join(path, name)
-                matched_files.append(os.path.join(path, name))
+    # print root
+    for pattern in patterns:
+        # check if pattern contains subdirectory
+        subdir_pat, fn_pat = os.path.split(pattern)
+        if not subdir_pat:
+            for path, subdirs, files in os.walk(root):
+                for fn in fnmatch.filter(files, pattern):
+                    matched_files.append(os.path.join(path, fn))
+        else:
+            for path, subdirs, files in os.walk(root):
+                # print os.path.split(path)
+                # subdir = os.path.split(path)[1]  # get current subdir
+                search_root = os.path.join(root, '')
+                subdir = path.replace(search_root, '')
+                # print subdir, subdir_pat
+                if fnmatch.fnmatch(subdir, subdir_pat):
+                    for fn in fnmatch.filter(files, fn_pat):
+                        matched_files.append(os.path.join(path, fn))
+
+    # for path, subdirs, files in os.walk(root):
+    #     # matched_files = any(fnmatch.fnmatch(files, p) for p in patterns)
+    #     for pattern in patterns:
+    #         for name in fnmatch.filter(files, pattern):
+    #             # print 'found without subdir'
+    #             # print os.path.join(path, name)
+    #             matched_files.append(os.path.join(path, name))
+    # print matched_files
     return matched_files
 
 
