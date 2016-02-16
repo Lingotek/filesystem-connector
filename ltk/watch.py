@@ -26,6 +26,7 @@ class WatchAction(Action):
         self.observer = Observer()  # watchdog observer that will watch the files
         self.handler = WatchHandler()
         self.handler.on_modified = self._on_modified
+        self.handler.on_created = self._on_create
         # if remote:  # poll lingotek cloud periodically if this option enabled
         # self.remote_thread = threading.Thread(target=self.poll_remote(), args=())
         # self.remote_thread.daemon = True
@@ -52,7 +53,7 @@ class WatchAction(Action):
         file_path = event.src_path
         title = os.path.basename(os.path.normpath(file_path))
         self.add_document(self.locale, file_path, title)
-
+        # logger.info('Added new document {0}'.format(title))
 
     def poll_remote(self):
         # poll lingotek servers to check if MT finished

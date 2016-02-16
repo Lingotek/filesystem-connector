@@ -9,7 +9,9 @@ class WatchHandler(FileSystemEventHandler):
         logger.info(event.event_type)
 
     def on_modified(self, event):
-        # todo add a check  here so that it only checks for the files in local db
+        self.process(event)
+
+    def on_created(self, event):
         self.process(event)
 
     # on modified
