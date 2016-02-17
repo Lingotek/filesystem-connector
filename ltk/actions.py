@@ -630,7 +630,7 @@ def reinit(host, project_path, delete, reset):
                 access_token = old_config.get('main', 'access_token')
                 api = ApiCalls(host, access_token)
                 response = api.delete_project(project_id)
-                if response.status_code != 204:
+                if response.status_code != 204 and response.status_code != 404:
                     try:
                         error = response.json()['messages'][0]
                         raise exceptions.RequestFailedError(error)
