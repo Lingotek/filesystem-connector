@@ -90,12 +90,13 @@ def init(host, access_token, path, project_name, workflow_id, locale, delete, re
 @ltk.command()
 @click.option('-l', '--locale', help='change the default source locale for project')
 @click.option('-w', '--workflow_id', help='change the default workflow id for project')
-def config(locale, workflow_id):
+@click.option('-d', '--download_folder', type=click.Path(exists=True), help='specify a folder for where downloaded translations should go')
+def config(locale, workflow_id, download_folder):
     """ view or change local configuration """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
-        action.config_action(locale, workflow_id)
+        action.config_action(locale, workflow_id, download_folder)
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)

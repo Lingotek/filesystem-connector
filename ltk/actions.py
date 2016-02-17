@@ -22,6 +22,7 @@ class Action:
         self.community_id = ''
         self.workflow_id = ''  # default workflow id; MT phase only
         self.locale = ''
+        self.download_dir = None  # directory where downloaded translation will be stored
         if not self._is_initialized():
             raise exceptions.UninitializedError("This project is not initialized. Please run init command.")
         self._initialize_self()
@@ -48,6 +49,10 @@ class Action:
         self.community_id = conf_parser.get('main', 'community_id')
         self.workflow_id = conf_parser.get('main', 'workflow_id')
         self.locale = conf_parser.get('main', 'default_locale')
+        try:
+            self.download_dir = conf_parser.get('main', 'download_folder')
+        except ConfigParser.NoOptionError:
+            pass
 
     def _add_document(self, file_name, title, doc_id):
         """ adds a document to db """
@@ -68,7 +73,9 @@ class Action:
         # whenever a document is updated, it should have new translations
         self.doc_manager.update_document('downloaded', [], doc_id)
 
-    def config_action(self, locale, workflow_id):
+    # def update_config_file(self, conf_parser, option):
+
+    def config_action(self, locale, workflow_id, download_folder):
         config_file_name = os.path.join(self.path, CONF_DIR, CONF_FN)
         conf_parser = ConfigParser.ConfigParser()
         conf_parser.read(config_file_name)
@@ -87,9 +94,16 @@ class Action:
                 conf_parser.write(new_file)
             self._initialize_self()
             logger.info('Project default workflow has been updated to {0}'.format(workflow_id))
+        if download_folder:
+            download_path = os.path.join(self.path, download_folder)
+            conf_parser.set('main', 'download_folder', download_path)
+            with open(config_file_name, 'wb') as new_file:
+                conf_parser.write(new_file)
+            self._initialize_self()
+            logger.info('Set download folder to {0}'.format(download_folder))
         print 'host: {0}\naccess_token: {1}\nproject id: {2}\nproject name: {6}\ncommunity id: {3}\nworkflow id: {4}\n' \
-              'locale: {5}'.format(self.host, self.access_token, self.project_id, self.community_id,
-                                   self.workflow_id, self.locale, self.project_name)
+              'locale: {5}\ndownloads folder: {7}'.format(self.host, self.access_token, self.project_id, self.community_id,
+                                   self.workflow_id, self.locale, self.project_name, self.download_dir)
 
     def add_document(self, locale, file_name, title, **kwargs):
         response = self.api.add_document(file_name, locale, self.project_id, title, **kwargs)
@@ -377,6 +391,9 @@ class Action:
                 download_path = os.path.join(download_dir, downloaded_name)
                 logger.info('Downloaded: {0} ({1} - {2})'.format(downloaded_name, name_parts[0], locale_code))
                 self.doc_manager.update_document('downloaded', [locale_code], document_id)
+            if self.download_dir:
+                title = os.path.basename(os.path.normpath(download_path))
+                download_path = os.path.join(self.download_dir, title)
             with open(download_path, 'wb') as fh:
                 for chunk in response.iter_content(1024):
                     fh.write(chunk)
