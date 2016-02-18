@@ -97,10 +97,14 @@ class WatchAction(Action):
                     logger.info('Translation completed ({0} - {1})'.format(doc_id,locale))
                     self.download_action(doc_id, locale, False)
 
-    def watch_action(self):
+    def watch_action(self, watch_path):
         # print self.path
-        print "Watching for updates: {0}".format(self.path)
-        self.observer.schedule(self.handler, path=self.path, recursive=True)
+        if not watch_path:
+            watch_path = self.path
+        else:
+            watch_path = os.path.join(self.path, watch_path)
+        print "Watching for updates: {0}".format(watch_path)
+        self.observer.schedule(self.handler, path=watch_path, recursive=True)
         self.observer.start()
         try:
             while True:

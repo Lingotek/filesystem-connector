@@ -296,7 +296,8 @@ def clean(force, dis_all, doc_name):
         return
 
 @ltk.command(short_help="watches local and remote files")
-def watch():
+@click.option('-p', '--path', type=click.Path(exists=True), help='specify a folder to watch, defaults to project path')
+def watch(path):
     """
     Watches local files added or imported by ltk, and sends a PATCH when a document is changed.
     Also watches remote files, and automatically downloads finished translations.
@@ -304,7 +305,7 @@ def watch():
     try:
         action = WatchAction(os.getcwd())
         init_logger(action.path)
-        action.watch_action()
+        action.watch_action(path)
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)

@@ -118,8 +118,6 @@ class Action:
         if not locale:
             locale = self.locale
         # format will be automatically detected by extension but may not be what user expects
-        # todo file pattern not matching subdirectory
-        # matched_files = get_files(self.path, file_patterns)
         # use current working directory as root for files instead of project root
         matched_files = get_files(os.getcwd(), file_patterns)
         if not matched_files:
@@ -142,7 +140,7 @@ class Action:
                         continue
                 else:
                     logger.error("This document has already been added: {0}".format(title))
-                    return
+                    continue
             # todo separate function somewhere around here maybe..
             self.add_document(locale, file_name, title, **kwargs)
             # response = self.api.add_document(file_name, locale, self.project_id, title, **kwargs)
