@@ -17,7 +17,7 @@ class TestPush(unittest.TestCase):
     def tearDown(self):
         for curr_file in self.files:
             self.action.delete_action(curr_file)
-        self.action.clean_action(True)
+        self.action.clean_action(True, False, None)
         cleanup()
 
     def test_push_1(self):

@@ -18,7 +18,7 @@ class TestStatusAction(unittest.TestCase):
     def tearDown(self):
         # remove the created file
         self.action.delete_action(self.file_name)
-        self.action.clean_action(True)
+        self.action.clean_action(True, False, None)
         cleanup()
 
     def test_status(self):

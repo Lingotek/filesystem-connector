@@ -30,7 +30,7 @@ class TestList(unittest.TestCase):
             sys.stdout = sys.__stdout__
         for fn in files:
             self.action.delete_action(fn)
-        self.action.clean_action(True)
+        self.action.clean_action(True, False, None)
 
     def test_list_no_docs(self):
         try:

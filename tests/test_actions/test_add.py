@@ -12,7 +12,7 @@ def test_add_db():
     # check that document added in db
     assert action.doc_manager.get_doc_by_prop('name', file_name)
     action.delete_action(file_name)
-    action.clean_action(True)
+    action.clean_action(True, False, None)
     # os.remove(text_file_path)
     cleanup()
 
@@ -28,7 +28,7 @@ def test_add_remote():
     # assert response.status_code == 200
     assert poll_doc(action, doc_id)
     action.delete_action(file_name)
-    action.clean_action(True)
+    action.clean_action(True, False, None)
     # os.remove(text_file_path)
     cleanup()
 
@@ -47,7 +47,7 @@ def test_add_pattern_db():
     #     os.remove(file_path)
     for fn in files:
         action.delete_action(fn)
-    action.clean_action(True)
+    action.clean_action(True, False, None)
     cleanup()
 
 def test_add_pattern_remote():
@@ -66,7 +66,7 @@ def test_add_pattern_remote():
     #     os.remove(file_path)
     for fn in files:
         action.delete_action(fn)
-    action.clean_action(True)
+    action.clean_action(True, False, None)
     cleanup()
 
 # todo test all those other args
