@@ -111,11 +111,13 @@ class WatchAction(Action):
 
     def watch_action(self, watch_path):
         # print self.path
-        if not watch_path:
+        if not watch_path and not self.watch_dir:
             watch_path = self.path
-        else:
+        elif watch_path:
             watch_path = os.path.join(self.path, watch_path)
-        print "Watching for updates: {0}".format(watch_path)
+        else:
+            watch_path = self.watch_dir
+        print "Watching for updates in: {0}".format(watch_path)
         self.observer.schedule(self.handler, path=watch_path, recursive=True)
         self.observer.start()
         try:

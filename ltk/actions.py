@@ -23,6 +23,7 @@ class Action:
         self.workflow_id = ''  # default workflow id; MT phase only
         self.locale = ''
         self.download_dir = None  # directory where downloaded translation will be stored
+        self.watch_dir = None  # if specified, only watch this directory
         if not self._is_initialized():
             raise exceptions.UninitializedError("This project is not initialized. Please run init command.")
         self._initialize_self()
@@ -51,6 +52,7 @@ class Action:
         try:
             self.project_name = conf_parser.get('main', 'project_name')
             self.download_dir = conf_parser.get('main', 'download_folder')
+            self.watch_dir = conf_parser.get('main', 'watch_folder')
         except ConfigParser.NoOptionError:
             if not self.project_name:
                 project_info = self.api.get_project_info(self.community_id)
@@ -91,7 +93,7 @@ class Action:
         self._initialize_self()
         logger.info(log_info)
 
-    def config_action(self, locale, workflow_id, download_folder):
+    def config_action(self, locale, workflow_id, download_folder, watch_folder):
         config_file_name, conf_parser = self.init_config_file()
         if locale:
             log_info = 'Project default locale has been updated to {0}'.format(locale)
@@ -107,9 +109,16 @@ class Action:
             download_path = os.path.join(self.path, download_folder)
             log_info = 'Set download folder to {0}'.format(download_folder)
             self.update_config_file('download_folder', download_path, conf_parser, config_file_name, log_info)
+        if watch_folder:
+            watch_path = os.path.join(self.path, watch_folder)
+            log_info = 'Set watch folder to {0}'.format(watch_folder)
+            self.update_config_file('watch_folder', watch_path, conf_parser, config_file_name, log_info)
         print 'host: {0}\naccess_token: {1}\nproject id: {2}\nproject name: {6}\ncommunity id: {3}\nworkflow id: {4}\n' \
-              'locale: {5}\ndownloads folder: {7}'.format(self.host, self.access_token, self.project_id, self.community_id,
-                                   self.workflow_id, self.locale, self.project_name, self.download_dir)
+              'locale: {5}\ndownloads folder: {7}\nwatch folder: {8}'.format(self.host, self.access_token,
+                                                                             self.project_id, self.community_id,
+                                                                             self.workflow_id, self.locale,
+                                                                             self.project_name, self.download_dir,
+                                                                             self.watch_dir)
 
     def add_document(self, locale, file_name, title, **kwargs):
         response = self.api.add_document(file_name, locale, self.project_id, title, **kwargs)
