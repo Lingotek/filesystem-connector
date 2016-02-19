@@ -1,3 +1,4 @@
+import ctypes
 from ltk.actions import Action
 from logger import logger
 import time
@@ -41,6 +42,20 @@ def retry(logger, timeout=5, exec_type=None):
         return wrapper
     return decorator
 
+def is_hidden_file(file_path):
+    # todo more robust checking for OSX files that doesn't start with '.'
+    name = os.path.basename(os.path.abspath(file_path))
+    return name.startswith('.') or has_hidden_attribute(file_path)
+
+def has_hidden_attribute(file_path):
+    """ Detects if a file has hidden attributes """
+    try:
+        attrs = ctypes.windll.kernel32.GetFileAttributesW(unicode(file_path))
+        assert attrs != -1
+        result = bool(attrs & 2)
+    except (AttributeError, AssertionError):
+        result = False
+    return result
 
 class WatchAction(Action):
     def __init__(self, path):
@@ -54,6 +69,7 @@ class WatchAction(Action):
         # self.remote_thread = threading.Thread(target=self.poll_remote(), args=())
         # self.remote_thread.daemon = True
         # self.remote_thread.start()
+
 
     def check_remote_doc_exist(self, fn):
         """ check if a document exists remotely """
@@ -86,8 +102,9 @@ class WatchAction(Action):
         # get path
         # add action
         file_path = event.src_path
-        title = os.path.basename(os.path.normpath(file_path))
-        self.add_document(self.locale, file_path, title)
+        if not is_hidden_file(file_path):
+            title = os.path.basename(os.path.normpath(file_path))
+            self.add_document(self.locale, file_path, title)
         # logger.info('Added new document {0}'.format(title))
 
     @retry(logger)
