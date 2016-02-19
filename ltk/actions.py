@@ -45,14 +45,19 @@ class Action:
         self.host = conf_parser.get('main', 'host')
         self.access_token = conf_parser.get('main', 'access_token')
         self.project_id = conf_parser.get('main', 'project_id')
-        self.project_name = conf_parser.get('main', 'project_name')
         self.community_id = conf_parser.get('main', 'community_id')
         self.workflow_id = conf_parser.get('main', 'workflow_id')
         self.locale = conf_parser.get('main', 'default_locale')
         try:
+            self.project_name = conf_parser.get('main', 'project_name')
             self.download_dir = conf_parser.get('main', 'download_folder')
         except ConfigParser.NoOptionError:
-            pass
+            if not self.project_name:
+                project_info = self.api.get_project_info(self.community_id)
+                self.project_name = project_info[self.project_id]
+                config_file_name, conf_parser = self.init_config_file()
+                log_info = 'Updated project name'
+                self.update_config_file('project_name', self.project_name, conf_parser, config_file_name, log_info)
 
     def _add_document(self, file_name, title, doc_id):
         """ adds a document to db """
@@ -73,34 +78,35 @@ class Action:
         # whenever a document is updated, it should have new translations
         self.doc_manager.update_document('downloaded', [], doc_id)
 
-    # def update_config_file(self, conf_parser, option):
-
-    def config_action(self, locale, workflow_id, download_folder):
+    def init_config_file(self):
         config_file_name = os.path.join(self.path, CONF_DIR, CONF_FN)
         conf_parser = ConfigParser.ConfigParser()
         conf_parser.read(config_file_name)
+        return config_file_name, conf_parser
+
+    def update_config_file(self, option, value, conf_parser, config_file_name, log_info):
+        conf_parser.set('main', option, value)
+        with open(config_file_name, 'wb') as new_file:
+            conf_parser.write(new_file)
+        self._initialize_self()
+        logger.info(log_info)
+
+    def config_action(self, locale, workflow_id, download_folder):
+        config_file_name, conf_parser = self.init_config_file()
         if locale:
-            conf_parser.set('main', 'default_locale', locale)
-            with open(config_file_name, 'wb') as new_file:
-                conf_parser.write(new_file)
-            self._initialize_self()
-            logger.info('Project default locale has been updated to {0}'.format(locale))
+            log_info = 'Project default locale has been updated to {0}'.format(locale)
+            self.update_config_file('default_locale', locale, conf_parser, config_file_name, log_info)
         if workflow_id:
             response = self.api.patch_project(self.project_id, workflow_id)
             if response.status_code != 204:
                 raise_error(response.json(), 'Something went wrong trying to update workflow_id of project')
+            log_info = 'Project default workflow has been updated to {0}'.format(workflow_id)
+            self.update_config_file('workflow_id', workflow_id, conf_parser, config_file_name, log_info)
             conf_parser.set('main', 'workflow_id', workflow_id)
-            with open(config_file_name, 'wb') as new_file:
-                conf_parser.write(new_file)
-            self._initialize_self()
-            logger.info('Project default workflow has been updated to {0}'.format(workflow_id))
         if download_folder:
             download_path = os.path.join(self.path, download_folder)
-            conf_parser.set('main', 'download_folder', download_path)
-            with open(config_file_name, 'wb') as new_file:
-                conf_parser.write(new_file)
-            self._initialize_self()
-            logger.info('Set download folder to {0}'.format(download_folder))
+            log_info = 'Set download folder to {0}'.format(download_folder)
+            self.update_config_file('download_folder', download_path, conf_parser, config_file_name, log_info)
         print 'host: {0}\naccess_token: {1}\nproject id: {2}\nproject name: {6}\ncommunity id: {3}\nworkflow id: {4}\n' \
               'locale: {5}\ndownloads folder: {7}'.format(self.host, self.access_token, self.project_id, self.community_id,
                                    self.workflow_id, self.locale, self.project_name, self.download_dir)

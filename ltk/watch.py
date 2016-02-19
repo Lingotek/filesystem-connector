@@ -55,7 +55,17 @@ class WatchAction(Action):
         # self.remote_thread.daemon = True
         # self.remote_thread.start()
 
+    def check_remote_doc_exist(self, fn):
+        """ check if a document exists remotely """
+        entry = self.doc_manager.get_doc_by_prop('file_name', fn)
+        doc_id = entry['id']
+        response = self.api.get_document(doc_id)
+        if response.status_code != 200:
+            return False
+        return True
+
     def _on_modified(self, event):
+        """ Notify Lingotek cloud when a previously added file is modified """
         db_entries = self.doc_manager.get_all_entries()
         in_db = False
         fn = ''
@@ -66,9 +76,11 @@ class WatchAction(Action):
                 fn = entry['file_name']
                 in_db = True
         if not event.is_directory and in_db:
-            logger.info('Detected local content modified: {0}'.format(fn))
-            self.update_document_action(fn)
-            logger.info('Updating remote content: {0}'.format(fn))
+            # check that document is added in TMS before updating
+            if self.check_remote_doc_exist(fn):
+                logger.info('Detected local content modified: {0}'.format(fn))
+                self.update_document_action(fn)
+                logger.info('Updating remote content: {0}'.format(fn))
 
     def _on_create(self, event):
         # get path
@@ -80,7 +92,7 @@ class WatchAction(Action):
 
     @retry(logger)
     def poll_remote(self):
-        # poll lingotek servers to check if MT finished
+        """ poll lingotek servers to check if MT finished """
         # todo eventually: poll for other jobs (prefill, analyze, etc...)
         # print 'polling remote...'
         documents = self.doc_manager.get_all_entries()
