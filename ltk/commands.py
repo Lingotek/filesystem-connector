@@ -9,6 +9,10 @@ import sys
 from ltk import __version__
 from watch import WatchAction
 
+def abort_if_false(ctx, param, value):
+    if not value:
+        ctx.abort()
+
 def init_logger(path):
     """
     Initializes logger based on path
@@ -70,7 +74,12 @@ def ltk(is_quiet, verbosity_lvl):
 @click.option('-w', '--workflow_id', default='c675bd20-0688-11e2-892e-0800200c9a66',
               help='the id of the workflow to use for this project, defaults to machine translate only.')
 @click.option('-l', '--locale', default='en_US', help='the default source locale for the project; defaults to en_US')
-@click.option('-d', '--delete', flag_value=True, help='delete the current project and re-initialize')
+@click.option('-d', '--delete', flag_value=True,  # expose_value=False, callback=abort_if_false,
+              # prompt='Are you sure you want to delete the current project remotely and re-initialize? '
+              #        'Use the -c flag if you only want to change the project.',
+              help='delete the current project and re-initialize')
+# todo add a 'change' option so don't delete remote project
+# @click.option('-c', '--change', flag_value=True, help='Change the Lingotek project. ')
 @click.option('--reset', flag_value=True, help='re-authorize and reset any stored access tokens')
 def init(host, access_token, path, project_name, workflow_id, locale, delete, reset):
     """ connects a local project to Lingotek """
@@ -94,8 +103,11 @@ def init(host, access_token, path, project_name, workflow_id, locale, delete, re
               help='specify a folder for where downloaded translations should go')
 @click.option('-f', '--watch_folder', type=click.Path(exists=True),
               help='specify a folder to watch when running ltk watch, defaults to project root')
-def config(locale, workflow_id, download_folder, watch_folder):
+@click.option('-t', '--target_locales', multiple=True,
+              help='specify target locales that documents in watch_folder should be assigned')
+def config(locale, workflow_id, download_folder, watch_folder, target_locales):
     """ view or change local configuration """
+    # todo add the target_locales
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
