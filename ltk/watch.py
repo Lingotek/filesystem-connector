@@ -15,7 +15,7 @@ import threading
 #
 #         self.thread = threading.Thread(target=self.run, args=())
 #         self.thread.daemon = True
-#         self.thread.start()
+#         self.thread.start()_on_create
 #
 #     def run(self):
 #         while True:
@@ -64,7 +64,7 @@ class WatchAction(Action):
         self.observer = Observer()  # watchdog observer that will watch the files
         self.handler = WatchHandler()
         self.handler.on_modified = self._on_modified
-        self.handler.on_created = self._on_create
+        self.handler.on_created = self._on_created
         # if remote:  # poll lingotek cloud periodically if this option enabled
         # self.remote_thread = threading.Thread(target=self.poll_remote(), args=())
         # self.remote_thread.daemon = True
@@ -98,7 +98,7 @@ class WatchAction(Action):
                 self.update_document_action(fn)
                 logger.info('Updating remote content: {0}'.format(fn))
 
-    def _on_create(self, event):
+    def _on_created(self, event):
         # get path
         # add action
         file_path = event.src_path
