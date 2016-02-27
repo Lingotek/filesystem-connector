@@ -125,8 +125,8 @@ class WatchAction(Action):
             self.watch_queue.append(document_id)
 
     def process_queue(self):
-        # if queue is not empty
-        # do stuff with stuff in queue (currently just add target)
+        """do stuff with documents in queue (currently just add targets)"""
+        # todo may want to process more than 1 item every "poll"..
         if self.watch_queue:
             self.watch_add_target(None, self.watch_queue.pop(0))
 
