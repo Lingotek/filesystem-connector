@@ -6,8 +6,9 @@ import requests
 import os
 from watchdog.observers import Observer
 from ltk.watchhandler import WatchHandler
+# import Queue
 
-import threading
+# import threading
 
 # class WatchThread:
 #     def __init__(self, interval=5):
@@ -65,17 +66,18 @@ class WatchAction(Action):
         self.handler = WatchHandler()
         self.handler.on_modified = self._on_modified
         self.handler.on_created = self._on_created
+        self.watch_queue = []  # not much slower than deque unless expecting 100+ items
         # if remote:  # poll lingotek cloud periodically if this option enabled
         # self.remote_thread = threading.Thread(target=self.poll_remote(), args=())
         # self.remote_thread.daemon = True
         # self.remote_thread.start()
 
-
-    def check_remote_doc_exist(self, fn):
+    def check_remote_doc_exist(self, fn, document_id=None):
         """ check if a document exists remotely """
-        entry = self.doc_manager.get_doc_by_prop('file_name', fn)
-        doc_id = entry['id']
-        response = self.api.get_document(doc_id)
+        if not document_id:
+            entry = self.doc_manager.get_doc_by_prop('file_name', fn)
+            document_id = entry['id']
+        response = self.api.get_document(document_id)
         if response.status_code != 200:
             return False
         return True
@@ -94,18 +96,44 @@ class WatchAction(Action):
         if not event.is_directory and in_db:
             # check that document is added in TMS before updating
             if self.check_remote_doc_exist(fn):
-                logger.info('Detected local content modified: {0}'.format(fn))
-                self.update_document_action(fn)
-                logger.info('Updating remote content: {0}'.format(fn))
+                # logger.info('Detected local content modified: {0}'.format(fn))
+                # self.update_document_action(os.path.join(self.path, fn))
+                # logger.info('Updating remote content: {0}'.format(fn))
+                self.update_content(fn)
 
     def _on_created(self, event):
         # get path
         # add action
         file_path = event.src_path
-        if not is_hidden_file(file_path):
-            title = os.path.basename(os.path.normpath(file_path))
+        relative_path = file_path.replace(self.path, '')
+        title = os.path.basename(os.path.normpath(file_path))
+        # only add the document if it's not a hidden document and it's a new file
+        if not is_hidden_file(file_path) and self.doc_manager.is_doc_new(relative_path):
             self.add_document(self.locale, file_path, title)
+        elif self.doc_manager.is_doc_modified(relative_path):
+            self.update_content(relative_path)
+        document_id = self.doc_manager.get_doc_by_prop('name', title)['id']
+        self.watch_add_target(title, document_id)
         # logger.info('Added new document {0}'.format(title))
+
+    def watch_add_target(self, title, document_id):
+        if self.check_remote_doc_exist(title, document_id):
+            self.target_action(title, self.watch_locales, None, None, None, document_id)
+            if document_id in self.watch_queue:
+                self.watch_queue.pop(0)
+        else:
+            self.watch_queue.append(document_id)
+
+    def process_queue(self):
+        # if queue is not empty
+        # do stuff with stuff in queue (currently just add target)
+        if self.watch_queue:
+            self.watch_add_target(None, self.watch_queue.pop(0))
+
+    def update_content(self, relative_path):
+        logger.info('Detected local content modified: {0}'.format(relative_path))
+        self.update_document_action(os.path.join(self.path, relative_path))
+        logger.info('Updating remote content: {0}'.format(relative_path))
 
     @retry(logger)
     def poll_remote(self):
@@ -115,6 +143,9 @@ class WatchAction(Action):
         documents = self.doc_manager.get_all_entries()
         for doc in documents:
             doc_id = doc['id']
+            if doc_id in self.watch_queue:
+                # if doc id in queue, not imported yet
+                continue
             locale_progress = self.import_locale_info(doc_id, True)
             try:
                 downloaded = doc['downloaded']
@@ -141,6 +172,7 @@ class WatchAction(Action):
             while True:
                 # print 'Watching....'
                 self.poll_remote()
+                self.process_queue()
                 time.sleep(5)
         except KeyboardInterrupt:
             self.observer.stop()
