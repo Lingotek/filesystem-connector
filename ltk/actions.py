@@ -24,6 +24,7 @@ class Action:
         self.locale = ''
         self.download_dir = None  # directory where downloaded translation will be stored
         self.watch_dir = None  # if specified, only watch this directory
+        self.watch_locales = []  # if specified, add these target locales to any files in the watch folder
         if not self._is_initialized():
             raise exceptions.UninitializedError("This project is not initialized. Please run init command.")
         self._initialize_self()
@@ -53,6 +54,11 @@ class Action:
             self.project_name = conf_parser.get('main', 'project_name')
             self.download_dir = conf_parser.get('main', 'download_folder')
             self.watch_dir = conf_parser.get('main', 'watch_folder')
+            watch_locales = conf_parser.get('main', 'watch_locales')
+            # todo watch_locales get overwritten the current way (reading from config)
+            # self.watch_locales.extend(watch_locales.split(','))
+            # self.watch_locales = list(set(self.watch_locales))
+            self.watch_locales = watch_locales.split(',')
         except ConfigParser.NoOptionError:
             if not self.project_name:
                 project_info = self.api.get_project_info(self.community_id)
@@ -72,7 +78,9 @@ class Action:
     def _update_document(self, file_name):
         """ updates a document in the db """
         now = time.time()
-        sys_last_modified = os.stat(file_name).st_mtime
+        file_path = os.path.join(self.path, file_name)
+        # sys_last_modified = os.stat(file_name).st_mtime
+        sys_last_modified = os.stat(file_path).st_mtime
         entry = self.doc_manager.get_doc_by_prop('file_name', file_name)
         doc_id = entry['id']
         self.doc_manager.update_document('last_mod', now, doc_id)
@@ -93,7 +101,7 @@ class Action:
         self._initialize_self()
         logger.info(log_info)
 
-    def config_action(self, locale, workflow_id, download_folder, watch_folder):
+    def config_action(self, locale, workflow_id, download_folder, watch_folder, target_locales):
         config_file_name, conf_parser = self.init_config_file()
         if locale:
             log_info = 'Project default locale has been updated to {0}'.format(locale)
@@ -113,12 +121,16 @@ class Action:
             watch_path = os.path.join(self.path, watch_folder)
             log_info = 'Set watch folder to {0}'.format(watch_folder)
             self.update_config_file('watch_folder', watch_path, conf_parser, config_file_name, log_info)
+        if target_locales:
+            log_info = 'Added target locales: {} for watch folder'.format(
+                ', '.join(target for target in target_locales))
+            target_locales = ','.join(target for target in target_locales)
+            self.update_config_file('watch_locales', target_locales, conf_parser, config_file_name, log_info)
+
         print 'host: {0}\naccess_token: {1}\nproject id: {2}\nproject name: {6}\ncommunity id: {3}\nworkflow id: {4}\n' \
-              'locale: {5}\ndownloads folder: {7}\nwatch folder: {8}'.format(self.host, self.access_token,
-                                                                             self.project_id, self.community_id,
-                                                                             self.workflow_id, self.locale,
-                                                                             self.project_name, self.download_dir,
-                                                                             self.watch_dir)
+              'locale: {5}\ndownloads folder: {7}\nwatch folder: {8}\nwatch target locales: {9}'.format(
+            self.host, self.access_token, self.project_id, self.community_id, self.workflow_id, self.locale,
+            self.project_name, self.download_dir, self.watch_dir, self.watch_locales)
 
     def add_document(self, locale, file_name, title, **kwargs):
         response = self.api.add_document(file_name, locale, self.project_id, title, **kwargs)
@@ -181,6 +193,8 @@ class Action:
             logger.info('All documents up-to-date with Lingotek Cloud. ')
 
     def update_document_action(self, file_name, title=None, **kwargs):
+        print "updating document action.."
+        print file_name
         relative_path = file_name.replace(self.path, '')
         entry = self.doc_manager.get_doc_by_prop('file_name', relative_path)
         try:
@@ -204,7 +218,7 @@ class Action:
         else:
             self.doc_manager.update_document('locales', list(locales), document_id)
 
-    def target_action(self, document_name, locales, to_delete, due_date, workflow):
+    def target_action(self, document_name, locales, to_delete, due_date, workflow, document_id=None):
         change_db_entry = True
         if to_delete:
             expected_code = 204
@@ -214,7 +228,7 @@ class Action:
             expected_code = 201
             failure_message = 'Failed to add target'
             info_message = 'Added target'
-        if not document_name:
+        if not document_name and not document_id:
             for locale in locales:
                 response = self.api.project_add_target(self.project_id, locale, due_date) if not to_delete \
                     else self.api.project_delete_target(self.project_id, locale)
@@ -223,21 +237,30 @@ class Action:
                                                                                          locale=locale), True)
                     change_db_entry = False
                     continue
-                logger.info('{message} {locale} for project {id}'.format(message=info_message, locale=locale,
-                                                                         id=self.project_id))
+                logger.info('{message} {locale} for project {project_name}'.format(message=info_message, locale=locale,
+                                                                                   project_name=self.project_name))
             document_ids = self.doc_manager.get_doc_ids()
             if change_db_entry:
                 for document_id in document_ids:
                     self._target_action_db(to_delete, locales, document_id)
         else:
             # todo: document name or file name? since file name will be relative to root
-            entry = self.doc_manager.get_doc_by_prop('name', document_name)
-            try:
-                document_id = entry['id']
-            except TypeError:
-                logger.error('Document name specified doesn\'t exist: {0}'.format(document_name))
-                return
-                # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
+            # todo: clean this code up some
+            if not document_id:
+                entry = self.doc_manager.get_doc_by_prop('name', document_name)
+                try:
+                    document_id = entry['id']
+                except TypeError:
+                    logger.error('Document name specified doesn\'t exist: {0}'.format(document_name))
+                    return
+                    # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
+            if not document_name:
+                entry = self.doc_manager.get_doc_by_prop('id', document_id)
+                try:
+                    document_name = entry['name']
+                except TypeError:
+                    logger.error('Document specified doesn\'t exist: {0}'.format(document_id))
+                    return
             for locale in locales:
                 response = self.api.document_add_target(document_id, locale, workflow, due_date) if not to_delete \
                     else self.api.document_delete_target(document_id, locale)
@@ -356,7 +379,7 @@ class Action:
                         # detailed_status[doc_id] = (curr_locale, curr_progress)
                 except KeyError:
                     continue
-        # return detailed_status
+                    # return detailed_status
 
     def download_by_name(self, document_name, locale_code, auto_format):
         try:

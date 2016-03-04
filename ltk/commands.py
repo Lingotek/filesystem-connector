@@ -111,7 +111,7 @@ def config(locale, workflow_id, download_folder, watch_folder, target_locales):
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
-        action.config_action(locale, workflow_id, download_folder, watch_folder)
+        action.config_action(locale, workflow_id, download_folder, watch_folder, target_locales)
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)

@@ -8,4 +8,6 @@ venv/
 info.py
 dist/
 **/config
+downloaded/
+uploads/
 */TypicalTranslationJob/*
