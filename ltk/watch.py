@@ -111,6 +111,10 @@ class WatchAction(Action):
         file_path = event.src_path
         relative_path = file_path.replace(self.path, '')
         title = os.path.basename(os.path.normpath(file_path))
+        curr_ext = os.path.splitext(file_path)[1]
+        if curr_ext in self.ignore_ext:
+            logger.info("Detected a file with an extension in the ignore list, ignoring..")
+            return
         if self.locale_delimiter:
             try:
                 curr_locale = title.split(self.locale_delimiter)[1]
@@ -121,11 +125,7 @@ class WatchAction(Action):
                     logger.warning('This document\'s detected locale: {0} is not supported.'.format(curr_locale))
             except IndexError:
                 logger.warning('Cannot detect locales from file: {0}, not adding any locales'.format(title))
-        curr_ext = os.path.splitext(file_path)[1]
-        if curr_ext in self.ignore_ext:
-            logger.info("Detected a file with an extension in the ignore list, ignoring..")
-            return
-        # only add the document if it's not a hidden document and it's a new file and it has ok extension
+        # only add the document if it's not a hidden document and it's a new file
         if not is_hidden_file(file_path) and self.doc_manager.is_doc_new(relative_path):
             self.add_document(self.locale, file_path, title)
         elif self.doc_manager.is_doc_modified(relative_path):
