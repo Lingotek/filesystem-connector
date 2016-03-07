@@ -104,10 +104,11 @@ def init(host, access_token, path, project_name, workflow_id, locale, delete, re
 @click.option('-f', '--watch_folder', type=click.Path(exists=True),
               help='specify a folder to watch when running ltk watch, defaults to project root')
 @click.option('-t', '--target_locales', multiple=True,
-              help='specify target locales that documents in watch_folder should be assigned')
+              help='specify target locales that documents in watch_folder should be assigned, may either specify '
+                   'with multiple -t flags (ex: -t locale -t locale) or give a list separated by commas and no spaces '
+                   '(ex: -t locale,locale)')
 def config(locale, workflow_id, download_folder, watch_folder, target_locales):
     """ view or change local configuration """
-    # todo add the target_locales
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
@@ -312,7 +313,9 @@ def clean(force, dis_all, doc_name):
 
 @ltk.command(short_help="watches local and remote files")
 @click.option('-p', '--path', type=click.Path(exists=True), help='specify a folder to watch, defaults to project path')
-def watch(path):
+@click.option('--ignore', multiple=True, help='specify types of files to ignore')
+@click.option('--auto', 'delimiter', help='automatically detects locale from the file name, specify locale delimiter')
+def watch(path, ignore, delimiter):
     """
     Watches local files added or imported by ltk, and sends a PATCH when a document is changed.
     Also watches remote files, and automatically downloads finished translations.
@@ -320,7 +323,7 @@ def watch(path):
     try:
         action = WatchAction(os.getcwd())
         init_logger(action.path)
-        action.watch_action(path)
+        action.watch_action(path, ignore, delimiter)
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)

@@ -24,7 +24,7 @@ class Action:
         self.locale = ''
         self.download_dir = None  # directory where downloaded translation will be stored
         self.watch_dir = None  # if specified, only watch this directory
-        self.watch_locales = []  # if specified, add these target locales to any files in the watch folder
+        self.watch_locales = set()  # if specified, add these target locales to any files in the watch folder
         if not self._is_initialized():
             raise exceptions.UninitializedError("This project is not initialized. Please run init command.")
         self._initialize_self()
@@ -56,9 +56,10 @@ class Action:
             self.watch_dir = conf_parser.get('main', 'watch_folder')
             watch_locales = conf_parser.get('main', 'watch_locales')
             # todo watch_locales get overwritten the current way (reading from config)
+            # since write to config then read from config.. intended?
             # self.watch_locales.extend(watch_locales.split(','))
             # self.watch_locales = list(set(self.watch_locales))
-            self.watch_locales = watch_locales.split(',')
+            self.watch_locales = set(watch_locales.split(','))
         except ConfigParser.NoOptionError:
             if not self.project_name:
                 project_info = self.api.get_project_info(self.community_id)
@@ -130,7 +131,7 @@ class Action:
         print 'host: {0}\naccess_token: {1}\nproject id: {2}\nproject name: {6}\ncommunity id: {3}\nworkflow id: {4}\n' \
               'locale: {5}\ndownloads folder: {7}\nwatch folder: {8}\nwatch target locales: {9}'.format(
             self.host, self.access_token, self.project_id, self.community_id, self.workflow_id, self.locale,
-            self.project_name, self.download_dir, self.watch_dir, self.watch_locales)
+            self.project_name, self.download_dir, self.watch_dir, ', '.join(x for x in self.watch_locales))
 
     def add_document(self, locale, file_name, title, **kwargs):
         response = self.api.add_document(file_name, locale, self.project_id, title, **kwargs)
