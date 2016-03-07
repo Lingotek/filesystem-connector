@@ -112,12 +112,15 @@ class WatchAction(Action):
         relative_path = file_path.replace(self.path, '')
         title = os.path.basename(os.path.normpath(file_path))
         if self.locale_delimiter:
-            curr_locale = title.split(self.locale_delimiter)[1]
-            fixed_locale = map_locale(curr_locale)
-            if fixed_locale:
-                self.watch_locales.add(fixed_locale)
-            else:
-                logger.warning('This document\'s detected locale: {0} is not supported.'.format(curr_locale))
+            try:
+                curr_locale = title.split(self.locale_delimiter)[1]
+                fixed_locale = map_locale(curr_locale)
+                if fixed_locale:
+                    self.watch_locales.add(fixed_locale)
+                else:
+                    logger.warning('This document\'s detected locale: {0} is not supported.'.format(curr_locale))
+            except IndexError:
+                logger.warning('Cannot detect locales from file: {0}, not adding any locales'.format(title))
         curr_ext = os.path.splitext(file_path)[1]
         if curr_ext in self.ignore_ext:
             logger.info("Detected a file with an extension in the ignore list, ignoring..")

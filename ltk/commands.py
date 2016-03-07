@@ -294,7 +294,7 @@ def import_command(import_all, force):
 
 @ltk.command(short_help="cleans up the associations between local documents and documents in Lingotek")
 @click.option('-a', '--all', 'dis_all', flag_value=True, help='removes all associations between local and remote')
-@click.option('-n', '--doc_name', help='removes disassociation of specified document name')
+@click.option('-n', '--doc_name', help='removes association of specified document name')
 @click.option('-f', '--force', flag_value=True, help='deletes local documents that no longer exists in Lingotek')
 def clean(force, dis_all, doc_name):
     """
