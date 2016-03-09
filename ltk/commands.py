@@ -8,6 +8,7 @@ from logger import logger, API_LOG_LEVEL, API_RESPONSE_LOG_LEVEL, CustomFormatte
 import sys
 from ltk import __version__
 from watch import WatchAction
+from import_action import ImportAction
 
 def abort_if_false(ctx, param, value):
     if not value:
@@ -287,7 +288,8 @@ def import_command(import_all, force, path):
         # else automatically re-name
             # possibly have to patch title in Lingotek Cloud?
     try:
-        action = actions.Action(os.getcwd())
+        # action = actions.Action(os.getcwd())
+        action = ImportAction(os.getcwd())
         init_logger(action.path)
         action.import_action(import_all, force, path)
     except(UninitializedError, RequestFailedError) as e:

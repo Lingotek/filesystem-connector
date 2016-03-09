@@ -129,7 +129,7 @@ class WatchAction(Action):
         # only add the document if it's not a hidden document and it's a new file
         if not is_hidden_file(file_path) and self.doc_manager.is_doc_new(relative_path):
             self.add_document(self.locale, file_path, title)
-        elif self.doc_manager.is_doc_modified(relative_path):
+        elif self.doc_manager.is_doc_modified(relative_path, self.path):
             self.update_content(relative_path)
         document_id = self.doc_manager.get_doc_by_prop('name', title)['id']
         self.watch_add_target(title, document_id)
