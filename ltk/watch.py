@@ -112,8 +112,9 @@ class WatchAction(Action):
         relative_path = file_path.replace(self.path, '')
         title = os.path.basename(os.path.normpath(file_path))
         curr_ext = os.path.splitext(file_path)[1]
-        if curr_ext in self.ignore_ext:
-            logger.info("Detected a file with an extension in the ignore list, ignoring..")
+        # return if the extension should be ignored or if the path is not a file
+        if curr_ext in self.ignore_ext or not os.path.isfile(file_path):
+            # logger.info("Detected a file with an extension in the ignore list, ignoring..")
             return
         if self.locale_delimiter:
             try:
