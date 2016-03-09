@@ -77,7 +77,7 @@ def ltk(is_quiet, verbosity_lvl):
 @click.option('-d', '--delete', flag_value=True,  # expose_value=False, callback=abort_if_false,
               # prompt='Are you sure you want to delete the current project remotely and re-initialize? '
               #        'Use the -c flag if you only want to change the project.',
-              help='delete the current project and re-initialize')
+              help='delete the current project remotely and re-initialize')
 # todo add a 'change' option so don't delete remote project
 # @click.option('-c', '--change', flag_value=True, help='Change the Lingotek project. ')
 @click.option('--reset', flag_value=True, help='re-authorize and reset any stored access tokens')
@@ -256,15 +256,17 @@ def pull(auto_format, locales):
 
 @ltk.command(short_help="disassociate local doc(s) from Lingotek cloud and deletes remote copy")
 @click.argument('document_names', required=True, nargs=-1)
-def delete(document_names):
+@click.option('-f', '--force', flag_value=True, help='delete both local and remote files')
+def rm(document_names, force):
     """
     disassociate local doc(s) from Lingotek cloud and deletes remote copy
+    if remote copy should not be deleted, please use ltk clean
     """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
         for name in document_names:
-            action.delete_action(name)
+            action.delete_action(name, force)
     except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
@@ -273,9 +275,10 @@ def delete(document_names):
 @ltk.command(name='import')
 @click.option('-a', '--all', 'import_all', flag_value=True, help='import all documents from Lingotek Cloud')
 @click.option('-f', '--force', flag_value=True, help='overwrites existing documents without prompt')
-def import_command(import_all, force):
+@click.option('-p', '--path', type=click.Path(exists=True), help='import documents to a specified path')
+def import_command(import_all, force, path):
     """
-    import documents from Lingotek
+    import documents from Lingotek cloud, automatically downloaded to project root
     """
     # todo import should show all documents
     # add a force option so can import all force -- overwrites all existing documents without prompting
@@ -286,7 +289,7 @@ def import_command(import_all, force):
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
-        action.import_action(import_all, force)
+        action.import_action(import_all, force, path)
     except(UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)

@@ -453,10 +453,11 @@ class Action:
             for document_id in document_ids:
                 self.download_action(document_id, locale_code, auto_format)
 
-    def delete_action(self, document_name):
+    def delete_action(self, document_name, force):
         try:
             entry = self.doc_manager.get_doc_by_prop('name', document_name)
             document_id = entry['id']
+            print document_id
         except TypeError:
             logger.warn("Document name specified doesn't exist: {0}".format(document_name))
             return
@@ -466,7 +467,9 @@ class Action:
             # raise_error(response.json(), "Failed to delete document {0}".format(document_name), True)
             logger.error("Failed to delete document {0}".format(document_name))
         else:
-            logger.info("{0} has been deleted.".format(document_name))
+            logger.info("{0} has been deleted remotely.".format(document_name))
+            if force:
+                self.delete_local(document_name, document_id)
             self.doc_manager.remove_element(document_id)
 
     def get_new_name(self, file_name, curr_path):
@@ -497,7 +500,7 @@ class Action:
             pass
         return locale_progress
 
-    def _import(self, document_id, document_info, force):
+    def _import(self, document_id, document_info, force, path):
         local_ids = self.doc_manager.get_doc_ids()
         response = self.api.document_content(document_id, None, None)
         title, extension = os.path.splitext(document_info['title'])
@@ -506,10 +509,16 @@ class Action:
             extension = '.' + extension
         if extension and extension != '.none':
             title += extension
-        file_path = os.path.join(os.getcwd(), title)  # import to current working directory
+        if path:
+            file_path = os.path.join(self.path, path, title)
+        else:
+            file_path = os.path.join(self.path, title)
+        # file_path = os.path.join(os.getcwd(), title)  # import to current working directory
         logger.info('Importing "{0}"'.format(title))
         # use status action to get locale info for importing
         locale_info = self.import_locale_info(document_id)
+        # todo document id may be in local_ids but not in same area.. check that their file path is diff,
+        # and ask if want to move -- if not move, is it a copy?
         if not force:
             if document_id in local_ids:
                 confirm = 'none'
@@ -535,7 +544,7 @@ class Action:
             self._add_document(relative_path, title, document_id)
             self.doc_manager.update_document('locales', list(locale_info.iterkeys()), document_id)
 
-    def import_action(self, import_all, force):
+    def import_action(self, import_all, force, path):
         response = self.api.list_documents(self.project_id)
         tms_doc_info = {}
         if response.status_code == 200:
@@ -561,7 +570,7 @@ class Action:
                 import_doc_info[k] = v['title']
             ids_to_import = get_import_ids(import_doc_info)
         for curr_id in ids_to_import:
-            self._import(curr_id, tms_doc_info[curr_id], force)
+            self._import(curr_id, tms_doc_info[curr_id], force, path)
 
     def clean_action(self, force, dis_all, document_name):
         if dis_all:
@@ -604,18 +613,21 @@ class Action:
                 removed_title = self.doc_manager.get_doc_by_prop('id', curr_id)['name']
                 # todo somehow this line^ doc is null... after delete files remotely, then delete locally
                 if force:
-                    file_name = self.doc_manager.get_doc_by_prop('id', curr_id)['file_name']
-                    try:
-                        os.remove(os.path.join(self.path, file_name))
-                        logger.info('Removed local file {0}'.format(removed_title))
-                    except OSError:
-                        logger.info('Something went wrong trying to delete the local file.')
+                    self.delete_local(removed_title, curr_id)
                 self.doc_manager.remove_element(curr_id)
                 logger.info('Removing association for document {0}'.format(removed_title))
         else:
             logger.info('Local documents already up-to-date with Lingotek cloud')
             return
         logger.info('Cleaned up associations between local documents and Lingotek cloud')
+
+    def delete_local(self, title, document_id):
+        file_name = self.doc_manager.get_doc_by_prop('id', document_id)['file_name']
+        try:
+            os.remove(os.path.join(self.path, file_name))
+            logger.info('Removed local file {0}'.format(title))
+        except OSError:
+            logger.info('Something went wrong trying to delete the local file.')
 
 
 def raise_error(json, error_message, is_warning=False):
