@@ -489,7 +489,8 @@ class Action:
             if poll:
                 return {}
             else:
-                raise_error(response.json(), 'Failed to get locale details of document', True)
+                # raise_error(response.json(), 'Failed to get locale details of document', True)
+                raise exceptions.RequestFailedError('Failed to get locale details of document')
         try:
             for entry in response.json()['entities']:
                 curr_locale = entry['properties']['locale_code']
@@ -617,11 +618,12 @@ class Action:
             return
         logger.info('Cleaned up associations between local documents and Lingotek cloud')
 
-    def delete_local(self, title, document_id):
+    def delete_local(self, title, document_id, message=None):
+        message = 'Removed local file {0}'.format(title) if not message else message
         file_name = self.doc_manager.get_doc_by_prop('id', document_id)['file_name']
         try:
             os.remove(os.path.join(self.path, file_name))
-            logger.info('Removed local file {0}'.format(title))
+            logger.info(message)
         except OSError:
             logger.info('Something went wrong trying to delete the local file.')
 

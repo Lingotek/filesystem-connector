@@ -64,9 +64,7 @@ class DocumentManager:
         self._db.purge()
 
 def _update_entry_list(field, new_val):
-    """
-    updates a list in an entry
-    """
+    """ updates a list in an entry """
     def transform(element):
         try:
             element[field]
