@@ -59,10 +59,14 @@ class ImportAction(Action):
         # if not just write to new file?
         if not path:
             path = self.path
+        else:
+            path = os.path.join(self.path, path.replace(self.path, ''))
         path_changed = False
         curr_entry = self.doc_manager.get_doc_by_prop('id', document_id)
         curr_path = os.path.join(self.path, curr_entry['file_name'])
-        if os.path.normpath(curr_path) != os.path.normpath(path):
+        new_path = os.path.join(path, title)
+        print curr_path, new_path
+        if os.path.normpath(curr_path) != os.path.normpath(new_path):
             path_changed = True
         if not force:
             confirmation_msg = 'Would you like to overwrite the existing document? [y/N]:'
