@@ -2,6 +2,7 @@ from tests.test_actions import *
 from ltk import actions
 import unittest
 
+
 class TestConfig(unittest.TestCase):
     def setUp(self):
         create_config()
@@ -19,7 +20,9 @@ class TestConfig(unittest.TestCase):
             sys.stdout = out
             self.action.config_action(None, None, None, None, [])
             info = out.getvalue()
-            assert info.startswith('host: https://cms.lingotek.com')
+            assert 'access_token' in info
+            key_words = ['host: https://cms.lingotek.com', 'project id', 'community id', 'locale', 'workflow id']
+            assert all(word in info for word in key_words)
         finally:
             sys.stdout = sys.__stdout__
 
@@ -40,4 +43,16 @@ class TestConfig(unittest.TestCase):
     def test_add_upload_folder(self):
         watch_folder = 'watching'
         self.action.config_action(None, None, None, watch_folder, [])
-        assert self.action.watch_dir == os.path.join(self.action.path, watch_folder)
+        print 'self action watch dir', self.action.watch_dir
+        assert self.action.watch_dir == watch_folder
+
+    def test_watch_locales_1(self):
+        locale = {'ja_JP'}
+        self.action.config_action(None, None, None, None, locale)
+        assert self.action.watch_locales == locale
+
+    def test_watch_locales_mult(self):
+        locales = ['ja_JP', 'zh_CN', 'fr_FR',]
+        self.action.config_action(None, None, None, None, locales)
+        print self.action.watch_locales, set(locales)
+        assert self.action.watch_locales == set(locales)

@@ -267,7 +267,7 @@ def rm(document_names, force):
         action = actions.Action(os.getcwd())
         init_logger(action.path)
         for name in document_names:
-            action.delete_action(name, force)
+            action.rm_action(name, force)
     except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
         print_log(e)
         logger.error(e)

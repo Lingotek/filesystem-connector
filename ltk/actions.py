@@ -51,17 +51,15 @@ class Action:
         self.workflow_id = conf_parser.get('main', 'workflow_id')
         self.locale = conf_parser.get('main', 'default_locale')
         try:
+            # todo this try block will stop once one of them gets an exception..
             self.project_name = conf_parser.get('main', 'project_name')
             self.download_dir = conf_parser.get('main', 'download_folder')
             self.watch_dir = conf_parser.get('main', 'watch_folder')
             watch_locales = conf_parser.get('main', 'watch_locales')
-            # todo watch_locales get overwritten the current way (reading from config)
-            # since write to config then read from config.. intended?
-            # self.watch_locales.extend(watch_locales.split(','))
-            # self.watch_locales = list(set(self.watch_locales))
             self.watch_locales = set(watch_locales.split(','))
         except ConfigParser.NoOptionError:
             if not self.project_name:
+                self.api = ApiCalls(self.host, self.access_token)
                 project_info = self.api.get_project_info(self.community_id)
                 self.project_name = project_info[self.project_id]
                 config_file_name, conf_parser = self.init_config_file()
@@ -99,32 +97,37 @@ class Action:
         conf_parser.set('main', option, value)
         with open(config_file_name, 'wb') as new_file:
             conf_parser.write(new_file)
-        self._initialize_self()
+        # self._initialize_self()
         logger.info(log_info)
 
     def config_action(self, locale, workflow_id, download_folder, watch_folder, target_locales):
         config_file_name, conf_parser = self.init_config_file()
         if locale:
+            self.locale = locale
             log_info = 'Project default locale has been updated to {0}'.format(locale)
             self.update_config_file('default_locale', locale, conf_parser, config_file_name, log_info)
         if workflow_id:
             response = self.api.patch_project(self.project_id, workflow_id)
             if response.status_code != 204:
                 raise_error(response.json(), 'Something went wrong trying to update workflow_id of project')
+            self.workflow_id = workflow_id
             log_info = 'Project default workflow has been updated to {0}'.format(workflow_id)
             self.update_config_file('workflow_id', workflow_id, conf_parser, config_file_name, log_info)
             conf_parser.set('main', 'workflow_id', workflow_id)
         if download_folder:
             download_path = os.path.join(self.path, download_folder)
+            self.download_dir = download_folder
             log_info = 'Set download folder to {0}'.format(download_folder)
             self.update_config_file('download_folder', download_path, conf_parser, config_file_name, log_info)
         if watch_folder:
             watch_path = os.path.join(self.path, watch_folder)
+            self.watch_dir = watch_folder
             log_info = 'Set watch folder to {0}'.format(watch_folder)
             self.update_config_file('watch_folder', watch_path, conf_parser, config_file_name, log_info)
         if target_locales:
             log_info = 'Added target locales: {} for watch folder'.format(
                 ', '.join(target for target in target_locales))
+            self.watch_locales = set(target_locales)
             target_locales = ','.join(target for target in target_locales)
             self.update_config_file('watch_locales', target_locales, conf_parser, config_file_name, log_info)
 
@@ -453,11 +456,10 @@ class Action:
             for document_id in document_ids:
                 self.download_action(document_id, locale_code, auto_format)
 
-    def delete_action(self, document_name, force):
+    def rm_action(self, document_name, force):
         try:
             entry = self.doc_manager.get_doc_by_prop('name', document_name)
             document_id = entry['id']
-            print document_id
         except TypeError:
             logger.warn("Document name specified doesn't exist: {0}".format(document_name))
             return
