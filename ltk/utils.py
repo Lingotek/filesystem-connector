@@ -1,4 +1,5 @@
 import os
+from locales import default_locales
 # from constants import APP_ID
 
 class Enum(set):
@@ -47,3 +48,25 @@ def detect_format(file_name, get_mapper=False):
         return format_mapper
     name, extension = os.path.splitext(file_name)
     return format_mapper.get(extension, 'PLAINTEXT_OKAPI')
+
+def map_locale(locale):
+    """
+    maps incorrectly formatted locales to valid locales for use with Lingotek API
+    :param locale: incorrectly formatted locale
+    :return: valid locale
+    """
+    # import json
+    # valid_locales = []
+    # unsupported_locales = []
+    # with open('data/language-default-locales.json') as json_file:
+    #     default_locales = json.load(json_file)
+    try:
+        return default_locales[locale]
+    except KeyError:
+        return None
+    # for locale in locales:
+    #     try:
+    #         valid_locales.append(default_locales[locale])
+    #     except KeyError:
+    #         unsupported_locales.append(locale)
+    # return valid_locales, unsupported_locales

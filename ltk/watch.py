@@ -1,11 +1,13 @@
 import ctypes
 from ltk.actions import Action
 from logger import logger
+from utils import map_locale
 import time
 import requests
 import os
 from watchdog.observers import Observer
 from ltk.watchhandler import WatchHandler
+
 # import Queue
 
 # import threading
@@ -59,14 +61,16 @@ def has_hidden_attribute(file_path):
     return result
 
 class WatchAction(Action):
-    def __init__(self, path):
     # def __init__(self, path, remote=False):
+    def __init__(self, path):
         Action.__init__(self, path)
         self.observer = Observer()  # watchdog observer that will watch the files
         self.handler = WatchHandler()
         self.handler.on_modified = self._on_modified
         self.handler.on_created = self._on_created
         self.watch_queue = []  # not much slower than deque unless expecting 100+ items
+        self.locale_delimiter = None
+        self.ignore_ext = []  # file types to ignore as specified by the user
         # if remote:  # poll lingotek cloud periodically if this option enabled
         # self.remote_thread = threading.Thread(target=self.poll_remote(), args=())
         # self.remote_thread.daemon = True
@@ -107,10 +111,25 @@ class WatchAction(Action):
         file_path = event.src_path
         relative_path = file_path.replace(self.path, '')
         title = os.path.basename(os.path.normpath(file_path))
+        curr_ext = os.path.splitext(file_path)[1]
+        # return if the extension should be ignored or if the path is not a file
+        if curr_ext in self.ignore_ext or not os.path.isfile(file_path):
+            # logger.info("Detected a file with an extension in the ignore list, ignoring..")
+            return
+        if self.locale_delimiter:
+            try:
+                curr_locale = title.split(self.locale_delimiter)[1]
+                fixed_locale = map_locale(curr_locale)
+                if fixed_locale:
+                    self.watch_locales.add(fixed_locale)
+                else:
+                    logger.warning('This document\'s detected locale: {0} is not supported.'.format(curr_locale))
+            except IndexError:
+                logger.warning('Cannot detect locales from file: {0}, not adding any locales'.format(title))
         # only add the document if it's not a hidden document and it's a new file
         if not is_hidden_file(file_path) and self.doc_manager.is_doc_new(relative_path):
             self.add_document(self.locale, file_path, title)
-        elif self.doc_manager.is_doc_modified(relative_path):
+        elif self.doc_manager.is_doc_modified(relative_path, self.path):
             self.update_content(relative_path)
         document_id = self.doc_manager.get_doc_by_prop('name', title)['id']
         self.watch_add_target(title, document_id)
@@ -157,7 +176,7 @@ class WatchAction(Action):
                     logger.info('Translation completed ({0} - {1})'.format(doc_id,locale))
                     self.download_action(doc_id, locale, False)
 
-    def watch_action(self, watch_path):
+    def watch_action(self, watch_path, ignore, delimiter):
         # print self.path
         if not watch_path and not self.watch_dir:
             watch_path = self.path
@@ -165,6 +184,8 @@ class WatchAction(Action):
             watch_path = os.path.join(self.path, watch_path)
         else:
             watch_path = self.watch_dir
+        self.ignore_ext.extend(ignore)
+        self.locale_delimiter = delimiter
         print "Watching for updates in: {0}".format(watch_path)
         self.observer.schedule(self.handler, path=watch_path, recursive=True)
         self.observer.start()

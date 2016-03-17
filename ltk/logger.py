@@ -46,7 +46,3 @@ class CustomFormatter(logging.Formatter):
         self._fmt = format_orig
 
         return result
-
-
-# logger.addHandler(logging.NullHandler())
-# logger = logging.getLogger('requests')

@@ -20,9 +20,10 @@ class DocumentManager:
             return True
         return False
 
-    def is_doc_modified(self, file_name):
+    def is_doc_modified(self, file_name, path):
         entry = self._db.get(where('file_name') == file_name)
-        last_modified = os.stat(file_name).st_mtime
+        full_path = os.path.join(path, file_name)
+        last_modified = os.stat(full_path).st_mtime
         if entry and entry['added'] < last_modified and entry['last_mod'] < last_modified:
             return True
         return False
@@ -63,9 +64,7 @@ class DocumentManager:
         self._db.purge()
 
 def _update_entry_list(field, new_val):
-    """
-    updates a list in an entry
-    """
+    """ updates a list in an entry """
     def transform(element):
         try:
             element[field]

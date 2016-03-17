@@ -24,7 +24,7 @@ class Action:
         self.locale = ''
         self.download_dir = None  # directory where downloaded translation will be stored
         self.watch_dir = None  # if specified, only watch this directory
-        self.watch_locales = []  # if specified, add these target locales to any files in the watch folder
+        self.watch_locales = set()  # if specified, add these target locales to any files in the watch folder
         if not self._is_initialized():
             raise exceptions.UninitializedError("This project is not initialized. Please run init command.")
         self._initialize_self()
@@ -51,16 +51,15 @@ class Action:
         self.workflow_id = conf_parser.get('main', 'workflow_id')
         self.locale = conf_parser.get('main', 'default_locale')
         try:
+            # todo this try block will stop once one of them gets an exception..
             self.project_name = conf_parser.get('main', 'project_name')
             self.download_dir = conf_parser.get('main', 'download_folder')
             self.watch_dir = conf_parser.get('main', 'watch_folder')
             watch_locales = conf_parser.get('main', 'watch_locales')
-            # todo watch_locales get overwritten the current way (reading from config)
-            # self.watch_locales.extend(watch_locales.split(','))
-            # self.watch_locales = list(set(self.watch_locales))
-            self.watch_locales = watch_locales.split(',')
+            self.watch_locales = set(watch_locales.split(','))
         except ConfigParser.NoOptionError:
             if not self.project_name:
+                self.api = ApiCalls(self.host, self.access_token)
                 project_info = self.api.get_project_info(self.community_id)
                 self.project_name = project_info[self.project_id]
                 config_file_name, conf_parser = self.init_config_file()
@@ -98,39 +97,44 @@ class Action:
         conf_parser.set('main', option, value)
         with open(config_file_name, 'wb') as new_file:
             conf_parser.write(new_file)
-        self._initialize_self()
+        # self._initialize_self()
         logger.info(log_info)
 
     def config_action(self, locale, workflow_id, download_folder, watch_folder, target_locales):
         config_file_name, conf_parser = self.init_config_file()
         if locale:
+            self.locale = locale
             log_info = 'Project default locale has been updated to {0}'.format(locale)
             self.update_config_file('default_locale', locale, conf_parser, config_file_name, log_info)
         if workflow_id:
             response = self.api.patch_project(self.project_id, workflow_id)
             if response.status_code != 204:
                 raise_error(response.json(), 'Something went wrong trying to update workflow_id of project')
+            self.workflow_id = workflow_id
             log_info = 'Project default workflow has been updated to {0}'.format(workflow_id)
             self.update_config_file('workflow_id', workflow_id, conf_parser, config_file_name, log_info)
             conf_parser.set('main', 'workflow_id', workflow_id)
         if download_folder:
             download_path = os.path.join(self.path, download_folder)
+            self.download_dir = download_folder
             log_info = 'Set download folder to {0}'.format(download_folder)
             self.update_config_file('download_folder', download_path, conf_parser, config_file_name, log_info)
         if watch_folder:
             watch_path = os.path.join(self.path, watch_folder)
+            self.watch_dir = watch_folder
             log_info = 'Set watch folder to {0}'.format(watch_folder)
             self.update_config_file('watch_folder', watch_path, conf_parser, config_file_name, log_info)
         if target_locales:
             log_info = 'Added target locales: {} for watch folder'.format(
                 ', '.join(target for target in target_locales))
+            self.watch_locales = set(target_locales)
             target_locales = ','.join(target for target in target_locales)
             self.update_config_file('watch_locales', target_locales, conf_parser, config_file_name, log_info)
 
         print 'host: {0}\naccess_token: {1}\nproject id: {2}\nproject name: {6}\ncommunity id: {3}\nworkflow id: {4}\n' \
               'locale: {5}\ndownloads folder: {7}\nwatch folder: {8}\nwatch target locales: {9}'.format(
             self.host, self.access_token, self.project_id, self.community_id, self.workflow_id, self.locale,
-            self.project_name, self.download_dir, self.watch_dir, self.watch_locales)
+            self.project_name, self.download_dir, self.watch_dir, ', '.join(x for x in self.watch_locales))
 
     def add_document(self, locale, file_name, title, **kwargs):
         response = self.api.add_document(file_name, locale, self.project_id, title, **kwargs)
@@ -154,7 +158,7 @@ class Action:
             title = os.path.basename(os.path.normpath(file_name))
             relative_path = file_name.replace(self.path, '')
             if not self.doc_manager.is_doc_new(relative_path):
-                if self.doc_manager.is_doc_modified(relative_path):
+                if self.doc_manager.is_doc_modified(relative_path, self.path):
                     confirm = 'not confirmed'
                     while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
                         confirm = raw_input("This document already exists. Would you like to overwrite it? [y/N]: ")
@@ -181,7 +185,7 @@ class Action:
         entries = self.doc_manager.get_all_entries()
         updated = False
         for entry in entries:
-            if not self.doc_manager.is_doc_modified(entry['file_name']):
+            if not self.doc_manager.is_doc_modified(entry['file_name'], self.path):
                 continue
             response = self.api.document_update(entry['id'], os.path.join(self.path, entry['file_name']))
             if response.status_code != 202:
@@ -452,7 +456,7 @@ class Action:
             for document_id in document_ids:
                 self.download_action(document_id, locale_code, auto_format)
 
-    def delete_action(self, document_name):
+    def rm_action(self, document_name, force):
         try:
             entry = self.doc_manager.get_doc_by_prop('name', document_name)
             document_id = entry['id']
@@ -465,7 +469,9 @@ class Action:
             # raise_error(response.json(), "Failed to delete document {0}".format(document_name), True)
             logger.error("Failed to delete document {0}".format(document_name))
         else:
-            logger.info("{0} has been deleted.".format(document_name))
+            logger.info("{0} has been deleted remotely.".format(document_name))
+            if force:
+                self.delete_local(document_name, document_id)
             self.doc_manager.remove_element(document_id)
 
     def get_new_name(self, file_name, curr_path):
@@ -485,7 +491,8 @@ class Action:
             if poll:
                 return {}
             else:
-                raise_error(response.json(), 'Failed to get locale details of document', True)
+                # raise_error(response.json(), 'Failed to get locale details of document', True)
+                raise exceptions.RequestFailedError('Failed to get locale details of document')
         try:
             for entry in response.json()['entities']:
                 curr_locale = entry['properties']['locale_code']
@@ -496,71 +503,73 @@ class Action:
             pass
         return locale_progress
 
-    def _import(self, document_id, document_info, force):
-        local_ids = self.doc_manager.get_doc_ids()
-        response = self.api.document_content(document_id, None, None)
-        title, extension = os.path.splitext(document_info['title'])
-        if not extension:
-            extension = document_info['extension']
-            extension = '.' + extension
-        if extension and extension != '.none':
-            title += extension
-        file_path = os.path.join(os.getcwd(), title)  # import to current working directory
-        logger.info('Importing "{0}"'.format(title))
-        # use status action to get locale info for importing
-        locale_info = self.import_locale_info(document_id)
-        if not force:
-            if document_id in local_ids:
-                confirm = 'none'
-                while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-                    confirm = raw_input('Would you like to overwrite the existing document? [y/N]:')
-                if not confirm or confirm in ['n', 'N', 'no', 'No', 'NO']:
-                    logger.info('Skipped importing "{0}"'.format(title))
-                    return
-            else:
-                if self.doc_manager.get_doc_by_prop('file_name', file_path.replace(self.path, '')):
-                    # change file_path
-                    file_path = self.get_new_name(title, os.getcwd())
-                    orig_title = title
-                    title = os.path.basename(os.path.normpath(file_path))
-                    logger.warning(
-                        'Imported "{0}" as "{1}" because "{0}" already exists locally'.format(orig_title, title))
-        # logger.info('Imported "{0}"'.format(title))
-        with open(file_path, 'wb') as fh:
-            for chunk in response.iter_content(1024):
-                fh.write(chunk)
-        if document_id not in local_ids:
-            relative_path = file_path.replace(self.path, '')
-            self._add_document(relative_path, title, document_id)
-            self.doc_manager.update_document('locales', list(locale_info.iterkeys()), document_id)
+    # def _import(self, document_id, document_info, force, path):
+    #     local_ids = self.doc_manager.get_doc_ids()
+    #     response = self.api.document_content(document_id, None, None)
+    #     title, extension = os.path.splitext(document_info['title'])
+    #     if not extension:
+    #         extension = document_info['extension']
+    #         extension = '.' + extension
+    #     if extension and extension != '.none':
+    #         title += extension
+    #     if path:
+    #         file_path = os.path.join(self.path, path, title)
+    #     else:
+    #         file_path = os.path.join(self.path, title)
+    #     # file_path = os.path.join(os.getcwd(), title)  # import to current working directory
+    #     logger.info('Importing "{0}"'.format(title))
+    #     # use status action to get locale info for importing
+    #     locale_info = self.import_locale_info(document_id)
+    #     # todo document id may be in local_ids but not in same area.. check that their file path is diff,
+    #     # and ask if want to move -- if not move, is it a copy?
+    #     if not force:
+    #         if document_id in local_ids:
+    #             confirm = 'none'
+    #             while confirm not in ['y', 'yes', 'n', 'no', '']:
+    #                 confirm = raw_input('Would you like to overwrite the existing document? [y/N]:').lower()
+    #             if not confirm or confirm in ['n', 'no']:
+    #                 logger.info('Skipped importing "{0}"'.format(title))
+    #                 return
+    #         else:
+    #             if self.doc_manager.get_doc_by_prop('file_name', file_path.replace(self.path, '')):
+    #                 # change file_path
+    #                 file_path = self.get_new_name(title, os.getcwd())
+    #                 orig_title = title
+    #                 title = os.path.basename(os.path.normpath(file_path))
+    #                 logger.warning(
+    #                     'Imported "{0}" as "{1}" because "{0}" already exists locally'.format(orig_title, title))
+    #     # logger.info('Imported "{0}"'.format(title))
+    #     with open(file_path, 'wb') as fh:
+    #         for chunk in response.iter_content(1024):
+    #             fh.write(chunk)
+    #     if document_id not in local_ids:
+    #         relative_path = file_path.replace(self.path, '')
+    #         self._add_document(relative_path, title, document_id)
+    #         self.doc_manager.update_document('locales', list(locale_info.iterkeys()), document_id)
 
-    def import_action(self, import_all, force):
-        response = self.api.list_documents(self.project_id)
-        tms_doc_info = {}
-        if response.status_code == 200:
-            tms_documents = response.json()['entities']
-            for entity in tms_documents:
-                doc_info = {'title': entity['properties']['title'], 'extension': entity['properties']['extension']}
-                tms_doc_info[entity['properties']['id']] = doc_info
-        elif response.status_code == 204:
-            # todo could maybe put the logger error 'No documents to import' here.
-            pass
-        else:
-            raise_error(response.json(), 'Error finding current documents in Lingotek Cloud')
-
-        if not tms_doc_info:
-            logger.error('No documents to import!')
-            return
-
-        if import_all:
-            ids_to_import = tms_doc_info.iterkeys()
-        else:
-            import_doc_info = {}
-            for k, v in tms_doc_info.iteritems():
-                import_doc_info[k] = v['title']
-            ids_to_import = get_import_ids(import_doc_info)
-        for curr_id in ids_to_import:
-            self._import(curr_id, tms_doc_info[curr_id], force)
+    # def import_action(self, import_all, force, path):
+    #     response = self.api.list_documents(self.project_id)
+    #     tms_doc_info = {}
+    #     if response.status_code == 200:
+    #         tms_documents = response.json()['entities']
+    #         for entity in tms_documents:
+    #             doc_info = {'title': entity['properties']['title'], 'extension': entity['properties']['extension']}
+    #             tms_doc_info[entity['properties']['id']] = doc_info
+    #     elif response.status_code == 204:
+    #         logger.error('No documents to import!')
+    #         return
+    #     else:
+    #         raise_error(response.json(), 'Error finding current documents in Lingotek Cloud')
+    #
+    #     if import_all:
+    #         ids_to_import = tms_doc_info.iterkeys()
+    #     else:
+    #         import_doc_info = {}
+    #         for k, v in tms_doc_info.iteritems():
+    #             import_doc_info[k] = v['title']
+    #         ids_to_import = get_import_ids(import_doc_info)
+    #     for curr_id in ids_to_import:
+    #         self._import(curr_id, tms_doc_info[curr_id], force, path)
 
     def clean_action(self, force, dis_all, document_name):
         if dis_all:
@@ -603,18 +612,22 @@ class Action:
                 removed_title = self.doc_manager.get_doc_by_prop('id', curr_id)['name']
                 # todo somehow this line^ doc is null... after delete files remotely, then delete locally
                 if force:
-                    file_name = self.doc_manager.get_doc_by_prop('id', curr_id)['file_name']
-                    try:
-                        os.remove(os.path.join(self.path, file_name))
-                        logger.info('Removed local file {0}'.format(removed_title))
-                    except OSError:
-                        logger.info('Something went wrong trying to delete the local file.')
+                    self.delete_local(removed_title, curr_id)
                 self.doc_manager.remove_element(curr_id)
                 logger.info('Removing association for document {0}'.format(removed_title))
         else:
             logger.info('Local documents already up-to-date with Lingotek cloud')
             return
         logger.info('Cleaned up associations between local documents and Lingotek cloud')
+
+    def delete_local(self, title, document_id, message=None):
+        message = 'Removed local file {0}'.format(title) if not message else message
+        file_name = self.doc_manager.get_doc_by_prop('id', document_id)['file_name']
+        try:
+            os.remove(os.path.join(self.path, file_name))
+            logger.info(message)
+        except OSError:
+            logger.info('Something went wrong trying to delete the local file.')
 
 
 def raise_error(json, error_message, is_warning=False):

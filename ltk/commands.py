@@ -8,6 +8,7 @@ from logger import logger, API_LOG_LEVEL, API_RESPONSE_LOG_LEVEL, CustomFormatte
 import sys
 from ltk import __version__
 from watch import WatchAction
+from import_action import ImportAction
 
 def abort_if_false(ctx, param, value):
     if not value:
@@ -77,7 +78,7 @@ def ltk(is_quiet, verbosity_lvl):
 @click.option('-d', '--delete', flag_value=True,  # expose_value=False, callback=abort_if_false,
               # prompt='Are you sure you want to delete the current project remotely and re-initialize? '
               #        'Use the -c flag if you only want to change the project.',
-              help='delete the current project and re-initialize')
+              help='delete the current project remotely and re-initialize')
 # todo add a 'change' option so don't delete remote project
 # @click.option('-c', '--change', flag_value=True, help='Change the Lingotek project. ')
 @click.option('--reset', flag_value=True, help='re-authorize and reset any stored access tokens')
@@ -104,10 +105,11 @@ def init(host, access_token, path, project_name, workflow_id, locale, delete, re
 @click.option('-f', '--watch_folder', type=click.Path(exists=True),
               help='specify a folder to watch when running ltk watch, defaults to project root')
 @click.option('-t', '--target_locales', multiple=True,
-              help='specify target locales that documents in watch_folder should be assigned')
+              help='specify target locales that documents in watch_folder should be assigned, may either specify '
+                   'with multiple -t flags (ex: -t locale -t locale) or give a list separated by commas and no spaces '
+                   '(ex: -t locale,locale)')
 def config(locale, workflow_id, download_folder, watch_folder, target_locales):
     """ view or change local configuration """
-    # todo add the target_locales
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
@@ -255,15 +257,17 @@ def pull(auto_format, locales):
 
 @ltk.command(short_help="disassociate local doc(s) from Lingotek cloud and deletes remote copy")
 @click.argument('document_names', required=True, nargs=-1)
-def delete(document_names):
+@click.option('-f', '--force', flag_value=True, help='delete both local and remote files')
+def rm(document_names, force):
     """
     disassociate local doc(s) from Lingotek cloud and deletes remote copy
+    if remote copy should not be deleted, please use ltk clean
     """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
         for name in document_names:
-            action.delete_action(name)
+            action.rm_action(name, force)
     except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
@@ -272,9 +276,10 @@ def delete(document_names):
 @ltk.command(name='import')
 @click.option('-a', '--all', 'import_all', flag_value=True, help='import all documents from Lingotek Cloud')
 @click.option('-f', '--force', flag_value=True, help='overwrites existing documents without prompt')
-def import_command(import_all, force):
+@click.option('-p', '--path', type=click.Path(exists=True), help='import documents to a specified path')
+def import_command(import_all, force, path):
     """
-    import documents from Lingotek
+    import documents from Lingotek cloud, automatically downloaded to project root
     """
     # todo import should show all documents
     # add a force option so can import all force -- overwrites all existing documents without prompting
@@ -283,9 +288,10 @@ def import_command(import_all, force):
         # else automatically re-name
             # possibly have to patch title in Lingotek Cloud?
     try:
-        action = actions.Action(os.getcwd())
+        # action = actions.Action(os.getcwd())
+        action = ImportAction(os.getcwd())
         init_logger(action.path)
-        action.import_action(import_all, force)
+        action.import_action(import_all, force, path)
     except(UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
@@ -293,7 +299,7 @@ def import_command(import_all, force):
 
 @ltk.command(short_help="cleans up the associations between local documents and documents in Lingotek")
 @click.option('-a', '--all', 'dis_all', flag_value=True, help='removes all associations between local and remote')
-@click.option('-n', '--doc_name', help='removes disassociation of specified document name')
+@click.option('-n', '--doc_name', help='removes association of specified document name')
 @click.option('-f', '--force', flag_value=True, help='deletes local documents that no longer exists in Lingotek')
 def clean(force, dis_all, doc_name):
     """
@@ -312,7 +318,9 @@ def clean(force, dis_all, doc_name):
 
 @ltk.command(short_help="watches local and remote files")
 @click.option('-p', '--path', type=click.Path(exists=True), help='specify a folder to watch, defaults to project path')
-def watch(path):
+@click.option('--ignore', multiple=True, help='specify types of files to ignore')
+@click.option('--auto', 'delimiter', help='automatically detects locale from the file name, specify locale delimiter')
+def watch(path, ignore, delimiter):
     """
     Watches local files added or imported by ltk, and sends a PATCH when a document is changed.
     Also watches remote files, and automatically downloads finished translations.
@@ -320,7 +328,7 @@ def watch(path):
     try:
         action = WatchAction(os.getcwd())
         init_logger(action.path)
-        action.watch_action(path)
+        action.watch_action(path, ignore, delimiter)
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)

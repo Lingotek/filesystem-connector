@@ -5,6 +5,7 @@ import unittest
 class TestInitAction(unittest.TestCase):
 
     def test_uninitialized(self):
+        # todo create dir outside so folder not initialized
         self.assertRaises(exceptions.UninitializedError, actions.Action, os.getcwd())
 
     def test_init_host(self):
