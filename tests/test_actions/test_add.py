@@ -1,61 +1,72 @@
 from tests.test_actions import *
 from ltk.actions import Action
 import os
-import unittest
 
-class TestAdd(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        create_config()
+def test_add_db():
+    # check document added to db
+    create_config()
+    action = Action(os.getcwd())
+    file_name = 'sample.txt'
+    text_file_path = create_txt_file(file_name)
+    action.add_action(None, [file_name])
+    # check that document added in db
+    assert action.doc_manager.get_doc_by_prop('name', file_name)
+    action.rm_action(file_name, False)
+    action.clean_action(True, False, None)
+    # os.remove(text_file_path)
+    cleanup()
 
-    @classmethod
-    def tearDownClass(cls):
-        cleanup()
+def test_add_remote():
+    # check that document added to Lingotek
+    create_config()
+    action = Action(os.getcwd())
+    file_name = 'sample.txt'
+    text_file_path = create_txt_file(file_name)
+    action.add_action(None, [file_name])
+    doc_id = action.doc_manager.get_doc_ids()[0]
+    # response = action.api.get_document(doc_id)
+    # assert response.status_code == 200
+    assert poll_doc(action, doc_id)
+    action.rm_action(file_name, False)
+    action.clean_action(True, False, None)
+    # os.remove(text_file_path)
+    cleanup()
 
-    def setUp(self):
-        self.action = Action(os.getcwd())
-        self.added_files = []
+def test_add_pattern_db():
+    # test that adding with a pattern gets all expected matches in local db
+    create_config()
+    action = Action(os.getcwd())
+    files = ['sample.txt', 'sample1.txt', 'sample2.txt']
+    file_paths = []
+    for fn in files:
+        file_paths.append(create_txt_file(fn))
+    action.add_action(None, ['sample*.txt'])
+    for fn in files:
+        assert action.doc_manager.get_doc_by_prop('name', fn)
+    # for file_path in file_paths:
+    #     os.remove(file_path)
+    for fn in files:
+        action.rm_action(fn, False)
+    action.clean_action(True, False, None)
+    cleanup()
 
-    def tearDown(self):
-        for fn in self.added_files:
-            self.action.rm_action(fn, True)
-        self.action.clean_action(False, False, None)
+def test_add_pattern_remote():
+    # test that adding with a pattern gets all expected matches in Lingotek
+    create_config()
+    action = Action(os.getcwd())
+    files = ['sample.txt', 'sample1.txt', 'sample2.txt']
+    file_paths = []
+    for fn in files:
+        file_paths.append(create_txt_file(fn))
+    action.add_action(None, ['sample*.txt'])
+    doc_ids = action.doc_manager.get_doc_ids()
+    for doc_id in doc_ids:
+        assert poll_doc(action, doc_id)
+    # for file_path in file_paths:
+    #     os.remove(file_path)
+    for fn in files:
+        action.rm_action(fn, False)
+    action.clean_action(True, False, None)
+    cleanup()
 
-    def test_add_db(self):
-        # check document added to db
-        file_name = 'sample.txt'
-        text_file_path = create_txt_file(file_name)
-        self.added_files.append(text_file_path)
-        self.action.add_action(None, [file_name])
-        # check that document added in db
-        assert self.action.doc_manager.get_doc_by_prop('name', file_name)
-
-    def test_add_remote(self):
-        # check that document added to Lingotek
-        file_name = 'sample.txt'
-        text_file_path = create_txt_file(file_name)
-        self.added_files.append(text_file_path)
-        self.action.add_action(None, [file_name])
-        doc_id = self.action.doc_manager.get_doc_ids()[0]
-        assert poll_doc(self.action, doc_id)
-
-    def test_add_pattern_db(self):
-        # test that adding with a pattern gets all expected matches in local db
-        files = ['sample.txt', 'sample1.txt', 'sample2.txt']
-        for fn in files:
-            self.added_files.append(create_txt_file(fn))
-        self.action.add_action(None, ['sample*.txt'])
-        for fn in files:
-            assert self.action.doc_manager.get_doc_by_prop('name', fn)
-
-    def test_add_pattern_remote(self):
-        # test that adding with a pattern gets all expected matches in Lingotek
-        files = ['sample.txt', 'sample1.txt', 'sample2.txt']
-        for fn in files:
-            self.added_files.append(create_txt_file(fn))
-        self.action.add_action(None, ['sample*.txt'])
-        doc_ids = self.action.doc_manager.get_doc_ids()
-        for doc_id in doc_ids:
-            assert poll_doc(self.action, doc_id)
-
-    # todo test all those other args
+# todo test all those other args

@@ -4,19 +4,12 @@ from ltk.actions import Action
 import unittest
 
 class TestClean(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        create_config()
-
-    @classmethod
-    def tearDownClass(cls):
-        cleanup()
-
     def setUp(self):
+        create_config()
         self.action = Action(os.getcwd())
 
     def tearDown(self):
-        pass
+        cleanup()
 
     def test_clean(self):
         pass

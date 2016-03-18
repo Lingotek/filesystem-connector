@@ -30,33 +30,6 @@ class ImportAction(Action):
             self.import_document(curr_id, tms_doc_info[curr_id], force, path)
 
     def import_check(self, force, path, document_id, title):
-        # local_ids = self.doc_manager.get_doc_ids()
-        # if document_id in local_ids:
-        #     if path:
-        #         curr_entry = self.doc_manager.get_doc_by_prop('id', document_id)
-        #         curr_path = os.path.join(self.path, curr_entry['file_name'])
-        #         confirmation_msg = 'Would you like to overwrite the existing document? [y/N]:'
-        #         if os.path.normpath(curr_path) != os.path.normpath(path):
-        #             confirmation_msg = 'Would you like to overwrite the existing document and ' \
-        #                                'its current saved path? [y/N]:'
-        #         confirm = 'none'
-        #         while confirm not in ['y', 'yes', 'n', 'no', '']:
-        #             confirm = raw_input(confirmation_msg).lower()
-        #         if not confirm or confirm in ['n', 'no']:
-        #             logger.info('Skipped importing "{0}"'.format(title))
-        #             return False
-        #     else:
-        #         logger.error('This document already exists somewhere locally. \
-        #         Use the -p option to import it to a specified path or -f to force an update')
-        #         return False
-        # return True
-        # check if document id is in local ids
-        # if it is, document already exists -- check the path associated with local id
-        # check current given path
-        # if same, prompt for overwrite
-        # if not same, prompt for overwrite for both path and file
-        # move the file to the new path
-        # if not just write to new file?
         if not path:
             path = self.path
         else:
@@ -108,24 +81,6 @@ class ImportAction(Action):
         if document_id in local_ids:
             changed_path = self.import_check(force, path, document_id, title)
 
-            # if not force:
-            #     self.import_check(path, document_id, title)
-            # if document_id in local_ids:
-            #     confirm = 'none'
-            #     while confirm not in ['y', 'yes', 'n', 'no', '']:
-            #         confirm = raw_input('Would you like to overwrite the existing document? [y/N]:').lower()
-            #     if not confirm or confirm in ['n', 'no']:
-            #         logger.info('Skipped importing "{0}"'.format(title))
-            #         return
-            # else:
-            #     if self.doc_manager.get_doc_by_prop('file_name', file_path.replace(self.path, '')):
-            #         # change file_path
-            #         file_path = self.get_new_name(title, os.getcwd())
-            #         orig_title = title
-            #         title = os.path.basename(os.path.normpath(file_path))
-            #         logger.warning(
-            #             'Imported "{0}" as "{1}" because "{0}" already exists locally'.format(orig_title, title))
-        # logger.info('Imported "{0}"'.format(title))
         if changed_path:
             self.delete_local(title, document_id, 'Moved local file {0}'.format(title))
 

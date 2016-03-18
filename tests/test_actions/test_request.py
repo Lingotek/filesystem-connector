@@ -1,37 +1,36 @@
 from tests.test_actions import *
 from ltk.actions import Action
+from io import BytesIO
 
+import sys
 import unittest
 
 class TestRequest(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        create_config()
-
-    @classmethod
-    def tearDownClass(cls):
-        cleanup()
-
     def setUp(self):
+        create_config()
         self.action = Action(os.getcwd())
         self.files = ['sample.txt', 'sample1.txt', 'sample2.txt']
         self.first_doc = 'sample.txt'
         for fn in self.files:
             create_txt_file(fn)
-        self.action.add_action(None, ['sample*.txt'])
+        self.action.add_action(None, 'sample*.txt')
         self.doc_ids = self.action.doc_manager.get_doc_ids()
         for doc_id in self.doc_ids:
             assert poll_doc(self.action, doc_id)
 
     def tearDown(self):
-        for curr_file in self.files:
-            self.action.rm_action(curr_file, True)
-        self.action.clean_action(False, False, None)
+        cleanup()
 
     def check_locales_exist(self, documents, locales):
         for document in documents:
-            curr_doc = self.action.doc_manager.get_doc_by_prop('file_name', document)
-            return all(locale in curr_doc['locales'] for locale in locales)
+            try:
+                out = BytesIO()
+                sys.stdout = out
+                self.action.status_action(True, document)
+                status = out.getvalue()
+                return all(locale in status for locale in locales)
+            finally:
+                sys.stdout = sys.__stdout__
 
     def test_request_one_locale_doc(self):
         locales = ['ja_JP']
