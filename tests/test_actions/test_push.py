@@ -9,21 +9,18 @@ class TestPush(unittest.TestCase):
         self.files = ['sample.txt', 'sample1.txt', 'sample2.txt']
         for fn in self.files:
             create_txt_file(fn)
-        self.action.add_action(None, 'sample*.txt')
+        self.action.add_action(None, ['sample*.txt'])
         self.doc_ids = self.action.doc_manager.get_doc_ids()
         for doc_id in self.doc_ids:
             assert poll_doc(self.action, doc_id)
 
     def tearDown(self):
         for curr_file in self.files:
-            self.action.rm_action(curr_file)
-        self.action.clean_action(True, False, None)
+            self.action.rm_action(curr_file, True)
+        self.action.clean_action(False, False, None)
         cleanup()
 
     def test_push_1(self):
-        # update one document
-        # push
-        # check results
         append_file(self.files[0])
         self.action.push_action()
         # todo check results

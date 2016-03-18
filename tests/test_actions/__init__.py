@@ -47,8 +47,3 @@ def cleanup():
         shutil.rmtree(conf_path)
     except OSError:
         print 'OSError in cleanup'
-
-# test delete
-# test import single
-# test import all
-# test clean
