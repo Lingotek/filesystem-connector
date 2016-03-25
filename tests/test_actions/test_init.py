@@ -51,5 +51,5 @@ class TestInitAction(unittest.TestCase):
         assert action.doc_manager
         cleanup()
 
-if __name__ == '__main__':
-    unittest.main()
+# if __name__ == '__main__':
+#     unittest.main()
