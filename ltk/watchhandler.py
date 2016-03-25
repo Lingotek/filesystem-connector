@@ -14,9 +14,6 @@ class WatchHandler(FileSystemEventHandler):
     def on_created(self, event):
         self.process(event)
 
-    def on_moved(self, event):
-        self.process(event)
-
     # on modified
     # on moved
     # on deleted
