@@ -36,10 +36,8 @@ def retry(logger, timeout=5, exec_type=None):
                     return function(*args, **kwargs)
                 except Exception as e:
                     if e.__class__ in exec_type:
-                        # some logging error here
                         logger.error("Connection has timed out. Retrying..")
-                        # sleep for some time then retry
-                        time.sleep(timeout)
+                        time.sleep(timeout)  # sleep for some time then retry
                     else:
                         raise e
         return wrapper
@@ -118,7 +116,9 @@ class WatchAction(Action):
             return
         if self.locale_delimiter:
             try:
-                curr_locale = title.split(self.locale_delimiter)[1]
+                # curr_locale = title.split(self.locale_delimiter)[1]
+                # todo locale detection needs to be more robust
+                curr_locale = title.split(self.locale_delimiter)[-2]
                 fixed_locale = map_locale(curr_locale)
                 if fixed_locale:
                     self.watch_locales.add(fixed_locale)
@@ -174,7 +174,7 @@ class WatchAction(Action):
             for locale, progress in locale_progress.iteritems():
                 if progress == 100 and locale not in downloaded:
                     logger.info('Translation completed ({0} - {1})'.format(doc_id,locale))
-                    self.download_action(doc_id, locale, False)
+                    self.download_action(doc_id, locale, False, False)
 
     def watch_action(self, watch_path, ignore, delimiter):
         # print self.path

@@ -36,7 +36,6 @@ class TestImport(unittest.TestCase):
         for doc_id in self.doc_ids:
             assert self.action.doc_manager.get_doc_by_prop('id', doc_id)
 
-
     def test_import_locale(self):
         # test importing a document that already has a locale
         pass

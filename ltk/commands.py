@@ -260,8 +260,8 @@ def pull(auto_format, locales):
 @click.option('-f', '--force', flag_value=True, help='delete both local and remote files')
 def rm(document_names, force):
     """
-    disassociate local doc(s) from Lingotek cloud and deletes remote copy
-    if remote copy should not be deleted, please use ltk clean
+    disassociate local doc(s) from Lingotek cloud and deletes remote copy.
+    if remote copy should not be kept, please use ltk clean
     """
     try:
         action = actions.Action(os.getcwd())
