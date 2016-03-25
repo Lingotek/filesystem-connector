@@ -116,11 +116,12 @@ class WatchAction(Action):
                     # logger.info('Updating remote content: {0}'.format(fn))
                     self.update_content(fn)
                 else:
-                    _on_created(event)
+                    self._on_created(event)
             except KeyboardInterrupt:
                 self.observer.stop()
             except:
-                print("Unable to add document on the cloud.")
+                print("Unable to update document.")
+                print(sys.exc_info())
                 restart()
 
     def _on_created(self, event):
@@ -156,13 +157,14 @@ class WatchAction(Action):
             except KeyboardInterrupt:
                 self.observer.stop()
             except:
-                print("Unable to update document.")
+                print("Unable to add document on the cloud.")
+                print(sys.exc_info()[0])
                 restart()
             document_id = self.doc_manager.get_doc_by_prop('name', title)['id']
             self.watch_add_target(title, document_id)
             # logger.info('Added new document {0}'.format(title
-        else:
-            print("Skipping hidden file "+file_path)
+        # else:
+        #     print("Skipping hidden file "+file_path)
 
     def _on_moved(self, event):
         """Used for programs, such as gedit, that modify documents by moving (overwriting)
