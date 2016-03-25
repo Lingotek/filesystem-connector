@@ -503,74 +503,6 @@ class Action:
             pass
         return locale_progress
 
-    # def _import(self, document_id, document_info, force, path):
-    #     local_ids = self.doc_manager.get_doc_ids()
-    #     response = self.api.document_content(document_id, None, None)
-    #     title, extension = os.path.splitext(document_info['title'])
-    #     if not extension:
-    #         extension = document_info['extension']
-    #         extension = '.' + extension
-    #     if extension and extension != '.none':
-    #         title += extension
-    #     if path:
-    #         file_path = os.path.join(self.path, path, title)
-    #     else:
-    #         file_path = os.path.join(self.path, title)
-    #     # file_path = os.path.join(os.getcwd(), title)  # import to current working directory
-    #     logger.info('Importing "{0}"'.format(title))
-    #     # use status action to get locale info for importing
-    #     locale_info = self.import_locale_info(document_id)
-    #     # todo document id may be in local_ids but not in same area.. check that their file path is diff,
-    #     # and ask if want to move -- if not move, is it a copy?
-    #     if not force:
-    #         if document_id in local_ids:
-    #             confirm = 'none'
-    #             while confirm not in ['y', 'yes', 'n', 'no', '']:
-    #                 confirm = raw_input('Would you like to overwrite the existing document? [y/N]:').lower()
-    #             if not confirm or confirm in ['n', 'no']:
-    #                 logger.info('Skipped importing "{0}"'.format(title))
-    #                 return
-    #         else:
-    #             if self.doc_manager.get_doc_by_prop('file_name', file_path.replace(self.path, '')):
-    #                 # change file_path
-    #                 file_path = self.get_new_name(title, os.getcwd())
-    #                 orig_title = title
-    #                 title = os.path.basename(os.path.normpath(file_path))
-    #                 logger.warning(
-    #                     'Imported "{0}" as "{1}" because "{0}" already exists locally'.format(orig_title, title))
-    #     # logger.info('Imported "{0}"'.format(title))
-    #     with open(file_path, 'wb') as fh:
-    #         for chunk in response.iter_content(1024):
-    #             fh.write(chunk)
-    #     if document_id not in local_ids:
-    #         relative_path = file_path.replace(self.path, '')
-    #         self._add_document(relative_path, title, document_id)
-    #         self.doc_manager.update_document('locales', list(locale_info.iterkeys()), document_id)
-
-    # def import_action(self, import_all, force, path):
-    #     response = self.api.list_documents(self.project_id)
-    #     tms_doc_info = {}
-    #     if response.status_code == 200:
-    #         tms_documents = response.json()['entities']
-    #         for entity in tms_documents:
-    #             doc_info = {'title': entity['properties']['title'], 'extension': entity['properties']['extension']}
-    #             tms_doc_info[entity['properties']['id']] = doc_info
-    #     elif response.status_code == 204:
-    #         logger.error('No documents to import!')
-    #         return
-    #     else:
-    #         raise_error(response.json(), 'Error finding current documents in Lingotek Cloud')
-    #
-    #     if import_all:
-    #         ids_to_import = tms_doc_info.iterkeys()
-    #     else:
-    #         import_doc_info = {}
-    #         for k, v in tms_doc_info.iteritems():
-    #             import_doc_info[k] = v['title']
-    #         ids_to_import = get_import_ids(import_doc_info)
-    #     for curr_id in ids_to_import:
-    #         self._import(curr_id, tms_doc_info[curr_id], force, path)
-
     def clean_action(self, force, dis_all, document_name):
         if dis_all:
             # disassociate everything
@@ -883,14 +815,6 @@ def get_files(root, patterns):
                     for fn in fnmatch.filter(files, fn_pat):
                         matched_files.append(os.path.join(path, fn))
 
-    # for path, subdirs, files in os.walk(root):
-    #     # matched_files = any(fnmatch.fnmatch(files, p) for p in patterns)
-    #     for pattern in patterns:
-    #         for name in fnmatch.filter(files, pattern):
-    #             # print 'found without subdir'
-    #             # print os.path.join(path, name)
-    #             matched_files.append(os.path.join(path, name))
-    # print matched_files
     return matched_files
 
 

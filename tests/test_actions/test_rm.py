@@ -27,4 +27,3 @@ class TestRm(unittest.TestCase):
         response = self.action.api.get_document(self.doc_id)
         assert response.status_code == 404
         assert not os.path.isfile(self.file_path)
-        # extra step: check that local document also gone

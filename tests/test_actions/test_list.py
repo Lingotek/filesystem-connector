@@ -5,12 +5,16 @@ import sys
 import unittest
 
 class TestList(unittest.TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         create_config()
-        self.action = Action(os.getcwd())
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(cls):
         cleanup()
+
+    def setUp(self):
+        self.action = Action(os.getcwd())
 
     def test_list_doc(self):
         files = ['sample.txt', 'sample1.txt', 'sample2.txt']
@@ -19,6 +23,8 @@ class TestList(unittest.TestCase):
             file_paths.append(create_txt_file(fn))
         self.action.add_action(None, ['sample*.txt'])
         doc_ids = self.action.doc_manager.get_doc_ids()
+        for doc_id in doc_ids:
+            assert poll_doc(self.action, doc_id)
         try:
             out = BytesIO()
             sys.stdout = out
@@ -28,9 +34,10 @@ class TestList(unittest.TestCase):
                 assert doc_id in info
         finally:
             sys.stdout = sys.__stdout__
+
         for fn in files:
-            self.action.rm_action(fn)
-        self.action.clean_action(True, False, None)
+            self.action.rm_action(fn, True)
+        self.action.clean_action(False, False, None)
 
     def test_list_no_docs(self):
         try:
@@ -78,7 +85,16 @@ class TestList(unittest.TestCase):
             sys.stdout = sys.__stdout__
 
     def test_list_filters_default(self):
-        pass
+        try:
+            out = BytesIO()
+            sys.stdout = out
+            self.action.list_filter_action()
+            info = out.getvalue()
+            assert info.startswith('filters:')
+            assert 'okf_html@wordpress.fprm' in info
+            assert '0adc9a9d-ca67-4217-9525-d5a6af7ba91f' in info
+        finally:
+            sys.stdout = sys.__stdout__
 
     def test_list_filters_custom(self):
         # create custom filters

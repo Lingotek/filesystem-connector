@@ -14,19 +14,44 @@ class TestClean(unittest.TestCase):
 
     def setUp(self):
         self.action = Action(os.getcwd())
+        self.files = ['sample.txt', 'sample1.txt', 'sample2.txt']
+        for fn in self.files:
+            create_txt_file(fn)
+        self.action.add_action(None, ['sample*.txt'])
+        self.doc_ids = self.action.doc_manager.get_doc_ids()
+        for doc_id in self.doc_ids:
+            assert poll_doc(self.action, doc_id)
 
     def tearDown(self):
-        pass
+        for curr_file in self.files:
+            os.remove(os.path.join(os.getcwd(), curr_file))
+        self.action.clean_action(False, False, None)
 
     def test_clean(self):
-        pass
+        delete_id = self.doc_ids[0]
+        r = self.action.api.document_delete(delete_id)
+        assert r.status_code == 204
+        assert self.action.doc_manager.get_doc_by_prop('id', delete_id)
+        self.action.clean_action(False, False, None)
+        assert not self.action.doc_manager.get_doc_by_prop('id', delete_id)
 
     def test_clean_force(self):
-        # test that force deletes the file
-        pass
+        delete_id = self.doc_ids[0]
+        doc_name = self.action.doc_manager.get_doc_by_prop('id', delete_id)['file_name']
+        r = self.action.api.document_delete(delete_id)
+        assert r.status_code == 204
+        assert self.action.doc_manager.get_doc_by_prop('id', delete_id)
+        self.action.clean_action(True, False, None)
+        assert not self.action.doc_manager.get_doc_by_prop('id', delete_id)
+        assert not os.path.isfile(os.path.join(self.action.path, doc_name))
 
     def test_disassociate(self):
-        pass
+        self.action.clean_action(False, True, None)
+        for curr_id in self.doc_ids:
+            assert not self.action.doc_manager.get_doc_by_prop('id', curr_id)
 
     def test_clean_single(self):
-        pass
+        delete_id = self.doc_ids[0]
+        doc_name = self.action.doc_manager.get_doc_by_prop('id', delete_id)['file_name']
+        self.action.clean_action(False, False, doc_name)
+        assert not self.action.doc_manager.get_doc_by_prop('id', delete_id)
