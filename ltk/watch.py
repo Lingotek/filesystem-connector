@@ -4,6 +4,7 @@ from logger import logger
 from utils import map_locale
 import time
 import requests
+from requests.exceptions import ConnectionError
 import os
 import sys
 from watchdog.observers import Observer
@@ -29,7 +30,7 @@ from ltk.watchhandler import WatchHandler
 # retry decorator to retry connections
 
 def restart():
-    """Restarts the program. Used after exceptions."""
+    """Restarts the program. Used after exceptions. Otherwise, watch doesn't work anymore."""
     print("Restarting watch")
     python = sys.executable
     os.execl(python, python, * sys.argv)
@@ -115,13 +116,14 @@ class WatchAction(Action):
                     # self.update_document_action(os.path.join(self.path, fn))
                     # logger.info('Updating remote content: {0}'.format(fn))
                     self.update_content(fn)
-                else:
-                    self._on_created(event)
             except KeyboardInterrupt:
                 self.observer.stop()
+            except ConnectionError:
+                print("Could not connect to remote.")
+                restart()
             except:
+                print(sys.exc_info()[1])
                 print("Unable to update document.")
-                print(sys.exc_info())
                 restart()
 
     def _on_created(self, event):
@@ -156,9 +158,12 @@ class WatchAction(Action):
                     self.update_content(relative_path)
             except KeyboardInterrupt:
                 self.observer.stop()
+            except ConnectionError:
+                print("Could not connect to remote.")
+                restart()
             except:
+                print(sys.exc_info()[1])
                 print("Unable to add document on the cloud.")
-                print(sys.exc_info()[0])
                 restart()
             document_id = self.doc_manager.get_doc_by_prop('name', title)['id']
             self.watch_add_target(title, document_id)
@@ -231,6 +236,7 @@ class WatchAction(Action):
         except KeyboardInterrupt:
             self.observer.stop()
         except:
+            print(sys.exc_info()[1])
             restart()
 
         try:
@@ -242,6 +248,7 @@ class WatchAction(Action):
         except KeyboardInterrupt:
             self.observer.stop()
         except:
+            print(sys.exc_info()[1])
             restart()
 
         self.observer.join()
