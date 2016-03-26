@@ -27,14 +27,13 @@ from ltk.watchhandler import WatchHandler
 #         while True:
 #             time.sleep(self.interval)
 
-# retry decorator to retry connections
-
 def restart():
     """Restarts the program. Used after exceptions. Otherwise, watch doesn't work anymore."""
     print("Restarting watch")
     python = sys.executable
     os.execl(python, python, * sys.argv)
 
+# retry decorator to retry connections
 def retry(logger, timeout=5, exec_type=None):
     if not exec_type:
         exec_type = [requests.exceptions.ConnectionError]
@@ -46,10 +45,8 @@ def retry(logger, timeout=5, exec_type=None):
                     return function(*args, **kwargs)
                 except Exception as e:
                     if e.__class__ in exec_type:
-                        # some logging error here
                         logger.error("Connection has timed out. Retrying..")
-                        # sleep for some time then retry
-                        time.sleep(timeout)
+                        time.sleep(timeout)  # sleep for some time then retry
                     else:
                         raise e
         return wrapper
@@ -78,7 +75,6 @@ class WatchAction(Action):
         self.handler = WatchHandler()
         self.handler.on_modified = self._on_modified
         self.handler.on_created = self._on_created
-        self.handler.on_moved = self._on_moved
         self.watch_queue = []  # not much slower than deque unless expecting 100+ items
         self.locale_delimiter = None
         self.ignore_ext = []  # file types to ignore as specified by the user
@@ -121,10 +117,10 @@ class WatchAction(Action):
             except ConnectionError:
                 print("Could not connect to remote.")
                 restart()
-            except:
-                print(sys.exc_info()[1])
-                print("Unable to update document.")
-                restart()
+            # except:
+            #     print(sys.exc_info()[1])
+            #     print("Unable to update document.")
+            #     restart()
 
     def _on_created(self, event):
         # get path
@@ -132,7 +128,6 @@ class WatchAction(Action):
         file_path = event.src_path
         # if it's a hidden document, don't do anything 
         if not is_hidden_file(file_path):
-            # if not is_hidden_file(file_path):
             relative_path = file_path.replace(self.path, '')
             title = os.path.basename(os.path.normpath(file_path))
             curr_ext = os.path.splitext(file_path)[1]
@@ -142,7 +137,9 @@ class WatchAction(Action):
                 return
             if self.locale_delimiter:
                 try:
-                    curr_locale = title.split(self.locale_delimiter)[1]
+                    # curr_locale = title.split(self.locale_delimiter)[1]
+                    # todo locale detection needs to be more robust
+                    curr_locale = title.split(self.locale_delimiter)[-2]
                     fixed_locale = map_locale(curr_locale)
                     if fixed_locale:
                         self.watch_locales.add(fixed_locale)
@@ -161,10 +158,10 @@ class WatchAction(Action):
             except ConnectionError:
                 print("Could not connect to remote.")
                 restart()
-            except:
-                print(sys.exc_info()[1])
-                print("Unable to add document on the cloud.")
-                restart()
+            # except:
+            #     print(sys.exc_info()[1])
+            #     print("Unable to add document on the cloud.")
+            #     restart()
             document_id = self.doc_manager.get_doc_by_prop('name', title)['id']
             self.watch_add_target(title, document_id)
             # logger.info('Added new document {0}'.format(title
@@ -217,7 +214,7 @@ class WatchAction(Action):
             for locale, progress in locale_progress.iteritems():
                 if progress == 100 and locale not in downloaded:
                     logger.info('Translation completed ({0} - {1})'.format(doc_id,locale))
-                    self.download_action(doc_id, locale, False)
+                    self.download_action(doc_id, locale, False, False)
 
     def watch_action(self, watch_path, ignore, delimiter):
         # print self.path
@@ -235,9 +232,9 @@ class WatchAction(Action):
             self.observer.start()
         except KeyboardInterrupt:
             self.observer.stop()
-        except:
-            print(sys.exc_info()[1])
-            restart()
+        # except:
+        #     print(sys.exc_info()[1])
+        #     restart()
 
         try:
             while True:
@@ -247,8 +244,8 @@ class WatchAction(Action):
                 time.sleep(5)
         except KeyboardInterrupt:
             self.observer.stop()
-        except:
-            print(sys.exc_info()[1])
-            restart()
+        # except:
+        #     print(sys.exc_info()[1])
+        #     restart()
 
         self.observer.join()
