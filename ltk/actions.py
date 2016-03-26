@@ -393,9 +393,7 @@ class Action:
             return
         self.download_action(document_id, locale_code, auto_format)
 
-    def download_action(self, document_id, locale_code, auto_format):
-        # if not os.path.isdir(os.path.join(self.path, TRANS_DIR)):
-        #     os.mkdir(os.path.join(self.path, TRANS_DIR))
+    def download_action(self, document_id, locale_code, auto_format, locale_ext=True):
         response = self.api.document_content(document_id, locale_code, auto_format)
         if response.status_code == 200:
             entry = self.doc_manager.get_doc_by_prop('id', document_id)
@@ -411,7 +409,7 @@ class Action:
                         title += extension
                 except KeyError:
                     raise_error(doc_info.json(),
-                                'Something went wrong trying to import document: {0}'.format(document_id), True)
+                                'Something went wrong trying to download document: {0}'.format(document_id), True)
                     return
                 download_path = os.path.join(self.path, title)
                 logger.info("Downloaded: {0}".format(title))
@@ -422,14 +420,17 @@ class Action:
                 file_name = entry['file_name']
                 download_dir = os.path.join(self.path, os.path.dirname(file_name))
                 base_name = os.path.basename(os.path.normpath(file_name))
-                name_parts = base_name.split('.')
-                if len(name_parts) > 1:
-                    name_parts.insert(-1, locale_code)
-                    downloaded_name = '.'.join(part for part in name_parts)
+                if locale_ext:
+                    name_parts = base_name.split('.')
+                    if len(name_parts) > 1:
+                        name_parts.insert(-1, locale_code)
+                        downloaded_name = '.'.join(part for part in name_parts)
+                    else:
+                        downloaded_name = name_parts[0] + '.' + locale_code
                 else:
-                    downloaded_name = name_parts[0] + '.' + locale_code
+                    downloaded_name = base_name
                 download_path = os.path.join(download_dir, downloaded_name)
-                logger.info('Downloaded: {0} ({1} - {2})'.format(downloaded_name, name_parts[0], locale_code))
+                logger.info('Downloaded: {0} ({1} - {2})'.format(downloaded_name, base_name, locale_code))
                 self.doc_manager.update_document('downloaded', [locale_code], document_id)
             if self.download_dir:
                 title = os.path.basename(os.path.normpath(download_path))
