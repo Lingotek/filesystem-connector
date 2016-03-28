@@ -118,6 +118,12 @@ class WatchAction(Action):
             except ConnectionError:
                 print("Could not connect to remote.")
                 restart()
+            except JSONDecodeError:
+                print(sys.exc_info()[1])
+                restart()
+            except ValueError:
+                print(sys.exc_info()[1])
+                restart()
             # except:
             #     print(sys.exc_info()[1])
             #     print("Unable to update document.")
@@ -158,6 +164,12 @@ class WatchAction(Action):
                 self.observer.stop()
             except ConnectionError:
                 print("Could not connect to remote.")
+                restart()
+            except JSONDecodeError:
+                print(sys.exc_info()[1])
+                restart()
+            except ValueError:
+                print(sys.exc_info()[1])
                 restart()
             # except:
             #     print(sys.exc_info()[1])
