@@ -107,7 +107,7 @@ class WatchAction(Action):
         if not event.is_directory and in_db:
             try:
                 # check that document is added in TMS before updating
-                if self.check_remote_doc_exist(fn):
+                if self.check_remote_doc_exist(fn) and self.doc_manager.is_doc_modified(fn, self.path):
                     # logger.info('Detected local content modified: {0}'.format(fn))
                     # self.update_document_action(os.path.join(self.path, fn))
                     # logger.info('Updating remote content: {0}'.format(fn))
