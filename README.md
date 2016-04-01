@@ -1,8 +1,8 @@
-# Lingotek Client #
+# Lingotek Translation Utility #
 
-The Lingotek Client (`ltk`) is a command line tool that connects your content to the Translation Network™.  It provides yet another way for continuously globalizing all of your translatable content.
+The Lingotek Translation Utility (`ltk`) connects your content from the command line to the Translation Network™.  It provides yet another way for continuously globalizing all of your translatable content.
 
-The Lingotek Client allows you to quickly add content, request translations, and pull translations from the Lingotek Cloud.  
+The Lingotek Translation Utility allows you to quickly add content, request translations, and pull translations from the Lingotek Cloud.  
 
 Content can be sent up in any a variety of formats including: `csv`, `dita`, `ditamap`, `docx`, `doxygen`, `dtd`, `excel`, `html`, `idml`, `java_properties`, `json`, `odp`, `ods`, `odt`, `pdf`, `plaintext`, `po`, `pptx`, `ppt`, `rails_yaml`, `resx`, `rtf`, `subtitle_rip`, `table`, `ts`, `xliff`, and `xml`.
 
@@ -44,10 +44,10 @@ Running `ltk` without any parameters will show all of the commands available: ad
 
 Here is video that shows the basics...
 
-[![Lingotek Client (Command Line Tool)](http://img.youtube.com/vi/CbsvVar2rFs/0.jpg)](http://www.youtube.com/watch?v=CbsvVar2rFs)
+[![Lingotek Translation Utility](http://img.youtube.com/vi/CbsvVar2rFs/0.jpg)](http://www.youtube.com/watch?v=CbsvVar2rFs)
 
 ## Tips ##
-The Lingotek Client is written in Python, so it runs on most systems. Should you run into any issues, below are some suggestions and troubleshooting tips.
+The Lingotek Translation Utility is written in Python, so it runs on most systems. Should you run into any issues, below are some suggestions and troubleshooting tips.
 
 ### virtualenv ###
 Like most Python development tools, you might consider installing inside a virtualenv (with a virtualenv wrapper), but it can be installed globally using sudo as well.
