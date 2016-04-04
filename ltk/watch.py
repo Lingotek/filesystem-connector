@@ -196,8 +196,11 @@ class WatchAction(Action):
                 self.doc_manager.update_document('downloaded', downloaded, doc_id)
             for locale, progress in locale_progress.iteritems():
                 if progress == 100 and locale not in downloaded:
-                    logger.info('Translation completed ({0} - {1})'.format(doc_id,locale))
-                    self.download_action(doc_id, locale, False, False)
+                    logger.info('Translation completed ({0} - {1})'.format(doc_id, locale))
+                    if self.locale_delimiter:
+                        self.download_action(doc_id, locale, False, False)
+                    else:
+                        self.download_action(doc_id, locale, False)
 
     def watch_action(self, watch_path, ignore, delimiter):
         # print self.path
