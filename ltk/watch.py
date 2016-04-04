@@ -11,22 +11,6 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEvent
 from ltk.watchhandler import WatchHandler
 
-# import Queue
-
-# import threading
-
-# class WatchThread:
-#     def __init__(self, interval=5):
-#         self.interval = interval
-#
-#         self.thread = threading.Thread(target=self.run, args=())
-#         self.thread.daemon = True
-#         self.thread.start()_on_create
-#
-#     def run(self):
-#         while True:
-#             time.sleep(self.interval)
-
 def restart():
     """Restarts the program. Used after exceptions. Otherwise, watch doesn't work anymore."""
     print("Restarting watch")
@@ -118,16 +102,9 @@ class WatchAction(Action):
             except ConnectionError:
                 print("Could not connect to remote.")
                 restart()
-            except JSONDecodeError:
-                print(sys.exc_info()[1])
-                restart()
             except ValueError:
                 print(sys.exc_info()[1])
                 restart()
-            # except:
-            #     print(sys.exc_info()[1])
-            #     print("Unable to update document.")
-            #     restart()
 
     def _on_created(self, event):
         # get path
@@ -165,16 +142,9 @@ class WatchAction(Action):
             except ConnectionError:
                 print("Could not connect to remote.")
                 restart()
-            except JSONDecodeError:
-                print(sys.exc_info()[1])
-                restart()
             except ValueError:
                 print(sys.exc_info()[1])
                 restart()
-            # except:
-            #     print(sys.exc_info()[1])
-            #     print("Unable to add document on the cloud.")
-            #     restart()
             document_id = self.doc_manager.get_doc_by_prop('name', title)['id']
             self.watch_add_target(title, document_id)
             # logger.info('Added new document {0}'.format(title
@@ -245,9 +215,6 @@ class WatchAction(Action):
             self.observer.start()
         except KeyboardInterrupt:
             self.observer.stop()
-        # except:
-        #     print(sys.exc_info()[1])
-        #     restart()
 
         try:
             while True:
@@ -257,8 +224,5 @@ class WatchAction(Action):
                 time.sleep(5)
         except KeyboardInterrupt:
             self.observer.stop()
-        # except:
-        #     print(sys.exc_info()[1])
-        #     restart()
 
         self.observer.join()

@@ -46,4 +46,4 @@ def cleanup():
     try:
         shutil.rmtree(conf_path)
     except OSError:
-        print ('OSError in cleanup')
+        print 'OSError in cleanup'
