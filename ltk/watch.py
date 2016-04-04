@@ -4,25 +4,18 @@ from logger import logger
 from utils import map_locale
 import time
 import requests
+from requests.exceptions import ConnectionError
 import os
+import sys
 from watchdog.observers import Observer
+from watchdog.events import FileSystemEvent
 from ltk.watchhandler import WatchHandler
 
-# import Queue
-
-# import threading
-
-# class WatchThread:
-#     def __init__(self, interval=5):
-#         self.interval = interval
-#
-#         self.thread = threading.Thread(target=self.run, args=())
-#         self.thread.daemon = True
-#         self.thread.start()_on_create
-#
-#     def run(self):
-#         while True:
-#             time.sleep(self.interval)
+def restart():
+    """Restarts the program. Used after exceptions. Otherwise, watch doesn't work anymore."""
+    print("Restarting watch")
+    python = sys.executable
+    os.execl(python, python, * sys.argv)
 
 # retry decorator to retry connections
 def retry(logger, timeout=5, exec_type=None):
@@ -46,7 +39,7 @@ def retry(logger, timeout=5, exec_type=None):
 def is_hidden_file(file_path):
     # todo more robust checking for OSX files that doesn't start with '.'
     name = os.path.basename(os.path.abspath(file_path))
-    return name.startswith('.') or has_hidden_attribute(file_path)
+    return name and (name.startswith('.') or has_hidden_attribute(file_path) or name == "4913")
 
 def has_hidden_attribute(file_path):
     """ Detects if a file has hidden attributes """
@@ -66,6 +59,7 @@ class WatchAction(Action):
         self.handler = WatchHandler()
         self.handler.on_modified = self._on_modified
         self.handler.on_created = self._on_created
+        self.handler.on_moved = self._on_moved
         self.watch_queue = []  # not much slower than deque unless expecting 100+ items
         self.locale_delimiter = None
         self.ignore_ext = []  # file types to ignore as specified by the user
@@ -96,44 +90,73 @@ class WatchAction(Action):
                 fn = entry['file_name']
                 in_db = True
         if not event.is_directory and in_db:
-            # check that document is added in TMS before updating
-            if self.check_remote_doc_exist(fn):
-                # logger.info('Detected local content modified: {0}'.format(fn))
-                # self.update_document_action(os.path.join(self.path, fn))
-                # logger.info('Updating remote content: {0}'.format(fn))
-                self.update_content(fn)
+            try:
+                # check that document is added in TMS before updating
+                if self.check_remote_doc_exist(fn) and self.doc_manager.is_doc_modified(fn, self.path):
+                    # logger.info('Detected local content modified: {0}'.format(fn))
+                    # self.update_document_action(os.path.join(self.path, fn))
+                    # logger.info('Updating remote content: {0}'.format(fn))
+                    self.update_content(fn)
+            except KeyboardInterrupt:
+                self.observer.stop()
+            except ConnectionError:
+                print("Could not connect to remote.")
+                restart()
+            except ValueError:
+                print(sys.exc_info()[1])
+                restart()
 
     def _on_created(self, event):
         # get path
         # add action
         file_path = event.src_path
-        relative_path = file_path.replace(self.path, '')
-        title = os.path.basename(os.path.normpath(file_path))
-        curr_ext = os.path.splitext(file_path)[1]
-        # return if the extension should be ignored or if the path is not a file
-        if curr_ext in self.ignore_ext or not os.path.isfile(file_path):
-            # logger.info("Detected a file with an extension in the ignore list, ignoring..")
-            return
-        if self.locale_delimiter:
+        # if it's a hidden document, don't do anything 
+        if not is_hidden_file(file_path):
+            relative_path = file_path.replace(self.path, '')
+            title = os.path.basename(os.path.normpath(file_path))
+            curr_ext = os.path.splitext(file_path)[1]
+            # return if the extension should be ignored or if the path is not a file
+            if curr_ext in self.ignore_ext or not os.path.isfile(file_path):
+                # logger.info("Detected a file with an extension in the ignore list, ignoring..")
+                return
+            if self.locale_delimiter:
+                try:
+                    # curr_locale = title.split(self.locale_delimiter)[1]
+                    # todo locale detection needs to be more robust
+                    curr_locale = title.split(self.locale_delimiter)[-2]
+                    fixed_locale = map_locale(curr_locale)
+                    if fixed_locale:
+                        self.watch_locales.add(fixed_locale)
+                    else:
+                        logger.warning('This document\'s detected locale: {0} is not supported.'.format(curr_locale))
+                except IndexError:
+                    logger.warning('Cannot detect locales from file: {0}, not adding any locales'.format(title))
+            # only add or update the document if it's not a hidden document and it's a new file
             try:
-                # curr_locale = title.split(self.locale_delimiter)[1]
-                # todo locale detection needs to be more robust
-                curr_locale = title.split(self.locale_delimiter)[-2]
-                fixed_locale = map_locale(curr_locale)
-                if fixed_locale:
-                    self.watch_locales.add(fixed_locale)
-                else:
-                    logger.warning('This document\'s detected locale: {0} is not supported.'.format(curr_locale))
-            except IndexError:
-                logger.warning('Cannot detect locales from file: {0}, not adding any locales'.format(title))
-        # only add the document if it's not a hidden document and it's a new file
-        if not is_hidden_file(file_path) and self.doc_manager.is_doc_new(relative_path):
-            self.add_document(self.locale, file_path, title)
-        elif self.doc_manager.is_doc_modified(relative_path, self.path):
-            self.update_content(relative_path)
-        document_id = self.doc_manager.get_doc_by_prop('name', title)['id']
-        self.watch_add_target(title, document_id)
-        # logger.info('Added new document {0}'.format(title))
+                if self.doc_manager.is_doc_new(relative_path):
+                    self.add_document(self.locale, file_path, title)
+                elif self.doc_manager.is_doc_modified(relative_path, self.path):
+                    self.update_content(relative_path)
+            except KeyboardInterrupt:
+                self.observer.stop()
+            except ConnectionError:
+                print("Could not connect to remote.")
+                restart()
+            except ValueError:
+                print(sys.exc_info()[1])
+                restart()
+            document_id = self.doc_manager.get_doc_by_prop('name', title)['id']
+            self.watch_add_target(title, document_id)
+            # logger.info('Added new document {0}'.format(title
+        # else:
+        #     print("Skipping hidden file "+file_path)
+
+    def _on_moved(self, event):
+        """Used for programs, such as gedit, that modify documents by moving (overwriting)
+        the previous document with the temporary file. Only the moved event contains the name of the
+        destination file."""
+        event = FileSystemEvent(event.dest_path)
+        self._on_modified(event)
 
     def watch_add_target(self, title, document_id):
         if self.check_remote_doc_exist(title, document_id):
@@ -187,8 +210,12 @@ class WatchAction(Action):
         self.ignore_ext.extend(ignore)
         self.locale_delimiter = delimiter
         print "Watching for updates in: {0}".format(watch_path)
-        self.observer.schedule(self.handler, path=watch_path, recursive=True)
-        self.observer.start()
+        try:
+            self.observer.schedule(self.handler, path=watch_path, recursive=True)
+            self.observer.start()
+        except KeyboardInterrupt:
+            self.observer.stop()
+
         try:
             while True:
                 # print 'Watching....'
