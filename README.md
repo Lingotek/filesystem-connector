@@ -29,13 +29,7 @@ $ python get-pip.py
 * Start the tool by using `ltk`
 
 ### Windows Installation ###
-Note: These instructions are for Windows Powershell
-
-Because python is not shipped with Windows, you must first install python. 
-
-If your python version is higher than 2.7.9, you can skip installing pip. If not, download get-pip.py from the link above and run `python get-pip.py`
-
-Then, just follow the above instructions to start `ltk`.
+For instructions on installing in Windows, go to the [Lingotek Translation Utility wiki](https://github.com/Lingotek/translation-utility/wiki/Installing-on-Windows).
 
 
 ## Getting Started ##
@@ -46,44 +40,4 @@ Here is video that shows the basics...
 
 [![Lingotek Translation Utility](http://img.youtube.com/vi/CbsvVar2rFs/0.jpg)](http://www.youtube.com/watch?v=CbsvVar2rFs)
 
-## Tips ##
-The Lingotek Translation Utility is written in Python, so it runs on most systems. Should you run into any issues, below are some suggestions and troubleshooting tips.
-
-### virtualenv ###
-Like most Python development tools, you might consider installing inside a virtualenv (with a virtualenv wrapper), but it can be installed globally using sudo as well.
-
-
-```
-virtualenv venv
-```
-Where venv is the name of the virtual environment -- it can be anything you want. 
-Start the virtual environment:
-
-```
-. venv/bin/activate
-```
-To exit the virtual environment:
-
-```
-deactivate
-```
-
-Once virtualenv is activated, install the tool and its dependencies:
-```
-pip install ltk
-```
-
-
-### Insecure Platform Warnings ###
-
-If you are on Ubuntu/Debian and there are build errors or Insecure Platform warning/errors, your system may be missing some packages needed for secure http requests:
-
-```
-sudo apt-get install python-dev libffi-dev libssl-dev
-```
-If there are still Insecure Platform warning/errors, you may need to upgrade existing packages:
-
-```
-
-pip install --upgrade ndg-httpsclient 
-```
+Checkout other installation notes [here](https://github.com/Lingotek/translation-utility/wiki/Other-Installation-Notes).
