@@ -41,4 +41,6 @@ class TestImport(unittest.TestCase):
         pass
 
     def test_import_no_locale(self):
-        pass
+        self.action.import_action(False, False, None)
+
+

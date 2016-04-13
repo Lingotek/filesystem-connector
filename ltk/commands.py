@@ -10,9 +10,11 @@ from ltk import __version__
 from watch import WatchAction
 from import_action import ImportAction
 
+
 def abort_if_false(ctx, param, value):
     if not value:
         ctx.abort()
+
 
 def init_logger(path):
     """
@@ -45,6 +47,7 @@ def init_logger(path):
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)
 
+
 def print_log(error):
     """
     prints the error before logger is initialized
@@ -53,6 +56,7 @@ def print_log(error):
         print 'Error: {0}'.format(error)
         sys.exit()
     return
+
 
 @click.group()
 @click.version_option(version=__version__, message='%(prog)s version %(version)s (Lingotek Client)')
@@ -97,6 +101,7 @@ def init(host, access_token, path, project_name, workflow_id, locale, delete, re
         logger.error(e)
         return
 
+
 @ltk.command()
 @click.option('-l', '--locale', help='change the default source locale for project')
 @click.option('-w', '--workflow_id', help='change the default workflow id for project')
@@ -118,6 +123,7 @@ def config(locale, workflow_id, download_folder, watch_folder, target_locales):
         print_log(e)
         logger.error(e)
         return
+
 
 @ltk.command(short_help="adds content, could be one or multiple files specified by Unix shell pattern")
 @click.argument('file_names', required=True, nargs=-1)
@@ -145,6 +151,7 @@ def add(file_names, locale, **kwargs):
         print_log(e)
         logger.error(e)
         return
+
 
 @ltk.command(short_help="sends updated content to Lingotek for documents that have been added")
 def push():
@@ -255,6 +262,7 @@ def pull(auto_format, locales):
         logger.error(e)
         return
 
+
 @ltk.command(short_help="disassociate local doc(s) from Lingotek cloud and deletes remote copy")
 @click.argument('document_names', required=True, nargs=-1)
 @click.option('-f', '--force', flag_value=True, help='delete both local and remote files')
@@ -273,6 +281,7 @@ def rm(document_names, force):
         logger.error(e)
         return
 
+
 @ltk.command(name='import')
 @click.option('-a', '--all', 'import_all', flag_value=True, help='import all documents from Lingotek Cloud')
 @click.option('-f', '--force', flag_value=True, help='overwrites existing documents without prompt')
@@ -284,9 +293,9 @@ def import_command(import_all, force, path):
     # todo import should show all documents
     # add a force option so can import all force -- overwrites all existing documents without prompting
     # check if doc id
-        # if exist, prompt for overwrite
-        # else automatically re-name
-            # possibly have to patch title in Lingotek Cloud?
+    # if exist, prompt for overwrite
+    # else automatically re-name
+    # possibly have to patch title in Lingotek Cloud?
     try:
         # action = actions.Action(os.getcwd())
         action = ImportAction(os.getcwd())
@@ -296,6 +305,7 @@ def import_command(import_all, force, path):
         print_log(e)
         logger.error(e)
         return
+
 
 @ltk.command(short_help="cleans up the associations between local documents and documents in Lingotek")
 @click.option('-a', '--all', 'dis_all', flag_value=True, help='removes all associations between local and remote')
@@ -316,11 +326,14 @@ def clean(force, dis_all, doc_name):
         logger.error(e)
         return
 
+
 @ltk.command(short_help="watches local and remote files")
 @click.option('-p', '--path', type=click.Path(exists=True), help='specify a folder to watch, defaults to project path')
 @click.option('--ignore', multiple=True, help='specify types of files to ignore')
 @click.option('--auto', 'delimiter', help='automatically detects locale from the file name, specify locale delimiter')
-def watch(path, ignore, delimiter):
+@click.option('-t', '--timeout', type=click.INT,
+              help='the amount of time watch will sleep between polls, in seconds. Defaults to 1 minute')
+def watch(path, ignore, delimiter, timeout):
     """
     Watches local files added or imported by ltk, and sends a PATCH when a document is changed.
     Also watches remote files, and automatically downloads finished translations.
@@ -328,10 +341,11 @@ def watch(path, ignore, delimiter):
     try:
         action = WatchAction(os.getcwd())
         init_logger(action.path)
-        action.watch_action(path, ignore, delimiter)
+        action.watch_action(path, ignore, delimiter, int(timeout))
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
+
 
 if __name__ == '__main__':
     ltk()

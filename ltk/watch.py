@@ -159,18 +159,20 @@ class WatchAction(Action):
         self._on_modified(event)
 
     def watch_add_target(self, title, document_id):
+        print "watching add target, watch queue:", self.watch_queue
+        if document_id not in self.watch_queue:
+            self.watch_queue.append(document_id)
         if self.check_remote_doc_exist(title, document_id):
             self.target_action(title, self.watch_locales, None, None, None, document_id)
-            if document_id in self.watch_queue:
-                self.watch_queue.pop(0)
-        else:
-            self.watch_queue.append(document_id)
+            self.watch_queue.remove(document_id)
 
     def process_queue(self):
         """do stuff with documents in queue (currently just add targets)"""
         # todo may want to process more than 1 item every "poll"..
-        if self.watch_queue:
-            self.watch_add_target(None, self.watch_queue.pop(0))
+        # if self.watch_queue:
+        #     self.watch_add_target(None, self.watch_queue.pop(0))
+        for document_id in self.watch_queue:
+            self.watch_add_target(None, document_id)
 
     def update_content(self, relative_path):
         logger.info('Detected local content modified: {0}'.format(relative_path))
@@ -181,8 +183,7 @@ class WatchAction(Action):
     def poll_remote(self):
         """ poll lingotek servers to check if MT finished """
         # todo eventually: poll for other jobs (prefill, analyze, etc...)
-        # print 'polling remote...'
-        documents = self.doc_manager.get_all_entries()
+        documents = self.doc_manager.get_all_entries()  # todo this gets all documents, not necessarily only ones in watch folder
         for doc in documents:
             doc_id = doc['id']
             if doc_id in self.watch_queue:
@@ -202,8 +203,9 @@ class WatchAction(Action):
                     else:
                         self.download_action(doc_id, locale, False)
 
-    def watch_action(self, watch_path, ignore, delimiter):
+    def watch_action(self, watch_path, ignore, delimiter, timeout=60):
         # print self.path
+        print "timeout: ", timeout
         if not watch_path and not self.watch_dir:
             watch_path = self.path
         elif watch_path:
@@ -224,7 +226,7 @@ class WatchAction(Action):
                 # print 'Watching....'
                 self.poll_remote()
                 self.process_queue()
-                time.sleep(5)
+                time.sleep(timeout)
         except KeyboardInterrupt:
             self.observer.stop()
 
