@@ -164,7 +164,7 @@ class WatchAction(Action):
         # print "watching add target, watch queue:", self.watch_queue
         if document_id not in self.watch_queue:
             self.watch_queue.append(document_id)
-        if self.check_remote_doc_exist(title, document_id) and self.doc_manager.get_doc_by_prop('id', document_id)['locales'] != self.watch_locales:
+        if self.check_remote_doc_exist(title, document_id) and not self.doc_manager.get_doc_by_prop('id', document_id)['locales']:
             self.target_action(title, self.watch_locales, None, None, None, document_id)
             self.watch_queue.remove(document_id)
 
