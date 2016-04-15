@@ -137,6 +137,12 @@ class WatchAction(Action):
                     self.add_document(self.locale, file_path, title)
                 elif self.doc_manager.is_doc_modified(relative_path, self.path):
                     self.update_content(relative_path)
+                else:
+                    return
+                print("document:")
+                print(self.doc_manager.get_doc_by_prop('name', title))
+                document_id = self.doc_manager.get_doc_by_prop('name', title)['id']
+                self.watch_add_target(title, document_id)
             except KeyboardInterrupt:
                 self.observer.stop()
             except ConnectionError:
@@ -145,8 +151,6 @@ class WatchAction(Action):
             except ValueError:
                 print(sys.exc_info()[1])
                 restart()
-            document_id = self.doc_manager.get_doc_by_prop('name', title)['id']
-            self.watch_add_target(title, document_id)
             # logger.info('Added new document {0}'.format(title
         # else:
         #     print("Skipping hidden file "+file_path)
@@ -159,10 +163,10 @@ class WatchAction(Action):
         self._on_modified(event)
 
     def watch_add_target(self, title, document_id):
-        print "watching add target, watch queue:", self.watch_queue
+        # print "watching add target, watch queue:", self.watch_queue
         if document_id not in self.watch_queue:
             self.watch_queue.append(document_id)
-        if self.check_remote_doc_exist(title, document_id):
+        if self.check_remote_doc_exist(title, document_id) and self.doc_manager.get_doc_by_prop('id', document_id)['locales'] != self.watch_locales:
             self.target_action(title, self.watch_locales, None, None, None, document_id)
             self.watch_queue.remove(document_id)
 
@@ -205,7 +209,7 @@ class WatchAction(Action):
 
     def watch_action(self, watch_path, ignore, delimiter, timeout=60):
         # print self.path
-        print "timeout: ", timeout
+        # print("timeout: " + str(timeout))
         if not watch_path and not self.watch_dir:
             watch_path = self.path
         elif watch_path:

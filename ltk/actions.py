@@ -197,8 +197,6 @@ class Action:
             logger.info('All documents up-to-date with Lingotek Cloud. ')
 
     def update_document_action(self, file_name, title=None, **kwargs):
-        print "updating document action.."
-        print file_name
         relative_path = file_name.replace(self.path, '')
         entry = self.doc_manager.get_doc_by_prop('file_name', relative_path)
         try:

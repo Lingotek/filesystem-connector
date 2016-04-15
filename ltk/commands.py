@@ -148,7 +148,6 @@ def add(file_names, locale, **kwargs):
         init_logger(action.path)
         action.add_action(locale, file_names, **kwargs)
     except (UninitializedError, RequestFailedError, ResourceNotFound, AlreadyExistsError) as e:
-        print("Exception test")
         print_log(e)
         logger.error(e)
         return
@@ -342,6 +341,8 @@ def watch(path, ignore, delimiter, timeout):
     try:
         action = WatchAction(os.getcwd())
         init_logger(action.path)
+        if timeout is None:
+            timeout=60
         action.watch_action(path, ignore, delimiter, int(timeout))
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
