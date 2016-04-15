@@ -158,12 +158,22 @@ class WatchAction(Action):
         event = FileSystemEvent(event.dest_path)
         self._on_modified(event)
 
+    def get_non_existing_locales(self, document_id):
+        """ if a locale already exists for a document """
+        entry = self.doc_manager.get_doc_by_prop("id", document_id)
+        try:
+            locales = [locale for locale in self.watch_locales if locale not in entry['locales']]
+        except KeyError:
+            locales = self.watch_locales
+        return locales
+
     def watch_add_target(self, title, document_id):
-        print "watching add target, watch queue:", self.watch_queue
+        # print "watching add target, watch queue:", self.watch_queue
         if document_id not in self.watch_queue:
             self.watch_queue.append(document_id)
         if self.check_remote_doc_exist(title, document_id):
-            self.target_action(title, self.watch_locales, None, None, None, document_id)
+            locales_to_add = self.get_non_existing_locales(document_id)
+            self.target_action(title, locales_to_add, None, None, None, document_id)
             self.watch_queue.remove(document_id)
 
     def process_queue(self):
@@ -203,7 +213,7 @@ class WatchAction(Action):
                     else:
                         self.download_action(doc_id, locale, False)
 
-    def watch_action(self, watch_path, ignore, delimiter, timeout=60):
+    def watch_action(self, watch_path, ignore, delimiter, timeout):
         # print self.path
         print "timeout: ", timeout
         if not watch_path and not self.watch_dir:
