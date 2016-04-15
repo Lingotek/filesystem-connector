@@ -139,8 +139,6 @@ class WatchAction(Action):
                     self.update_content(relative_path)
                 else:
                     return
-                print("document:")
-                print(self.doc_manager.get_doc_by_prop('name', title))
                 document_id = self.doc_manager.get_doc_by_prop('name', title)['id']
                 self.watch_add_target(title, document_id)
             except KeyboardInterrupt:

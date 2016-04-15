@@ -159,7 +159,6 @@ class ApiCalls:
         else:
             r = requests.patch(self.host + uri, headers=self.headers, data=payload)
         log_api('PATCH', uri, r)
-        print("document updated")
         return r
 
     def document_delete_target(self, document_id, locale):
