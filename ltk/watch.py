@@ -63,6 +63,7 @@ class WatchAction(Action):
         self.watch_queue = []  # not much slower than deque unless expecting 100+ items
         self.locale_delimiter = None
         self.ignore_ext = []  # file types to ignore as specified by the user
+        self.detected_locales = {}  # dict to keep track of detected locales
         # if remote:  # poll lingotek cloud periodically if this option enabled
         # self.remote_thread = threading.Thread(target=self.poll_remote(), args=())
         # self.remote_thread.daemon = True
@@ -119,18 +120,6 @@ class WatchAction(Action):
             if curr_ext in self.ignore_ext or not os.path.isfile(file_path):
                 # logger.info("Detected a file with an extension in the ignore list, ignoring..")
                 return
-            if self.locale_delimiter:
-                try:
-                    # curr_locale = title.split(self.locale_delimiter)[1]
-                    # todo locale detection needs to be more robust
-                    curr_locale = title.split(self.locale_delimiter)[-2]
-                    fixed_locale = map_locale(curr_locale)
-                    if fixed_locale:
-                        self.watch_locales.add(fixed_locale)
-                    else:
-                        logger.warning('This document\'s detected locale: {0} is not supported.'.format(curr_locale))
-                except IndexError:
-                    logger.warning('Cannot detect locales from file: {0}, not adding any locales'.format(title))
             # only add or update the document if it's not a hidden document and it's a new file
             try:
                 if self.doc_manager.is_doc_new(relative_path):
@@ -145,7 +134,22 @@ class WatchAction(Action):
             except ValueError:
                 print(sys.exc_info()[1])
                 restart()
+
             document_id = self.doc_manager.get_doc_by_prop('name', title)['id']
+            if self.locale_delimiter:
+                try:
+                    # curr_locale = title.split(self.locale_delimiter)[1]
+                    # todo locale detection needs to be more robust
+                    curr_locale = title.split(self.locale_delimiter)[-2]
+                    fixed_locale = map_locale(curr_locale)
+                    if fixed_locale:
+                        print "fixed locale:", fixed_locale
+                        # self.watch_locales.add(fixed_locale)
+                        self.detected_locales[document_id] = fixed_locale
+                    else:
+                        logger.warning('This document\'s detected locale: {0} is not supported.'.format(curr_locale))
+                except IndexError:
+                    logger.warning('Cannot detect locales from file: {0}, not adding any locales'.format(title))
             self.watch_add_target(title, document_id)
             # logger.info('Added new document {0}'.format(title
         # else:
@@ -158,8 +162,15 @@ class WatchAction(Action):
         event = FileSystemEvent(event.dest_path)
         self._on_modified(event)
 
-    def get_non_existing_locales(self, document_id):
-        """ if a locale already exists for a document """
+    def get_watch_locales(self, document_id):
+        """ determine the locales that should be added for a watched doc """
+        locales = []
+        if self.detected_locales:
+            try:
+                locales = [self.detected_locales[document_id]]
+            except KeyError:
+                logger.error("Something went wrong, could not detect a locale")
+            return locales
         entry = self.doc_manager.get_doc_by_prop("id", document_id)
         try:
             locales = [locale for locale in self.watch_locales if locale not in entry['locales']]
@@ -172,7 +183,7 @@ class WatchAction(Action):
         if document_id not in self.watch_queue:
             self.watch_queue.append(document_id)
         if self.check_remote_doc_exist(title, document_id):
-            locales_to_add = self.get_non_existing_locales(document_id)
+            locales_to_add = self.get_watch_locales(document_id)
             self.target_action(title, locales_to_add, None, None, None, document_id)
             self.watch_queue.remove(document_id)
 
