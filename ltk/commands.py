@@ -331,7 +331,7 @@ def clean(force, dis_all, doc_name):
 @click.option('-p', '--path', type=click.Path(exists=True), help='specify a folder to watch, defaults to project path')
 @click.option('--ignore', multiple=True, help='specify types of files to ignore')
 @click.option('--auto', 'delimiter', help='automatically detects locale from the file name, specify locale delimiter')
-@click.option('-t', '--timeout', type=click.INT,
+@click.option('-t', '--timeout', type=click.INT, default=60,
               help='the amount of time watch will sleep between polls, in seconds. Defaults to 1 minute')
 def watch(path, ignore, delimiter, timeout):
     """
@@ -341,7 +341,7 @@ def watch(path, ignore, delimiter, timeout):
     try:
         action = WatchAction(os.getcwd())
         init_logger(action.path)
-        action.watch_action(path, ignore, delimiter, int(timeout))
+        action.watch_action(path, ignore, delimiter, timeout)
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
