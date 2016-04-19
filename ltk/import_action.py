@@ -5,7 +5,7 @@ class ImportAction(Action):
     def __init__(self, path):
         Action.__init__(self, path)
 
-    def import_action(self, import_all, force, path):
+    def import_action(self, import_all, force, path, ids_to_import=None):
         response = self.api.list_documents(self.project_id)
         tms_doc_info = {}
         if response.status_code == 200:
@@ -19,13 +19,16 @@ class ImportAction(Action):
         else:
             raise_error(response.json(), 'Error finding current documents in Lingotek Cloud')
 
-        if import_all:
-            ids_to_import = tms_doc_info.iterkeys()
+        if not ids_to_import:
+            if import_all:
+                ids_to_import = tms_doc_info.iterkeys()
+            else:
+                import_doc_info = {}
+                for k, v in tms_doc_info.iteritems():
+                    import_doc_info[k] = v['title']
+                ids_to_import = get_import_ids(import_doc_info)
         else:
-            import_doc_info = {}
-            for k, v in tms_doc_info.iteritems():
-                import_doc_info[k] = v['title']
-            ids_to_import = get_import_ids(import_doc_info)
+            ids_to_import = [ids_to_import]
         for curr_id in ids_to_import:
             self.import_document(curr_id, tms_doc_info[curr_id], force, path)
 

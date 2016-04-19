@@ -41,6 +41,6 @@ class TestImport(unittest.TestCase):
         pass
 
     def test_import_no_locale(self):
-        self.action.import_action(False, False, None)
-
-
+        self.action.import_action(False, False, None, self.doc_ids[0])
+        entry = self.action.doc_manager.get_doc_by_prop("id", self.doc_ids[0])
+        assert not entry.get("locales")
