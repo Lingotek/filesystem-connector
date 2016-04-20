@@ -20,7 +20,7 @@ class TestPush(unittest.TestCase):
         for curr_file in self.files:
             self.action.rm_action(curr_file, True)
         for df in self.downloaded:
-            self.action.rm_action(df, True)
+            os.remove(df)
         self.action.clean_action(False, False, None)
         cleanup()
 
@@ -28,7 +28,7 @@ class TestPush(unittest.TestCase):
         append_file(self.files[0])
         self.action.push_action()
         # currently sleep for some arbitrary time while document updates in Lingotek
-        # replace when api call or some way to check update is done is available
+        # replace when api call or some way to check if update is finished is available
         time.sleep(30)
         downloaded_path = self.action.download_action(self.doc_ids[0], None, False)
         self.downloaded.append(downloaded_path)
