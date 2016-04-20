@@ -413,10 +413,10 @@ class Action:
                     return
                 download_path = os.path.join(self.path, title)
                 logger.info("Downloaded: {0}".format(title))
-            elif not locale_code:
-                logger.info("Tried to download an existing document, did nothing")
-                return
             else:
+                if not locale_code:
+                    logger.info("No target locales, downloading source instead.")
+                    locale_code = self.locale
                 file_name = entry['file_name']
                 download_dir = os.path.join(self.path, os.path.dirname(file_name))
                 base_name = os.path.basename(os.path.normpath(file_name))

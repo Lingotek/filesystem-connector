@@ -1,10 +1,12 @@
 from tests.test_actions import *
 from ltk.actions import Action
 import unittest
+import time
 
 class TestPush(unittest.TestCase):
     def setUp(self):
         create_config()
+        self.downloaded = []
         self.action = Action(os.getcwd())
         self.files = ['sample.txt', 'sample1.txt', 'sample2.txt']
         for fn in self.files:
@@ -17,19 +19,37 @@ class TestPush(unittest.TestCase):
     def tearDown(self):
         for curr_file in self.files:
             self.action.rm_action(curr_file, True)
+        for df in self.downloaded:
+            self.action.rm_action(df, True)
         self.action.clean_action(False, False, None)
         cleanup()
 
     def test_push_1(self):
         append_file(self.files[0])
         self.action.push_action()
-        # todo check results
+        # currently sleep for some arbitrary time while document updates in Lingotek
+        # replace when api call or some way to check update is done is available
+        time.sleep(30)
+        downloaded_path = self.action.download_action(self.doc_ids[0], None, False)
+        self.downloaded.append(downloaded_path)
+        with open(downloaded_path, 'r') as f:
+            downloaded = f.read()
+        assert "Appended text. " in downloaded
+        assert "This is a sample text file. " in downloaded
 
     def test_push_mult(self):
-        # update mult docs
-        # push
-        # check
-        pass
+        append_file(self.files[0])
+        append_file(self.files[1])
+        self.action.push_action()
+        time.sleep(45)  # see test_push_1 comment
+        dl_path = self.action.download_action(self.doc_ids[0], None, False)
+        dl_path1 = self.action.download_action(self.doc_ids[1], None, False)
+        self.downloaded = [dl_path, dl_path1]
+        for path in self.downloaded:
+            with open(path, 'r') as f:
+                downloaded = f.read()
+            assert "Appended text. " in downloaded
+            assert "This is a sample text file. " in downloaded
 
     def test_push_none(self):
         from io import BytesIO
