@@ -6,8 +6,10 @@ class TestInitAction(unittest.TestCase):
 
     def test_uninitialized(self):
         # todo create dir outside so folder not initialized
+        cwd = os.getcwd()
         os.chdir('/')
         self.assertRaises(exceptions.UninitializedError, actions.Action, os.getcwd())
+        os.chdir(cwd)  # change back to this directory so rest of the tests will work
 
     def test_init_host(self):
         create_config()
