@@ -30,7 +30,7 @@ class TestRequest(unittest.TestCase):
 
     def check_locales_exist(self, documents, locales):
         for document in documents:
-            curr_doc = self.action.doc_manager.get_doc_by_prop('file_name', document)
+            curr_doc = self.action.doc_manager.get_doc_by_prop('name', document)
             return all(locale in curr_doc['locales'] for locale in locales)
 
     def test_request_one_locale_doc(self):
@@ -56,13 +56,13 @@ class TestRequest(unittest.TestCase):
     def test_delete_locale_doc(self):
         locales = ['ja_JP']
         self.action.target_action(self.first_doc, locales, False, None, None)
-        assert self.check_locales_exist(self.first_doc, locales)
-        self.action.target_action(self.first_doc, 'ja_JP', True, None, None)
-        assert not self.check_locales_exist(self.first_doc, locales)
+        assert self.check_locales_exist([self.first_doc], locales)
+        self.action.target_action(self.first_doc, locales, True, None, None)
+        assert not self.check_locales_exist([self.first_doc], locales)
 
     def test_delete_locale_proj(self):
         locales = ['ja_JP']
         self.action.target_action(None, locales, False, None, None)
-        assert self.check_locales_exist(self.first_doc, locales)
-        self.action.target_action(None, 'ja_JP', True, None, None)
+        assert self.check_locales_exist([self.first_doc], locales)
+        self.action.target_action(None, locales, True, None, None)
         assert not self.check_locales_exist(self.files, locales)
