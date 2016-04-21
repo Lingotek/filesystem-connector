@@ -108,6 +108,7 @@ class WatchAction(Action):
                 restart()
 
     def _on_created(self, event):
+        # print "new file created"
         # get path
         # add action
         file_path = event.src_path
