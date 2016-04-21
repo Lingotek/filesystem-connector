@@ -60,6 +60,6 @@ class TestPush(unittest.TestCase):
             sys.stdout = out
             self.action.push_action()
             info = out.getvalue()
-            assert info == 'All documents up-to-date with Lingotek Cloud. '
+            assert 'All documents up-to-date with Lingotek Cloud.' in info
         finally:
             sys.stdout = sys.__stdout__
