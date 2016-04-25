@@ -29,7 +29,7 @@ $ python get-pip.py
 * Start the tool by using `ltk`
 
 ### Windows Installation ###
-For instructions on installing in Windows, go to the [Project wiki](https://github.com/Lingotek/filesystem-connector/wiki/Installing-on-Windows).
+For instructions on installing in Windows, go to the [Wiki](https://github.com/Lingotek/filesystem-connector/wiki/Installing-on-Windows).
 
 
 ## Getting Started ##
