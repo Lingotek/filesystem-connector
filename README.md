@@ -1,8 +1,8 @@
-# Lingotek Translation Utility #
+# Lingotek Filesystem Connector #
 
-The Lingotek Translation Utility (`ltk`) connects your content from the command line to the Translation Network™.  It provides yet another way for continuously globalizing all of your translatable content.
+The Lingotek Filesystem Connector (`ltk`) links your files and folders to the Translation Network™.  It provides yet another way for continuously globalizing all of your translatable content.
 
-The Lingotek Translation Utility allows you to quickly add content, request translations, and pull translations from the Lingotek Cloud.  
+The Lingotek Filesystem Connector allows you to quickly add content, request translations, and pull translations from the Lingotek Cloud.  It can even be quickly setup to automate the entire process by watching files or folders for new translatable content.
 
 Content can be sent up in any a variety of formats including: `csv`, `dita`, `ditamap`, `docx`, `doxygen`, `dtd`, `excel`, `html`, `idml`, `java_properties`, `json`, `odp`, `ods`, `odt`, `pdf`, `plaintext`, `po`, `pptx`, `ppt`, `rails_yaml`, `resx`, `rtf`, `subtitle_rip`, `table`, `ts`, `xliff`, and `xml`.
 
@@ -29,7 +29,7 @@ $ python get-pip.py
 * Start the tool by using `ltk`
 
 ### Windows Installation ###
-For instructions on installing in Windows, go to the [Lingotek Translation Utility wiki](https://github.com/Lingotek/translation-utility/wiki/Installing-on-Windows).
+For instructions on installing in Windows, go to the [Project wiki](https://github.com/Lingotek/filesystem-connector/wiki/Installing-on-Windows).
 
 
 ## Getting Started ##
@@ -38,6 +38,6 @@ Running `ltk` without any parameters will show all of the commands available: ad
 
 Here is video that shows the basics...
 
-[![Lingotek Translation Utility](http://img.youtube.com/vi/CbsvVar2rFs/0.jpg)](http://www.youtube.com/watch?v=CbsvVar2rFs)
+[![Lingotek Filesystem Connector](http://img.youtube.com/vi/CbsvVar2rFs/0.jpg)](http://www.youtube.com/watch?v=CbsvVar2rFs)
 
 Checkout other installation notes [here](https://github.com/Lingotek/translation-utility/wiki/Other-Installation-Notes).
