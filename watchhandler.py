@@ -1,4 +1,4 @@
-from ltk.logger import logger
+from logger import logger
 from watchdog.events import FileSystemEventHandler
 
 class WatchHandler(FileSystemEventHandler):

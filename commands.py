@@ -1,14 +1,14 @@
 import click
-from ltk import actions
+import actions
 import os
-from ltk.exceptions import UninitializedError, ResourceNotFound, RequestFailedError, AlreadyExistsError
-from ltk.constants import LOG_FN, CONF_DIR
+from exceptions import UninitializedError, ResourceNotFound, RequestFailedError, AlreadyExistsError
+from constants import LOG_FN, CONF_DIR
 import logging
-from ltk.logger import logger, API_LOG_LEVEL, API_RESPONSE_LOG_LEVEL, CustomFormatter
+from logger import logger, API_LOG_LEVEL, API_RESPONSE_LOG_LEVEL, CustomFormatter
 import sys
 from ltk import __version__
-from ltk.watch import WatchAction
-from ltk.import_action import ImportAction
+from watch import WatchAction
+from import_action import ImportAction
 
 
 def abort_if_false(ctx, param, value):
@@ -53,7 +53,7 @@ def print_log(error):
     prints the error before logger is initialized
     """
     if not len(logger.handlers):
-        print ('Error: {0}'.format(error))
+        print 'Error: {0}'.format(error)
         sys.exit()
     return
 

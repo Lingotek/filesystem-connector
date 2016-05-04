@@ -1,6 +1,6 @@
 from tinydb import TinyDB, where
 import os
-from ltk.constants import CONF_DIR, DB_FN
+from constants import CONF_DIR, DB_FN
 
 class DocumentManager:
     def __init__(self, path):

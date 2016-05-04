@@ -1,5 +1,5 @@
 import os
-from ltk.locales import default_locales
+from locales import default_locales
 # from constants import APP_ID
 
 class Enum(set):

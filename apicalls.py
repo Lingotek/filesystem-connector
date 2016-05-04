@@ -1,8 +1,8 @@
 import requests
-from ltk.api_uri import API_URI
-import ltk.utils
-from ltk.exceptions import RequestFailedError
-from ltk.logger import logger
+from api_uri import API_URI
+import utils
+from exceptions import RequestFailedError
+from logger import logger
 
 
 class ApiCalls:
@@ -86,10 +86,10 @@ class ApiCalls:
         """ adds a document """
         uri = API_URI['document']
         payload = {'locale_code': locale, 'project_id': project_id, 'title': title}
-        for key in kwargs:
+        for key, value in kwargs.iteritems():
             if kwargs[key]:
                 payload[key] = value
-        detected_format = ltk.utils.detect_format(file_name)
+        detected_format = utils.detect_format(file_name)
         if 'format' not in kwargs and detected_format != 'PLAINTEXT_OKAPI':
             payload['format'] = detected_format
         files = {'content': (file_name, open(file_name, 'rb'))}
@@ -150,9 +150,9 @@ class ApiCalls:
     def document_update(self, document_id, file_name=None, **kwargs):
         uri = (API_URI['document_id'] % locals())
         payload = {'id': document_id}
-        for key in kwargs:
+        for key, value in kwargs.iteritems():
             if kwargs[key]:
-                payload[key] = kwargs[key]
+                payload[key] = value
         if file_name:
             files = {'content': (file_name, open(file_name, 'rb'))}
             r = requests.patch(self.host + uri, headers=self.headers, data=payload, files=files)

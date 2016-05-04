@@ -21,7 +21,7 @@ class ImportAction(Action):
 
         if not ids_to_import:
             if import_all:
-                ids_to_import = tms_doc_info.items()
+                ids_to_import = tms_doc_info.keys()
             else:
                 import_doc_info = {}
                 for k, v in tms_doc_info.items():
@@ -41,7 +41,7 @@ class ImportAction(Action):
         curr_entry = self.doc_manager.get_doc_by_prop('id', document_id)
         curr_path = os.path.join(self.path, curr_entry['file_name'])
         new_path = os.path.join(path, title)
-        print (curr_path, new_path)
+        print curr_path, new_path
         if os.path.normpath(curr_path) != os.path.normpath(new_path):
             path_changed = True
         if not force:
