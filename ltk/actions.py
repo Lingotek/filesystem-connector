@@ -90,13 +90,13 @@ class Action:
     def init_config_file(self):
         config_file_name = os.path.join(self.path, CONF_DIR, CONF_FN)
         conf_parser = configparser.ConfigParser()
-        conf_parser.read(config_file_name.encode())
+        conf_parser.read(config_file_name)
         return config_file_name, conf_parser
 
     def update_config_file(self, option, value, conf_parser, config_file_name, log_info):
         conf_parser.set('main', option, value)
         with open(config_file_name, 'wb') as new_file:
-            conf_parser.write(new_file.encode())
+            conf_parser.write(new_file)
         # self._initialize_self()
         logger.info(log_info)
 
@@ -297,7 +297,7 @@ class Action:
         if not ids:
             print ('no documents')
             return
-        print ('documents: id, title, locales'.encode())
+        print ('documents: id, title, locales')
         for i in range(len(ids)):
             info = '{id} \t {title} \t\t {locales}'.format(id=ids[i], title=titles[i],
                                                            locales=', '.join(locale for locale in locales[i]))
@@ -311,7 +311,7 @@ class Action:
         if not ids:
             print ('no workflows')
             return
-        print ('workflows: id, title'.encode())
+        print ('workflows: id, title')
         for i in range(len(ids)):
             info = '{id} \t {title}'.format(id=ids[i], title=titles[i])
             print (info)
@@ -336,7 +336,7 @@ class Action:
     def list_format_action(self):
         format_mapper = detect_format(None, True)
         print ("Formats Lingotek supports:")
-        for format_name in sorted(set(format_mapper.itervalues())):
+        for format_name in sorted(set(format_mapper.values())):
             print (format_name)
 
     def list_filter_action(self):
@@ -368,7 +368,7 @@ class Action:
             else:
                 title = response.json()['properties']['title']
                 progress = response.json()['properties']['progress']
-                print ('{0}: {1}%'.format(title.encode(), progress.encode()))
+                print ('{0}: {1}%'.format(title, progress))
                 # print title + ': ' + str(progress) + '%'
                 # for each doc id, also call /document/id/translation and get % of each locale
             if detailed:
@@ -647,7 +647,7 @@ def choice_mapper(info):
 def get_import_ids(info):
     mapper = choice_mapper(info)
     chosen_indices = ['none-chosen']
-    while not set(chosen_indices) <= set(mapper.iterkeys()):
+    while not set(chosen_indices) <= set(mapper.keys()):
         choice = input('Which documents to import? (Separate indices by comma) ')
         try:
             chosen_indices = map(int, choice.split(','))

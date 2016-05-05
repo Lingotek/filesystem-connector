@@ -34,6 +34,7 @@ class TestPush(unittest.TestCase):
         self.downloaded.append(downloaded_path)
         with open(downloaded_path, 'r') as f:
             downloaded = f.read()
+
         assert "Appended text. " in downloaded
         assert "This is a sample text file. " in downloaded
 
@@ -54,12 +55,11 @@ class TestPush(unittest.TestCase):
     def test_push_none(self):
         from io import BytesIO
         import sys
-
         try:
             out = BytesIO()
             sys.stdout = out
             self.action.push_action()
             info = out.getvalue()
-            assert 'All documents up-to-date with Lingotek Cloud.' in info
+            assert 'All documents up-to-date with Lingotek Cloud.' in info.decode()
         finally:
             sys.stdout = sys.__stdout__

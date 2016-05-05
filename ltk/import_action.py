@@ -29,8 +29,8 @@ class ImportAction(Action):
                 ids_to_import = get_import_ids(import_doc_info)
         else:
             ids_to_import = [ids_to_import]
-        for curr_id in ids_to_import:
-            self.import_document(curr_id, tms_doc_info[curr_id], force, path)
+        for curr_id in ids_to_import:            
+            self.import_document(curr_id, tms_doc_info[entity['properties']['id']], force, path)
 
     def import_check(self, force, path, document_id, title):
         if not path:

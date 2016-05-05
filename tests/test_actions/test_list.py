@@ -1,6 +1,7 @@
 from tests.test_actions import *
 from ltk.actions import Action
 from io import BytesIO
+from io import StringIO
 import sys
 import unittest
 
@@ -26,7 +27,7 @@ class TestList(unittest.TestCase):
         for doc_id in doc_ids:
             assert poll_doc(self.action, doc_id)
         try:
-            out = BytesIO()
+            out = StringIO()
             sys.stdout = out
             self.action.list_ids_action()
             info = out.getvalue()
@@ -41,56 +42,62 @@ class TestList(unittest.TestCase):
 
     def test_list_no_docs(self):
         try:
-            out = BytesIO()
+            out = StringIO()
             sys.stdout = out
             self.action.list_ids_action()
             info = out.getvalue()
+            sys.stdout = sys.__stdout__
+            print (info)
             assert 'no documents' in info
         finally:
             sys.stdout = sys.__stdout__
 
     def test_list_workflow(self):
         try:
-            out = BytesIO()
+            out = StringIO()
             sys.stdout = out
             self.action.list_workflow_action()
             info = out.getvalue()
-            assert 'workflows' in info
-            assert 'c675bd20-0688-11e2-892e-0800200c9a66' in info
-            assert 'Machine Translation' in info
+            decoded_info = info
+            assert 'workflows' in decoded_info
+            assert 'c675bd20-0688-11e2-892e-0800200c9a66' in decoded_info
+            assert 'Machine Translation' in decoded_info
         finally:
             sys.stdout = sys.__stdout__
 
     def test_list_locale(self):
         try:
-            out = BytesIO()
+            out = StringIO()
             sys.stdout = out
             self.action.list_locale_action()
             info = out.getvalue()
-            assert 'ar_AE (Arabic, United Arab Emirates)' in info
-            assert 'zh_TW (Chinese, Taiwan)' in info
+            decoded_info = info
+            assert 'ar_AE (Arabic, United Arab Emirates)' in decoded_info
+            assert 'zh_TW (Chinese, Taiwan)' in decoded_info
         finally:
             sys.stdout = sys.__stdout__
 
     def test_list_format(self):
         try:
-            out = BytesIO()
+            out = StringIO()
             sys.stdout = out
             self.action.list_format_action()
             info = out.getvalue()
+            decoded_info = info
             assert info.startswith('Formats Lingotek supports')
-            assert 'CSV' in info
-            assert 'XML_OKAPI' in info
+            assert 'CSV' in decoded_info
+            assert 'XML_OKAPI' in decoded_info
         finally:
             sys.stdout = sys.__stdout__
 
     def test_list_filters_default(self):
         try:
-            out = BytesIO()
+            out = StringIO()
             sys.stdout = out
             self.action.list_filter_action()
             info = out.getvalue()
-            assert info.startswith('filters:')
+            decoded_info = info
+            assert 'filters:' in info
             assert 'okf_html@wordpress.fprm' in info
             assert '0adc9a9d-ca67-4217-9525-d5a6af7ba91f' in info
         finally:

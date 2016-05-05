@@ -1,6 +1,7 @@
 from ltk import actions, exceptions
 import unittest
 from io import BytesIO
+from io import StringIO
 import sys
 from tests.test_actions import *
 
@@ -24,9 +25,9 @@ class TestStatusAction(unittest.TestCase):
     def test_status(self):
         # see that there is a status
         try:
-            out = BytesIO()
+            out = StringIO()
             sys.stdout = out
-            self.action.status_action(False, self.file_name)
+            self.action.status_action(False, (self.file_name).encode())
             status = out.getvalue()
             assert status.startswith('Status of {0}'.format(self.file_name))
         finally:
@@ -37,9 +38,9 @@ class TestStatusAction(unittest.TestCase):
         # request translations
         self.action.target_action(self.file_name, self.targets, False, None, None)
         try:
-            out = BytesIO()
+            out = StringIO()
             sys.stdout = out
-            self.action.status_action(True, self.file_name)
+            self.action.status_action(True, (self.file_name).encode)
             status = out.getvalue()
             assert 'Status of {0}'.format(self.file_name) in status
             for target in self.targets:
