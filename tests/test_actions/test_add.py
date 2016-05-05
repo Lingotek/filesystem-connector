@@ -24,6 +24,7 @@ class TestAdd(unittest.TestCase):
     def test_add_db(self):
         # check document added to db
         file_name = 'sample.txt'
+        self.added_files.append(file_name)
         text_file_path = create_txt_file(file_name)
         self.added_files.append(text_file_path)
         self.action.add_action(None, [file_name])
@@ -33,6 +34,7 @@ class TestAdd(unittest.TestCase):
     def test_add_remote(self):
         # check that document added to Lingotek
         file_name = 'sample.txt'
+        self.added_files.append(file_name)
         text_file_path = create_txt_file(file_name)
         self.added_files.append(text_file_path)
         self.action.add_action(None, [file_name])
@@ -42,8 +44,9 @@ class TestAdd(unittest.TestCase):
     def test_add_pattern_db(self):
         # test that adding with a pattern gets all expected matches in local db
         files = ['sample.txt', 'sample1.txt', 'sample2.txt']
+        self.added_files = files
         for fn in files:
-            self.added_files.append(create_txt_file(fn))
+            create_txt_file(fn)
         self.action.add_action(None, ['sample*.txt'])
         for fn in files:
             assert self.action.doc_manager.get_doc_by_prop('name', fn)
@@ -51,8 +54,9 @@ class TestAdd(unittest.TestCase):
     def test_add_pattern_remote(self):
         # test that adding with a pattern gets all expected matches in Lingotek
         files = ['sample.txt', 'sample1.txt', 'sample2.txt']
+        self.added_files = files
         for fn in files:
-            self.added_files.append(create_txt_file(fn))
+            create_txt_file(fn)
         self.action.add_action(None, ['sample*.txt'])
         doc_ids = self.action.doc_manager.get_doc_ids()
         for doc_id in doc_ids:

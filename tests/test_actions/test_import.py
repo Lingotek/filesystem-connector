@@ -37,10 +37,15 @@ class TestImport(unittest.TestCase):
             assert self.action.doc_manager.get_doc_by_prop('id', doc_id)
 
     def test_import_locale(self):
-        # test importing a document that already has a locale
-        pass
+        locale = "ja_JP"
+        doc_id = self.doc_ids[0]
+        response = self.action.api.document_add_target(doc_id, locale)
+        assert response.status_code == 201
+        self.action.import_action(False, False, None, doc_id)
+        entry = self.action.doc_manager.get_doc_by_prop("id", doc_id)
+        assert locale in entry["locales"]
 
     def test_import_no_locale(self):
-        self.action.import_action(False, False, None)
-
-
+        self.action.import_action(False, False, None, self.doc_ids[0])
+        entry = self.action.doc_manager.get_doc_by_prop("id", self.doc_ids[0])
+        assert not entry.get("locales")

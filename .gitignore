@@ -11,3 +11,5 @@ dist/
 downloaded/
 uploads/
 */TypicalTranslationJob/*
+tests/test_actions/*.txt
+tests/test_actions/*.json

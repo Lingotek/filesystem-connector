@@ -38,7 +38,7 @@ class TestConfig(unittest.TestCase):
     def test_add_download_folder(self):
         download_folder = 'downloaded'
         self.action.config_action(None, None, download_folder, None, [])
-        assert self.action.download_dir == os.path.join(self.action.path, download_folder)
+        assert self.action.download_dir == download_folder
 
     def test_add_upload_folder(self):
         watch_folder = 'watching'

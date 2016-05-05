@@ -15,6 +15,7 @@ class TestClean(unittest.TestCase):
     def setUp(self):
         self.action = Action(os.getcwd())
         self.files = ['sample.txt', 'sample1.txt', 'sample2.txt']
+        self.forced = []
         for fn in self.files:
             create_txt_file(fn)
         self.action.add_action(None, ['sample*.txt'])
@@ -24,6 +25,8 @@ class TestClean(unittest.TestCase):
 
     def tearDown(self):
         for curr_file in self.files:
+            if curr_file in self.forced:
+                continue
             os.remove(os.path.join(os.getcwd(), curr_file))
         self.action.clean_action(False, False, None)
 
@@ -42,6 +45,7 @@ class TestClean(unittest.TestCase):
         assert r.status_code == 204
         assert self.action.doc_manager.get_doc_by_prop('id', delete_id)
         self.action.clean_action(True, False, None)
+        self.forced.append(self.files[0])
         assert not self.action.doc_manager.get_doc_by_prop('id', delete_id)
         assert not os.path.isfile(os.path.join(self.action.path, doc_name))
 
