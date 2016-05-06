@@ -92,9 +92,11 @@ class ApiCalls:
         detected_format = ltk.utils.detect_format(file_name)
         if 'format' not in kwargs and detected_format != 'PLAINTEXT_OKAPI':
             payload['format'] = detected_format
-        files = {'content': (file_name, open(file_name, 'rb'))}
+        document = open(file_name, 'rb')
+        files = {'content': (file_name, document)}
         r = requests.post(self.host + uri, headers=self.headers, data=payload, files=files)
         log_api('POST', uri, r)
+        document.close()
         return r
 
     def document_add_target(self, document_id, locale, workflow_id=None, due_date=None):
@@ -154,11 +156,13 @@ class ApiCalls:
             if kwargs[key]:
                 payload[key] = kwargs[key]
         if file_name:
-            files = {'content': (file_name, open(file_name, 'rb'))}
+            document = open(file_name, 'rb')
+            files = {'content': (file_name, document)}
             r = requests.patch(self.host + uri, headers=self.headers, data=payload, files=files)
+            document.close()
         else:
             r = requests.patch(self.host + uri, headers=self.headers, data=payload)
-        log_api('PATCH', uri, r)
+        log_api('PATCH', uri, r)        
         return r
 
     def document_delete_target(self, document_id, locale):

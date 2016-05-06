@@ -126,6 +126,8 @@ class WatchAction(Action):
                     self.add_document(self.locale, file_path, title)
                 elif self.doc_manager.is_doc_modified(relative_path, self.path):
                     self.update_content(relative_path)
+                else:
+                    return
             except KeyboardInterrupt:
                 self.observer.stop()
             except ConnectionError:
@@ -182,8 +184,16 @@ class WatchAction(Action):
         # print "watching add target, watch queue:", self.watch_queue
         if document_id not in self.watch_queue:
             self.watch_queue.append(document_id)
+        # Only add target if doc exists on the cloud
         if self.check_remote_doc_exist(title, document_id):
             locales_to_add = self.get_watch_locales(document_id)
+            # if len(locales_to_add) == 1:
+            #     printStr = "Adding target "+locales_to_add[0]
+            # else:
+            #     printStr = "Adding targets "
+            #     for target in locales_to_add:
+            #         printStr += target+","
+            # print(printStr)
             self.target_action(title, locales_to_add, None, None, None, document_id)
             self.watch_queue.remove(document_id)
 
@@ -227,7 +237,7 @@ class WatchAction(Action):
 
     def watch_action(self, watch_path, ignore, delimiter, timeout):
         # print self.path
-        print ("timeout: ", timeout)
+        # print("timeout: " + str(timeout))
         if not watch_path and not self.watch_dir:
             watch_path = self.path
         elif watch_path:
