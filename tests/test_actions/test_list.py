@@ -46,8 +46,6 @@ class TestList(unittest.TestCase):
             sys.stdout = out
             self.action.list_ids_action()
             info = out.getvalue()
-            sys.stdout = sys.__stdout__
-            print (info)
             assert 'no documents' in info
         finally:
             sys.stdout = sys.__stdout__
@@ -58,10 +56,9 @@ class TestList(unittest.TestCase):
             sys.stdout = out
             self.action.list_workflow_action()
             info = out.getvalue()
-            decoded_info = info
-            assert 'workflows' in decoded_info
-            assert 'c675bd20-0688-11e2-892e-0800200c9a66' in decoded_info
-            assert 'Machine Translation' in decoded_info
+            assert 'workflows' in info
+            assert 'c675bd20-0688-11e2-892e-0800200c9a66' in info
+            assert 'Machine Translation' in info
         finally:
             sys.stdout = sys.__stdout__
 
@@ -71,9 +68,8 @@ class TestList(unittest.TestCase):
             sys.stdout = out
             self.action.list_locale_action()
             info = out.getvalue()
-            decoded_info = info
-            assert 'ar_AE (Arabic, United Arab Emirates)' in decoded_info
-            assert 'zh_TW (Chinese, Taiwan)' in decoded_info
+            assert 'ar_AE (Arabic, United Arab Emirates)' in info
+            assert 'zh_TW (Chinese, Taiwan)' in info
         finally:
             sys.stdout = sys.__stdout__
 
@@ -83,10 +79,9 @@ class TestList(unittest.TestCase):
             sys.stdout = out
             self.action.list_format_action()
             info = out.getvalue()
-            decoded_info = info
             assert info.startswith('Formats Lingotek supports')
-            assert 'CSV' in decoded_info
-            assert 'XML_OKAPI' in decoded_info
+            assert 'CSV' in info
+            assert 'XML_OKAPI' in info
         finally:
             sys.stdout = sys.__stdout__
 

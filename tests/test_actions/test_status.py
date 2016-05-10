@@ -27,7 +27,7 @@ class TestStatusAction(unittest.TestCase):
         try:
             out = StringIO()
             sys.stdout = out
-            self.action.status_action(False, (self.file_name).encode())
+            self.action.status_action(False, self.file_name)
             status = out.getvalue()
             assert status.startswith('Status of {0}'.format(self.file_name))
         finally:
@@ -40,7 +40,7 @@ class TestStatusAction(unittest.TestCase):
         try:
             out = StringIO()
             sys.stdout = out
-            self.action.status_action(True, (self.file_name).encode)
+            self.action.status_action(True, self.file_name)
             status = out.getvalue()
             assert 'Status of {0}'.format(self.file_name) in status
             for target in self.targets:

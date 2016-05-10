@@ -95,8 +95,8 @@ class Action:
 
     def update_config_file(self, option, value, conf_parser, config_file_name, log_info):
         conf_parser.set('main', option, value)
-        with open(config_file_name, 'wb') as new_file:
-            conf_parser.write(new_file)
+        with open(config_file_name, 'w') as new_file:
+            conf_parser.write(new_file )
         # self._initialize_self()
         logger.info(log_info)
 
@@ -187,6 +187,7 @@ class Action:
         for entry in entries:
             if not self.doc_manager.is_doc_modified(entry['file_name'], self.path):
                 continue
+            print (entry['file_name'])
             response = self.api.document_update(entry['id'], os.path.join(self.path, entry['file_name']))
             if response.status_code != 202:
                 raise_error(response.json(), "Failed to update document {0}".format(entry['name']), True)
@@ -194,6 +195,7 @@ class Action:
             logger.info('Updated ' + entry['name'])
             self._update_document(entry['file_name'])
         if not updated:
+            print('All documents up-to-date with Lingotek Cloud. ')
             logger.info('All documents up-to-date with Lingotek Cloud. ')
 
     def update_document_action(self, file_name, title=None, **kwargs):
@@ -211,7 +213,7 @@ class Action:
         if response.status_code != 202:
             raise_error(response.json(), "Failed to update document {0}".format(file_name), True)
         self._update_document(relative_path)
-        response.close()
+      
 
     def _target_action_db(self, to_delete, locales, document_id):
         if to_delete:
@@ -461,7 +463,7 @@ class Action:
             entry = self.doc_manager.get_doc_by_prop('name', document_name)
             document_id = entry['id']
         except TypeError:
-            logger.warn("Document name specified doesn't exist: {0}".format(document_name))
+            logger.warning("Document name specified doesn't exist: {0}".format(document_name))
             return
             # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
         response = self.api.document_delete(document_id)
@@ -515,7 +517,7 @@ class Action:
                 document_id = entry['id']
                 self.doc_manager.remove_element(document_id)
             except TypeError:
-                logger.warn("Document name specified doesn't exist: {0}".format(document_name))
+                logger.warning("Document name specified doesn't exist: {0}".format(document_name))
             return
 
         response = self.api.list_documents(self.project_id)

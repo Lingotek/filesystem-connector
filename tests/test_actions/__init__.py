@@ -23,9 +23,10 @@ def create_txt_file(file_name):
     return file_path
 
 def append_file(file_name):
-    file_path = os.path.join(os.getcwd(), file_name)
+    file_path = os.path.join(os.getcwd(), file_name)    
     with open(file_path, 'a') as txt_file:
         txt_file.write('Appended text. ')
+    txt_file.close()
     return file_path
 
 def poll_doc(action, doc_id):

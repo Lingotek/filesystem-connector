@@ -1,5 +1,6 @@
 from tests.test_actions import *
 from ltk import actions
+from io import StringIO
 import unittest
 
 
@@ -16,7 +17,7 @@ class TestConfig(unittest.TestCase):
         import sys
 
         try:
-            out = BytesIO()
+            out = StringIO()
             sys.stdout = out
             self.action.config_action(None, None, None, None, [])
             info = out.getvalue()
