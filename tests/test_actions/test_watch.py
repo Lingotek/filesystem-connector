@@ -20,7 +20,7 @@ class TestWatch(unittest.TestCase):
         for fn in self.files:
             create_txt_file(fn)
         self.downloaded = []
-        self.action.add_action(None, ['sample*.txt'])
+        self.action.add_action(None, ['sample*.txt'], force=True)
         self.doc_ids = self.action.doc_manager.get_doc_ids()
         for doc_id in self.doc_ids:
             assert poll_doc(self.action, doc_id)

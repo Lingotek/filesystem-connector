@@ -11,7 +11,7 @@ class TestPush(unittest.TestCase):
         self.files = ['sample.txt', 'sample1.txt', 'sample2.txt']
         for fn in self.files:
             create_txt_file(fn)
-        self.action.add_action(None, ['sample*.txt'])
+        self.action.add_action(None, ['sample*.txt'], force=True)
         self.doc_ids = self.action.doc_manager.get_doc_ids()
         for doc_id in self.doc_ids:
             assert poll_doc(self.action, doc_id)
@@ -29,7 +29,7 @@ class TestPush(unittest.TestCase):
         self.action.push_action()
         # currently sleep for some arbitrary time while document updates in Lingotek
         # replace when api call or some way to check if update is finished is available
-        time.sleep(30)
+        time.sleep(10)
         downloaded_path = self.action.download_action(self.doc_ids[0], None, False)
         self.downloaded.append(downloaded_path)
         with open(downloaded_path, 'r') as f:
@@ -41,7 +41,7 @@ class TestPush(unittest.TestCase):
         append_file(self.files[0])
         append_file(self.files[1])
         self.action.push_action()
-        time.sleep(45)  # see test_push_1 comment
+        time.sleep(10)  # see test_push_1 comment
         dl_path = self.action.download_action(self.doc_ids[0], None, False)
         dl_path1 = self.action.download_action(self.doc_ids[1], None, False)
         self.downloaded = [dl_path, dl_path1]
@@ -60,6 +60,7 @@ class TestPush(unittest.TestCase):
             sys.stdout = out
             self.action.push_action()
             info = out.getvalue()
+            print(info)
             assert 'All documents up-to-date with Lingotek Cloud.' in info
         finally:
             sys.stdout = sys.__stdout__
