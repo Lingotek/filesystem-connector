@@ -24,7 +24,6 @@ class TestClean(unittest.TestCase):
             assert poll_doc(self.action, doc_id)
 
     def tearDown(self):
-        print(self.forced)
         for curr_file in self.files:
             if curr_file in self.forced:
                 continue
