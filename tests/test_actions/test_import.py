@@ -1,6 +1,6 @@
 from tests.test_actions import *
 from ltk.import_action import ImportAction
-import time
+
 import unittest
 
 class TestImport(unittest.TestCase):
@@ -25,18 +25,18 @@ class TestImport(unittest.TestCase):
             self.doc_ids.append(response.json()['properties']['id'])
         for doc_id in self.doc_ids:
             assert poll_doc(self.action, doc_id)
+        for fn in self.files:
+            delete_file(fn)
 
     def tearDown(self):
         for fn in self.files:
+            #print ('deleting', fn)
             self.action.rm_action(fn, True)
         self.action.clean_action(False, False, None)
 
     def test_import_all(self):
-        time.sleep(10)
         self.action.import_action(True, False, None)
-        print ('import ALL')
         for doc_id in self.doc_ids:
-            #print (doc_id)
             assert self.action.doc_manager.get_doc_by_prop('id', doc_id)
 
     def test_import_locale(self):

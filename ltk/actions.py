@@ -187,7 +187,7 @@ class Action:
         for entry in entries:
             if not self.doc_manager.is_doc_modified(entry['file_name'], self.path):
                 continue
-            print (entry['file_name'])
+            #print (entry['file_name'])
             response = self.api.document_update(entry['id'], os.path.join(self.path, entry['file_name']))
             if response.status_code != 202:
                 raise_error(response.json(), "Failed to update document {0}".format(entry['name']), True)
@@ -205,6 +205,7 @@ class Action:
             document_id = entry['id']
         except TypeError:
             logger.error("Document name specified doesn't exist: {0}".format(title))
+            print (file_name, entry['prolerty'])
             return
         if title:
             response = self.api.document_update(document_id, file_name, title=title, **kwargs)
@@ -461,18 +462,21 @@ class Action:
     def rm_action(self, document_name, force):
         try:
             entry = self.doc_manager.get_doc_by_prop('name', document_name)
+            #print ('entry :', entry)
             document_id = entry['id']
-        except TypeError:
+            #print ('id:', document_id)
+        except TypeError:            
             logger.warning("Document name specified doesn't exist: {0}".format(document_name))
             return
             # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
         response = self.api.document_delete(document_id)
-        if response.status_code != 204:
+        #print (response)
+        if response.status_code != 204:            
             # raise_error(response.json(), "Failed to delete document {0}".format(document_name), True)
             logger.error("Failed to delete document {0}".format(document_name))
         else:
             logger.info("{0} has been deleted remotely.".format(document_name))
-            if force:
+            if force:                
                 self.delete_local(document_name, document_id)
             self.doc_manager.remove_element(document_id)
 
@@ -555,11 +559,12 @@ class Action:
         logger.info('Cleaned up associations between local documents and Lingotek cloud')
 
     def delete_local(self, title, document_id, message=None):
+        #print('local delete:', title, document_id)
         message = 'Removed local file {0}'.format(title) if not message else message
-        file_name = self.doc_manager.get_doc_by_prop('id', document_id)['file_name']
+        file_name = self.doc_manager.get_doc_by_prop('id', document_id)['file_name']        
         try:
             os.remove(os.path.join(self.path, file_name))
-            logger.info(message)
+            logger.info(message)            
         except OSError:
             logger.info('Something went wrong trying to delete the local file.')
 
@@ -748,8 +753,8 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
     config_parser.set('main', 'default_locale', locale)
     # get community id
     community_info = api.get_communities_info()
-    print("Community INFO")
-    print(len(community_info))
+    #print("Community INFO")
+    #print(len(community_info))
     if len(community_info) == 0:
         raise exceptions.ResourceNotFound('You are not part of any communities in Lingotek Cloud')
     if len(community_info) > 1:

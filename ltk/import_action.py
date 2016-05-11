@@ -21,16 +21,16 @@ class ImportAction(Action):
 
         if not ids_to_import:
             if import_all:
-                ids_to_import = tms_doc_info.items()
+                ids_to_import = iter(tms_doc_info)
             else:
                 import_doc_info = {}
-                for k, v in tms_doc_info.items():
+                for k, v in tms_doc_info.iteritems():
                     import_doc_info[k] = v['title']
                 ids_to_import = get_import_ids(import_doc_info)
         else:
             ids_to_import = [ids_to_import]
-        for curr_id in ids_to_import:            
-            self.import_document(curr_id, tms_doc_info[entity['properties']['id']], force, path)
+        for curr_id in ids_to_import:
+            self.import_document(curr_id, tms_doc_info[curr_id], force, path)
 
     def import_check(self, force, path, document_id, title):
         if not path:
@@ -76,7 +76,7 @@ class ImportAction(Action):
         # use status action to get locale info for importing
         try:
             locale_map = self.import_locale_info(document_id)
-            locale_info = list(locale_map.keys())
+            locale_info = list(iter(locale_map))
         except exceptions.RequestFailedError:
             locale_info = []
 
