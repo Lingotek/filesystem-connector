@@ -22,7 +22,7 @@ class TestList(unittest.TestCase):
         file_paths = []
         for fn in files:
             file_paths.append(create_txt_file(fn))
-        self.action.add_action(None, ['sample*.txt'])
+        self.action.add_action(None, ['sample*.txt'], force=True)
         doc_ids = self.action.doc_manager.get_doc_ids()
         for doc_id in doc_ids:
             assert poll_doc(self.action, doc_id)

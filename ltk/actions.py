@@ -159,7 +159,10 @@ class Action:
             relative_path = file_name.replace(self.path, '')
             if not self.doc_manager.is_doc_new(relative_path):
                 if self.doc_manager.is_doc_modified(relative_path, self.path):
-                    confirm = 'not confirmed'
+                    if 'force' in kwargs and kwargs['force']:
+                        confirm = 'Y'
+                    else:
+                        confirm = 'not confirmed'
                     while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
                         confirm = input("This document already exists. Would you like to overwrite it? [y/N]: ")
                     # confirm if would like to overwrite existing document in Lingotek Cloud
