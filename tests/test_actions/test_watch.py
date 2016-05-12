@@ -36,6 +36,7 @@ class TestWatch(unittest.TestCase):
         self.action.clean_action(False, False, None)
         for fn in self.downloaded:
             os.remove(fn)
+        self.action.close()
 
     def test_watch_new_file(self):
         file_name = "new_file.txt"

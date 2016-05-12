@@ -27,6 +27,7 @@ class TestRequest(unittest.TestCase):
         for curr_file in self.files:
             self.action.rm_action(curr_file, True)
         self.action.clean_action(False, False, None)
+        self.action.close()
 
     def check_locales_exist(self, documents, locales):
         for document in documents:

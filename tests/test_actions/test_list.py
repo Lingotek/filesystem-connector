@@ -17,6 +17,9 @@ class TestList(unittest.TestCase):
     def setUp(self):
         self.action = Action(os.getcwd())
 
+    def tearDown(self):
+        self.action.close()
+
     def test_list_doc(self):
         files = ['sample.txt', 'sample1.txt', 'sample2.txt']
         file_paths = []

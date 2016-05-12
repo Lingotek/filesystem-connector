@@ -35,6 +35,7 @@ class TestDownload(unittest.TestCase):
         self.action.clean_action(False, False, None)
         for dl_file in self.downloaded_files:
             os.remove(dl_file)
+        self.action.close()
 
     def get_dl_path(self, locale, document):
         name_parts = document.split('.')

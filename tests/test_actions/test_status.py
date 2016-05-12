@@ -20,6 +20,7 @@ class TestStatusAction(unittest.TestCase):
         # remove the created file
         self.action.rm_action(self.file_name, False)
         self.action.clean_action(True, False, None)
+        self.action.close()
         cleanup()
 
     def test_status(self):

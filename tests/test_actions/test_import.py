@@ -27,19 +27,31 @@ class TestImport(unittest.TestCase):
             assert poll_doc(self.action, doc_id)
         for fn in self.files:
             delete_file(fn)
+        self.imported = []
 
     def tearDown(self):
+        # print("tearDown")
         for fn in self.files:
-            #print ('deleting', fn)
-            self.action.rm_action(fn, True)
-        self.action.clean_action(False, False, None)
+            for doc in self.imported:
+                if doc['file_name'] == fn:
+                    # print ('removing', fn)
+                    self.action.rm_action(fn, True)
+                else:
+                    # print ('deleting', fn)
+                    self.action.api.document_delete(doc['id'])
+        self.action.clean_action(True, False, None)
+        self.action.close()
 
     def test_import_all(self):
+        # print("test_import_all")
         self.action.import_action(True, False, None)
         for doc_id in self.doc_ids:
-            assert self.action.doc_manager.get_doc_by_prop('id', doc_id)
+            doc = self.action.doc_manager.get_doc_by_prop('id', doc_id)
+            assert doc
+            self.imported.append(doc)
 
     def test_import_locale(self):
+        # print("test_import_locale")
         locale = "ja_JP"
         doc_id = self.doc_ids[0]
         response = self.action.api.document_add_target(doc_id, locale)
@@ -47,8 +59,11 @@ class TestImport(unittest.TestCase):
         self.action.import_action(False, False, None, doc_id)
         entry = self.action.doc_manager.get_doc_by_prop("id", doc_id)
         assert locale in entry["locales"]
+        self.imported.append(entry)
 
     def test_import_no_locale(self):
+        # print("test_import_no_locale")
         self.action.import_action(False, False, None, self.doc_ids[0])
         entry = self.action.doc_manager.get_doc_by_prop("id", self.doc_ids[0])
         assert not entry.get("locales")
+        self.imported.append(entry)

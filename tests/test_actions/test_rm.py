@@ -15,6 +15,7 @@ class TestRm(unittest.TestCase):
     def tearDown(self):
         self.action.rm_action(self.file_name, False)
         self.action.clean_action(True, False, None)
+        self.action.close()
         cleanup()
 
     def test_rm(self):

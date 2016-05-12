@@ -23,6 +23,7 @@ class TestPush(unittest.TestCase):
         for df in self.downloaded:
             os.remove(df)
         self.action.clean_action(False, False, None)
+        self.action.close()
         cleanup()
 
     def test_push_1(self):
