@@ -18,7 +18,7 @@ class TestClean(unittest.TestCase):
         self.forced = []
         for fn in self.files:
             create_txt_file(fn)
-        self.action.add_action(None, ['sample*.txt'])
+        self.action.add_action(None, ['sample*.txt'], force=True)
         self.doc_ids = self.action.doc_manager.get_doc_ids()
         for doc_id in self.doc_ids:
             assert poll_doc(self.action, doc_id)
@@ -27,7 +27,7 @@ class TestClean(unittest.TestCase):
         for curr_file in self.files:
             if curr_file in self.forced:
                 continue
-            os.remove(os.path.join(os.getcwd(), curr_file))
+            self.action.rm_action(curr_file, True)
         self.action.clean_action(False, False, None)
 
     def test_clean(self):
