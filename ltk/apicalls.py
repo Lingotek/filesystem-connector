@@ -88,7 +88,7 @@ class ApiCalls:
         payload = {'locale_code': locale, 'project_id': project_id, 'title': title}
         for key in kwargs:
             if kwargs[key]:
-                payload[key] = value
+                payload[key] = kwargs[key]
         detected_format = ltk.utils.detect_format(file_name)
         if 'format' not in kwargs and detected_format != 'PLAINTEXT_OKAPI':
             payload['format'] = detected_format
