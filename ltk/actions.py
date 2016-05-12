@@ -87,6 +87,12 @@ class Action:
         # whenever a document is updated, it should have new translations
         self.doc_manager.update_document('downloaded', [], doc_id)
 
+    def close(self):
+        self.doc_manager.close_db()
+
+    def open(self):
+        self.doc_manager.open_db()
+
     def init_config_file(self):
         config_file_name = os.path.join(self.path, CONF_DIR, CONF_FN)
         conf_parser = configparser.ConfigParser()
@@ -207,7 +213,7 @@ class Action:
         try:
             document_id = entry['id']
         except TypeError:
-            logger.error("Document name specified doesn't exist: {0}".format(title))
+            logger.error("Document name specified for update doesn't exist: {0}".format(title))
             print (file_name, entry['prolerty'])
             return
         if title:
@@ -260,7 +266,7 @@ class Action:
                 try:
                     document_id = entry['id']
                 except TypeError:
-                    logger.error('Document name specified doesn\'t exist: {0}'.format(document_name))
+                    logger.error('Document name specified for target doesn\'t exist: {0}'.format(document_name))
                     return
                     # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
             if not document_name:
@@ -268,7 +274,7 @@ class Action:
                 try:
                     document_name = entry['name']
                 except TypeError:
-                    logger.error('Document specified doesn\'t exist: {0}'.format(document_id))
+                    logger.error('Document specified for target doesn\'t exist: {0}'.format(document_id))
                     return
             for locale in locales:
                 response = self.api.document_add_target(document_id, locale, workflow, due_date) if not to_delete \
@@ -362,7 +368,7 @@ class Action:
             try:
                 doc_ids = [entry['id']]
             except TypeError:
-                raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
+                raise exceptions.ResourceNotFound("Document name specified for status doesn't exist: {0}".format(document_name))
         else:
             doc_ids = self.doc_manager.get_doc_ids()
         # detailed_status = {}
@@ -394,7 +400,7 @@ class Action:
         try:
             document_id = self.doc_manager.get_doc_by_prop('name', document_name)['id']
         except TypeError:
-            logger.error("Document name specified doesn't exist: {0}".format(document_name))
+            logger.error("Document name specified for download doesn't exist: {0}".format(document_name))
             return
         self.download_action(document_id, locale_code, auto_format)
 
@@ -469,7 +475,7 @@ class Action:
             document_id = entry['id']
             #print ('id:', document_id)
         except TypeError:            
-            logger.warning("Document name specified doesn't exist: {0}".format(document_name))
+            logger.warning("Document name specified for remove doesn't exist: {0}".format(document_name))
             return
             # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
         response = self.api.document_delete(document_id)
@@ -524,7 +530,7 @@ class Action:
                 document_id = entry['id']
                 self.doc_manager.remove_element(document_id)
             except TypeError:
-                logger.warning("Document name specified doesn't exist: {0}".format(document_name))
+                logger.warning("Document name specified for clean doesn't exist: {0}".format(document_name))
             return
 
         response = self.api.list_documents(self.project_id)
