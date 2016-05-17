@@ -25,7 +25,7 @@ class TestRequest(unittest.TestCase):
 
     def tearDown(self):
         for curr_file in self.files:
-            self.action.rm_action(curr_file, True)
+            self.action.rm_action(curr_file, force=True)
         self.action.clean_action(False, False, None)
         self.action.close()
 

@@ -14,11 +14,12 @@ class TestAdd(unittest.TestCase):
 
     def setUp(self):
         self.action = Action(os.getcwd())
+        self.action.clean_action(False, False, None)
         self.added_files = []
 
     def tearDown(self):
         for fn in self.added_files:
-            self.action.rm_action(fn, True)
+            self.action.rm_action(fn, force=True)
         self.action.clean_action(False, False, None)
         self.action.close()
 

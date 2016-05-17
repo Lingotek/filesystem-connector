@@ -16,8 +16,10 @@ class TestList(unittest.TestCase):
 
     def setUp(self):
         self.action = Action(os.getcwd())
+        self.action.clean_action(True, False, None)
 
     def tearDown(self):
+        self.action.clean_action(True, False, None)
         self.action.close()
 
     def test_list_doc(self):
@@ -40,7 +42,7 @@ class TestList(unittest.TestCase):
             sys.stdout = sys.__stdout__
 
         for fn in files:
-            self.action.rm_action(fn, True)
+            self.action.rm_action(fn, force=True)
         self.action.clean_action(False, False, None)
 
     def test_list_no_docs(self):
@@ -49,7 +51,7 @@ class TestList(unittest.TestCase):
             sys.stdout = out
             self.action.list_ids_action()
             info = out.getvalue()
-            assert 'no documents' in info
+            assert 'No local documents' in info
         finally:
             sys.stdout = sys.__stdout__
 
@@ -59,7 +61,7 @@ class TestList(unittest.TestCase):
             sys.stdout = out
             self.action.list_workflow_action()
             info = out.getvalue()
-            assert 'workflows' in info
+            assert 'Workflows' in info
             assert 'c675bd20-0688-11e2-892e-0800200c9a66' in info
             assert 'Machine Translation' in info
         finally:
@@ -95,7 +97,7 @@ class TestList(unittest.TestCase):
             self.action.list_filter_action()
             info = out.getvalue()
             decoded_info = info
-            assert 'filters:' in info
+            assert 'Filters:' in info
             assert 'okf_html@wordpress.fprm' in info
             assert '0adc9a9d-ca67-4217-9525-d5a6af7ba91f' in info
         finally:

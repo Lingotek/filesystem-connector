@@ -306,9 +306,9 @@ class Action:
                 except KeyError:
                     locales.append(['none'])
         if not ids:
-            print ('no documents')
+            print ('No local documents')
             return
-        print ('documents: id, title, locales')
+        print ('Local documents: id, file name, locales')
         for i in range(len(ids)):
             info = '{id} \t {title} \t\t {locales}'.format(id=ids[i], title=titles[i],
                                                            locales=', '.join(locale for locale in locales[i]))
@@ -320,9 +320,9 @@ class Action:
             raise_error(response.json(), "Failed to list workflows")
         ids, titles = log_id_names(response.json())
         if not ids:
-            print ('no workflows')
+            print ('No workflows')
             return
-        print ('workflows: id, title')
+        print ('Workflows: id, title')
         for i in range(len(ids)):
             info = '{id} \t {title}'.format(id=ids[i], title=titles[i])
             print (info)
@@ -355,23 +355,64 @@ class Action:
         if response.status_code != 200:
             raise_error(response.json(), 'Failed to get filters')
         filter_entities = response.json()['entities']
-        print (bytes('filters: id, title', 'UTF-8'))
+        print (bytes('Filters: id, title', 'UTF-8'))
         for entry in filter_entities:
             properties = entry['properties']
             title = properties['title']
             filter_id = properties['id']
             print ('{0}\t{1}\t'.format(filter_id, title))
 
-    def status_action(self, detailed, document_name=None):
-        if document_name is not None:
-            entry = self.doc_manager.get_doc_by_prop('name', document_name)
-            try:
-                doc_ids = [entry['id']]
-            except TypeError:
-                raise exceptions.ResourceNotFound("Document name specified for status doesn't exist: {0}".format(document_name))
-        else:
-            doc_ids = self.doc_manager.get_doc_ids()
+    def print_status(self, title, progress):
+        print ('{0}: {1}%'.format(title, progress))
+        # print title + ': ' + str(progress) + '%'
+        # for each doc id, also call /document/id/translation and get % of each locale
+
+    def print_detailed(self, doc_id):
+        response = self.api.document_translation_status(doc_id)
+        if response.status_code != 200:
+            raise_error(response.json(), 'Failed to get detailed status of document', True)
+        try:
+            for entry in response.json()['entities']:
+                curr_locale = entry['properties']['locale_code']
+                curr_progress = entry['properties']['percent_complete']
+                print ('\tlocale: {0} \t percent complete: {1}%'.format(curr_locale, curr_progress))
+                # detailed_status[doc_id] = (curr_locale, curr_progress)
+        except KeyError as e:
+            print("Error listing translations")
+            return
+            # return detailed_status
+    def status_action(self, document_name=None, **kwargs):
         # detailed_status = {}
+        if 'all' in kwargs and kwargs['all']:
+            response = self.api.list_documents(self.project_id)
+            if response.status_code == 204:
+                print("No documents to report")
+                return
+            elif response.status_code != 200:
+                if response.json():
+                    raise_error(response.json(), "Failed to get status of documents", True)
+                else:
+                    raise_error("", "Failed to get status of documents", True)
+            else:
+                for entry in response.json()['entities']:
+                    title = entry['entities'][1]['properties']['title']
+                    progress = entry['entities'][1]['properties']['progress']
+                    self.print_status(title, progress)
+                    if 'detailed' in kwargs and kwargs['detailed']:
+                        self.print_detailed(entry['properties']['id'])
+                return
+        else:
+            if document_name is not None:
+                entry = self.doc_manager.get_doc_by_prop('name', document_name)
+                try:
+                    doc_ids = [entry['id']]
+                except TypeError:
+                    raise exceptions.ResourceNotFound("Document name specified for status doesn't exist: {0}".format(document_name))
+            else:
+                doc_ids = self.doc_manager.get_doc_ids()
+            if not doc_ids:
+                print("No documents to report")
+                return
         for doc_id in doc_ids:
             response = self.api.document_status(doc_id)
             if response.status_code != 200:
@@ -379,22 +420,9 @@ class Action:
             else:
                 title = response.json()['properties']['title']
                 progress = response.json()['properties']['progress']
-                print ('{0}: {1}%'.format(title, progress))
-                # print title + ': ' + str(progress) + '%'
-                # for each doc id, also call /document/id/translation and get % of each locale
-            if detailed:
-                response = self.api.document_translation_status(doc_id)
-                if response.status_code != 200:
-                    raise_error(response.json(), 'Failed to get detailed status of document', True)
-                try:
-                    for entry in response.json()['entities']:
-                        curr_locale = entry['properties']['locale_code']
-                        curr_progress = entry['properties']['percent_complete']
-                        print ('\tlocale: {0} \t percent complete: {1}%'.format(curr_locale, curr_progress))
-                        # detailed_status[doc_id] = (curr_locale, curr_progress)
-                except KeyError:
-                    continue
-                    # return detailed_status
+                self.print_status(title, progress)
+            if 'detailed' in kwargs and kwargs['detailed']:
+                self.print_detailed(doc_id)
 
     def download_by_name(self, document_name, locale_code, auto_format):
         try:
@@ -468,25 +496,29 @@ class Action:
             for document_id in document_ids:
                 self.download_action(document_id, locale_code, auto_format)
 
-    def rm_action(self, document_name, force):
-        try:
-            entry = self.doc_manager.get_doc_by_prop('name', document_name)
-            #print ('entry :', entry)
-            document_id = entry['id']
-            #print ('id:', document_id)
-        except TypeError:            
-            logger.warning("Document name specified for remove doesn't exist: {0}".format(document_name))
-            return
-            # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
+    def rm_action(self, file_name, **kwargs):
+        if not 'id' in kwargs or not kwargs['id']:
+            try:
+                entry = self.doc_manager.get_doc_by_prop('file_name', file_name)
+                #print ('entry :', entry)
+                document_id = entry['id']
+                #print ('id:', document_id)
+            except TypeError:            
+                logger.warning("Document name specified for remove doesn't exist locally: {0}".format(file_name))
+                return
+                # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
+        else:
+            document_id = file_name
+            file_name = self.doc_manager.get_doc_by_prop('id', document_id)['file_name']
         response = self.api.document_delete(document_id)
         #print (response)
         if response.status_code != 204:            
             # raise_error(response.json(), "Failed to delete document {0}".format(document_name), True)
-            logger.error("Failed to delete document {0}".format(document_name))
+            logger.error("Failed to delete document {0}".format(file_name))
         else:
-            logger.info("{0} has been deleted remotely.".format(document_name))
-            if force:                
-                self.delete_local(document_name, document_id)
+            logger.info("{0} has been deleted remotely.".format(file_name))
+            if 'force' in kwargs and kwargs['force']:               
+                self.delete_local(file_name, document_id)
             self.doc_manager.remove_element(document_id)
 
     def get_new_name(self, file_name, curr_path):
@@ -556,7 +588,10 @@ class Action:
         # remove entry for local doc -- possibly delete local file too?
         if locals_to_delete:
             for curr_id in locals_to_delete:
-                removed_title = self.doc_manager.get_doc_by_prop('id', curr_id)['name']
+                removed_doc = self.doc_manager.get_doc_by_prop('id', curr_id)
+                if not removed_doc:
+                    continue
+                removed_title = removed_doc['name']
                 # todo somehow this line^ doc is null... after delete files remotely, then delete locally
                 if force:
                     self.delete_local(removed_title, curr_id)

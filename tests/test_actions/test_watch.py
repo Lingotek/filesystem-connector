@@ -32,7 +32,7 @@ class TestWatch(unittest.TestCase):
 
     def tearDown(self):
         for fn in self.files:
-            self.action.rm_action(fn, True)
+            self.action.rm_action(fn, force=True)
         self.action.clean_action(False, False, None)
         for fn in self.downloaded:
             os.remove(fn)
@@ -41,6 +41,7 @@ class TestWatch(unittest.TestCase):
     def test_watch_new_file(self):
         file_name = "new_file.txt"
         added_file = create_txt_file(file_name)
+        self.files.append(file_name)
         # check if watch detected file and added it to db
         assert self.action.doc_manager.get_doc_by_prop('name', file_name)
 
