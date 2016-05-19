@@ -18,6 +18,7 @@ class TestDownload(unittest.TestCase):
     def setUp(self):
         self.downloaded_files = []
         self.action = Action(os.getcwd())
+        self.action.clean_action(False, False, None)
         self.files = ['sample.txt', 'sample1.txt']
         self.locales = ['ja_JP', 'zh_CN']
         self.first_doc = 'sample.txt'
@@ -31,10 +32,11 @@ class TestDownload(unittest.TestCase):
 
     def tearDown(self):
         for curr_file in self.files:
-            self.action.rm_action(curr_file, True)
+            self.action.rm_action(curr_file, force=True)
         self.action.clean_action(False, False, None)
         for dl_file in self.downloaded_files:
             os.remove(dl_file)
+        self.action.close()
 
     def get_dl_path(self, locale, document):
         name_parts = document.split('.')

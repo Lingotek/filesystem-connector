@@ -1,14 +1,16 @@
 from ltk import actions, exceptions
 import unittest
-from io import BytesIO
 from io import StringIO
 import sys
 from tests.test_actions import *
+import logging
+
 
 class TestStatusAction(unittest.TestCase):
     def setUp(self):
         create_config()
         self.action = actions.Action(os.getcwd())
+        self.action.clean_action(True, False, None)
         self.file_name = 'sample.txt'
         self.file_path = create_txt_file(self.file_name)
         self.action.add_action(None, [self.file_name], force=True)
@@ -18,8 +20,9 @@ class TestStatusAction(unittest.TestCase):
 
     def tearDown(self):
         # remove the created file
-        self.action.rm_action(self.file_name, False)
+        self.action.rm_action(self.file_name, force=False)
         self.action.clean_action(True, False, None)
+        self.action.close()
         cleanup()
 
     def test_status(self):
@@ -27,7 +30,7 @@ class TestStatusAction(unittest.TestCase):
         try:
             out = StringIO()
             sys.stdout = out
-            self.action.status_action(False, self.file_name)
+            self.action.status_action(doc_name=self.file_name)
             status = out.getvalue()
             assert status.startswith('Status of {0}'.format(self.file_name))
         finally:
@@ -40,7 +43,7 @@ class TestStatusAction(unittest.TestCase):
         try:
             out = StringIO()
             sys.stdout = out
-            self.action.status_action(True, self.file_name)
+            self.action.status_action(detailed=True, doc_name=self.file_name)
             status = out.getvalue()
             assert 'Status of {0}'.format(self.file_name) in status
             for target in self.targets:
@@ -49,13 +52,17 @@ class TestStatusAction(unittest.TestCase):
             sys.stdout = sys.__stdout__
 
     # def test_status_no_target(self):
-        # when no targets have been added
-        # try:
-            # out = BytesIO()
-            # sys.stdout = out
-            # self.action.status_action(True, self.file_name)
-            # status = out.getvalue()
-            # todo this test fails because the error comes from logger not stdout
-        # assert 'ERROR: No translations exist for document {0}'.format(self.doc_id) in status
-        # finally:
-        #     sys.stdout = sys.__stdout__
+    #     # when no targets have been added
+    #     try:
+    #         from ltk.logger import logger
+    #         logger.setLevel(logging.DEBUG)
+    #         out = StringIO()
+    #         ch = logging.StreamHandler(out)
+    #         ch.setLevel(logging.DEBUG)
+    #         logger.addHandler(ch)
+    #         self.action.status_action(detailed=True, doc_name=self.file_name)
+    #         status = out.getvalue()
+    #         # todo this test fails because the error comes from logger not stdout
+    #         assert 'ERROR: No translations exist for document {0}'.format(self.doc_id) in status
+    #     finally:
+    #         sys.stdout = sys.__stdout__

@@ -11,6 +11,7 @@ class TestConfig(unittest.TestCase):
 
     def tearDown(self):
         cleanup()
+        self.action.close()
 
     def test_config(self):
         from io import BytesIO

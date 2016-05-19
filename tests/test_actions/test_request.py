@@ -14,6 +14,7 @@ class TestRequest(unittest.TestCase):
 
     def setUp(self):
         self.action = Action(os.getcwd())
+        self.action.clean_action(True, False, None)
         self.files = ['sample.txt', 'sample1.txt', 'sample2.txt']
         self.first_doc = 'sample.txt'
         for fn in self.files:
@@ -25,8 +26,9 @@ class TestRequest(unittest.TestCase):
 
     def tearDown(self):
         for curr_file in self.files:
-            self.action.rm_action(curr_file, True)
-        self.action.clean_action(False, False, None)
+            self.action.rm_action(curr_file, force=True)
+        self.action.clean_action(True, False, None)
+        self.action.close()
 
     def check_locales_exist(self, documents, locales):
         for document in documents:

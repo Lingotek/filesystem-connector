@@ -4,8 +4,14 @@ from ltk.constants import CONF_DIR, DB_FN
 
 class DocumentManager:
     def __init__(self, path):
-        db_file = os.path.join(path, CONF_DIR, DB_FN)
-        self._db = TinyDB(db_file)
+        self.db_file = os.path.join(path, CONF_DIR, DB_FN)
+        self._db = TinyDB(self.db_file)
+
+    def open_db(self):
+        self._db = TinyDB(self.db_file)
+
+    def close_db(self):
+        self._db.close()
 
     def doc_exists(self, file_name, title):
         entries = self._db.search((where('file_name') == file_name) & (where('name') == title))
