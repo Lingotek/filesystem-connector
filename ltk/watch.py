@@ -1,7 +1,7 @@
 import ctypes
 from ltk.actions import Action
-from logger import logger
-from utils import map_locale
+from ltk.logger import logger
+from ltk.utils import map_locale
 import time
 import requests
 from requests.exceptions import ConnectionError
@@ -108,7 +108,6 @@ class WatchAction(Action):
                 restart()
 
     def _on_created(self, event):
-        # print "new file created"
         # get path
         # add action
         file_path = event.src_path
@@ -146,7 +145,7 @@ class WatchAction(Action):
                     curr_locale = title.split(self.locale_delimiter)[-2]
                     fixed_locale = map_locale(curr_locale)
                     if fixed_locale:
-                        print "fixed locale:", fixed_locale
+                        print ("fixed locale:", fixed_locale)
                         # self.watch_locales.add(fixed_locale)
                         self.detected_locales[document_id] = fixed_locale
                     else:
@@ -227,7 +226,8 @@ class WatchAction(Action):
             except KeyError:
                 downloaded = []
                 self.doc_manager.update_document('downloaded', downloaded, doc_id)
-            for locale, progress in locale_progress.iteritems():
+            for locale in locale_progress:
+                progress = locale_progress[locale]
                 if progress == 100 and locale not in downloaded:
                     logger.info('Translation completed ({0} - {1})'.format(doc_id, locale))
                     if self.locale_delimiter:
@@ -246,7 +246,7 @@ class WatchAction(Action):
             watch_path = self.watch_dir
         self.ignore_ext.extend(ignore)
         self.locale_delimiter = delimiter
-        print "Watching for updates in: {0}".format(watch_path)
+        print ("Watching for updates in: {0}".format(watch_path))
         try:
             self.observer.schedule(self.handler, path=watch_path, recursive=True)
             self.observer.start()

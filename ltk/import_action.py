@@ -21,10 +21,10 @@ class ImportAction(Action):
 
         if not ids_to_import:
             if import_all:
-                ids_to_import = tms_doc_info.iterkeys()
+                ids_to_import = iter(tms_doc_info)
             else:
                 import_doc_info = {}
-                for k, v in tms_doc_info.iteritems():
+                for k, v in tms_doc_info.items():
                     import_doc_info[k] = v['title']
                 ids_to_import = get_import_ids(import_doc_info)
         else:
@@ -41,7 +41,7 @@ class ImportAction(Action):
         curr_entry = self.doc_manager.get_doc_by_prop('id', document_id)
         curr_path = os.path.join(self.path, curr_entry['file_name'])
         new_path = os.path.join(path, title)
-        print curr_path, new_path
+        print (curr_path, new_path)
         if os.path.normpath(curr_path) != os.path.normpath(new_path):
             path_changed = True
         if not force:
@@ -76,7 +76,7 @@ class ImportAction(Action):
         # use status action to get locale info for importing
         try:
             locale_map = self.import_locale_info(document_id)
-            locale_info = list(locale_map.iterkeys())
+            locale_info = list(iter(locale_map))
         except exceptions.RequestFailedError:
             locale_info = []
 

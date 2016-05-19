@@ -1,6 +1,7 @@
 from tests.test_actions import *
 from ltk.actions import Action
 from io import BytesIO
+from io import StringIO
 import sys
 import unittest
 
@@ -21,12 +22,12 @@ class TestList(unittest.TestCase):
         file_paths = []
         for fn in files:
             file_paths.append(create_txt_file(fn))
-        self.action.add_action(None, ['sample*.txt'])
+        self.action.add_action(None, ['sample*.txt'], force=True)
         doc_ids = self.action.doc_manager.get_doc_ids()
         for doc_id in doc_ids:
             assert poll_doc(self.action, doc_id)
         try:
-            out = BytesIO()
+            out = StringIO()
             sys.stdout = out
             self.action.list_ids_action()
             info = out.getvalue()
@@ -41,7 +42,7 @@ class TestList(unittest.TestCase):
 
     def test_list_no_docs(self):
         try:
-            out = BytesIO()
+            out = StringIO()
             sys.stdout = out
             self.action.list_ids_action()
             info = out.getvalue()
@@ -51,7 +52,7 @@ class TestList(unittest.TestCase):
 
     def test_list_workflow(self):
         try:
-            out = BytesIO()
+            out = StringIO()
             sys.stdout = out
             self.action.list_workflow_action()
             info = out.getvalue()
@@ -63,7 +64,7 @@ class TestList(unittest.TestCase):
 
     def test_list_locale(self):
         try:
-            out = BytesIO()
+            out = StringIO()
             sys.stdout = out
             self.action.list_locale_action()
             info = out.getvalue()
@@ -74,7 +75,7 @@ class TestList(unittest.TestCase):
 
     def test_list_format(self):
         try:
-            out = BytesIO()
+            out = StringIO()
             sys.stdout = out
             self.action.list_format_action()
             info = out.getvalue()
@@ -86,11 +87,12 @@ class TestList(unittest.TestCase):
 
     def test_list_filters_default(self):
         try:
-            out = BytesIO()
+            out = StringIO()
             sys.stdout = out
             self.action.list_filter_action()
             info = out.getvalue()
-            assert info.startswith('filters:')
+            decoded_info = info
+            assert 'filters:' in info
             assert 'okf_html@wordpress.fprm' in info
             assert '0adc9a9d-ca67-4217-9525-d5a6af7ba91f' in info
         finally:

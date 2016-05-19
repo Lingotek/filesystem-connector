@@ -1,5 +1,6 @@
 from tests.test_actions import *
 from ltk import actions
+from io import StringIO
 import unittest
 
 
@@ -16,7 +17,7 @@ class TestConfig(unittest.TestCase):
         import sys
 
         try:
-            out = BytesIO()
+            out = StringIO()
             sys.stdout = out
             self.action.config_action(None, None, None, None, [])
             info = out.getvalue()
@@ -43,7 +44,7 @@ class TestConfig(unittest.TestCase):
     def test_add_upload_folder(self):
         watch_folder = 'watching'
         self.action.config_action(None, None, None, watch_folder, [])
-        print 'self action watch dir', self.action.watch_dir
+        print ('self action watch dir', self.action.watch_dir)
         assert self.action.watch_dir == watch_folder
 
     def test_watch_locales_1(self):
@@ -54,5 +55,5 @@ class TestConfig(unittest.TestCase):
     def test_watch_locales_mult(self):
         locales = ['ja_JP', 'zh_CN', 'fr_FR',]
         self.action.config_action(None, None, None, None, locales)
-        print self.action.watch_locales, set(locales)
+        print (self.action.watch_locales, set(locales))
         assert self.action.watch_locales == set(locales)

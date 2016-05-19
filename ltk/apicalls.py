@@ -1,8 +1,8 @@
 import requests
-from api_uri import API_URI
-import utils
-from exceptions import RequestFailedError
-from logger import logger
+from ltk.api_uri import API_URI
+import ltk.utils
+from ltk.exceptions import RequestFailedError
+from ltk.logger import logger
 
 
 class ApiCalls:
@@ -86,15 +86,17 @@ class ApiCalls:
         """ adds a document """
         uri = API_URI['document']
         payload = {'locale_code': locale, 'project_id': project_id, 'title': title}
-        for key, value in kwargs.iteritems():
+        for key in kwargs:
             if kwargs[key]:
-                payload[key] = value
-        detected_format = utils.detect_format(file_name)
+                payload[key] = kwargs[key]
+        detected_format = ltk.utils.detect_format(file_name)
         if 'format' not in kwargs and detected_format != 'PLAINTEXT_OKAPI':
             payload['format'] = detected_format
-        files = {'content': (file_name, open(file_name, 'rb'))}
+        document = open(file_name, 'rb')
+        files = {'content': (file_name, document)}
         r = requests.post(self.host + uri, headers=self.headers, data=payload, files=files)
         log_api('POST', uri, r)
+        document.close()
         return r
 
     def document_add_target(self, document_id, locale, workflow_id=None, due_date=None):
@@ -150,15 +152,17 @@ class ApiCalls:
     def document_update(self, document_id, file_name=None, **kwargs):
         uri = (API_URI['document_id'] % locals())
         payload = {'id': document_id}
-        for key, value in kwargs.iteritems():
+        for key in kwargs:
             if kwargs[key]:
-                payload[key] = value
+                payload[key] = kwargs[key]
         if file_name:
-            files = {'content': (file_name, open(file_name, 'rb'))}
+            document = open(file_name, 'rb')
+            files = {'content': (file_name, document)}
             r = requests.patch(self.host + uri, headers=self.headers, data=payload, files=files)
+            document.close()
         else:
             r = requests.patch(self.host + uri, headers=self.headers, data=payload)
-        log_api('PATCH', uri, r)
+        log_api('PATCH', uri, r)        
         return r
 
     def document_delete_target(self, document_id, locale):

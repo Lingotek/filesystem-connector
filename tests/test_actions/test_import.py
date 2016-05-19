@@ -25,9 +25,12 @@ class TestImport(unittest.TestCase):
             self.doc_ids.append(response.json()['properties']['id'])
         for doc_id in self.doc_ids:
             assert poll_doc(self.action, doc_id)
+        for fn in self.files:
+            delete_file(fn)
 
     def tearDown(self):
         for fn in self.files:
+            #print ('deleting', fn)
             self.action.rm_action(fn, True)
         self.action.clean_action(False, False, None)
 

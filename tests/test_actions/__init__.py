@@ -20,12 +20,18 @@ def create_txt_file(file_name):
     file_path = os.path.join(os.getcwd(), file_name)
     with open(file_path, 'w') as txt_file:
         txt_file.write('This is a sample text file. ')
+        txt_file.close()
     return file_path
 
-def append_file(file_name):
+def delete_file(file_name):
     file_path = os.path.join(os.getcwd(), file_name)
+    os.remove(file_name)
+
+def append_file(file_name):
+    file_path = os.path.join(os.getcwd(), file_name)    
     with open(file_path, 'a') as txt_file:
         txt_file.write('Appended text. ')
+        txt_file.close()
     return file_path
 
 def poll_doc(action, doc_id):
@@ -37,7 +43,7 @@ def poll_doc(action, doc_id):
         response = action.api.get_document(doc_id)
         if response.status_code == 200:
             return True
-        time.sleep(1)
+        time.sleep(5)
         time_passed += 1
     return False
 
@@ -46,4 +52,4 @@ def cleanup():
     try:
         shutil.rmtree(conf_path)
     except OSError:
-        print 'OSError in cleanup'
+        print ('OSError in cleanup')
