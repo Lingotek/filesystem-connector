@@ -306,9 +306,15 @@ class Action:
                 except KeyError:
                     locales.append(['none'])
         if not ids:
+<<<<<<< HEAD
             print ('No local documents')
             return
         print ('Local documents: id, file name, locales')
+=======
+            print ('no documents')
+            return
+        print ('documents: id, title, locales')
+>>>>>>> 5c8d451d16b152e0342d8eb366aaadd2be05dfff
         for i in range(len(ids)):
             info = '{id} \t {title} \t\t {locales}'.format(id=ids[i], title=titles[i],
                                                            locales=', '.join(locale for locale in locales[i]))
@@ -320,9 +326,15 @@ class Action:
             raise_error(response.json(), "Failed to list workflows")
         ids, titles = log_id_names(response.json())
         if not ids:
+<<<<<<< HEAD
             print ('No workflows')
             return
         print ('Workflows: id, title')
+=======
+            print ('no workflows')
+            return
+        print ('workflows: id, title')
+>>>>>>> 5c8d451d16b152e0342d8eb366aaadd2be05dfff
         for i in range(len(ids)):
             info = '{id} \t {title}'.format(id=ids[i], title=titles[i])
             print (info)
@@ -355,13 +367,18 @@ class Action:
         if response.status_code != 200:
             raise_error(response.json(), 'Failed to get filters')
         filter_entities = response.json()['entities']
+<<<<<<< HEAD
         print (bytes('Filters: id, title', 'UTF-8'))
+=======
+        print (bytes('filters: id, title', 'UTF-8'))
+>>>>>>> 5c8d451d16b152e0342d8eb366aaadd2be05dfff
         for entry in filter_entities:
             properties = entry['properties']
             title = properties['title']
             filter_id = properties['id']
             print ('{0}\t{1}\t'.format(filter_id, title))
 
+<<<<<<< HEAD
     def print_status(self, title, progress):
         print ('{0}: {1}%'.format(title, progress))
         # print title + ': ' + str(progress) + '%'
@@ -384,6 +401,17 @@ class Action:
             # return detailed_status
 
     def status_action(self, **kwargs):
+=======
+    def status_action(self, detailed, document_name=None):
+        if document_name is not None:
+            entry = self.doc_manager.get_doc_by_prop('name', document_name)
+            try:
+                doc_ids = [entry['id']]
+            except TypeError:
+                raise exceptions.ResourceNotFound("Document name specified for status doesn't exist: {0}".format(document_name))
+        else:
+            doc_ids = self.doc_manager.get_doc_ids()
+>>>>>>> 5c8d451d16b152e0342d8eb366aaadd2be05dfff
         # detailed_status = {}
         doc_name = None
         if 'doc_name' in kwargs:
@@ -425,9 +453,28 @@ class Action:
             else:
                 title = response.json()['properties']['title']
                 progress = response.json()['properties']['progress']
+<<<<<<< HEAD
                 self.print_status(title, progress)
             if 'detailed' in kwargs and kwargs['detailed']:
                 self.print_detailed(doc_id)
+=======
+                print ('{0}: {1}%'.format(title, progress))
+                # print title + ': ' + str(progress) + '%'
+                # for each doc id, also call /document/id/translation and get % of each locale
+            if detailed:
+                response = self.api.document_translation_status(doc_id)
+                if response.status_code != 200:
+                    raise_error(response.json(), 'Failed to get detailed status of document', True)
+                try:
+                    for entry in response.json()['entities']:
+                        curr_locale = entry['properties']['locale_code']
+                        curr_progress = entry['properties']['percent_complete']
+                        print ('\tlocale: {0} \t percent complete: {1}%'.format(curr_locale, curr_progress))
+                        # detailed_status[doc_id] = (curr_locale, curr_progress)
+                except KeyError:
+                    continue
+                    # return detailed_status
+>>>>>>> 5c8d451d16b152e0342d8eb366aaadd2be05dfff
 
     def download_by_name(self, document_name, locale_code, auto_format):
         try:
@@ -501,6 +548,7 @@ class Action:
             for document_id in document_ids:
                 self.download_action(document_id, locale_code, auto_format)
 
+<<<<<<< HEAD
     def rm_action(self, file_name, **kwargs):
         if not 'id' in kwargs or not kwargs['id']:
             try:
@@ -519,15 +567,33 @@ class Action:
                 file_name = doc['file_name']
             else:
                 file_name = document_id
+=======
+    def rm_action(self, document_name, force):
+        try:
+            entry = self.doc_manager.get_doc_by_prop('name', document_name)
+            #print ('entry :', entry)
+            document_id = entry['id']
+            #print ('id:', document_id)
+        except TypeError:            
+            logger.warning("Document name specified for remove doesn't exist: {0}".format(document_name))
+            return
+            # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
+>>>>>>> 5c8d451d16b152e0342d8eb366aaadd2be05dfff
         response = self.api.document_delete(document_id)
         #print (response)
         if response.status_code != 204:            
             # raise_error(response.json(), "Failed to delete document {0}".format(document_name), True)
             logger.error("Failed to delete document {0}".format(file_name))
         else:
+<<<<<<< HEAD
             logger.info("{0} has been deleted remotely.".format(file_name))
             if 'force' in kwargs and kwargs['force']:               
                 self.delete_local(file_name, document_id)
+=======
+            logger.info("{0} has been deleted remotely.".format(document_name))
+            if force:                
+                self.delete_local(document_name, document_id)
+>>>>>>> 5c8d451d16b152e0342d8eb366aaadd2be05dfff
             self.doc_manager.remove_element(document_id)
 
     def get_new_name(self, file_name, curr_path):
@@ -812,8 +878,13 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
     config_parser.set('main', 'default_locale', locale)
     # get community id
     community_info = api.get_communities_info()
+<<<<<<< HEAD
     # print("Community INFO")
     # print(len(community_info))
+=======
+    #print("Community INFO")
+    #print(len(community_info))
+>>>>>>> 5c8d451d16b152e0342d8eb366aaadd2be05dfff
     if len(community_info) == 0:
         raise exceptions.ResourceNotFound('You are not part of any communities in Lingotek Cloud')
     if len(community_info) > 1:

@@ -18,7 +18,10 @@ class TestWatch(unittest.TestCase):
         self.action = WatchAction(os.getcwd())
         self.action.clean_action(False, False, None)
         self.downloaded = []
-        self.files = []
+        self.action.add_action(None, ['sample*.txt'], force=True)
+        self.doc_ids = self.action.doc_manager.get_doc_ids()
+        for doc_id in self.doc_ids:
+            assert poll_doc(self.action, doc_id)
         # todo current problem: watchdog does not seem to detect changes in daemon
         # but not daemonizing watch causes tests to hang..
         watch_thread = Thread(target=self.action.watch_action, args=(None, (), None, 5,))

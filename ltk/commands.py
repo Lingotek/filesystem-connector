@@ -139,9 +139,15 @@ def config(locale, workflow_id, download_folder, watch_folder, target_locales):
 @click.option('-fi', '--fprm_id', help='fprm id')
 @click.option('-fs', '--fprm_subfilter', type=click.Path(exists=True), help='fprm subfilter file')
 @click.option('-fsi', '--fprm_subfilter_id', help='fprm subfilter id')
+<<<<<<< HEAD
 @click.option('-v', '--vault_id', help='Save-to TM vault id')
 @click.option('-e', '--external_url', help='Source url')
 @click.option('-f', '--force', flag_value=True, help='Overwrite previously added file if the file has been modified')
+=======
+@click.option('-v', '--vault_id', help='save-to TM vault id')
+@click.option('-e', '--external_url', help='source url')
+@click.option('-f', '--force', flag_value=True, help='overwrite previously added file if the file has been modified')
+>>>>>>> 5c8d451d16b152e0342d8eb366aaadd2be05dfff
 def add(file_names, locale, **kwargs):
     """ adds content, could be one or multiple files specified by Unix shell pattern """
     try:

@@ -43,7 +43,7 @@ def poll_doc(action, doc_id):
         response = action.api.get_document(doc_id)
         if response.status_code == 200:
             return True
-        time.sleep(1)
+        time.sleep(5)
         time_passed += 1
     return False
 

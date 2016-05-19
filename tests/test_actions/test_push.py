@@ -41,6 +41,7 @@ class TestPush(unittest.TestCase):
         self.downloaded.append(downloaded_path)
         with open(downloaded_path, 'r') as f:
             downloaded = f.read()
+        print (downloaded)
         assert "Appended text. " in downloaded
         assert "This is a sample text file. " in downloaded
 
@@ -60,6 +61,7 @@ class TestPush(unittest.TestCase):
         for path in self.downloaded:
             with open(path, 'r') as f:
                 downloaded = f.read()
+            print (downloaded)
             assert "Appended text. " in downloaded
             assert "This is a sample text file. " in downloaded
 
