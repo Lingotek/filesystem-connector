@@ -36,7 +36,7 @@ class TestPush(unittest.TestCase):
         with open(self.files[0]) as f:
             downloaded = f.read()
         self.action.push_action()
-        check_updated_ids(self.action, [test_doc_id]) # Poll and wait until the modification has taken effect on the cloud
+        assert check_updated_ids(self.action, [test_doc_id]) # Poll and wait until the modification has taken effect on the cloud
         downloaded_path = self.action.download_action(test_doc_id, None, False)
         self.downloaded.append(downloaded_path)
         with open(downloaded_path, 'r') as f:
@@ -53,7 +53,7 @@ class TestPush(unittest.TestCase):
         self.action.target_action(None, locales, False, None, None, doc_id0)
         self.action.target_action(None, locales, False, None, None, doc_id1)
         self.action.push_action()
-        check_updated_ids(self.action, [doc_id0, doc_id1]) # Poll and wait until the modification has taken effect on the cloud
+        assert check_updated_ids(self.action, [doc_id0, doc_id1]) # Poll and wait until the modification has taken effect on the cloud
         dl_path = self.action.download_action(doc_id0, None, False)
         dl_path1 = self.action.download_action(doc_id1, None, False)
         self.downloaded = [dl_path, dl_path1]        

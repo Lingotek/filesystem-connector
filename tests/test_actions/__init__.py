@@ -43,7 +43,7 @@ def poll_doc(action, doc_id):
         response = action.api.get_document(doc_id)
         if response.status_code == 200:
             return True
-        time.sleep(5)
+        time.sleep(1)
         time_passed += 1
     return False
 
@@ -56,7 +56,7 @@ def poll_rm(action, doc_id):
         response = action.api.get_document(doc_id)
         if response.status_code == 404:
             return True
-        time.sleep(5)
+        time.sleep(1)
         time_passed += 1
     return False
 
@@ -75,7 +75,9 @@ def check_updated_ids(action, doc_ids):
             print("Document id not found on Lingotek Cloud: "+str(doc_id))
             return False
     for doc_id in doc_ids:
-        check_updated(action, doc_id, orig_dates[doc_id])
+        if not check_updated(action, doc_id, orig_dates[doc_id]):
+            return False
+    return True
 
 def check_updated(action, doc_id, orig_date):
     """polls Lingotek for modification of a document given an id

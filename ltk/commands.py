@@ -217,12 +217,12 @@ def list_ids(id_type):
 @click.option('-n', '--doc_name', help='Specific document name to get status of')
 @click.option('-d', '--detailed', flag_value=True, help='Detailed status of each locale for the document')
 @click.option('-a', '--all', flag_value=True, help='List all project documents on Lingotek Cloud')
-def status(doc_name, **kwargs):
+def status(**kwargs):
     """ gets the status of a specific document or all documents """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
-        action.status_action(doc_name, **kwargs)
+        action.status_action(**kwargs)
     except (UninitializedError, ResourceNotFound) as e:
         print_log(e)
         logger.error(e)

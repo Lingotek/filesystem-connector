@@ -370,19 +370,24 @@ class Action:
     def print_detailed(self, doc_id):
         response = self.api.document_translation_status(doc_id)
         if response.status_code != 200:
-            raise_error(response.json(), 'Failed to get detailed status of document', True)
+            raise_error(response.json(), 'Failed to get detailed status of document', True, doc_id, doc_name)
         try:
-            for entry in response.json()['entities']:
-                curr_locale = entry['properties']['locale_code']
-                curr_progress = entry['properties']['percent_complete']
-                print ('\tlocale: {0} \t percent complete: {1}%'.format(curr_locale, curr_progress))
-                # detailed_status[doc_id] = (curr_locale, curr_progress)
+            if 'entities' in response.json():
+                for entry in response.json()['entities']:
+                    curr_locale = entry['properties']['locale_code']
+                    curr_progress = entry['properties']['percent_complete']
+                    print ('\tlocale: {0} \t percent complete: {1}%'.format(curr_locale, curr_progress))
+                    # detailed_status[doc_id] = (curr_locale, curr_progress)
         except KeyError as e:
             print("Error listing translations")
             return
             # return detailed_status
-    def status_action(self, document_name=None, **kwargs):
+
+    def status_action(self, **kwargs):
         # detailed_status = {}
+        doc_name = None
+        if 'doc_name' in kwargs:
+            doc_name = kwargs['doc_name']
         if 'all' in kwargs and kwargs['all']:
             response = self.api.list_documents(self.project_id)
             if response.status_code == 204:
@@ -402,12 +407,12 @@ class Action:
                         self.print_detailed(entry['properties']['id'])
                 return
         else:
-            if document_name is not None:
-                entry = self.doc_manager.get_doc_by_prop('name', document_name)
+            if doc_name is not None:
+                entry = self.doc_manager.get_doc_by_prop('name', doc_name)
                 try:
                     doc_ids = [entry['id']]
                 except TypeError:
-                    raise exceptions.ResourceNotFound("Document name specified for status doesn't exist: {0}".format(document_name))
+                    raise exceptions.ResourceNotFound("Document name specified for status doesn't exist: {0}".format(doc_name))
             else:
                 doc_ids = self.doc_manager.get_doc_ids()
             if not doc_ids:
@@ -509,7 +514,11 @@ class Action:
                 # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
         else:
             document_id = file_name
-            file_name = self.doc_manager.get_doc_by_prop('id', document_id)['file_name']
+            doc = self.doc_manager.get_doc_by_prop('id', document_id)
+            if doc:
+                file_name = doc['file_name']
+            else:
+                file_name = document_id
         response = self.api.document_delete(document_id)
         #print (response)
         if response.status_code != 204:            
@@ -613,9 +622,13 @@ class Action:
             logger.info('Something went wrong trying to delete the local file.')
 
 
-def raise_error(json, error_message, is_warning=False):
+def raise_error(json, error_message, is_warning=False, doc_id=None, file_name=None):
     try:
         error = json['messages'][0]
+        print("id: "+str(doc_id))
+        print("name: "+str(file_name))
+        if file_name is not None and doc_id is not None:
+            error = error.replace(doc_id, file_name+" ("+doc_id+")")
         # Sometimes api returns vague errors like 'Unknown error'
         if error == 'Unknown error':
             error = error_message
@@ -757,7 +770,9 @@ def create_global(access_token):
 
 def init_action(host, access_token, project_path, folder_name, workflow_id, locale, delete, reset):
     # check if Lingotek directory already exists
+    print("init_action")
     to_init = reinit(host, project_path, delete, reset)
+    print("to_init: "+str(to_init))
     if not to_init:
         return
     elif to_init is not True:
@@ -767,11 +782,11 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
     if not access_token:
         access_token = check_global()
         if not access_token or reset:
-            from auth import run_oauth
+            from ltk.auth import run_oauth
 
             access_token = run_oauth(host)
             ran_oauth = True
-
+    print("access_token: "+str(access_token))
     if ran_oauth:
         # create or overwrite global file
         create_global(access_token)
@@ -797,8 +812,8 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
     config_parser.set('main', 'default_locale', locale)
     # get community id
     community_info = api.get_communities_info()
-    #print("Community INFO")
-    #print(len(community_info))
+    # print("Community INFO")
+    # print(len(community_info))
     if len(community_info) == 0:
         raise exceptions.ResourceNotFound('You are not part of any communities in Lingotek Cloud')
     if len(community_info) > 1:

@@ -22,10 +22,12 @@ logging.Logger.api_response = log_api_response
 logger = logging.getLogger('lib')
 
 class CustomFormatter(logging.Formatter):
+    # default_format = '%(levelname)s: %(message)s'
     default_format = '%(levelname)s: %(message)s'
     info_format = '%(message)s'
 
-    def __init__(self, fmt="%(levelno)s: %(message)s"):
+    # previous default: "%(levelno)s: %(message)s"
+    def __init__(self, fmt="%(message)s"):
         logging.Formatter.__init__(self, fmt)
 
     def format(self, record):
