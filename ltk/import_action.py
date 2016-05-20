@@ -41,11 +41,7 @@ class ImportAction(Action):
         curr_entry = self.doc_manager.get_doc_by_prop('id', document_id)
         curr_path = os.path.join(self.path, curr_entry['file_name'])
         new_path = os.path.join(path, title)
-<<<<<<< HEAD
         # print (curr_path, new_path)
-=======
-        print (curr_path, new_path)
->>>>>>> 5c8d451d16b152e0342d8eb366aaadd2be05dfff
         if os.path.normpath(curr_path) != os.path.normpath(new_path):
             path_changed = True
         if not force:
