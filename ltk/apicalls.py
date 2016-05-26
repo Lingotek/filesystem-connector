@@ -82,10 +82,10 @@ class ApiCalls:
         log_api('GET', uri, r)
         return r
 
-    def add_document(self, file_name, locale, project_id, title, **kwargs):
+    def add_document(self, source_locale, file_name, project_id, title, **kwargs):
         """ adds a document """
         uri = API_URI['document']
-        payload = {'locale_code': locale, 'project_id': project_id, 'title': title}
+        payload = {'locale_code': source_locale, 'project_id': project_id, 'title': title}
         for key in kwargs:
             if kwargs[key]:
                 payload[key] = kwargs[key]

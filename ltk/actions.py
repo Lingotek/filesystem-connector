@@ -142,18 +142,21 @@ class Action:
             self.host, self.access_token, self.project_id, self.community_id, self.workflow_id, self.locale,
             self.project_name, self.download_dir, self.watch_dir, ', '.join(x for x in self.watch_locales)))
 
-    def add_document(self, locale, file_name, title, **kwargs):
-        response = self.api.add_document(file_name, locale, self.project_id, title, **kwargs)
+    def add_document(self, file_name, title, **kwargs):
+        if not 'locale' in kwargs or not kwargs['locale']:
+            locale = self.locale
+        else:
+            locale = kwargs['locale']
+        response = self.api.add_document(locale, file_name, self.project_id, title, **kwargs)
         if response.status_code != 202:
             raise_error(response.json(), "Failed to add document {0}".format(title), True)
         else:
             logger.info('Added document {0}'.format(title))
             relative_path = file_name.replace(self.path, '')
+            print("relative path: "+relative_path)
             self._add_document(relative_path, title, response.json()['properties']['id'])
 
-    def add_action(self, locale, file_patterns, **kwargs):
-        if not locale:
-            locale = self.locale
+    def add_action(self, file_patterns, **kwargs):
         # format will be automatically detected by extension but may not be what user expects
         # use current working directory as root for files instead of project root
         matched_files = get_files(os.getcwd(), file_patterns)
@@ -182,7 +185,7 @@ class Action:
                     logger.error("This document has already been added: {0}".format(title))
                     continue
             # todo separate function somewhere around here maybe..
-            self.add_document(locale, file_name, title, **kwargs)
+            self.add_document(file_name, title, **kwargs)
             # response = self.api.add_document(file_name, locale, self.project_id, title, **kwargs)
             # if response.status_code != 202:
             #     raise_error(response.json(), "Failed to add document {0}".format(title), True)
@@ -314,6 +317,30 @@ class Action:
                                                            locales=', '.join(locale for locale in locales[i]))
             print (info)
 
+    def list_all_action(self):
+        """ lists ids of all remote documents """
+        response = self.api.list_documents(self.project_id)
+        if response.status_code == 204:
+            print("No documents to report")
+            return
+        elif response.status_code != 200:
+            if response.json():
+                raise_error(response.json(), "Failed to get status of documents", True)
+            else:
+                raise_error("", "Failed to get status of documents", True)
+        else:
+            print ('Remote documents: id, document name, locales')
+            for entry in response.json()['entities']:
+                title = entry['entities'][1]['properties']['title']
+                id = entry['entities'][1]['properties']['id']
+                locales = entry['entities'][1]['properties']['locales']
+                if 'detailed' in kwargs and kwargs['detailed']:
+                    self.print_detailed(entry['properties']['id'])
+                info = '{id} \t {title} \t\t {locales}'.format(id=id, title=title,
+                                                               locales=', '.join(locale for locale in locales))
+                print (info)
+            return
+
     def list_workflow_action(self):
         response = self.api.list_workflows(self.community_id)
         if response.status_code != 200:
@@ -367,7 +394,7 @@ class Action:
         # print title + ': ' + str(progress) + '%'
         # for each doc id, also call /document/id/translation and get % of each locale
 
-    def print_detailed(self, doc_id):
+    def print_detailed(self, doc_id, doc_name):
         response = self.api.document_translation_status(doc_id)
         if response.status_code != 200:
             raise_error(response.json(), 'Failed to get detailed status of document', True, doc_id, doc_name)
@@ -404,7 +431,7 @@ class Action:
                     progress = entry['entities'][1]['properties']['progress']
                     self.print_status(title, progress)
                     if 'detailed' in kwargs and kwargs['detailed']:
-                        self.print_detailed(entry['properties']['id'])
+                        self.print_detailed(entry['properties']['id'], title)
                 return
         else:
             if doc_name is not None:
@@ -427,7 +454,7 @@ class Action:
                 progress = response.json()['properties']['progress']
                 self.print_status(title, progress)
             if 'detailed' in kwargs and kwargs['detailed']:
-                self.print_detailed(doc_id)
+                self.print_detailed(doc_id, title)
 
     def download_by_name(self, document_name, locale_code, auto_format):
         try:
@@ -501,15 +528,18 @@ class Action:
             for document_id in document_ids:
                 self.download_action(document_id, locale_code, auto_format)
 
-    def rm_action(self, file_name, **kwargs):
-        if not 'id' in kwargs or not kwargs['id']:
+    def rm_document(self, file_name, useID, force):
+        if not useID:
+            title = os.path.basename(os.path.normpath(file_name))
+            relative_path = file_name.replace(self.path, '')
+            print("relative_path: "+relative_path)
             try:
-                entry = self.doc_manager.get_doc_by_prop('file_name', file_name)
+                entry = self.doc_manager.get_doc_by_prop('file_name', relative_path)
                 #print ('entry :', entry)
                 document_id = entry['id']
                 #print ('id:', document_id)
             except TypeError:            
-                logger.warning("Document name specified for remove doesn't exist locally: {0}".format(file_name))
+                logger.warning("Document name specified for remove doesn't exist locally: {0}".format(relative_path))
                 return
                 # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
         else:
@@ -523,12 +553,32 @@ class Action:
         #print (response)
         if response.status_code != 204:            
             # raise_error(response.json(), "Failed to delete document {0}".format(document_name), True)
-            logger.error("Failed to delete document {0}".format(file_name))
+            logger.error("Failed to delete document {0} remotely".format(file_name))
         else:
             logger.info("{0} has been deleted remotely.".format(file_name))
-            if 'force' in kwargs and kwargs['force']:               
+            if force:               
                 self.delete_local(file_name, document_id)
             self.doc_manager.remove_element(document_id)
+
+    def rm_action(self, file_patterns, **kwargs):
+        if 'force' in kwargs and kwargs['force']:
+            force = True
+        else:
+            force = False
+        if 'id' in kwargs and kwargs['id']:
+            useID = True
+        else:
+            useID = False
+        # use current working directory as root for files instead of project root
+        if not useID:
+            matched_files = get_files(os.getcwd(), file_patterns)
+        else:
+            matched_files = file_patterns
+        if not matched_files:
+            raise exceptions.ResourceNotFound("Could not find the specified file/pattern")
+        for file_name in matched_files:
+            # title = os.path.basename(os.path.normpath(file_name)).split('.')[0]
+            self.rm_document(file_name, useID, force)
 
     def get_new_name(self, file_name, curr_path):
         i = 1
@@ -625,8 +675,7 @@ class Action:
 def raise_error(json, error_message, is_warning=False, doc_id=None, file_name=None):
     try:
         error = json['messages'][0]
-        print("id: "+str(doc_id))
-        print("name: "+str(file_name))
+        file_name = file_name.replace("Status of ", "")
         if file_name is not None and doc_id is not None:
             error = error.replace(doc_id, file_name+" ("+doc_id+")")
         # Sometimes api returns vague errors like 'Unknown error'
