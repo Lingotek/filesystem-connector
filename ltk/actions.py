@@ -153,7 +153,7 @@ class Action:
         else:
             logger.info('Added document {0}'.format(title))
             relative_path = file_name.replace(self.path, '')
-            print("relative path: "+relative_path)
+            # print("relative path: "+relative_path)
             self._add_document(relative_path, title, response.json()['properties']['id'])
 
     def add_action(self, file_patterns, **kwargs):
@@ -317,7 +317,7 @@ class Action:
                                                            locales=', '.join(locale for locale in locales[i]))
             print (info)
 
-    def list_all_action(self):
+    def list_remote_action(self):
         """ lists ids of all remote documents """
         response = self.api.list_documents(self.project_id)
         if response.status_code == 204:
@@ -329,15 +329,11 @@ class Action:
             else:
                 raise_error("", "Failed to get status of documents", True)
         else:
-            print ('Remote documents: id, document name, locales')
+            print ('Remote documents: id, document name')
             for entry in response.json()['entities']:
-                title = entry['entities'][1]['properties']['title']
+                title = entry['entities'][1]['properties']['title'].replace("Status of ", "")
                 id = entry['entities'][1]['properties']['id']
-                locales = entry['entities'][1]['properties']['locales']
-                if 'detailed' in kwargs and kwargs['detailed']:
-                    self.print_detailed(entry['properties']['id'])
-                info = '{id} \t {title} \t\t {locales}'.format(id=id, title=title,
-                                                               locales=', '.join(locale for locale in locales))
+                info = '{id} \t {title}'.format(id=id, title=title)
                 print (info)
             return
 
@@ -448,7 +444,7 @@ class Action:
         for doc_id in doc_ids:
             response = self.api.document_status(doc_id)
             if response.status_code != 200:
-                raise_error(response.json(), "Failed to get status of document", True)
+                raise_error(response.json(), "Failed to get status of document", True, doc_id)
             else:
                 title = response.json()['properties']['title']
                 progress = response.json()['properties']['progress']
@@ -528,39 +524,43 @@ class Action:
             for document_id in document_ids:
                 self.download_action(document_id, locale_code, auto_format)
 
-    def rm_document(self, file_name, useID, force):
+    def rm_document(self, file_name, useID, force, doc_name=None):
+        doc = None
         if not useID:
-            title = os.path.basename(os.path.normpath(file_name))
             relative_path = file_name.replace(self.path, '')
-            print("relative_path: "+relative_path)
+            doc = self.doc_manager.get_doc_by_prop('file_name', relative_path)
+            title = os.path.basename(os.path.normpath(file_name))
+            # print("relative_path: "+relative_path)
             try:
-                entry = self.doc_manager.get_doc_by_prop('file_name', relative_path)
-                #print ('entry :', entry)
-                document_id = entry['id']
-                #print ('id:', document_id)
-            except TypeError:            
+                doc = self.doc_manager.get_doc_by_prop('file_name', relative_path)
+                document_id = doc['id']
+            except TypeError: # Documents specified by name must be found in the local database to be removed.
                 logger.warning("Document name specified for remove doesn't exist locally: {0}".format(relative_path))
                 return
                 # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
         else:
             document_id = file_name
             doc = self.doc_manager.get_doc_by_prop('id', document_id)
+            # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
             if doc:
                 file_name = doc['file_name']
-            else:
-                file_name = document_id
         response = self.api.document_delete(document_id)
         #print (response)
         if response.status_code != 204:            
             # raise_error(response.json(), "Failed to delete document {0}".format(document_name), True)
             logger.error("Failed to delete document {0} remotely".format(file_name))
         else:
-            logger.info("{0} has been deleted remotely.".format(file_name))
-            if force:               
-                self.delete_local(file_name, document_id)
-            self.doc_manager.remove_element(document_id)
+            if doc_name:
+                logger.info("{0} ({1}) has been deleted remotely.".format(doc_name, file_name))
+            else:
+                logger.info("{0} has been deleted remotely.".format(file_name))
+            if doc:
+                if force:               
+                    self.delete_local(file_name, document_id)
+                self.doc_manager.remove_element(document_id)
 
     def rm_action(self, file_patterns, **kwargs):
+        matched_files = None
         if 'force' in kwargs and kwargs['force']:
             force = True
         else:
@@ -569,12 +569,32 @@ class Action:
             useID = True
         else:
             useID = False
-        # use current working directory as root for files instead of project root
-        if not useID:
+        if 'all' in kwargs and kwargs['all']:
+            if 'remote' in kwargs and kwargs['remote']:
+                response = self.api.list_documents(self.project_id)
+                if response.status_code == 204:
+                    print("No remote documents to remove")
+                    return
+                elif response.status_code != 200:
+                    if response.json():
+                        raise_error(response.json(), "Failed to get status of documents", True)
+                    else:
+                        raise_error("", "Failed to get status of documents", True)
+                else:
+                    for entry in response.json()['entities']:
+                        id = entry['entities'][1]['properties']['id']
+                        doc_name = entry['entities'][1]['properties']['file_name']
+                        self.rm_document(id, True, force, doc_name)
+                        return
+            else:
+                useID = False
+                matched_files = self.doc_manager.get_doc_names()
+        elif not useID:
+            # use current working directory as root for files instead of project root
             matched_files = get_files(os.getcwd(), file_patterns)
         else:
             matched_files = file_patterns
-        if not matched_files:
+        if matched_files is None:
             raise exceptions.ResourceNotFound("Could not find the specified file/pattern")
         for file_name in matched_files:
             # title = os.path.basename(os.path.normpath(file_name)).split('.')[0]
@@ -662,9 +682,15 @@ class Action:
         logger.info('Cleaned up associations between local documents and Lingotek cloud')
 
     def delete_local(self, title, document_id, message=None):
-        #print('local delete:', title, document_id)
-        message = 'Removed local file {0}'.format(title) if not message else message
-        file_name = self.doc_manager.get_doc_by_prop('id', document_id)['file_name']        
+        # print('local delete:', title, document_id)
+        if not title:
+            title = document_id
+        message = '{0} has been deleted locally.'.format(title) if not message else message
+        try:
+            file_name = self.doc_manager.get_doc_by_prop('id', document_id)['file_name']     
+        except TypeError:
+            logger.info('Document to remove not found in the local database')
+            return
         try:
             os.remove(os.path.join(self.path, file_name))
             logger.info(message)            

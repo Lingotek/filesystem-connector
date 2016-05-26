@@ -191,7 +191,7 @@ def request(doc_name, locales, to_delete, due_date, workflow):
 @click.option('-w', '--workflows', 'id_type', flag_value='workflow', help='List available workflows')
 @click.option('-l', '--locales', 'id_type', flag_value='locale', help='List supported locale codes')
 @click.option('-f', '--formats', 'id_type', flag_value='format', help='List supported formats')
-@click.option('-a', '--all', 'id_type', flag_value='all', help='List all project documents on Lingotek Cloud')
+@click.option('-r', '--remote', 'id_type', flag_value='remote', help='List all project documents on Lingotek Cloud')
 @click.option('--filters', 'id_type', flag_value='filter', help='List default and custom filters')
 def list_ids(id_type):
     """ Shows docs, workflows, locales, or formats """
@@ -206,8 +206,8 @@ def list_ids(id_type):
             action.list_format_action()
         elif id_type == 'filter':
             action.list_filter_action()
-        elif id_type == 'all':
-            action.list_all_action()
+        elif id_type == 'remote':
+            action.list_remote_action()
         else:
             action.list_ids_action()
 
@@ -270,8 +270,10 @@ def pull(auto_format, locales):
 
 
 @ltk.command(short_help="Disassociates local doc(s) from Lingotek Cloud and deletes the remote copy")
-@click.argument('file_names', required=True, nargs=-1)
+@click.argument('file_names', required=False, nargs=-1)
 @click.option('-i', '--id', flag_value=True, help='Delete documents with the specified ids on Lingotek Cloud')
+@click.option('-a', '--all', flag_value=True, help='Delete all documents from Lingotek Cloud that are found locally')
+@click.option('-r', '--remote', flag_value=True, help='When used with -a, deletes all documents from Lingotek Cloud for the current project')
 @click.option('-f', '--force', flag_value=True, help='Delete both local and remote files')
 def rm(file_names, **kwargs):
     """
@@ -281,7 +283,9 @@ def rm(file_names, **kwargs):
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
-        # for name in document_names:
+        if not file_names and not 'all' in kwargs or not kwargs['all']:
+            logger.info("Usage: ltk rm [OPTIONS] FILE_NAMES...")
+            return
         action.rm_action(file_names, **kwargs)
     except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
         print_log(e)
