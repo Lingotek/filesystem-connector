@@ -583,7 +583,7 @@ class Action:
                 else:
                     for entry in response.json()['entities']:
                         id = entry['entities'][1]['properties']['id']
-                        doc_name = entry['entities'][1]['properties']['file_name']
+                        doc_name = entry['entities'][1]['properties']['name']
                         self.rm_document(id, True, force, doc_name)
                         return
             else:
