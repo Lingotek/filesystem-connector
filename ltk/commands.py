@@ -283,7 +283,8 @@ def rm(file_names, **kwargs):
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
-        if not file_names and not 'all' in kwargs or not kwargs['all']:
+        print(file_names)
+        if not file_names and not ('all' in kwargs and kwargs['all']):
             logger.info("Usage: ltk rm [OPTIONS] FILE_NAMES...")
             return
         action.rm_action(file_names, **kwargs)

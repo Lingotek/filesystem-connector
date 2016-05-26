@@ -159,7 +159,7 @@ class Action:
     def add_action(self, file_patterns, **kwargs):
         # format will be automatically detected by extension but may not be what user expects
         # use current working directory as root for files instead of project root
-        matched_files = get_files(os.getcwd(), file_patterns)
+        matched_files = get_files(file_patterns)
         if not matched_files:
             raise exceptions.ResourceNotFound("Could not find the specified file/pattern")
         for file_name in matched_files:
@@ -580,18 +580,19 @@ class Action:
                         raise_error(response.json(), "Failed to get status of documents", True)
                     else:
                         raise_error("", "Failed to get status of documents", True)
+                    return
                 else:
                     for entry in response.json()['entities']:
                         id = entry['entities'][1]['properties']['id']
-                        doc_name = entry['entities'][1]['properties']['name']
+                        doc_name = entry['properties']['name']
                         self.rm_document(id, True, force, doc_name)
-                        return
+                    return
             else:
                 useID = False
                 matched_files = self.doc_manager.get_doc_names()
         elif not useID:
             # use current working directory as root for files instead of project root
-            matched_files = get_files(os.getcwd(), file_patterns)
+            matched_files = get_files(file_patterns)
         else:
             matched_files = file_patterns
         if matched_files is None:
@@ -939,30 +940,51 @@ def find_conf(curr_path):
     else:
         return find_conf(os.path.abspath(os.path.join(curr_path, os.pardir)))
 
+def norm_path(file_location, project_path):
+    print("original path: "+file_location)
+    print("project_path: "+project_path)
+    # norm_path = os.path.realpath(file_location).replace(project_path, '')
+    abspath=os.path.abspath(file_location)
+    print("abspath: "+abspath)
+    norm_path = os.path.abspath(file_location).replace(project_path, '')
+    print("normalized path: "+norm_path)
+    return norm_path
 
-def get_files(root, patterns):
+def get_files(patterns):
     """ gets all files matching pattern from root
         pattern supports any unix shell-style wildcards (not same as RE) """
-    matched_files = []
-    # print root
-    for pattern in patterns:
-        # check if pattern contains subdirectory
-        subdir_pat, fn_pat = os.path.split(pattern)
-        if not subdir_pat:
-            for path, subdirs, files in os.walk(root):
-                for fn in fnmatch.filter(files, pattern):
-                    matched_files.append(os.path.join(path, fn))
-        else:
-            for path, subdirs, files in os.walk(root):
-                # print os.path.split(path)
-                # subdir = os.path.split(path)[1]  # get current subdir
-                search_root = os.path.join(root, '')
-                subdir = path.replace(search_root, '')
-                # print subdir, subdir_pat
-                if fnmatch.fnmatch(subdir, subdir_pat):
-                    for fn in fnmatch.filter(files, fn_pat):
-                        matched_files.append(os.path.join(path, fn))
 
+    # root = os.getcwd()
+    matched_files = []
+    for pattern in patterns:
+        path = os.path.abspath(pattern)
+        # check if pattern contains subdirectory
+        if os.path.exists(path):
+            if os.path.isdir(path):
+                for root, subdirs, files in os.walk(path):
+                    split_path = root.split('/')
+                    for file in files:
+                        # print(os.path.join(root, file))
+                        matched_files.append(os.path.join(root, file))
+            else:
+                matched_files.append(path)
+        else:
+            logger.info("File not found: "+pattern)
+        # subdir_pat, fn_pat = os.path.split(pattern)
+        # if not subdir_pat:
+        #     for path, subdirs, files in os.walk(root):
+        #         for fn in fnmatch.filter(files, pattern):
+        #             matched_files.append(os.path.join(path, fn))
+        # else:
+        #     for path, subdirs, files in os.walk(root):
+        #         # print os.path.split(path)
+        #         # subdir = os.path.split(path)[1]  # get current subdir
+        #         search_root = os.path.join(root, '')
+        #         subdir = path.replace(search_root, '')
+        #         # print subdir, subdir_pat
+        #         if fnmatch.fnmatch(subdir, subdir_pat):
+        #             for fn in fnmatch.filter(files, fn_pat):
+        #                 matched_files.append(os.path.join(path, fn))
     return matched_files
 
 
