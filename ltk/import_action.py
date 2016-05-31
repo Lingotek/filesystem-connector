@@ -55,6 +55,7 @@ class ImportAction(Action):
         write_file = True
         curr_entry = self.doc_manager.get_doc_by_prop('id', document_id)
         new_path = os.path.join(path, title)
+        delete_file = False
         if curr_entry:
             curr_path = os.path.join(self.path, curr_entry['file_name'])
             # print (curr_path, new_path)
@@ -73,6 +74,13 @@ class ImportAction(Action):
                     logger.info('Retaining old path "{0}"'.format(curr_path))
                     path_changed = None
                     new_path = curr_path
+                else:
+                    confirmation_msg = 'Delete '+curr_path+'? [y/n]:'
+                    confirm = 'none'
+                    while confirm not in ['y', 'yes', 'n', 'no', '']:
+                        confirm = input(confirmation_msg).lower()
+                    if confirm and confirm in ['y', 'yes']:
+                        delete_file = True
             # Confirm overwriting a local file
             if os.path.exists(new_path):
                 confirmation_msg = 'Would you like to overwrite the existing document at '+new_path+'? [y/n]:'
@@ -82,7 +90,7 @@ class ImportAction(Action):
                 if not confirm or confirm in ['n', 'no']:
                     logger.info('Skipped importing "{0}"'.format(title))
                     write_file = False
-        return path_changed, new_path, write_file
+        return path_changed, new_path, write_file, delete_file
 
     def import_document(self, document_id, document_info, force, path):
         local_ids = self.doc_manager.get_doc_ids()
@@ -107,20 +115,22 @@ class ImportAction(Action):
             locale_info = []
 
         changed_path = False
-        changed_path, new_path, write_file = self.import_check(force, path, document_id, title)
+        changed_path, new_path, write_file, delete_file = self.import_check(force, path, document_id, title)
 
-        if write_file:
-
-            if changed_path and os.path.exists(changed_path):
-                self.delete_local(title, document_id, 'Moved local file {0} to {1}'.format(changed_path, new_path))
-
-            with open(new_path, 'wb') as fh:
-                for chunk in response.iter_content(1024):
-                    fh.write(chunk)
+        if delete_file and changed_path and os.path.exists(changed_path):
+            self.delete_local_path(changed_path, 'Deleting local file {0}'.format(changed_path))
 
         if document_id not in local_ids:
             self._add_document(new_path, title, document_id)
             self.doc_manager.update_document('locales', locale_info, document_id)
         elif changed_path:
             # update the document's path
+            logger.info('Moved local file {0} to {1}'.format(changed_path, new_path))
             self.doc_manager.update_document('file_name', new_path, document_id)
+
+
+        if write_file:
+
+            with open(new_path, 'wb') as fh:
+                for chunk in response.iter_content(1024):
+                    fh.write(chunk)

@@ -703,7 +703,7 @@ class Action:
         # print('local delete:', title, document_id)
         if not title:
             title = document_id
-        message = '{0} has been deleted locally.'.format(title) if not message else message
+        message = 'Deleting local file {0}'.format(title) if not message else message
         try:
             file_name = self.doc_manager.get_doc_by_prop('id', document_id)['file_name']     
         except TypeError:
@@ -711,6 +711,15 @@ class Action:
             return
         try:
             os.remove(os.path.join(self.path, file_name))
+            logger.info(message)            
+        except OSError:
+            logger.info('Something went wrong trying to delete the local file.')
+
+    def delete_local_path(self, path, message=None):
+        path = self.norm_path(path)
+        message = 'Deleting local file {0}'.format(path) if not message else message
+        try:
+            os.remove(path)
             logger.info(message)            
         except OSError:
             logger.info('Something went wrong trying to delete the local file.')
