@@ -118,10 +118,9 @@ class ImportAction(Action):
                 for chunk in response.iter_content(1024):
                     fh.write(chunk)
 
-        relative_path = file_path.replace(self.path, '')
         if document_id not in local_ids:
-            self._add_document(relative_path, title, document_id)
+            self._add_document(new_path, title, document_id)
             self.doc_manager.update_document('locales', locale_info, document_id)
-        else:
+        else if changed_path:
             # update the document's path
-            self.doc_manager.update_document('file_name', relative_path, document_id)
+            self.doc_manager.update_document('file_name', new_path, document_id)
