@@ -121,6 +121,6 @@ class ImportAction(Action):
         if document_id not in local_ids:
             self._add_document(new_path, title, document_id)
             self.doc_manager.update_document('locales', locale_info, document_id)
-        else if changed_path:
+        elif changed_path:
             # update the document's path
             self.doc_manager.update_document('file_name', new_path, document_id)
