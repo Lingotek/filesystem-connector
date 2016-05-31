@@ -106,6 +106,16 @@ class Action:
         # self._initialize_self()
         logger.info(log_info)
 
+    def norm_path(self, file_location):
+        # print("original path: "+file_location)
+        # print("project_path: "+project_path)
+        # norm_path = os.path.realpath(file_location).replace(project_path, '')
+        abspath=os.path.abspath(file_location)
+        # print("abspath: "+abspath)
+        norm_path = os.path.abspath(file_location).replace(self.path, '')
+        # print("normalized path: "+norm_path)
+        return norm_path
+
     def config_action(self, locale, workflow_id, download_folder, watch_folder, target_locales):
         config_file_name, conf_parser = self.init_config_file()
         if locale:
@@ -121,14 +131,16 @@ class Action:
             self.update_config_file('workflow_id', workflow_id, conf_parser, config_file_name, log_info)
             conf_parser.set('main', 'workflow_id', workflow_id)
         if download_folder:
-            download_path = os.path.join(self.path, download_folder)
-            self.download_dir = download_folder
-            log_info = 'Set download folder to {0}'.format(download_folder)
+            # download_path = os.path.join(self.path, download_folder)
+            download_path = self.norm_path(download_folder)
+            self.download_dir = download_path
+            log_info = 'Set download folder to {0}'.format(download_path)
             self.update_config_file('download_folder', download_path, conf_parser, config_file_name, log_info)
         if watch_folder:
-            watch_path = os.path.join(self.path, watch_folder)
-            self.watch_dir = watch_folder
-            log_info = 'Set watch folder to {0}'.format(watch_folder)
+            # watch_path = os.path.join(self.path, watch_folder)
+            watch_path = self.norm_path(watch_folder)
+            self.watch_dir = watch_path
+            log_info = 'Set watch folder to {0}'.format(watch_path)
             self.update_config_file('watch_folder', watch_path, conf_parser, config_file_name, log_info)
         if target_locales:
             log_info = 'Added target locales: {} for watch folder'.format(
@@ -152,7 +164,7 @@ class Action:
             raise_error(response.json(), "Failed to add document {0}".format(title), True)
         else:
             logger.info('Added document {0}'.format(title))
-            relative_path = file_name.replace(self.path, '')
+            relative_path = self.norm_path(file_name)
             # print("relative path: "+relative_path)
             self._add_document(relative_path, title, response.json()['properties']['id'])
 
@@ -164,8 +176,8 @@ class Action:
             raise exceptions.ResourceNotFound("Could not find the specified file/pattern")
         for file_name in matched_files:
             # title = os.path.basename(os.path.normpath(file_name)).split('.')[0]
-            title = os.path.basename(os.path.normpath(file_name))
-            relative_path = file_name.replace(self.path, '')
+            relative_path = self.norm_path(file_name)
+            title = os.path.basename(relative_path)
             if not self.doc_manager.is_doc_new(relative_path):
                 if self.doc_manager.is_doc_modified(relative_path, self.path):
                     if 'force' in kwargs and kwargs['force']:
@@ -173,7 +185,7 @@ class Action:
                     else:
                         confirm = 'not confirmed'
                     while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-                        confirm = input("This document already exists. Would you like to overwrite it? [y/N]: ")
+                        confirm = input("This document already exists. Would you like to overwrite it? [y/n]: ")
                     # confirm if would like to overwrite existing document in Lingotek Cloud
                     if not confirm or confirm in ['n', 'N']:
                         continue
@@ -211,7 +223,7 @@ class Action:
             logger.info('All documents up-to-date with Lingotek Cloud. ')
 
     def update_document_action(self, file_name, title=None, **kwargs):
-        relative_path = file_name.replace(self.path, '')
+        relative_path = self.norm_path(file_name)
         entry = self.doc_manager.get_doc_by_prop('file_name', relative_path)
         try:
             document_id = entry['id']
@@ -298,16 +310,15 @@ class Action:
         titles = []
         locales = []
         entries = self.doc_manager.get_all_entries()
-        cwd = os.path.join(os.getcwd(), '')
         for entry in entries:
-            if entry['file_name'].startswith(cwd.replace(self.path, '')):
-                ids.append(entry['id'])
-                relative_path = entry['file_name'].replace(cwd.replace(self.path, ''), '')
-                titles.append(relative_path)
-                try:
-                    locales.append(entry['locales'])
-                except KeyError:
-                    locales.append(['none'])
+            # if entry['file_name'].startswith(cwd.replace(self.path, '')):
+            ids.append(entry['id'])
+            relative_path = self.norm_path(entry['file_name'])
+            titles.append(relative_path)
+            try:
+                locales.append(entry['locales'])
+            except KeyError:
+                locales.append(['none'])
         if not ids:
             print ('No local documents')
             return
@@ -527,9 +538,9 @@ class Action:
     def rm_document(self, file_name, useID, force, doc_name=None):
         doc = None
         if not useID:
-            relative_path = file_name.replace(self.path, '')
+            relative_path = self.norm_path(file_name)
             doc = self.doc_manager.get_doc_by_prop('file_name', relative_path)
-            title = os.path.basename(os.path.normpath(file_name))
+            title = os.path.basename(self.norm_path(file_name))
             # print("relative_path: "+relative_path)
             try:
                 doc = self.doc_manager.get_doc_by_prop('file_name', relative_path)
@@ -630,19 +641,23 @@ class Action:
             pass
         return locale_progress
 
-    def clean_action(self, force, dis_all, document_name):
+    def clean_action(self, force, dis_all, path):
         if dis_all:
             # disassociate everything
             self.doc_manager.clear_all()
             return
 
-        if document_name:
-            try:
-                entry = self.doc_manager.get_doc_by_prop('name', document_name)
-                document_id = entry['id']
-                self.doc_manager.remove_element(document_id)
-            except TypeError:
-                logger.warning("Document name specified for clean doesn't exist: {0}".format(document_name))
+        if path:
+            files = get_files(path)
+            for file_name in files:
+                try:
+                    entry = self.doc_manager.get_doc_by_prop('file_name', file_name)
+                    print(entry)
+                    document_id = entry['id']
+                    self.doc_manager.remove_element(document_id)
+                except TypeError:
+                    1+1
+                    # logger.warning("Document name specified for clean doesn't exist: {0}".format(file_name))
             return
 
         response = self.api.list_documents(self.project_id)
@@ -698,7 +713,6 @@ class Action:
         except OSError:
             logger.info('Something went wrong trying to delete the local file.')
 
-
 def raise_error(json, error_message, is_warning=False, doc_id=None, file_name=None):
     try:
         error = json['messages'][0]
@@ -736,8 +750,8 @@ def reinit(host, project_path, delete, reset):
         while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
             confirm = input(
                 "Are you sure you want to delete the current project? "
-                "This will also delete the project in your community. [y/N]: ")
-        # confirm if would like to delete existing folder
+                "This will also delete the project in your community. [y/n]: ")
+        # confirm if deleting existing folder
         if not confirm or confirm in ['n', 'N']:
             return False
         else:
@@ -781,18 +795,6 @@ def choice_mapper(info):
         for values in v:
             print ('({0}) {1} ({2})'.format(k, v[values], values))
     return mapper
-
-
-def get_import_ids(info):
-    mapper = choice_mapper(info)
-    chosen_indices = ['none-chosen']
-    while not set(chosen_indices) <= set(mapper.keys()):
-        choice = input('Which documents to import? (Separate indices by comma) ')
-        try:
-            chosen_indices = map(int, choice.split(','))
-        except ValueError:
-            print ('Some unexpected, non-integer value was included')
-    return [mapper[index].iterkeys().next() for index in chosen_indices]
 
 
 def display_choice(display_type, info):
@@ -907,7 +909,7 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
     if len(project_info) > 0:
         confirm = 'none'
         while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-            confirm = input('Would you like to use an existing Lingotek project? [y/N]:')
+            confirm = input('Would you like to use an existing Lingotek project? [y/n]:')
         if confirm and confirm in ['y', 'Y', 'yes', 'Yes']:
             project_id, project_name = display_choice('project', project_info)
             config_parser.set('main', 'project_id', project_id)
@@ -940,16 +942,6 @@ def find_conf(curr_path):
     else:
         return find_conf(os.path.abspath(os.path.join(curr_path, os.pardir)))
 
-def norm_path(file_location, project_path):
-    print("original path: "+file_location)
-    print("project_path: "+project_path)
-    # norm_path = os.path.realpath(file_location).replace(project_path, '')
-    abspath=os.path.abspath(file_location)
-    print("abspath: "+abspath)
-    norm_path = os.path.abspath(file_location).replace(project_path, '')
-    print("normalized path: "+norm_path)
-    return norm_path
-
 def get_files(patterns):
     """ gets all files matching pattern from root
         pattern supports any unix shell-style wildcards (not same as RE) """
@@ -958,6 +950,7 @@ def get_files(patterns):
     matched_files = []
     for pattern in patterns:
         path = os.path.abspath(pattern)
+        print("path: "+path)
         # check if pattern contains subdirectory
         if os.path.exists(path):
             if os.path.isdir(path):

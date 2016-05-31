@@ -235,15 +235,22 @@ class WatchAction(Action):
                     else:
                         self.download_action(doc_id, locale, False)
 
+    def complete_path(self, file_location):
+        # print("self.path: "+self.path)
+        # print("file_location: "+file_location)
+        # print("abs file_location: "+os.path.abspath(file_location))
+        abspath=os.path.abspath(file_location)
+        # norm_path = os.path.abspath(file_location).replace(self.path, '')
+        return abspath
+
     def watch_action(self, watch_path, ignore, delimiter, timeout):
         # print self.path
         # print("timeout: " + str(timeout))
         if not watch_path and not self.watch_dir:
             watch_path = self.path
-        elif watch_path:
-            watch_path = os.path.join(self.path, watch_path)
-        else:
+        elif not watch_path:
             watch_path = self.watch_dir
+        watch_path = self.complete_path(watch_path)
         self.ignore_ext.extend(ignore)
         self.locale_delimiter = delimiter
         print ("Watching for updates in: {0}".format(watch_path))

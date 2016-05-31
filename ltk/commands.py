@@ -300,7 +300,7 @@ def rm(file_names, **kwargs):
 @click.option('-p', '--path', type=click.Path(exists=True), help='Import documents to a specified path')
 def import_command(import_all, force, path):
     """
-    Import documents from Lingotek Cloud, automatically downloading to the project root
+    Import documents from Lingotek Cloud, by default downloading to the project's root folder
     """
     # todo import should show all documents
     # add a force option so can import all force -- overwrites all existing documents without prompting
@@ -321,9 +321,9 @@ def import_command(import_all, force, path):
 
 @ltk.command(short_help="Cleans up the associations between local documents and documents in Lingotek")
 @click.option('-a', '--all', 'dis_all', flag_value=True, help='Removes all associations between local and remote')
-@click.option('-n', '--doc_name', help='Removes association of the specified document name')
+@click.option('-p', '--file_path', help='Removes local associations of the specified files or directories')
 @click.option('-f', '--force', flag_value=True, help='Deletes local documents that no longer exists in Lingotek')
-def clean(force, dis_all, doc_name):
+def clean(force, dis_all, file_path):
     """
     Cleans up the associations between local documents and documents in Lingotek.
     By default, checks that local documents and remote documents line up.
@@ -332,7 +332,7 @@ def clean(force, dis_all, doc_name):
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
-        action.clean_action(force, dis_all, doc_name)
+        action.clean_action(force, dis_all, file_path)
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)

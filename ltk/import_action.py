@@ -5,7 +5,20 @@ class ImportAction(Action):
     def __init__(self, path):
         Action.__init__(self, path)
 
+
+    def get_import_ids(self,info):
+        mapper = choice_mapper(info)
+        chosen_ids = []
+        while not len(chosen_ids) > 0:
+            choice = input('Documents to import: (Separate indices by comma) ')
+            try:
+                chosen_ids = [list(mapper[int(index)].keys())[0] for index in choice.split(',')]
+            except ValueError:
+                print ('Some unexpected, non-integer value was included')
+        return chosen_ids
+
     def import_action(self, import_all, force, path, ids_to_import=None):
+        path = self.norm_path(path)
         response = self.api.list_documents(self.project_id)
         tms_doc_info = {}
         if response.status_code == 200:
@@ -26,7 +39,7 @@ class ImportAction(Action):
                 import_doc_info = {}
                 for k, v in tms_doc_info.items():
                     import_doc_info[k] = v['title']
-                ids_to_import = get_import_ids(import_doc_info)
+                ids_to_import = self.get_import_ids(import_doc_info)
         else:
             ids_to_import = [ids_to_import]
         for curr_id in ids_to_import:
@@ -37,26 +50,39 @@ class ImportAction(Action):
             path = self.path
         else:
             path = os.path.join(self.path, path.replace(self.path, ''))
-        path_changed = False
+        path_changed = None
+        curr_path = None
+        write_file = True
         curr_entry = self.doc_manager.get_doc_by_prop('id', document_id)
-        curr_path = os.path.join(self.path, curr_entry['file_name'])
         new_path = os.path.join(path, title)
-        # print (curr_path, new_path)
-        if os.path.normpath(curr_path) != os.path.normpath(new_path):
-            path_changed = True
+        if curr_entry:
+            curr_path = os.path.join(self.path, curr_entry['file_name'])
+            # print (curr_path, new_path)
+            if self.norm_path(curr_path) != self.norm_path(new_path):
+                path_changed = curr_path
         if not force:
-            confirmation_msg = 'Would you like to overwrite the existing document? [y/N]:'
-            if path_changed:
-                confirmation_msg = 'Would you like to overwrite the existing document ' \
-                                   'and its current saved path? [y/N]:'
-            confirm = 'none'
-            while confirm not in ['y', 'yes', 'n', 'no', '']:
-                confirm = raw_input(confirmation_msg).lower()
-            if not confirm or confirm in ['n', 'no']:
-                logger.info('Skipped importing "{0}"'.format(title))
-                path_changed = False
-
-        return path_changed
+            if not curr_path and not os.path.exists(new_path):
+                return 
+            if path_changed and curr_path: # Confirm changing the file path saved in docs.json
+                confirmation_msg = 'Would you like to change ' \
+                                   'the current saved path of '+title+' from '+curr_path+' to '+new_path+'? [y/n]:'
+                confirm = 'none'
+                while confirm not in ['y', 'yes', 'n', 'no', '']:
+                    confirm = input(confirmation_msg).lower()
+                if not confirm or confirm in ['n', 'no']:
+                    logger.info('Retaining old path "{0}"'.format(curr_path))
+                    path_changed = None
+                    new_path = curr_path
+            # Confirm overwriting a local file
+            if os.path.exists(new_path):
+                confirmation_msg = 'Would you like to overwrite the existing document at '+new_path+'? [y/n]:'
+                confirm = 'none'
+                while confirm not in ['y', 'yes', 'n', 'no', '']:
+                    confirm = input(confirmation_msg).lower()
+                if not confirm or confirm in ['n', 'no']:
+                    logger.info('Skipped importing "{0}"'.format(title))
+                    write_file = False
+        return path_changed, new_path, write_file
 
     def import_document(self, document_id, document_info, force, path):
         local_ids = self.doc_manager.get_doc_ids()
@@ -81,15 +107,16 @@ class ImportAction(Action):
             locale_info = []
 
         changed_path = False
-        if document_id in local_ids:
-            changed_path = self.import_check(force, path, document_id, title)
+        changed_path, new_path, write_file = self.import_check(force, path, document_id, title)
 
-        if changed_path:
-            self.delete_local(title, document_id, 'Moved local file {0}'.format(title))
+        if write_file:
 
-        with open(file_path, 'wb') as fh:
-            for chunk in response.iter_content(1024):
-                fh.write(chunk)
+            if changed_path and os.path.exists(changed_path):
+                self.delete_local(title, document_id, 'Moved local file {0} to {1}'.format(changed_path, new_path))
+
+            with open(new_path, 'wb') as fh:
+                for chunk in response.iter_content(1024):
+                    fh.write(chunk)
 
         relative_path = file_path.replace(self.path, '')
         if document_id not in local_ids:
