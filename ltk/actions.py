@@ -109,12 +109,14 @@ class Action:
     def norm_path(self, file_location):
         # print("original path: "+file_location)
         # print("project_path: "+project_path)
-        # norm_path = os.path.realpath(file_location).replace(project_path, '')
-        abspath=os.path.abspath(file_location)
-        # print("abspath: "+abspath)
-        norm_path = os.path.abspath(file_location).replace(self.path, '')
-        # print("normalized path: "+norm_path)
-        return norm_path
+        if file_location:
+            abspath=os.path.abspath(file_location)
+            # print("abspath: "+abspath)
+            norm_path = os.path.abspath(file_location).replace(self.path, '')
+            # print("normalized path: "+norm_path)
+            return norm_path
+        else:
+            return None
 
     def config_action(self, locale, workflow_id, download_folder, watch_folder, target_locales):
         config_file_name, conf_parser = self.init_config_file()
