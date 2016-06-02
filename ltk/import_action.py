@@ -45,13 +45,13 @@ class ImportAction(Action):
         for curr_id in ids_to_import:
             self.import_document(curr_id, tms_doc_info[curr_id], force, path)
 
-    def import_check(self, force, path, document_id, title):
+    def import_check(self, document_id, title, force=False, path=False):
         if not path:
             path = self.path
         else:
             path = os.path.join(self.path, path.replace(self.path, ''))
-        path_changed = None
-        curr_path = None
+        path_changed = False
+        curr_path = False
         write_file = True
         curr_entry = self.doc_manager.get_doc_by_prop('id', document_id)
         new_path = os.path.join(path, title)
@@ -63,7 +63,7 @@ class ImportAction(Action):
                 path_changed = curr_path
         if not force:
             if not curr_path and not os.path.exists(new_path):
-                return 
+                return path_changed, new_path, write_file, delete_file
             if path_changed and curr_path: # Confirm changing the file path saved in docs.json
                 confirmation_msg = 'Would you like to change ' \
                                    'the current saved path of '+title+' from '+curr_path+' to '+new_path+'? [y/n]:'
@@ -72,7 +72,7 @@ class ImportAction(Action):
                     confirm = input(confirmation_msg).lower()
                 if not confirm or confirm in ['n', 'no']:
                     logger.info('Retaining old path "{0}"'.format(curr_path))
-                    path_changed = None
+                    path_changed = False
                     new_path = curr_path
                 else:
                     confirmation_msg = 'Delete '+curr_path+'? [y/n]:'
@@ -90,9 +90,10 @@ class ImportAction(Action):
                 if not confirm or confirm in ['n', 'no']:
                     logger.info('Skipped importing "{0}"'.format(title))
                     write_file = False
+        # print(str(path_changed)+" "+str(new_path)+" "+str(write_file)+" "+str(delete_file))
         return path_changed, new_path, write_file, delete_file
 
-    def import_document(self, document_id, document_info, force, path):
+    def import_document(self, document_id, document_info, force=False, path=False):
         local_ids = self.doc_manager.get_doc_ids()
         response = self.api.document_content(document_id, None, None)
         title, extension = os.path.splitext(document_info['title'])
@@ -115,18 +116,10 @@ class ImportAction(Action):
             locale_info = []
 
         changed_path = False
-        changed_path, new_path, write_file, delete_file = self.import_check(force, path, document_id, title)
-
+        changed_path, new_path, write_file, delete_file = self.import_check(document_id, title, force, path)
         if delete_file and changed_path and os.path.exists(changed_path):
             self.delete_local_path(changed_path, 'Deleting local file {0}'.format(changed_path))
 
-        if document_id not in local_ids:
-            self._add_document(new_path, title, document_id)
-            self.doc_manager.update_document('locales', locale_info, document_id)
-        elif changed_path:
-            # update the document's path
-            logger.info('Moved local file {0} to {1}'.format(changed_path, new_path))
-            self.doc_manager.update_document('file_name', new_path, document_id)
 
 
         if write_file:
@@ -134,3 +127,10 @@ class ImportAction(Action):
             with open(new_path, 'wb') as fh:
                 for chunk in response.iter_content(1024):
                     fh.write(chunk)
+        if document_id not in local_ids:
+            self._add_document(new_path, title, document_id)
+            self.doc_manager.update_document('locales', locale_info, document_id)
+        elif changed_path:
+            # update the document's path
+            logger.info('Moved local file {0} to {1}'.format(changed_path, new_path))
+            self.doc_manager.update_document('file_name', new_path, document_id)

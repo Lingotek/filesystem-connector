@@ -648,39 +648,41 @@ class Action:
             # disassociate everything
             self.doc_manager.clear_all()
             return
-
+        locals_to_delete = []
         if path:
             files = get_files(path)
-            for file_name in files:
-                try:
+            docs = self.doc_manager.get_doc_names()
+            if len(files) > len(docs):
+                for file_name in docs:
+                    if file_name in files:
+                        entry = self.doc_manager.get_doc_by_prop('file_name', file_name)
+                        if entry:
+                            locals_to_delete.append(entry['id'])
+            else:
+                for file_name in files:
                     entry = self.doc_manager.get_doc_by_prop('file_name', file_name)
-                    print(entry)
-                    document_id = entry['id']
-                    self.doc_manager.remove_element(document_id)
-                except TypeError:
-                    1+1
-                    # logger.warning("Document name specified for clean doesn't exist: {0}".format(file_name))
-            return
-
-        response = self.api.list_documents(self.project_id)
-        local_ids = self.doc_manager.get_doc_ids()
-        tms_doc_ids = []
-        if response.status_code == 200:
-            tms_documents = response.json()['entities']
-            for entity in tms_documents:
-                tms_doc_ids.append(entity['properties']['id'])
-        elif response.status_code == 204:
-            pass
+                    if entry:
+                        locals_to_delete.append(entry['id'])
         else:
-            raise_error(response.json(), 'Error trying to list documents in TMS for cleaning')
-        locals_to_delete = [x for x in local_ids if x not in tms_doc_ids]
+            response = self.api.list_documents(self.project_id)
+            local_ids = self.doc_manager.get_doc_ids()
+            tms_doc_ids = []
+            if response.status_code == 200:
+                tms_documents = response.json()['entities']
+                for entity in tms_documents:
+                    tms_doc_ids.append(entity['properties']['id'])
+            elif response.status_code == 204:
+                pass
+            else:
+                raise_error(response.json(), 'Error trying to list documents in TMS for cleaning')
+            locals_to_delete = [x for x in local_ids if x not in tms_doc_ids]
 
-        # check local files
-        db_entries = self.doc_manager.get_all_entries()
-        for entry in db_entries:
-            # if local file doesn't exist, remove entry
-            if not os.path.isfile(os.path.join(self.path, entry['file_name'])):
-                locals_to_delete.append(entry['id'])
+            # check local files
+            db_entries = self.doc_manager.get_all_entries()
+            for entry in db_entries:
+                # if local file doesn't exist, remove entry
+                if not os.path.isfile(os.path.join(self.path, entry['file_name'])):
+                    locals_to_delete.append(entry['id'])
 
         # remove entry for local doc -- possibly delete local file too?
         if locals_to_delete:
@@ -695,9 +697,9 @@ class Action:
                 self.doc_manager.remove_element(curr_id)
                 logger.info('Removing association for document {0}'.format(removed_title))
         else:
-            logger.info('Local documents already up-to-date with Lingotek cloud')
+            logger.info('Local documents already up-to-date with Lingotek Cloud')
             return
-        logger.info('Cleaned up associations between local documents and Lingotek cloud')
+        logger.info('Cleaned up associations between local documents and Lingotek Cloud')
 
     def delete_local(self, title, document_id, message=None):
         # print('local delete:', title, document_id)
@@ -958,10 +960,11 @@ def get_files(patterns):
         pattern supports any unix shell-style wildcards (not same as RE) """
 
     # root = os.getcwd()
+    if isinstance(patterns,str):
+        patterns = [patterns]
     matched_files = []
     for pattern in patterns:
         path = os.path.abspath(pattern)
-        print("path: "+path)
         # check if pattern contains subdirectory
         if os.path.exists(path):
             if os.path.isdir(path):
