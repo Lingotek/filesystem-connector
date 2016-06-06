@@ -19,6 +19,12 @@ You can also install the latest version by downloading this repository and then,
 pip install .
 ```
 
+If you are using python2 and you want to use the filesystem-connector with python2, you can specify the version of ltk during the install process.
+
+```bash
+pip install==0.1.2 .
+```
+
 If you don't have `pip` installed, then you can [install it](https://pip.pypa.io/en/latest/installing/#using-get-pip) using the following:
 
 ```bash
