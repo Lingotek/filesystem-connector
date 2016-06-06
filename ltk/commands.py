@@ -1,11 +1,17 @@
 import click
+import sys
+python_version = sys.version
+if python_version[0] < '3':
+   print('Python 3 is required to run this version. See https://github.com/lingotek/filesystem-connectorgit for running other versions and troubleshooting.')
+
+   exit()
 from ltk import actions
 import os
 from ltk.exceptions import UninitializedError, ResourceNotFound, RequestFailedError, AlreadyExistsError
 from ltk.constants import LOG_FN, CONF_DIR
 import logging
 from ltk.logger import logger, API_LOG_LEVEL, API_RESPONSE_LOG_LEVEL, CustomFormatter
-import sys
+
 from ltk import __version__
 from ltk.watch import WatchAction
 from ltk.import_action import ImportAction
