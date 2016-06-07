@@ -1,5 +1,10 @@
 from setuptools import setup, find_packages
-from ltk import __version__
+import sys
+
+if sys.version_info[0] == 2:
+    base_dir = 'python2'
+elif sys.version_info[0] == 3:
+    base_dir = 'python3'
 
 try:
     import pypandoc
@@ -11,14 +16,17 @@ except (IOError, ImportError, OSError):
 
 setup(
     name='ltk',
-    version=__version__,
+    version='0.2.3',
     url='https://github.com/Lingotek/client',
     description='Command line tool that connects your content to the Lingotek Translation Network',
     long_description=long_description,
     author='Lingotek',
     author_email='integrations@lingotek.com',
     license='MIT',
-    packages=find_packages(),
+    packages=[ 'ltk',],
+    package_dir={
+        'ltk' : base_dir + '/ltk',
+    },
     include_package_data=True,
     install_requires=[
         'click',
