@@ -105,7 +105,7 @@ def init(host, access_token, path, project_name, workflow_id, locale, delete, re
 @ltk.command()
 @click.option('-l', '--locale', help='Change the default source locale for the project')
 @click.option('-w', '--workflow_id', help='Change the default workflow id for the project')
-@click.option('-d', '--download_folder', type=click.Path(exists=True),
+@click.option('-d', '--download_folder',
               help='Specify a folder for where downloaded translations should go')
 @click.option('-f', '--watch_folder', type=click.Path(exists=True),
               help='Specify a folder to watch when running ltk watch; defaults to project root')
@@ -125,7 +125,7 @@ def config(locale, workflow_id, download_folder, watch_folder, target_locales):
         return
 
 
-@ltk.command(short_help="Adds content, could be one or multiple files specified by the Unix shell pattern")
+@ltk.command(short_help="Adds content; could be one or more files specified by the Unix shell pattern")
 @click.argument('file_names', required=True, nargs=-1)
 @click.option('-l', '--locale', help='If source locale is different from the default configuration. Use ltk list -l to see possible locales')
 @click.option('-f', '--format',
@@ -169,16 +169,17 @@ def push():
 
 @ltk.command(short_help="Add targets to document(s) to start translation; defaults to the entire project. Use ltk list -l to see possible locales")
 @click.option('-n', '--doc_name', help='The name of the document; specify for one document')
+@click.option('-p', '--path', type=click.Path(exists=True), help='A file name or directory for which to request targets')
 @click.option('-d', '--delete', 'to_delete', flag_value=True, help='Deletes a specified target locale')
 @click.option('--due_date', help='The due date of the translation')
 @click.option('-w', '--workflow', help='The workflow of the translation (do "ltk list -w" to see available workflows)')
 @click.argument('locales', required=True, nargs=-1)  # can have unlimited number of locales
-def request(doc_name, locales, to_delete, due_date, workflow):
+def request(doc_name, path, locales, to_delete, due_date, workflow):
     """ Add targets to document(s) to start translation; defaults to the entire project. Use ltk list -l to see possible locales """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
-        action.target_action(doc_name, locales, to_delete, due_date, workflow)
+        action.target_action(doc_name, path, locales, to_delete, due_date, workflow)
     except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
@@ -236,14 +237,14 @@ def status(**kwargs):
 @ltk.command()
 @click.option('-a', '--auto_format', flag_value=True, help='Flag to auto apply formatting during download')
 @click.argument('locale', required=True, nargs=1)
-@click.argument('document_names', required=True, nargs=-1)
-def download(auto_format, locale, document_names):
-    """ Downloads the translated content of document(s) """
+@click.argument('file_names', type=click.Path(exists=True), required=True, nargs=-1)
+def download(auto_format, locale, file_names):
+    """ Downloads the translated content of document(s) for the specified locale """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
-        for name in document_names:
-            action.download_by_name(name, locale, auto_format)
+        for name in file_names:
+            action.download_by_path(name, locale, auto_format)
     except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
@@ -254,7 +255,7 @@ def download(auto_format, locale, document_names):
 @click.option('-a', '--auto_format', flag_value=True, help='Flag to auto apply formatting during download')
 @click.argument('locales', nargs=-1)
 def pull(auto_format, locales):
-    """ Pulls all translations for added documents """
+    """ Pulls translations for all added documents for the specified locales or for all locales by default """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)

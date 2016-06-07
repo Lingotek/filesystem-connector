@@ -102,21 +102,31 @@ class Action:
     def update_config_file(self, option, value, conf_parser, config_file_name, log_info):
         conf_parser.set('main', option, value)
         with open(config_file_name, 'w') as new_file:
-            conf_parser.write(new_file )
+            conf_parser.write(new_file)
         # self._initialize_self()
         logger.info(log_info)
 
     def norm_path(self, file_location):
         # print("original path: "+file_location)
-        # print("project_path: "+project_path)
         if file_location:
             abspath=os.path.abspath(file_location)
             # print("abspath: "+abspath)
-            norm_path = os.path.abspath(file_location).replace(self.path, '')
+            # print("self.path: "+self.path)
+            norm_path = os.path.abspath(os.path.expanduser(file_location)).replace(self.path, '')
             # print("normalized path: "+norm_path)
             return norm_path
         else:
             return None
+
+    def get_docs_in_path(self, path):
+        files = get_files(path)
+        db_files = self.doc_manager.get_file_names()
+        docs = []
+        for file in files:
+            file_name = self.norm_path(file)
+            if file_name in db_files:
+                docs.append(self.doc_manager.get_doc_by_prop('file_name',file_name))
+        return docs
 
     def config_action(self, locale, workflow_id, download_folder, watch_folder, target_locales):
         config_file_name, conf_parser = self.init_config_file()
@@ -133,11 +143,15 @@ class Action:
             self.update_config_file('workflow_id', workflow_id, conf_parser, config_file_name, log_info)
             conf_parser.set('main', 'workflow_id', workflow_id)
         if download_folder:
-            # download_path = os.path.join(self.path, download_folder)
-            download_path = self.norm_path(download_folder)
-            self.download_dir = download_path
-            log_info = 'Set download folder to {0}'.format(download_path)
-            self.update_config_file('download_folder', download_path, conf_parser, config_file_name, log_info)
+            if os.path.exists(os.path.abspath(download_folder)) or "--same" in download_folder or "--default" in download_folder:
+                # download_path = os.path.join(self.path, download_folder)
+                download_path = self.norm_path(download_folder)
+                self.download_dir = download_path
+                log_info = 'Set download folder to {0}'.format(download_path)
+                self.update_config_file('download_folder', download_path, conf_parser, config_file_name, log_info)
+            else:
+                logger.warning('Error: Invalid value for "-d" / "--download_folder": Path "'+download_folder+'" does not exist.')
+                return
         if watch_folder:
             # watch_path = os.path.join(self.path, watch_folder)
             watch_path = self.norm_path(watch_folder)
@@ -151,10 +165,10 @@ class Action:
             target_locales = ','.join(target for target in target_locales)
             self.update_config_file('watch_locales', target_locales, conf_parser, config_file_name, log_info)
 
-        print ('host: {0}\naccess_token: {1}\nproject id: {2}\nproject name: {6}\ncommunity id: {3}\nworkflow id: {4}\n' \
-              'locale: {5}\ndownloads folder: {7}\nwatch folder: {8}\nwatch target locales: {9}'.format(
-            self.host, self.access_token, self.project_id, self.community_id, self.workflow_id, self.locale,
-            self.project_name, self.download_dir, self.watch_dir, ', '.join(x for x in self.watch_locales)))
+        print ('Host: {0}\nAccess_token: {1}\nProject id: {2}\nProject name: {3}\nProject path: {4}\nCommunity id: {5}\nWorkflow id: {6}\n' \
+              'Locale: {7}\nDownloads folder: {8}\nWatch folder: {9}\nWatch target locales: {10}'.format(
+            self.host, self.access_token, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale,
+            self.download_dir, self.watch_dir, ', '.join(x for x in self.watch_locales)))
 
     def add_document(self, file_name, title, **kwargs):
         if not 'locale' in kwargs or not kwargs['locale']:
@@ -250,7 +264,10 @@ class Action:
         else:
             self.doc_manager.update_document('locales', list(locales), document_id)
 
-    def target_action(self, document_name, locales, to_delete, due_date, workflow, document_id=None):
+    def target_action(self, document_name, path, locales, to_delete, due_date, workflow, document_id=None):
+        if path:
+            document_id = None
+            document_name = None
         change_db_entry = True
         if to_delete:
             expected_code = 204
@@ -260,7 +277,9 @@ class Action:
             expected_code = 201
             failure_message = 'Failed to add target'
             info_message = 'Added target'
-        if not document_name and not document_id:
+        # print("doc_name: "+str(document_name))
+        docs = []
+        if not path and not document_name and not document_id:
             for locale in locales:
                 response = self.api.project_add_target(self.project_id, locale, due_date) if not to_delete \
                     else self.api.project_delete_target(self.project_id, locale)
@@ -275,30 +294,33 @@ class Action:
             if change_db_entry:
                 for document_id in document_ids:
                     self._target_action_db(to_delete, locales, document_id)
+        elif path:
+            docs = self.get_docs_in_path(path)
         else:
             # todo: document name or file name? since file name will be relative to root
             # todo: clean this code up some
             if not document_id:
                 entry = self.doc_manager.get_doc_by_prop('name', document_name)
-                try:
-                    document_id = entry['id']
-                except TypeError:
+                if not entry:
                     logger.error('Document name specified for target doesn\'t exist: {0}'.format(document_name))
                     return
                     # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
             if not document_name:
                 entry = self.doc_manager.get_doc_by_prop('id', document_id)
-                try:
-                    document_name = entry['name']
-                except TypeError:
+                if not entry:
                     logger.error('Document specified for target doesn\'t exist: {0}'.format(document_id))
                     return
+            docs.append(entry)
+        # print("docs: "+str(docs))
+        for entry in docs:
+            document_id = entry['id']
+            document_name = entry['file_name']
             for locale in locales:
                 response = self.api.document_add_target(document_id, locale, workflow, due_date) if not to_delete \
                     else self.api.document_delete_target(document_id, locale)
                 if response.status_code != expected_code:
-                    raise_error(response.json(), '{message} {locale} for document'.format(message=failure_message,
-                                                                                          locale=locale), True)
+                    raise_error(response.json(), '{message} {locale} for document {name}'.format(message=failure_message,
+                                                                                          locale=locale,name=document_name), True)
                     change_db_entry = False
                     continue
                 logger.info('{message} {locale} for document {name}'.format(message=info_message,
@@ -324,7 +346,7 @@ class Action:
         if not ids:
             print ('No local documents')
             return
-        print ('Local documents: id, file name, locales')
+        print ('Local documents:\tID\t\t File name\t\tLocales')
         for i in range(len(ids)):
             info = '{id} \t {title} \t\t {locales}'.format(id=ids[i], title=titles[i],
                                                            locales=', '.join(locale for locale in locales[i]))
@@ -420,63 +442,68 @@ class Action:
             # return detailed_status
 
     def status_action(self, **kwargs):
-        # detailed_status = {}
-        doc_name = None
-        if 'doc_name' in kwargs:
-            doc_name = kwargs['doc_name']
-        if 'all' in kwargs and kwargs['all']:
-            response = self.api.list_documents(self.project_id)
-            if response.status_code == 204:
-                print("No documents to report")
-                return
-            elif response.status_code != 200:
-                if response.json():
-                    raise_error(response.json(), "Failed to get status of documents", True)
-                else:
-                    raise_error("", "Failed to get status of documents", True)
-            else:
-                for entry in response.json()['entities']:
-                    title = entry['entities'][1]['properties']['title']
-                    progress = entry['entities'][1]['properties']['progress']
-                    self.print_status(title, progress)
-                    if 'detailed' in kwargs and kwargs['detailed']:
-                        self.print_detailed(entry['properties']['id'], title)
-                return
-        else:
-            if doc_name is not None:
-                entry = self.doc_manager.get_doc_by_prop('name', doc_name)
-                try:
-                    doc_ids = [entry['id']]
-                except TypeError:
-                    raise exceptions.ResourceNotFound("Document name specified for status doesn't exist: {0}".format(doc_name))
-            else:
-                doc_ids = self.doc_manager.get_doc_ids()
-            if not doc_ids:
-                print("No documents to report")
-                return
-        for doc_id in doc_ids:
-            response = self.api.document_status(doc_id)
-            if response.status_code != 200:
-                raise_error(response.json(), "Failed to get status of document", True, doc_id)
-            else:
-                title = response.json()['properties']['title']
-                progress = response.json()['properties']['progress']
-                self.print_status(title, progress)
-            if 'detailed' in kwargs and kwargs['detailed']:
-                self.print_detailed(doc_id, title)
-
-    def download_by_name(self, document_name, locale_code, auto_format):
         try:
-            document_id = self.doc_manager.get_doc_by_prop('name', document_name)['id']
-        except TypeError:
-            logger.error("Document name specified for download doesn't exist: {0}".format(document_name))
-            return
-        self.download_action(document_id, locale_code, auto_format)
+            # detailed_status = {}
+            doc_name = None
+            if 'doc_name' in kwargs:
+                doc_name = kwargs['doc_name']
+            if 'all' in kwargs and kwargs['all']:
+                response = self.api.list_documents(self.project_id)
+                if response.status_code == 204:
+                    print("No documents to report")
+                    return
+                elif response.status_code != 200:
+                    if response.json():
+                        raise_error(response.json(), "Failed to get status of documents", True)
+                    else:
+                        raise_error("", "Failed to get status of documents", True)
+                else:
+                    for entry in response.json()['entities']:
+                        title = entry['entities'][1]['properties']['title']
+                        progress = entry['entities'][1]['properties']['progress']
+                        self.print_status(title, progress)
+                        if 'detailed' in kwargs and kwargs['detailed']:
+                            self.print_detailed(entry['properties']['id'], title)
+                    return
+            else:
+                if doc_name is not None:
+                    entry = self.doc_manager.get_doc_by_prop('name', doc_name)
+                    try:
+                        doc_ids = [entry['id']]
+                    except TypeError:
+                        raise exceptions.ResourceNotFound("Document name specified for status doesn't exist: {0}".format(doc_name))
+                else:
+                    doc_ids = self.doc_manager.get_doc_ids()
+                if not doc_ids:
+                    print("No documents to report")
+                    return
+            for doc_id in doc_ids:
+                response = self.api.document_status(doc_id)
+                if response.status_code != 200:
+                    raise_error(response.json(), "Failed to get status of document", True, doc_id)
+                else:
+                    title = response.json()['properties']['title']
+                    progress = response.json()['properties']['progress']
+                    self.print_status(title, progress)
+                if 'detailed' in kwargs and kwargs['detailed']:
+                    self.print_detailed(doc_id, title)
+        except requests.exceptions.ConnectionError:
+            logger.warning("Could not connect to Lingotek")
+            exit()
+
+    def download_by_path(self, file_path, locale_code, auto_format):
+        docs = self.get_docs_in_path(file_path)
+        for entry in docs:
+            self.download_action(entry['id'], locale_code, auto_format)
 
     def download_action(self, document_id, locale_code, auto_format, locale_ext=True):
         response = self.api.document_content(document_id, locale_code, auto_format)
         if response.status_code == 200:
             entry = self.doc_manager.get_doc_by_prop('id', document_id)
+            if self.download_dir and not '--same' in self.download_dir and not '--default' in self.download_dir:
+                download_path = self.download_dir
+            else:
+                download_path = self.path
             if not entry:
                 doc_info = self.api.get_document(document_id)
                 try:
@@ -491,15 +518,14 @@ class Action:
                     raise_error(doc_info.json(),
                                 'Something went wrong trying to download document: {0}'.format(document_id), True)
                     return
-                download_path = os.path.join(self.path, title)
+                download_path = os.path.join(download_path, title)
                 logger.info("Downloaded: {0}".format(title))
             else:
-                if not locale_code:
-                    logger.info("No target locales, downloading source instead.")
-                    locale_code = self.locale
                 file_name = entry['file_name']
-                download_dir = os.path.join(self.path, os.path.dirname(file_name))
-                base_name = os.path.basename(os.path.normpath(file_name))
+                base_name = os.path.basename(self.norm_path(file_name))
+                if not locale_code:
+                    logger.info("No target locales for "+file_name+". Downloading the source document instead.")
+                    locale_code = self.locale
                 if locale_ext:
                     name_parts = base_name.split('.')
                     if len(name_parts) > 1:
@@ -509,17 +535,18 @@ class Action:
                         downloaded_name = name_parts[0] + '.' + locale_code
                 else:
                     downloaded_name = base_name
-                download_path = os.path.join(download_dir, downloaded_name)
+                if '--same' in self.download_dir or '--default' in self.download_dir:
+                    download_path = os.path.dirname(file_name)
+                download_path = os.path.join(self.path,os.path.join(download_path, downloaded_name))
                 logger.info('Downloaded: {0} ({1} - {2})'.format(downloaded_name, base_name, locale_code))
                 self.doc_manager.update_document('downloaded', [locale_code], document_id)
-            if self.download_dir:
-                title = os.path.basename(os.path.normpath(download_path))
-                download_path = os.path.join(self.download_dir, title)
+
             with open(download_path, 'wb') as fh:
                 for chunk in response.iter_content(1024):
                     fh.write(chunk)
             return download_path
         else:
+            printResponseMessages(response)
             raise_error(response.json(), 'Failed to download content for id: {0}'.format(document_id), True)
 
     def pull_action(self, locale_code, auto_format):
@@ -548,7 +575,7 @@ class Action:
                 doc = self.doc_manager.get_doc_by_prop('file_name', relative_path)
                 document_id = doc['id']
             except TypeError: # Documents specified by name must be found in the local database to be removed.
-                logger.warning("Document name specified for remove doesn't exist locally: {0}".format(relative_path))
+                logger.warning("Document name specified for remove isn't in the local database: {0}".format(relative_path))
                 return
                 # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
         else:
@@ -583,6 +610,7 @@ class Action:
         else:
             useID = False
         if 'all' in kwargs and kwargs['all']:
+            print("all selected")
             if 'remote' in kwargs and kwargs['remote']:
                 response = self.api.list_documents(self.project_id)
                 if response.status_code == 204:
@@ -602,7 +630,7 @@ class Action:
                     return
             else:
                 useID = False
-                matched_files = self.doc_manager.get_doc_names()
+                matched_files = self.doc_manager.get_file_names()
         elif not useID:
             # use current working directory as root for files instead of project root
             matched_files = get_files(file_patterns)
@@ -612,7 +640,7 @@ class Action:
             raise exceptions.ResourceNotFound("Could not find the specified file/pattern")
         for file_name in matched_files:
             # title = os.path.basename(os.path.normpath(file_name)).split('.')[0]
-            self.rm_document(file_name, useID, force)
+            self.rm_document(self.norm_path(file_name).replace(self.path,""), useID, force)
 
     def get_new_name(self, file_name, curr_path):
         i = 1
@@ -651,7 +679,7 @@ class Action:
         locals_to_delete = []
         if path:
             files = get_files(path)
-            docs = self.doc_manager.get_doc_names()
+            docs = self.doc_manager.get_file_names()
             if len(files) > len(docs):
                 for file_name in docs:
                     if file_name in files:
@@ -954,6 +982,10 @@ def find_conf(curr_path):
         return None
     else:
         return find_conf(os.path.abspath(os.path.join(curr_path, os.pardir)))
+
+def printResponseMessages(response):
+    for message in response.json()['messages']:
+        logger.info(message)
 
 def get_files(patterns):
     """ gets all files matching pattern from root
