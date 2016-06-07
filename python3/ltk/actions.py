@@ -102,9 +102,31 @@ class Action:
     def update_config_file(self, option, value, conf_parser, config_file_name, log_info):
         conf_parser.set('main', option, value)
         with open(config_file_name, 'w') as new_file:
-            conf_parser.write(new_file )
+            conf_parser.write(new_file)
         # self._initialize_self()
         logger.info(log_info)
+
+    def norm_path(self, file_location):
+        # print("original path: "+file_location)
+        if file_location:
+            abspath=os.path.abspath(file_location)
+            # print("abspath: "+abspath)
+            # print("self.path: "+self.path)
+            norm_path = os.path.abspath(os.path.expanduser(file_location)).replace(self.path, '')
+            # print("normalized path: "+norm_path)
+            return norm_path
+        else:
+            return None
+
+    def get_docs_in_path(self, path):
+        files = get_files(path)
+        db_files = self.doc_manager.get_file_names()
+        docs = []
+        for file in files:
+            file_name = self.norm_path(file)
+            if file_name in db_files:
+                docs.append(self.doc_manager.get_doc_by_prop('file_name',file_name))
+        return docs
 
     def config_action(self, locale, workflow_id, download_folder, watch_folder, target_locales):
         config_file_name, conf_parser = self.init_config_file()
@@ -121,14 +143,20 @@ class Action:
             self.update_config_file('workflow_id', workflow_id, conf_parser, config_file_name, log_info)
             conf_parser.set('main', 'workflow_id', workflow_id)
         if download_folder:
-            download_path = os.path.join(self.path, download_folder)
-            self.download_dir = download_folder
-            log_info = 'Set download folder to {0}'.format(download_folder)
-            self.update_config_file('download_folder', download_path, conf_parser, config_file_name, log_info)
+            if os.path.exists(os.path.abspath(download_folder)) or "--same" in download_folder or "--default" in download_folder:
+                # download_path = os.path.join(self.path, download_folder)
+                download_path = self.norm_path(download_folder)
+                self.download_dir = download_path
+                log_info = 'Set download folder to {0}'.format(download_path)
+                self.update_config_file('download_folder', download_path, conf_parser, config_file_name, log_info)
+            else:
+                logger.warning('Error: Invalid value for "-d" / "--download_folder": Path "'+download_folder+'" does not exist.')
+                return
         if watch_folder:
-            watch_path = os.path.join(self.path, watch_folder)
-            self.watch_dir = watch_folder
-            log_info = 'Set watch folder to {0}'.format(watch_folder)
+            # watch_path = os.path.join(self.path, watch_folder)
+            watch_path = self.norm_path(watch_folder)
+            self.watch_dir = watch_path
+            log_info = 'Set watch folder to {0}'.format(watch_path)
             self.update_config_file('watch_folder', watch_path, conf_parser, config_file_name, log_info)
         if target_locales:
             log_info = 'Added target locales: {} for watch folder'.format(
@@ -137,32 +165,35 @@ class Action:
             target_locales = ','.join(target for target in target_locales)
             self.update_config_file('watch_locales', target_locales, conf_parser, config_file_name, log_info)
 
-        print ('host: {0}\naccess_token: {1}\nproject id: {2}\nproject name: {6}\ncommunity id: {3}\nworkflow id: {4}\n' \
-              'locale: {5}\ndownloads folder: {7}\nwatch folder: {8}\nwatch target locales: {9}'.format(
-            self.host, self.access_token, self.project_id, self.community_id, self.workflow_id, self.locale,
-            self.project_name, self.download_dir, self.watch_dir, ', '.join(x for x in self.watch_locales)))
+        print ('Host: {0}\nAccess_token: {1}\nProject id: {2}\nProject name: {3}\nProject path: {4}\nCommunity id: {5}\nWorkflow id: {6}\n' \
+              'Locale: {7}\nDownloads folder: {8}\nWatch folder: {9}\nWatch target locales: {10}'.format(
+            self.host, self.access_token, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale,
+            self.download_dir, self.watch_dir, ', '.join(x for x in self.watch_locales)))
 
-    def add_document(self, locale, file_name, title, **kwargs):
-        response = self.api.add_document(file_name, locale, self.project_id, title, **kwargs)
+    def add_document(self, file_name, title, **kwargs):
+        if not 'locale' in kwargs or not kwargs['locale']:
+            locale = self.locale
+        else:
+            locale = kwargs['locale']
+        response = self.api.add_document(locale, file_name, self.project_id, title, **kwargs)
         if response.status_code != 202:
             raise_error(response.json(), "Failed to add document {0}".format(title), True)
         else:
             logger.info('Added document {0}'.format(title))
-            relative_path = file_name.replace(self.path, '')
+            relative_path = self.norm_path(file_name)
+            # print("relative path: "+relative_path)
             self._add_document(relative_path, title, response.json()['properties']['id'])
 
-    def add_action(self, locale, file_patterns, **kwargs):
-        if not locale:
-            locale = self.locale
+    def add_action(self, file_patterns, **kwargs):
         # format will be automatically detected by extension but may not be what user expects
         # use current working directory as root for files instead of project root
-        matched_files = get_files(os.getcwd(), file_patterns)
+        matched_files = get_files(file_patterns)
         if not matched_files:
             raise exceptions.ResourceNotFound("Could not find the specified file/pattern")
         for file_name in matched_files:
             # title = os.path.basename(os.path.normpath(file_name)).split('.')[0]
-            title = os.path.basename(os.path.normpath(file_name))
-            relative_path = file_name.replace(self.path, '')
+            relative_path = self.norm_path(file_name)
+            title = os.path.basename(relative_path)
             if not self.doc_manager.is_doc_new(relative_path):
                 if self.doc_manager.is_doc_modified(relative_path, self.path):
                     if 'force' in kwargs and kwargs['force']:
@@ -170,7 +201,7 @@ class Action:
                     else:
                         confirm = 'not confirmed'
                     while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-                        confirm = input("This document already exists. Would you like to overwrite it? [y/N]: ")
+                        confirm = input("This document already exists. Would you like to overwrite it? [y/n]: ")
                     # confirm if would like to overwrite existing document in Lingotek Cloud
                     if not confirm or confirm in ['n', 'N']:
                         continue
@@ -182,7 +213,7 @@ class Action:
                     logger.error("This document has already been added: {0}".format(title))
                     continue
             # todo separate function somewhere around here maybe..
-            self.add_document(locale, file_name, title, **kwargs)
+            self.add_document(file_name, title, **kwargs)
             # response = self.api.add_document(file_name, locale, self.project_id, title, **kwargs)
             # if response.status_code != 202:
             #     raise_error(response.json(), "Failed to add document {0}".format(title), True)
@@ -208,7 +239,7 @@ class Action:
             logger.info('All documents up-to-date with Lingotek Cloud. ')
 
     def update_document_action(self, file_name, title=None, **kwargs):
-        relative_path = file_name.replace(self.path, '')
+        relative_path = self.norm_path(file_name)
         entry = self.doc_manager.get_doc_by_prop('file_name', relative_path)
         try:
             document_id = entry['id']
@@ -233,7 +264,10 @@ class Action:
         else:
             self.doc_manager.update_document('locales', list(locales), document_id)
 
-    def target_action(self, document_name, locales, to_delete, due_date, workflow, document_id=None):
+    def target_action(self, document_name, path, locales, to_delete, due_date, workflow, document_id=None):
+        if path:
+            document_id = None
+            document_name = None
         change_db_entry = True
         if to_delete:
             expected_code = 204
@@ -243,7 +277,9 @@ class Action:
             expected_code = 201
             failure_message = 'Failed to add target'
             info_message = 'Added target'
-        if not document_name and not document_id:
+        # print("doc_name: "+str(document_name))
+        docs = []
+        if not path and not document_name and not document_id:
             for locale in locales:
                 response = self.api.project_add_target(self.project_id, locale, due_date) if not to_delete \
                     else self.api.project_delete_target(self.project_id, locale)
@@ -258,30 +294,33 @@ class Action:
             if change_db_entry:
                 for document_id in document_ids:
                     self._target_action_db(to_delete, locales, document_id)
+        elif path:
+            docs = self.get_docs_in_path(path)
         else:
             # todo: document name or file name? since file name will be relative to root
             # todo: clean this code up some
             if not document_id:
                 entry = self.doc_manager.get_doc_by_prop('name', document_name)
-                try:
-                    document_id = entry['id']
-                except TypeError:
+                if not entry:
                     logger.error('Document name specified for target doesn\'t exist: {0}'.format(document_name))
                     return
                     # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
             if not document_name:
                 entry = self.doc_manager.get_doc_by_prop('id', document_id)
-                try:
-                    document_name = entry['name']
-                except TypeError:
+                if not entry:
                     logger.error('Document specified for target doesn\'t exist: {0}'.format(document_id))
                     return
+            docs.append(entry)
+        # print("docs: "+str(docs))
+        for entry in docs:
+            document_id = entry['id']
+            document_name = entry['file_name']
             for locale in locales:
                 response = self.api.document_add_target(document_id, locale, workflow, due_date) if not to_delete \
                     else self.api.document_delete_target(document_id, locale)
                 if response.status_code != expected_code:
-                    raise_error(response.json(), '{message} {locale} for document'.format(message=failure_message,
-                                                                                          locale=locale), True)
+                    raise_error(response.json(), '{message} {locale} for document {name}'.format(message=failure_message,
+                                                                                          locale=locale,name=document_name), True)
                     change_db_entry = False
                     continue
                 logger.info('{message} {locale} for document {name}'.format(message=info_message,
@@ -295,24 +334,43 @@ class Action:
         titles = []
         locales = []
         entries = self.doc_manager.get_all_entries()
-        cwd = os.path.join(os.getcwd(), '')
         for entry in entries:
-            if entry['file_name'].startswith(cwd.replace(self.path, '')):
-                ids.append(entry['id'])
-                relative_path = entry['file_name'].replace(cwd.replace(self.path, ''), '')
-                titles.append(relative_path)
-                try:
-                    locales.append(entry['locales'])
-                except KeyError:
-                    locales.append(['none'])
+            # if entry['file_name'].startswith(cwd.replace(self.path, '')):
+            ids.append(entry['id'])
+            relative_path = self.norm_path(entry['file_name'])
+            titles.append(relative_path)
+            try:
+                locales.append(entry['locales'])
+            except KeyError:
+                locales.append(['none'])
         if not ids:
             print ('No local documents')
             return
-        print ('Local documents: id, file name, locales')
+        print ('Local documents:\tID\t\t File name\t\tLocales')
         for i in range(len(ids)):
             info = '{id} \t {title} \t\t {locales}'.format(id=ids[i], title=titles[i],
                                                            locales=', '.join(locale for locale in locales[i]))
             print (info)
+
+    def list_remote_action(self):
+        """ lists ids of all remote documents """
+        response = self.api.list_documents(self.project_id)
+        if response.status_code == 204:
+            print("No documents to report")
+            return
+        elif response.status_code != 200:
+            if response.json():
+                raise_error(response.json(), "Failed to get status of documents", True)
+            else:
+                raise_error("", "Failed to get status of documents", True)
+        else:
+            print ('Remote documents: id, document name')
+            for entry in response.json()['entities']:
+                title = entry['entities'][1]['properties']['title'].replace("Status of ", "")
+                id = entry['entities'][1]['properties']['id']
+                info = '{id} \t {title}'.format(id=id, title=title)
+                print (info)
+            return
 
     def list_workflow_action(self):
         response = self.api.list_workflows(self.community_id)
@@ -367,7 +425,7 @@ class Action:
         # print title + ': ' + str(progress) + '%'
         # for each doc id, also call /document/id/translation and get % of each locale
 
-    def print_detailed(self, doc_id):
+    def print_detailed(self, doc_id, doc_name):
         response = self.api.document_translation_status(doc_id)
         if response.status_code != 200:
             raise_error(response.json(), 'Failed to get detailed status of document', True, doc_id, doc_name)
@@ -384,63 +442,68 @@ class Action:
             # return detailed_status
 
     def status_action(self, **kwargs):
-        # detailed_status = {}
-        doc_name = None
-        if 'doc_name' in kwargs:
-            doc_name = kwargs['doc_name']
-        if 'all' in kwargs and kwargs['all']:
-            response = self.api.list_documents(self.project_id)
-            if response.status_code == 204:
-                print("No documents to report")
-                return
-            elif response.status_code != 200:
-                if response.json():
-                    raise_error(response.json(), "Failed to get status of documents", True)
-                else:
-                    raise_error("", "Failed to get status of documents", True)
-            else:
-                for entry in response.json()['entities']:
-                    title = entry['entities'][1]['properties']['title']
-                    progress = entry['entities'][1]['properties']['progress']
-                    self.print_status(title, progress)
-                    if 'detailed' in kwargs and kwargs['detailed']:
-                        self.print_detailed(entry['properties']['id'])
-                return
-        else:
-            if doc_name is not None:
-                entry = self.doc_manager.get_doc_by_prop('name', doc_name)
-                try:
-                    doc_ids = [entry['id']]
-                except TypeError:
-                    raise exceptions.ResourceNotFound("Document name specified for status doesn't exist: {0}".format(doc_name))
-            else:
-                doc_ids = self.doc_manager.get_doc_ids()
-            if not doc_ids:
-                print("No documents to report")
-                return
-        for doc_id in doc_ids:
-            response = self.api.document_status(doc_id)
-            if response.status_code != 200:
-                raise_error(response.json(), "Failed to get status of document", True)
-            else:
-                title = response.json()['properties']['title']
-                progress = response.json()['properties']['progress']
-                self.print_status(title, progress)
-            if 'detailed' in kwargs and kwargs['detailed']:
-                self.print_detailed(doc_id)
-
-    def download_by_name(self, document_name, locale_code, auto_format):
         try:
-            document_id = self.doc_manager.get_doc_by_prop('name', document_name)['id']
-        except TypeError:
-            logger.error("Document name specified for download doesn't exist: {0}".format(document_name))
-            return
-        self.download_action(document_id, locale_code, auto_format)
+            # detailed_status = {}
+            doc_name = None
+            if 'doc_name' in kwargs:
+                doc_name = kwargs['doc_name']
+            if 'all' in kwargs and kwargs['all']:
+                response = self.api.list_documents(self.project_id)
+                if response.status_code == 204:
+                    print("No documents to report")
+                    return
+                elif response.status_code != 200:
+                    if response.json():
+                        raise_error(response.json(), "Failed to get status of documents", True)
+                    else:
+                        raise_error("", "Failed to get status of documents", True)
+                else:
+                    for entry in response.json()['entities']:
+                        title = entry['entities'][1]['properties']['title']
+                        progress = entry['entities'][1]['properties']['progress']
+                        self.print_status(title, progress)
+                        if 'detailed' in kwargs and kwargs['detailed']:
+                            self.print_detailed(entry['properties']['id'], title)
+                    return
+            else:
+                if doc_name is not None:
+                    entry = self.doc_manager.get_doc_by_prop('name', doc_name)
+                    try:
+                        doc_ids = [entry['id']]
+                    except TypeError:
+                        raise exceptions.ResourceNotFound("Document name specified for status doesn't exist: {0}".format(doc_name))
+                else:
+                    doc_ids = self.doc_manager.get_doc_ids()
+                if not doc_ids:
+                    print("No documents to report")
+                    return
+            for doc_id in doc_ids:
+                response = self.api.document_status(doc_id)
+                if response.status_code != 200:
+                    raise_error(response.json(), "Failed to get status of document", True, doc_id)
+                else:
+                    title = response.json()['properties']['title']
+                    progress = response.json()['properties']['progress']
+                    self.print_status(title, progress)
+                if 'detailed' in kwargs and kwargs['detailed']:
+                    self.print_detailed(doc_id, title)
+        except requests.exceptions.ConnectionError:
+            logger.warning("Could not connect to Lingotek")
+            exit()
+
+    def download_by_path(self, file_path, locale_code, auto_format):
+        docs = self.get_docs_in_path(file_path)
+        for entry in docs:
+            self.download_action(entry['id'], locale_code, auto_format)
 
     def download_action(self, document_id, locale_code, auto_format, locale_ext=True):
         response = self.api.document_content(document_id, locale_code, auto_format)
         if response.status_code == 200:
             entry = self.doc_manager.get_doc_by_prop('id', document_id)
+            if self.download_dir and not '--same' in self.download_dir and not '--default' in self.download_dir:
+                download_path = self.download_dir
+            else:
+                download_path = self.path
             if not entry:
                 doc_info = self.api.get_document(document_id)
                 try:
@@ -455,15 +518,14 @@ class Action:
                     raise_error(doc_info.json(),
                                 'Something went wrong trying to download document: {0}'.format(document_id), True)
                     return
-                download_path = os.path.join(self.path, title)
+                download_path = os.path.join(download_path, title)
                 logger.info("Downloaded: {0}".format(title))
             else:
-                if not locale_code:
-                    logger.info("No target locales, downloading source instead.")
-                    locale_code = self.locale
                 file_name = entry['file_name']
-                download_dir = os.path.join(self.path, os.path.dirname(file_name))
-                base_name = os.path.basename(os.path.normpath(file_name))
+                base_name = os.path.basename(self.norm_path(file_name))
+                if not locale_code:
+                    logger.info("No target locales for "+file_name+". Downloading the source document instead.")
+                    locale_code = self.locale
                 if locale_ext:
                     name_parts = base_name.split('.')
                     if len(name_parts) > 1:
@@ -473,17 +535,18 @@ class Action:
                         downloaded_name = name_parts[0] + '.' + locale_code
                 else:
                     downloaded_name = base_name
-                download_path = os.path.join(download_dir, downloaded_name)
+                if '--same' in self.download_dir or '--default' in self.download_dir:
+                    download_path = os.path.dirname(file_name)
+                download_path = os.path.join(self.path,os.path.join(download_path, downloaded_name))
                 logger.info('Downloaded: {0} ({1} - {2})'.format(downloaded_name, base_name, locale_code))
                 self.doc_manager.update_document('downloaded', [locale_code], document_id)
-            if self.download_dir:
-                title = os.path.basename(os.path.normpath(download_path))
-                download_path = os.path.join(self.download_dir, title)
+
             with open(download_path, 'wb') as fh:
                 for chunk in response.iter_content(1024):
                     fh.write(chunk)
             return download_path
         else:
+            printResponseMessages(response)
             raise_error(response.json(), 'Failed to download content for id: {0}'.format(document_id), True)
 
     def pull_action(self, locale_code, auto_format):
@@ -501,34 +564,83 @@ class Action:
             for document_id in document_ids:
                 self.download_action(document_id, locale_code, auto_format)
 
-    def rm_action(self, file_name, **kwargs):
-        if not 'id' in kwargs or not kwargs['id']:
+    def rm_document(self, file_name, useID, force, doc_name=None):
+        doc = None
+        if not useID:
+            relative_path = self.norm_path(file_name)
+            doc = self.doc_manager.get_doc_by_prop('file_name', relative_path)
+            title = os.path.basename(self.norm_path(file_name))
+            # print("relative_path: "+relative_path)
             try:
-                entry = self.doc_manager.get_doc_by_prop('file_name', file_name)
-                #print ('entry :', entry)
-                document_id = entry['id']
-                #print ('id:', document_id)
-            except TypeError:            
-                logger.warning("Document name specified for remove doesn't exist locally: {0}".format(file_name))
+                doc = self.doc_manager.get_doc_by_prop('file_name', relative_path)
+                document_id = doc['id']
+            except TypeError: # Documents specified by name must be found in the local database to be removed.
+                logger.warning("Document name specified for remove isn't in the local database: {0}".format(relative_path))
                 return
                 # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
         else:
             document_id = file_name
             doc = self.doc_manager.get_doc_by_prop('id', document_id)
+            # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
             if doc:
                 file_name = doc['file_name']
-            else:
-                file_name = document_id
         response = self.api.document_delete(document_id)
         #print (response)
         if response.status_code != 204:            
             # raise_error(response.json(), "Failed to delete document {0}".format(document_name), True)
-            logger.error("Failed to delete document {0}".format(file_name))
+            logger.error("Failed to delete document {0} remotely".format(file_name))
         else:
-            logger.info("{0} has been deleted remotely.".format(file_name))
-            if 'force' in kwargs and kwargs['force']:               
-                self.delete_local(file_name, document_id)
-            self.doc_manager.remove_element(document_id)
+            if doc_name:
+                logger.info("{0} ({1}) has been deleted remotely.".format(doc_name, file_name))
+            else:
+                logger.info("{0} has been deleted remotely.".format(file_name))
+            if doc:
+                if force:               
+                    self.delete_local(file_name, document_id)
+                self.doc_manager.remove_element(document_id)
+
+    def rm_action(self, file_patterns, **kwargs):
+        matched_files = None
+        if 'force' in kwargs and kwargs['force']:
+            force = True
+        else:
+            force = False
+        if 'id' in kwargs and kwargs['id']:
+            useID = True
+        else:
+            useID = False
+        if 'all' in kwargs and kwargs['all']:
+            print("all selected")
+            if 'remote' in kwargs and kwargs['remote']:
+                response = self.api.list_documents(self.project_id)
+                if response.status_code == 204:
+                    print("No remote documents to remove")
+                    return
+                elif response.status_code != 200:
+                    if response.json():
+                        raise_error(response.json(), "Failed to get status of documents", True)
+                    else:
+                        raise_error("", "Failed to get status of documents", True)
+                    return
+                else:
+                    for entry in response.json()['entities']:
+                        id = entry['entities'][1]['properties']['id']
+                        doc_name = entry['properties']['name']
+                        self.rm_document(id, True, force, doc_name)
+                    return
+            else:
+                useID = False
+                matched_files = self.doc_manager.get_file_names()
+        elif not useID:
+            # use current working directory as root for files instead of project root
+            matched_files = get_files(file_patterns)
+        else:
+            matched_files = file_patterns
+        if matched_files is None:
+            raise exceptions.ResourceNotFound("Could not find the specified file/pattern")
+        for file_name in matched_files:
+            # title = os.path.basename(os.path.normpath(file_name)).split('.')[0]
+            self.rm_document(self.norm_path(file_name).replace(self.path,""), useID, force)
 
     def get_new_name(self, file_name, curr_path):
         i = 1
@@ -559,40 +671,46 @@ class Action:
             pass
         return locale_progress
 
-    def clean_action(self, force, dis_all, document_name):
+    def clean_action(self, force, dis_all, path):
         if dis_all:
             # disassociate everything
             self.doc_manager.clear_all()
             return
-
-        if document_name:
-            try:
-                entry = self.doc_manager.get_doc_by_prop('name', document_name)
-                document_id = entry['id']
-                self.doc_manager.remove_element(document_id)
-            except TypeError:
-                logger.warning("Document name specified for clean doesn't exist: {0}".format(document_name))
-            return
-
-        response = self.api.list_documents(self.project_id)
-        local_ids = self.doc_manager.get_doc_ids()
-        tms_doc_ids = []
-        if response.status_code == 200:
-            tms_documents = response.json()['entities']
-            for entity in tms_documents:
-                tms_doc_ids.append(entity['properties']['id'])
-        elif response.status_code == 204:
-            pass
+        locals_to_delete = []
+        if path:
+            files = get_files(path)
+            docs = self.doc_manager.get_file_names()
+            if len(files) > len(docs):
+                for file_name in docs:
+                    if file_name in files:
+                        entry = self.doc_manager.get_doc_by_prop('file_name', file_name)
+                        if entry:
+                            locals_to_delete.append(entry['id'])
+            else:
+                for file_name in files:
+                    entry = self.doc_manager.get_doc_by_prop('file_name', file_name)
+                    if entry:
+                        locals_to_delete.append(entry['id'])
         else:
-            raise_error(response.json(), 'Error trying to list documents in TMS for cleaning')
-        locals_to_delete = [x for x in local_ids if x not in tms_doc_ids]
+            response = self.api.list_documents(self.project_id)
+            local_ids = self.doc_manager.get_doc_ids()
+            tms_doc_ids = []
+            if response.status_code == 200:
+                tms_documents = response.json()['entities']
+                for entity in tms_documents:
+                    tms_doc_ids.append(entity['properties']['id'])
+            elif response.status_code == 204:
+                pass
+            else:
+                raise_error(response.json(), 'Error trying to list documents in TMS for cleaning')
+            locals_to_delete = [x for x in local_ids if x not in tms_doc_ids]
 
-        # check local files
-        db_entries = self.doc_manager.get_all_entries()
-        for entry in db_entries:
-            # if local file doesn't exist, remove entry
-            if not os.path.isfile(os.path.join(self.path, entry['file_name'])):
-                locals_to_delete.append(entry['id'])
+            # check local files
+            db_entries = self.doc_manager.get_all_entries()
+            for entry in db_entries:
+                # if local file doesn't exist, remove entry
+                if not os.path.isfile(os.path.join(self.path, entry['file_name'])):
+                    locals_to_delete.append(entry['id'])
 
         # remove entry for local doc -- possibly delete local file too?
         if locals_to_delete:
@@ -607,26 +725,39 @@ class Action:
                 self.doc_manager.remove_element(curr_id)
                 logger.info('Removing association for document {0}'.format(removed_title))
         else:
-            logger.info('Local documents already up-to-date with Lingotek cloud')
+            logger.info('Local documents already up-to-date with Lingotek Cloud')
             return
-        logger.info('Cleaned up associations between local documents and Lingotek cloud')
+        logger.info('Cleaned up associations between local documents and Lingotek Cloud')
 
     def delete_local(self, title, document_id, message=None):
-        #print('local delete:', title, document_id)
-        message = 'Removed local file {0}'.format(title) if not message else message
-        file_name = self.doc_manager.get_doc_by_prop('id', document_id)['file_name']        
+        # print('local delete:', title, document_id)
+        if not title:
+            title = document_id
+        message = 'Deleting local file {0}'.format(title) if not message else message
+        try:
+            file_name = self.doc_manager.get_doc_by_prop('id', document_id)['file_name']     
+        except TypeError:
+            logger.info('Document to remove not found in the local database')
+            return
         try:
             os.remove(os.path.join(self.path, file_name))
             logger.info(message)            
         except OSError:
             logger.info('Something went wrong trying to delete the local file.')
 
+    def delete_local_path(self, path, message=None):
+        path = self.norm_path(path)
+        message = 'Deleting local file {0}'.format(path) if not message else message
+        try:
+            os.remove(path)
+            logger.info(message)            
+        except OSError:
+            logger.info('Something went wrong trying to delete the local file.')
 
 def raise_error(json, error_message, is_warning=False, doc_id=None, file_name=None):
     try:
         error = json['messages'][0]
-        print("id: "+str(doc_id))
-        print("name: "+str(file_name))
+        file_name = file_name.replace("Status of ", "")
         if file_name is not None and doc_id is not None:
             error = error.replace(doc_id, file_name+" ("+doc_id+")")
         # Sometimes api returns vague errors like 'Unknown error'
@@ -660,8 +791,8 @@ def reinit(host, project_path, delete, reset):
         while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
             confirm = input(
                 "Are you sure you want to delete the current project? "
-                "This will also delete the project in your community. [y/N]: ")
-        # confirm if would like to delete existing folder
+                "This will also delete the project in your community. [y/n]: ")
+        # confirm if deleting existing folder
         if not confirm or confirm in ['n', 'N']:
             return False
         else:
@@ -705,18 +836,6 @@ def choice_mapper(info):
         for values in v:
             print ('({0}) {1} ({2})'.format(k, v[values], values))
     return mapper
-
-
-def get_import_ids(info):
-    mapper = choice_mapper(info)
-    chosen_indices = ['none-chosen']
-    while not set(chosen_indices) <= set(mapper.keys()):
-        choice = input('Which documents to import? (Separate indices by comma) ')
-        try:
-            chosen_indices = map(int, choice.split(','))
-        except ValueError:
-            print ('Some unexpected, non-integer value was included')
-    return [mapper[index].iterkeys().next() for index in chosen_indices]
 
 
 def display_choice(display_type, info):
@@ -831,7 +950,7 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
     if len(project_info) > 0:
         confirm = 'none'
         while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-            confirm = input('Would you like to use an existing Lingotek project? [y/N]:')
+            confirm = input('Would you like to use an existing Lingotek project? [y/n]:')
         if confirm and confirm in ['y', 'Y', 'yes', 'Yes']:
             project_id, project_name = display_choice('project', project_info)
             config_parser.set('main', 'project_id', project_id)
@@ -864,30 +983,47 @@ def find_conf(curr_path):
     else:
         return find_conf(os.path.abspath(os.path.join(curr_path, os.pardir)))
 
+def printResponseMessages(response):
+    for message in response.json()['messages']:
+        logger.info(message)
 
-def get_files(root, patterns):
+def get_files(patterns):
     """ gets all files matching pattern from root
         pattern supports any unix shell-style wildcards (not same as RE) """
-    matched_files = []
-    # print root
-    for pattern in patterns:
-        # check if pattern contains subdirectory
-        subdir_pat, fn_pat = os.path.split(pattern)
-        if not subdir_pat:
-            for path, subdirs, files in os.walk(root):
-                for fn in fnmatch.filter(files, pattern):
-                    matched_files.append(os.path.join(path, fn))
-        else:
-            for path, subdirs, files in os.walk(root):
-                # print os.path.split(path)
-                # subdir = os.path.split(path)[1]  # get current subdir
-                search_root = os.path.join(root, '')
-                subdir = path.replace(search_root, '')
-                # print subdir, subdir_pat
-                if fnmatch.fnmatch(subdir, subdir_pat):
-                    for fn in fnmatch.filter(files, fn_pat):
-                        matched_files.append(os.path.join(path, fn))
 
+    # root = os.getcwd()
+    if isinstance(patterns,str):
+        patterns = [patterns]
+    matched_files = []
+    for pattern in patterns:
+        path = os.path.abspath(pattern)
+        # check if pattern contains subdirectory
+        if os.path.exists(path):
+            if os.path.isdir(path):
+                for root, subdirs, files in os.walk(path):
+                    split_path = root.split('/')
+                    for file in files:
+                        # print(os.path.join(root, file))
+                        matched_files.append(os.path.join(root, file))
+            else:
+                matched_files.append(path)
+        else:
+            logger.info("File not found: "+pattern)
+        # subdir_pat, fn_pat = os.path.split(pattern)
+        # if not subdir_pat:
+        #     for path, subdirs, files in os.walk(root):
+        #         for fn in fnmatch.filter(files, pattern):
+        #             matched_files.append(os.path.join(path, fn))
+        # else:
+        #     for path, subdirs, files in os.walk(root):
+        #         # print os.path.split(path)
+        #         # subdir = os.path.split(path)[1]  # get current subdir
+        #         search_root = os.path.join(root, '')
+        #         subdir = path.replace(search_root, '')
+        #         # print subdir, subdir_pat
+        #         if fnmatch.fnmatch(subdir, subdir_pat):
+        #             for fn in fnmatch.filter(files, fn_pat):
+        #                 matched_files.append(os.path.join(path, fn))
     return matched_files
 
 
