@@ -106,7 +106,7 @@ def init(host, access_token, path, project_name, workflow_id, locale, delete, re
 @click.option('-l', '--locale', help='Change the default source locale for the project')
 @click.option('-w', '--workflow_id', help='Change the default workflow id for the project')
 @click.option('-d', '--download_folder',
-              help='Specify a folder for where downloaded translations should go')
+              help='Specify a folder for where downloaded translations should go. Enter -d --default or -d --same for target translations to be downloaded to the same folder as their corresponding source files.')
 @click.option('-f', '--watch_folder', type=click.Path(exists=True),
               help='Specify a folder to watch when running ltk watch; defaults to project root')
 @click.option('-t', '--target_locales', multiple=True,
