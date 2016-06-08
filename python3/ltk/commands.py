@@ -2,7 +2,7 @@ import click
 import sys
 python_version = sys.version
 if python_version[0] < '3':
-   print('Python 3 is required to run this version. See https://github.com/lingotek/filesystem-connectorgit for running other versions and troubleshooting.')
+   print('Python 3 is required to run this version of the Lingotek Filesystem connector.\n\nFor other versions and troubleshooting, see: https://github.com/lingotek/filesystem-connector')
 
    exit()
 from ltk import actions
@@ -65,7 +65,7 @@ def print_log(error):
 
 
 @click.group()
-@click.version_option(version=__version__, message='%(prog)s version %(version)s (Lingotek Client)')
+@click.version_option(version=__version__, message='%(prog)s version %(version)s (Lingotek Filesystem Connector - Python 2)')
 @click.option('-q', 'is_quiet', flag_value=True, help='Will only show warnings')
 @click.option('-v', 'verbosity_lvl', count=True, help='Show API calls. Use -vv for API responses.')
 def ltk(is_quiet, verbosity_lvl):

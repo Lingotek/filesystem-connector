@@ -59,7 +59,7 @@ def print_log(error):
 
 
 @click.group()
-@click.version_option(version=__version__, message='%(prog)s version %(version)s (Lingotek Client)')
+@click.version_option(version=__version__, message='%(prog)s version %(version)s (Lingotek Filesystem Connector - Python 2)')
 @click.option('-q', 'is_quiet', flag_value=True, help='will only show warnings')
 @click.option('-v', 'verbosity_lvl', count=True, help='show API calls. -vv for API responses.')
 def ltk(is_quiet, verbosity_lvl):
