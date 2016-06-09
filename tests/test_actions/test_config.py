@@ -22,8 +22,8 @@ class TestConfig(unittest.TestCase):
             sys.stdout = out
             self.action.config_action(None, None, None, None, [])
             info = out.getvalue()
-            assert 'access_token' in info
-            key_words = ['host: https://cms.lingotek.com', 'project id', 'community id', 'locale', 'workflow id']
+            assert 'Access_token' in info
+            key_words = ['Host: https://cms.lingotek.com', 'Project id', 'Community id', 'Locale', 'Workflow id']
             assert all(word in info for word in key_words)
         finally:
             sys.stdout = sys.__stdout__
@@ -38,14 +38,18 @@ class TestConfig(unittest.TestCase):
         assert self.action.workflow_id == new_workflow
 
     def test_add_download_folder(self):
-        download_folder = 'downloaded'
+        dirName = 'download'
+        os.mkdir(dirName)
+        download_folder = dirName
         self.action.config_action(None, None, download_folder, None, [])
+        os.rmdir(dirName)
         assert self.action.download_dir == download_folder
 
     def test_add_upload_folder(self):
         watch_folder = 'watching'
+        os.mkdir(watch_folder)
         self.action.config_action(None, None, None, watch_folder, [])
-        print ('self action watch dir', self.action.watch_dir)
+        os.rmdir(watch_folder)
         assert self.action.watch_dir == watch_folder
 
     def test_watch_locales_1(self):

@@ -1,14 +1,14 @@
 import click
-from ltk import actions
+import actions
 import os
-from ltk.exceptions import UninitializedError, ResourceNotFound, RequestFailedError, AlreadyExistsError
-from ltk.constants import LOG_FN, CONF_DIR
+from exceptions import UninitializedError, ResourceNotFound, RequestFailedError, AlreadyExistsError
+from constants import LOG_FN, CONF_DIR
 import logging
-from ltk.logger import logger, API_LOG_LEVEL, API_RESPONSE_LOG_LEVEL, CustomFormatter
+from logger import logger, API_LOG_LEVEL, API_RESPONSE_LOG_LEVEL, CustomFormatter
 import sys
 from ltk import __version__
-from ltk.watch import WatchAction
-from ltk.import_action import ImportAction
+from watch import WatchAction
+from import_action import ImportAction
 
 
 def abort_if_false(ctx, param, value):
@@ -50,18 +50,18 @@ def init_logger(path):
 
 def print_log(error):
     """
-    Prints the error before logger is initialized
+    prints the error before logger is initialized
     """
     if not len(logger.handlers):
-        print ('Error: {0}'.format(error))
+        print 'Error: {0}'.format(error)
         sys.exit()
     return
 
 
 @click.group()
-@click.version_option(version=__version__, message='%(prog)s version %(version)s (Lingotek Client)')
-@click.option('-q', 'is_quiet', flag_value=True, help='Will only show warnings')
-@click.option('-v', 'verbosity_lvl', count=True, help='Show API calls. Use -vv for API responses.')
+@click.version_option(version=__version__, message='%(prog)s version %(version)s (Lingotek Filesystem Connector - Python 2)')
+@click.option('-q', 'is_quiet', flag_value=True, help='will only show warnings')
+@click.option('-v', 'verbosity_lvl', count=True, help='show API calls. -vv for API responses.')
 def ltk(is_quiet, verbosity_lvl):
     global quiet, verbosity
     quiet = is_quiet
@@ -69,25 +69,25 @@ def ltk(is_quiet, verbosity_lvl):
 
 
 @ltk.command()
-@click.option('--access_token', help='Your access token')
+@click.option('--access_token', help='your access token')
 @click.option('--host', type=click.Choice(['myaccount.lingotek.com', 'cms.lingotek.com']), default='cms.lingotek.com',
-              help='Environment: myaccount for production, cms for sandbox; the default is sandbox')
+              help='environment: myaccount for production, cms for sandbox; default is sandbox')
 # @click.option('--host', help='host')
 @click.option('--path', type=click.Path(exists=True),
-              help='The path to the project directory to be initialized; defaults to the current directory')
-@click.option('-n', '--project_name', help='The preferred project name, defaults to the current directory name')
+              help='the path to the project directory to be initialized, defaults to current directory')
+@click.option('-n', '--project_name', help='the preferred project name, defaults to current directory name')
 @click.option('-w', '--workflow_id', default='c675bd20-0688-11e2-892e-0800200c9a66',
-              help='The id of the workflow to use for this project; defaults to machine translate only.')
-@click.option('-l', '--locale', default='en_US', help='The default source locale for the project; defaults to en_US')
+              help='the id of the workflow to use for this project, defaults to machine translate only.')
+@click.option('-l', '--locale', default='en_US', help='the default source locale for the project; defaults to en_US')
 @click.option('-d', '--delete', flag_value=True,  # expose_value=False, callback=abort_if_false,
               # prompt='Are you sure you want to delete the current project remotely and re-initialize? '
               #        'Use the -c flag if you only want to change the project.',
-              help='Delete the current project remotely and re-initialize')
+              help='delete the current project remotely and re-initialize')
 # todo add a 'change' option so don't delete remote project
 # @click.option('-c', '--change', flag_value=True, help='Change the Lingotek project. ')
-@click.option('--reset', flag_value=True, help='Re-authorize and reset any stored access tokens')
+@click.option('--reset', flag_value=True, help='re-authorize and reset any stored access tokens')
 def init(host, access_token, path, project_name, workflow_id, locale, delete, reset):
-    """ Connects a local project to Lingotek """
+    """ connects a local project to Lingotek """
     try:
         host = 'https://' + host
         if not path:
@@ -103,18 +103,18 @@ def init(host, access_token, path, project_name, workflow_id, locale, delete, re
 
 
 @ltk.command()
-@click.option('-l', '--locale', help='Change the default source locale for the project')
-@click.option('-w', '--workflow_id', help='Change the default workflow id for the project')
+@click.option('-l', '--locale', help='change the default source locale for project')
+@click.option('-w', '--workflow_id', help='change the default workflow id for project')
 @click.option('-d', '--download_folder', type=click.Path(exists=True),
-              help='Specify a folder for where downloaded translations should go')
+              help='specify a folder for where downloaded translations should go')
 @click.option('-f', '--watch_folder', type=click.Path(exists=True),
-              help='Specify a folder to watch when running ltk watch; defaults to project root')
+              help='specify a folder to watch when running ltk watch, defaults to project root')
 @click.option('-t', '--target_locales', multiple=True,
-              help='Specify target locales that documents in watch_folder should be assigned; may either specify '
+              help='specify target locales that documents in watch_folder should be assigned, may either specify '
                    'with multiple -t flags (ex: -t locale -t locale) or give a list separated by commas and no spaces '
                    '(ex: -t locale,locale)')
 def config(locale, workflow_id, download_folder, watch_folder, target_locales):
-    """ View or change local configuration """
+    """ view or change local configuration """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
@@ -125,38 +125,38 @@ def config(locale, workflow_id, download_folder, watch_folder, target_locales):
         return
 
 
-@ltk.command(short_help="Adds content, could be one or multiple files specified by the Unix shell pattern")
+@ltk.command(short_help="adds content, could be one or multiple files specified by Unix shell pattern")
 @click.argument('file_names', required=True, nargs=-1)
-@click.option('-l', '--locale', help='If source locale is different from the default configuration. Use ltk list -l to see possible locales')
+@click.option('-l', '--locale', help='if source locale is different from the default configuration')
 @click.option('-f', '--format',
-              help='Format of file; if not specified, will use extension to detect; defaults to plaintext. Use ltk list -f to see possible formats')
+              help='format of file; if not specified, will use extension to detect; defaults to plaintext')
 @click.option('-s', '--srx', type=click.Path(exists=True), help='srx file')
 @click.option('-si', '--srx_id', help='srx id')
 @click.option('-i', '--its', type=click.Path(exists=True), help='its file')
 @click.option('-ii', '--its_id', help='its id')
-@click.option('-c', '--charset', help='File encoding')
+@click.option('-c', '--charset', help='file encoding')
 @click.option('-ff', '--fprm', type=click.Path(exists=True), help='fprm file')
 @click.option('-fi', '--fprm_id', help='fprm id')
 @click.option('-fs', '--fprm_subfilter', type=click.Path(exists=True), help='fprm subfilter file')
 @click.option('-fsi', '--fprm_subfilter_id', help='fprm subfilter id')
-@click.option('-v', '--vault_id', help='Save-to TM vault id')
-@click.option('-e', '--external_url', help='Source url')
-@click.option('-f', '--force', flag_value=True, help='Overwrite previously added file if the file has been modified')
-def add(file_names, **kwargs):
-    """ Adds content. Could be one or more files specified by a Unix shell pattern """
+@click.option('-v', '--vault_id', help='save-to TM vault id')
+@click.option('-e', '--external_url', help='source url')
+@click.option('-f', '--force', flag_value=True, help='overwrite previously added file if the file has been modified')
+def add(file_names, locale, **kwargs):
+    """ adds content, could be one or multiple files specified by Unix shell pattern """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
-        action.add_action(file_names, **kwargs)
+        action.add_action(locale, file_names, **kwargs)
     except (UninitializedError, RequestFailedError, ResourceNotFound, AlreadyExistsError) as e:
         print_log(e)
         logger.error(e)
         return
 
 
-@ltk.command(short_help="Sends updated content to Lingotek for documents that have been added")
+@ltk.command(short_help="sends updated content to Lingotek for documents that have been added")
 def push():
-    """ Sends updated content to Lingotek for documents that have been added """
+    """ sends updated content to Lingotek for documents that have been added """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
@@ -167,14 +167,14 @@ def push():
         return
 
 
-@ltk.command(short_help="Add targets to document(s) to start translation; defaults to the entire project. Use ltk list -l to see possible locales")
-@click.option('-n', '--doc_name', help='The name of the document; specify for one document')
-@click.option('-d', '--delete', 'to_delete', flag_value=True, help='Deletes a specified target locale')
-@click.option('--due_date', help='The due date of the translation')
-@click.option('-w', '--workflow', help='The workflow of the translation (do "ltk list -w" to see available workflows)')
+@ltk.command(short_help="add targets to document(s) to start translation, defaults to entire project")
+@click.option('-n', '--doc_name', help='the name of the document, specify for one document')
+@click.option('-d', '--delete', 'to_delete', flag_value=True, help='deletes a specified target locale')
+@click.option('--due_date', help='the due date of the translation')
+@click.option('-w', '--workflow', help='the workflow of the translation (do "ltk list -w" to see available workflows)')
 @click.argument('locales', required=True, nargs=-1)  # can have unlimited number of locales
 def request(doc_name, locales, to_delete, due_date, workflow):
-    """ Add targets to document(s) to start translation; defaults to the entire project. Use ltk list -l to see possible locales """
+    """ add targets to document(s) to start translation, defaults to entire project """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
@@ -187,14 +187,13 @@ def request(doc_name, locales, to_delete, due_date, workflow):
 
 # todo add a --all option to see all document ids once only show relative to cwd is implemented
 @ltk.command(name='list')
-@click.option('-d', '--documents', 'id_type', flag_value='document', help='List added documents')
-@click.option('-w', '--workflows', 'id_type', flag_value='workflow', help='List available workflows')
-@click.option('-l', '--locales', 'id_type', flag_value='locale', help='List supported locale codes')
-@click.option('-f', '--formats', 'id_type', flag_value='format', help='List supported formats')
-@click.option('-r', '--remote', 'id_type', flag_value='remote', help='List all project documents on Lingotek Cloud')
-@click.option('--filters', 'id_type', flag_value='filter', help='List default and custom filters')
+@click.option('-d', '--documents', 'id_type', flag_value='document', help='list added documents')
+@click.option('-w', '--workflows', 'id_type', flag_value='workflow', help='list available workflows')
+@click.option('-l', '--locales', 'id_type', flag_value='locale', help='list supported locale codes')
+@click.option('-f', '--formats', 'id_type', flag_value='format', help='list supported formats')
+@click.option('--filters', 'id_type', flag_value='filter', help='list default and custom filters')
 def list_ids(id_type):
-    """ Shows docs, workflows, locales, or formats """
+    """ shows docs, workflows, locales, or formats """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
@@ -206,27 +205,23 @@ def list_ids(id_type):
             action.list_format_action()
         elif id_type == 'filter':
             action.list_filter_action()
-        elif id_type == 'remote':
-            action.list_remote_action()
         else:
             action.list_ids_action()
-
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
         return
 
 
-@ltk.command(short_help="Gets the status of a specific document or all documents")
-@click.option('-n', '--doc_name', help='Specific document name to get status of')
-@click.option('-d', '--detailed', flag_value=True, help='Detailed status of each locale for the document')
-@click.option('-a', '--all', flag_value=True, help='List all project documents on Lingotek Cloud')
-def status(**kwargs):
-    """ Gets the status of a specific document or all documents """
+@ltk.command(short_help="gets the status of a specific document or all documents")
+@click.option('-n', '--doc_name', help='specific document name to get status of')
+@click.option('-d', '--detailed', flag_value=True, help='detailed status of each locale for document')
+def status(doc_name, detailed):
+    """ gets the status of a specific document or all documents """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
-        action.status_action(**kwargs)
+        action.status_action(detailed, doc_name)
     except (UninitializedError, ResourceNotFound) as e:
         print_log(e)
         logger.error(e)
@@ -234,11 +229,11 @@ def status(**kwargs):
 
 
 @ltk.command()
-@click.option('-a', '--auto_format', flag_value=True, help='Flag to auto apply formatting during download')
+@click.option('-a', '--auto_format', flag_value=True, help='flag to auto apply formatting during download')
 @click.argument('locale', required=True, nargs=1)
 @click.argument('document_names', required=True, nargs=-1)
 def download(auto_format, locale, document_names):
-    """ Downloads the translated content of document(s) """
+    """ downloads translated content of document(s) """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
@@ -251,10 +246,10 @@ def download(auto_format, locale, document_names):
 
 
 @ltk.command()
-@click.option('-a', '--auto_format', flag_value=True, help='Flag to auto apply formatting during download')
+@click.option('-a', '--auto_format', flag_value=True, help='flag to auto apply formatting during download')
 @click.argument('locales', nargs=-1)
 def pull(auto_format, locales):
-    """ Pulls all translations for added documents """
+    """ pulls all translations for added documents """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
@@ -269,25 +264,19 @@ def pull(auto_format, locales):
         return
 
 
-@ltk.command(short_help="Disassociates local doc(s) from Lingotek Cloud and deletes the remote copy")
-@click.argument('file_names', required=False, nargs=-1)
-@click.option('-i', '--id', flag_value=True, help='Delete documents with the specified ids on Lingotek Cloud')
-@click.option('-a', '--all', flag_value=True, help='Delete all documents from Lingotek Cloud that are found locally')
-@click.option('-r', '--remote', flag_value=True, help='When used with -a, deletes all documents from Lingotek Cloud for the current project')
-@click.option('-f', '--force', flag_value=True, help='Delete both local and remote files')
-def rm(file_names, **kwargs):
+@ltk.command(short_help="disassociate local doc(s) from Lingotek cloud and deletes remote copy")
+@click.argument('document_names', required=True, nargs=-1)
+@click.option('-f', '--force', flag_value=True, help='delete both local and remote files')
+def rm(document_names, force):
     """
-    Disassociates local doc(s) from Lingotek Cloud and deletes the remote copy.
-    If the remote copy should not be kept, please use ltk clean.
+    disassociate local doc(s) from Lingotek cloud and deletes remote copy.
+    if remote copy should not be kept, please use ltk clean
     """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
-        print(file_names)
-        if not file_names and not ('all' in kwargs and kwargs['all']):
-            logger.info("Usage: ltk rm [OPTIONS] FILE_NAMES...")
-            return
-        action.rm_action(file_names, **kwargs)
+        for name in document_names:
+            action.rm_action(name, force)
     except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
@@ -295,12 +284,12 @@ def rm(file_names, **kwargs):
 
 
 @ltk.command(name='import')
-@click.option('-a', '--all', 'import_all', flag_value=True, help='Import all documents from Lingotek Cloud')
-@click.option('-f', '--force', flag_value=True, help='Overwrites existing documents without prompt')
-@click.option('-p', '--path', type=click.Path(exists=True), help='Import documents to a specified path')
+@click.option('-a', '--all', 'import_all', flag_value=True, help='import all documents from Lingotek Cloud')
+@click.option('-f', '--force', flag_value=True, help='overwrites existing documents without prompt')
+@click.option('-p', '--path', type=click.Path(exists=True), help='import documents to a specified path')
 def import_command(import_all, force, path):
     """
-    Import documents from Lingotek Cloud, automatically downloading to the project root
+    import documents from Lingotek cloud, automatically downloaded to project root
     """
     # todo import should show all documents
     # add a force option so can import all force -- overwrites all existing documents without prompting
@@ -319,15 +308,15 @@ def import_command(import_all, force, path):
         return
 
 
-@ltk.command(short_help="Cleans up the associations between local documents and documents in Lingotek")
-@click.option('-a', '--all', 'dis_all', flag_value=True, help='Removes all associations between local and remote')
-@click.option('-n', '--doc_name', help='Removes association of the specified document name')
-@click.option('-f', '--force', flag_value=True, help='Deletes local documents that no longer exists in Lingotek')
+@ltk.command(short_help="cleans up the associations between local documents and documents in Lingotek")
+@click.option('-a', '--all', 'dis_all', flag_value=True, help='removes all associations between local and remote')
+@click.option('-n', '--doc_name', help='removes association of specified document name')
+@click.option('-f', '--force', flag_value=True, help='deletes local documents that no longer exists in Lingotek')
 def clean(force, dis_all, doc_name):
     """
-    Cleans up the associations between local documents and documents in Lingotek.
-    By default, checks that local documents and remote documents line up.
-    Use different options for different use cases
+    cleans up the associations between local documents and documents in Lingotek.
+    by default, checks that local documents and remote documents line up.
+    use different options for different use cases
     """
     try:
         action = actions.Action(os.getcwd())
@@ -339,12 +328,12 @@ def clean(force, dis_all, doc_name):
         return
 
 
-@ltk.command(short_help="Watches local and remote files")
-@click.option('-p', '--path', type=click.Path(exists=True), help='Specify a folder to watch; defaults to project path')
-@click.option('--ignore', multiple=True, help='Specify types of files to ignore')
-@click.option('--auto', 'delimiter', help='Automatically detects locale from the file name; specify locale delimiter')
+@ltk.command(short_help="watches local and remote files")
+@click.option('-p', '--path', type=click.Path(exists=True), help='specify a folder to watch, defaults to project path')
+@click.option('--ignore', multiple=True, help='specify types of files to ignore')
+@click.option('--auto', 'delimiter', help='automatically detects locale from the file name, specify locale delimiter')
 @click.option('-t', '--timeout', type=click.INT, default=60,
-              help='The amount of time watch will sleep between polls, in seconds. Defaults to 1 minute')
+              help='the amount of time watch will sleep between polls, in seconds. Defaults to 1 minute')
 def watch(path, ignore, delimiter, timeout):
     """
     Watches local files added or imported by ltk, and sends a PATCH when a document is changed.

@@ -123,7 +123,7 @@ class WatchAction(Action):
             # only add or update the document if it's not a hidden document and it's a new file
             try:
                 if self.doc_manager.is_doc_new(relative_path):
-                    self.add_document(self.locale, file_path, title)
+                    self.add_document(file_path, title, locale=self.locale)
                 elif self.doc_manager.is_doc_modified(relative_path, self.path):
                     self.update_content(relative_path)
                 else:
@@ -180,7 +180,7 @@ class WatchAction(Action):
             locales = self.watch_locales
         return locales
 
-    def watch_add_target(self, title, document_id):
+    def watch_add_target(self, file_name, document_id):
         # print "watching add target, watch queue:", self.watch_queue
         if document_id not in self.watch_queue:
             self.watch_queue.append(document_id)
@@ -194,7 +194,7 @@ class WatchAction(Action):
             #     for target in locales_to_add:
             #         printStr += target+","
             # print(printStr)
-            self.target_action(title, locales_to_add, None, None, None, document_id)
+            self.target_action(file_name, file_name, locales_to_add, None, None, None, document_id)
             self.watch_queue.remove(document_id)
 
     def process_queue(self):
@@ -235,15 +235,22 @@ class WatchAction(Action):
                     else:
                         self.download_action(doc_id, locale, False)
 
+    def complete_path(self, file_location):
+        # print("self.path: "+self.path)
+        # print("file_location: "+file_location)
+        # print("abs file_location: "+os.path.abspath(file_location))
+        abspath=os.path.abspath(file_location)
+        # norm_path = os.path.abspath(file_location).replace(self.path, '')
+        return abspath
+
     def watch_action(self, watch_path, ignore, delimiter, timeout):
         # print self.path
         # print("timeout: " + str(timeout))
         if not watch_path and not self.watch_dir:
             watch_path = self.path
-        elif watch_path:
-            watch_path = os.path.join(self.path, watch_path)
-        else:
+        elif not watch_path:
             watch_path = self.watch_dir
+        watch_path = self.complete_path(watch_path)
         self.ignore_ext.extend(ignore)
         self.locale_delimiter = delimiter
         print ("Watching for updates in: {0}".format(watch_path))

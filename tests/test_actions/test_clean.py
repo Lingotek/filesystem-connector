@@ -1,5 +1,6 @@
 from tests.test_actions import *
 from ltk.actions import Action
+import subprocess
 
 import unittest
 
@@ -19,7 +20,7 @@ class TestClean(unittest.TestCase):
         self.forced = []
         for fn in self.files:
             create_txt_file(fn)
-        self.action.add_action(None, ['sample*.txt'], force=True)
+        subprocess.call(['ltk','add','-f','sample*.txt'])
         self.entries = self.action.doc_manager.get_all_entries()
         for entry in self.entries:
             assert poll_doc(self.action, entry['id'])
@@ -60,6 +61,7 @@ class TestClean(unittest.TestCase):
             self.action.api.document_delete(entry['id'])
             self.forced.append(entry['file_name'])
 
+    # Test that a specified file is disassociated
     def test_clean_single(self):
         delete_id = self.entries[0]['id']
         doc_name = self.entries[0]['file_name']

@@ -21,7 +21,7 @@ class TestImport(unittest.TestCase):
         self.doc_ids = []
         for fn in self.files:
             title = os.path.basename(os.path.normpath(fn))
-            response = self.action.api.add_document(fn, self.action.locale, self.action.project_id, title)
+            response = self.action.api.add_document(self.action.locale, fn, self.action.project_id, title)
             assert response.status_code == 202
             self.doc_ids.append(response.json()['properties']['id'])
         for doc_id in self.doc_ids:
