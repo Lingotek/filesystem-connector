@@ -153,11 +153,15 @@ class Action:
                 logger.warning('Error: Invalid value for "-d" / "--download_folder": Path "'+download_folder+'" does not exist.')
                 return
         if watch_folder:
-            # watch_path = os.path.join(self.path, watch_folder)
-            watch_path = self.norm_path(watch_folder)
-            self.watch_dir = watch_path
-            log_info = 'Set watch folder to {0}'.format(watch_path)
-            self.update_config_file('watch_folder', watch_path, conf_parser, config_file_name, log_info)
+            if os.path.exists(os.path.abspath(watch_folder)) or "--default" in watch_folder:
+                # watch_path = os.path.join(self.path, watch_folder)
+                watch_path = self.norm_path(watch_folder)
+                self.watch_dir = watch_path
+                log_info = 'Set watch folder to {0}'.format(watch_path)
+                self.update_config_file('watch_folder', watch_path, conf_parser, config_file_name, log_info)
+            else:
+                logger.warning('Error: Invalid value for "-f" / "--watch_folder": Path "'+watch_folder+'" does not exist.')
+                return
         if target_locales:
             log_info = 'Added target locales: {} for watch folder'.format(
                 ', '.join(target for target in target_locales))
@@ -235,7 +239,6 @@ class Action:
             logger.info('Updated ' + entry['name'])
             self._update_document(entry['file_name'])
         if not updated:
-            print('All documents up-to-date with Lingotek Cloud. ')
             logger.info('All documents up-to-date with Lingotek Cloud. ')
 
     def update_document_action(self, file_name, title=None, **kwargs):
@@ -565,6 +568,7 @@ class Action:
                 self.download_action(document_id, locale_code, auto_format)
 
     def rm_document(self, file_name, useID, force, doc_name=None):
+        print("file_name: "+file_name)
         doc = None
         if not useID:
             relative_path = self.norm_path(file_name)
@@ -641,6 +645,7 @@ class Action:
         for file_name in matched_files:
             # title = os.path.basename(os.path.normpath(file_name)).split('.')[0]
             self.rm_document(self.norm_path(file_name).replace(self.path,""), useID, force)
+
 
     def get_new_name(self, file_name, curr_path):
         i = 1

@@ -64,6 +64,7 @@ class WatchAction(Action):
         self.locale_delimiter = None
         self.ignore_ext = []  # file types to ignore as specified by the user
         self.detected_locales = {}  # dict to keep track of detected locales
+        self.watch_folder = True
         # if remote:  # poll lingotek cloud periodically if this option enabled
         # self.remote_thread = threading.Thread(target=self.poll_remote(), args=())
         # self.remote_thread.daemon = True
@@ -112,7 +113,7 @@ class WatchAction(Action):
         # add action
         file_path = event.src_path
         # if it's a hidden document, don't do anything 
-        if not is_hidden_file(file_path):
+        if not is_hidden_file(file_path) and self.watch_folder:
             relative_path = file_path.replace(self.path, '')
             title = os.path.basename(os.path.normpath(file_path))
             curr_ext = os.path.splitext(file_path)[1]
@@ -246,14 +247,18 @@ class WatchAction(Action):
     def watch_action(self, watch_path, ignore, delimiter, timeout):
         # print self.path
         # print("timeout: " + str(timeout))
-        if not watch_path and not self.watch_dir:
+        if not watch_path and not self.watch_dir or "--default" in self.watch_dir:
             watch_path = self.path
+            self.watch_folder = False
         elif not watch_path:
             watch_path = self.watch_dir
-        watch_path = self.complete_path(watch_path)
+        if self.watch_folder:
+            watch_path = self.complete_path(watch_path)
+            print ("Watching for updates in: {0}".format(watch_path))
+        else:
+            print ("Watching for updates to added documents")
         self.ignore_ext.extend(ignore)
         self.locale_delimiter = delimiter
-        print ("Watching for updates in: {0}".format(watch_path))
         try:
             self.observer.schedule(self.handler, path=watch_path, recursive=True)
             self.observer.start()
