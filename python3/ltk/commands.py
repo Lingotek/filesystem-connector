@@ -241,15 +241,16 @@ def status(**kwargs):
 
 @ltk.command()
 @click.option('-a', '--auto_format', flag_value=True, help='Flag to auto apply formatting during download')
-@click.argument('locale', required=True, nargs=1)
+@click.argument('locales', required=True, nargs=1)
 @click.argument('file_names', type=click.Path(exists=True), required=True, nargs=-1)
-def download(auto_format, locale, file_names):
-    """ Downloads the translated content of document(s) for the specified locale """
+def download(auto_format, locales, file_names):
+    """ Downloads the translated content of document(s) for the specified locales. For multiple locales give a list separated by commas and no spaces
+    (ex: en_US,en_GB)"""
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
         for name in file_names:
-            action.download_by_path(name, locale, auto_format)
+            action.download_by_path(name, locales, auto_format)
     except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
@@ -277,7 +278,7 @@ def pull(auto_format, locales):
 
 @ltk.command(short_help="Disassociates local doc(s) from Lingotek Cloud and deletes the remote copy")
 @click.argument('file_names', required=False, nargs=-1)
-@click.option('-i', '--id', flag_value=True, help='Delete documents with the specified ids on Lingotek Cloud')
+@click.option('-i', '--id', flag_value=True, help='Delete documents with the specified ids (instead of file names) on Lingotek Cloud')
 @click.option('-a', '--all', flag_value=True, help='Delete all documents from Lingotek Cloud that are found locally')
 @click.option('-r', '--remote', flag_value=True, help='When used with -a, deletes all documents from Lingotek Cloud for the current project')
 @click.option('-f', '--force', flag_value=True, help='Delete both local and remote files')
@@ -357,9 +358,9 @@ def watch(path, ignore, delimiter, timeout):
     Also watches remote files, and automatically downloads finished translations.
     """
     try:
-        action = WatchAction(os.getcwd())
+        action = WatchAction(os.getcwd(), timeout)
         init_logger(action.path)
-        action.watch_action(path, ignore, delimiter, timeout)
+        action.watch_action(path, ignore, delimiter)
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)

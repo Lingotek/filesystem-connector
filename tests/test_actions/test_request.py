@@ -37,34 +37,34 @@ class TestRequest(unittest.TestCase):
 
     def test_request_one_locale_doc(self):
         locales = ['ja_JP']
-        self.action.target_action(self.first_doc, locales, False, None, None)
+        self.action.target_action(self.first_doc, None, locales, False, None, None)
         assert self.check_locales_exist([self.first_doc], locales)
 
     def test_request_mult_locale_doc(self):
         locales = ['ja_JP', 'zh_CN', 'es_MX']
-        self.action.target_action(self.first_doc, locales, False, None, None)
+        self.action.target_action(self.first_doc, None, locales, False, None, None)
         assert self.check_locales_exist([self.first_doc], locales)
 
     def test_request_one_locale_proj(self):
         locales = ['ja_JP']
-        self.action.target_action(None, locales, False, None, None)
+        self.action.target_action(None, None, locales, False, None, None)
         assert self.check_locales_exist(self.files, locales)
 
     def test_request_mult_locale_proj(self):
         locales = ['ja_JP', 'zh_CN', 'es_MX']
-        self.action.target_action(None, locales, False, None, None)
+        self.action.target_action(None, None, locales, False, None, None)
         assert self.check_locales_exist(self.files, locales)
 
     def test_delete_locale_doc(self):
         locales = ['ja_JP']
-        self.action.target_action(self.first_doc, locales, False, None, None)
+        self.action.target_action(self.first_doc, None, locales, False, None, None)
         assert self.check_locales_exist([self.first_doc], locales)
-        self.action.target_action(self.first_doc, locales, True, None, None)
+        self.action.target_action(self.first_doc, None, locales, True, None, None)
         assert not self.check_locales_exist([self.first_doc], locales)
 
     def test_delete_locale_proj(self):
         locales = ['ja_JP']
-        self.action.target_action(None, locales, False, None, None)
+        self.action.target_action(None, None, locales, False, None, None)
         assert self.check_locales_exist([self.first_doc], locales)
-        self.action.target_action(None, locales, True, None, None)
+        self.action.target_action(None, None, locales, True, None, None)
         assert not self.check_locales_exist(self.files, locales)

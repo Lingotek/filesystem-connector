@@ -39,7 +39,7 @@ class TestStatusAction(unittest.TestCase):
     def test_status_detailed(self):
         # see that there are targets
         # request translations
-        self.action.target_action(self.file_name, self.targets, False, None, None)
+        self.action.target_action(None, self.file_name, self.targets, False, None, None)
         try:
             out = StringIO()
             sys.stdout = out

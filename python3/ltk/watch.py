@@ -1,7 +1,7 @@
 import ctypes
 from ltk.actions import Action
 from ltk.logger import logger
-from ltk.utils import map_locale
+from ltk.utils import map_locale, restart
 import time
 import requests
 from requests.exceptions import ConnectionError
@@ -10,12 +10,6 @@ import sys
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEvent
 from ltk.watchhandler import WatchHandler
-
-def restart():
-    """Restarts the program. Used after exceptions. Otherwise, watch doesn't work anymore."""
-    print("Restarting watch")
-    python = sys.executable
-    os.execl(python, python, * sys.argv)
 
 # retry decorator to retry connections
 def retry(logger, timeout=5, exec_type=None):
@@ -53,8 +47,8 @@ def has_hidden_attribute(file_path):
 
 class WatchAction(Action):
     # def __init__(self, path, remote=False):
-    def __init__(self, path):
-        Action.__init__(self, path)
+    def __init__(self, path, timeout):
+        Action.__init__(self, path, True, timeout)
         self.observer = Observer()  # watchdog observer that will watch the files
         self.handler = WatchHandler()
         self.handler.on_modified = self._on_modified
@@ -65,6 +59,7 @@ class WatchAction(Action):
         self.ignore_ext = []  # file types to ignore as specified by the user
         self.detected_locales = {}  # dict to keep track of detected locales
         self.watch_folder = True
+        self.timeout = timeout
         # if remote:  # poll lingotek cloud periodically if this option enabled
         # self.remote_thread = threading.Thread(target=self.poll_remote(), args=())
         # self.remote_thread.daemon = True
@@ -102,7 +97,7 @@ class WatchAction(Action):
             except KeyboardInterrupt:
                 self.observer.stop()
             except ConnectionError:
-                print("Could not connect to remote.")
+                print("Could not connect to remote server.")
                 restart()
             except ValueError:
                 print(sys.exc_info()[1])
@@ -132,7 +127,7 @@ class WatchAction(Action):
             except KeyboardInterrupt:
                 self.observer.stop()
             except ConnectionError:
-                print("Could not connect to remote.")
+                print("Could not connect to remote server.")
                 restart()
             except ValueError:
                 print(sys.exc_info()[1])
@@ -245,9 +240,9 @@ class WatchAction(Action):
         # norm_path = os.path.abspath(file_location).replace(self.path, '')
         return abspath
 
-    def watch_action(self, watch_path, ignore, delimiter, timeout):
+    def watch_action(self, watch_path, ignore, delimiter):
         # print self.path
-        # print("timeout: " + str(timeout))
+        # print("timeout: " + str(self.timeout))
         if not watch_path and not self.watch_dir or "--default" in self.watch_dir:
             watch_path = self.path
             self.watch_folder = False
@@ -271,7 +266,7 @@ class WatchAction(Action):
                 # print 'Watching....'
                 self.poll_remote()
                 self.process_queue()
-                time.sleep(timeout)
+                time.sleep(self.timeout)
         except KeyboardInterrupt:
             self.observer.stop()
 

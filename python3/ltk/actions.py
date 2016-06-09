@@ -13,7 +13,7 @@ from ltk.logger import logger
 
 
 class Action:
-    def __init__(self, path):
+    def __init__(self, path, watch=False, timeout=5):
         self.host = ''
         self.access_token = ''
         self.project_id = ''
@@ -28,8 +28,10 @@ class Action:
         if not self._is_initialized():
             raise exceptions.UninitializedError("This project is not initialized. Please run init command.")
         self._initialize_self()
-        self.api = ApiCalls(self.host, self.access_token)
+        self.watch = watch
         self.doc_manager = DocumentManager(self.path)
+        self.timeout = timeout
+        self.api = ApiCalls(self.host, self.access_token, self.watch, self.timeout)
 
     def _is_initialized(self):
         actual_path = find_conf(self.path)
@@ -164,7 +166,7 @@ class Action:
                 return
         if target_locales:
             log_info = 'Added target locales: {} for watch folder'.format(
-                ', '.join(target for target in target_locales))
+                ','.join(target for target in target_locales))
             self.watch_locales = set(target_locales)
             target_locales = ','.join(target for target in target_locales)
             self.update_config_file('watch_locales', target_locales, conf_parser, config_file_name, log_info)
@@ -238,8 +240,10 @@ class Action:
             updated = True
             logger.info('Updated ' + entry['name'])
             self._update_document(entry['file_name'])
+            return True
         if not updated:
             logger.info('All documents up-to-date with Lingotek Cloud. ')
+            return False
 
     def update_document_action(self, file_name, title=None, **kwargs):
         relative_path = self.norm_path(file_name)
@@ -494,10 +498,15 @@ class Action:
             logger.warning("Could not connect to Lingotek")
             exit()
 
-    def download_by_path(self, file_path, locale_code, auto_format):
+    def download_by_path(self, file_path, locale_codes, auto_format):
         docs = self.get_docs_in_path(file_path)
         for entry in docs:
-            self.download_action(entry['id'], locale_code, auto_format)
+            self.download_locales(entry['id'], locale_codes, auto_format)
+
+    def download_locales(self, document_id, locale_codes, auto_format, locale_ext=True):
+        locales = locale_codes.split(",")
+        for locale_code in locales:
+            self.download_action(document_id, locale_code, auto_format)
 
     def download_action(self, document_id, locale_code, auto_format, locale_ext=True):
         response = self.api.document_content(document_id, locale_code, auto_format)
@@ -568,7 +577,6 @@ class Action:
                 self.download_action(document_id, locale_code, auto_format)
 
     def rm_document(self, file_name, useID, force, doc_name=None):
-        print("file_name: "+file_name)
         doc = None
         if not useID:
             relative_path = self.norm_path(file_name)
@@ -605,6 +613,8 @@ class Action:
 
     def rm_action(self, file_patterns, **kwargs):
         matched_files = None
+        if isinstance(file_patterns,str):
+            file_patterns = [file_patterns]
         if 'force' in kwargs and kwargs['force']:
             force = True
         else:
@@ -614,7 +624,6 @@ class Action:
         else:
             useID = False
         if 'all' in kwargs and kwargs['all']:
-            print("all selected")
             if 'remote' in kwargs and kwargs['remote']:
                 response = self.api.list_documents(self.project_id)
                 if response.status_code == 204:
@@ -895,9 +904,9 @@ def create_global(access_token):
 
 def init_action(host, access_token, project_path, folder_name, workflow_id, locale, delete, reset):
     # check if Lingotek directory already exists
-    print("init_action")
+    # print("init_action")
     to_init = reinit(host, project_path, delete, reset)
-    print("to_init: "+str(to_init))
+    # print("to_init: "+str(to_init))
     if not to_init:
         return
     elif to_init is not True:
@@ -911,7 +920,7 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
 
             access_token = run_oauth(host)
             ran_oauth = True
-    print("access_token: "+str(access_token))
+    # print("access_token: "+str(access_token))
     if ran_oauth:
         # create or overwrite global file
         create_global(access_token)
@@ -1001,9 +1010,11 @@ def get_files(patterns):
     if isinstance(patterns,str):
         patterns = [patterns]
     allPatterns = []
+    # print("patterns: "+str(patterns))
     for pattern in patterns:
         allPatterns.extend(getRegexFiles(pattern,cwd))
     matched_files = []
+    # print("all patterns: "+str(allPatterns))
     for pattern in allPatterns:
         path = os.path.abspath(pattern)
         # check if pattern contains subdirectory
@@ -1036,6 +1047,7 @@ def get_files(patterns):
     return matched_files
 
 def getRegexFiles(pattern,path):
+    pattern = os.path.basename(pattern)
     matched_files = []
     for path, subdirs, files in os.walk(path):
         for fn in fnmatch.filter(files, pattern):

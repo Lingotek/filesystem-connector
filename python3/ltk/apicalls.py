@@ -1,15 +1,25 @@
 import requests
 from ltk.api_uri import API_URI
+from ltk.utils import restart
 import ltk.utils
 from ltk.exceptions import RequestFailedError,ConnectionFailed
 from ltk.logger import logger
-
+import sys, os
 
 class ApiCalls:
-    def __init__(self, host, access_token):
+    def __init__(self, host, access_token, watch=False, timeout=5):
         self.host = host
         self.headers = {'Authorization': 'bearer ' + access_token}
+        self.watch = watch
+        self.timeout = timeout
         # self.cert = ('lingotek.crt', 'lingotek.key')
+
+    def handleError(self):
+        if self.watch:
+            logger.warning("Could not connect to Lingotek")
+            restart("Restarting watch", self.timeout)
+        else:
+            raise ConnectionFailed("Could not connect to Lingotek")
 
     def list_communities(self):
         """ gets the communities that a user is in """
@@ -19,7 +29,7 @@ class ApiCalls:
             r = requests.get(self.host + uri, headers=self.headers, params=payload)
             log_api('GET', uri, r)
         except requests.exceptions.ConnectionError:
-                    raise ConnectionFailed("Could not connect to Lingotek")
+            self.handleError()
         return r
 
     def list_projects(self, community_id):
@@ -30,7 +40,7 @@ class ApiCalls:
             r = requests.get(self.host + uri, headers=self.headers, params=payload)
             log_api('GET', uri, r)
         except requests.exceptions.ConnectionError:
-                    raise ConnectionFailed("Could not connect to Lingotek")
+            self.handleError()
         return r
 
     def add_project(self, project_name, community_id, workflow_id):
@@ -41,7 +51,7 @@ class ApiCalls:
             r = requests.post(self.host + uri, headers=self.headers, data=payload)
             log_api('POST', uri, r)
         except requests.exceptions.ConnectionError:
-                    raise ConnectionFailed("Could not connect to Lingotek")
+            self.handleError()
         return r
 
     def patch_project(self, project_id, workflow_id):
@@ -54,7 +64,7 @@ class ApiCalls:
             r = requests.patch(self.host + uri, headers=self.headers, data=payload)
             log_api('PATCH', uri, r)
         except requests.exceptions.ConnectionError:
-                    raise ConnectionFailed("Could not connect to Lingotek")
+            self.handleError()
         return r
 
     def project_add_target(self, project_id, locale, due_date):
@@ -67,7 +77,7 @@ class ApiCalls:
             r = requests.post(self.host + uri, headers=self.headers, data=payload)
             log_api('POST', uri, r)
         except requests.exceptions.ConnectionError:
-                    raise ConnectionFailed("Could not connect to Lingotek")
+            self.handleError()
         return r
 
     def project_status(self, project_id):
@@ -77,7 +87,7 @@ class ApiCalls:
             r = requests.get(self.host + uri, headers=self.headers)
             log_api('GET', uri, r)
         except requests.exceptions.ConnectionError:
-                    raise ConnectionFailed("Could not connect to Lingotek")
+            self.handleError()
         return r
 
     def project_delete_target(self, project_id, locale):
@@ -86,7 +96,7 @@ class ApiCalls:
             r = requests.delete(self.host + uri, headers=self.headers)
             log_api('DELETE', uri, r)
         except requests.exceptions.ConnectionError:
-                    raise ConnectionFailed("Could not connect to Lingotek")
+            self.handleError()
         return r
 
     def delete_project(self, project_id):
@@ -96,7 +106,7 @@ class ApiCalls:
             r = requests.delete(self.host + uri, headers=self.headers)
             log_api('DELETE', uri, r)
         except requests.exceptions.ConnectionError:
-                    raise ConnectionFailed("Could not connect to Lingotek")
+            self.handleError()
         return r
 
     def get_document(self, document_id):
@@ -106,7 +116,7 @@ class ApiCalls:
             r = requests.get(self.host + uri, headers=self.headers)
             log_api('GET', uri, r)
         except requests.exceptions.ConnectionError:
-                    raise ConnectionFailed("Could not connect to Lingotek")
+            self.handleError()
         return r
 
     def add_document(self, source_locale, file_name, project_id, title, **kwargs):
@@ -126,7 +136,7 @@ class ApiCalls:
             log_api('POST', uri, r)
             document.close()
         except requests.exceptions.ConnectionError:
-                    raise ConnectionFailed("Could not connect to Lingotek")
+            self.handleError()
         return r
 
     def document_add_target(self, document_id, locale, workflow_id=None, due_date=None):
@@ -141,7 +151,7 @@ class ApiCalls:
             r = requests.post(self.host + uri, headers=self.headers, data=payload)
             log_api('POST', uri, r)
         except requests.exceptions.ConnectionError:
-                    raise ConnectionFailed("Could not connect to Lingotek")
+            self.handleError()
         return r
 
     def list_documents(self, project_id):
@@ -154,7 +164,7 @@ class ApiCalls:
             r = requests.get(self.host + uri, headers=self.headers, params=payload)
             log_api('GET', uri, r)
         except requests.exceptions.ConnectionError:
-                    raise ConnectionFailed("Could not connect to Lingotek")
+            self.handleError()
         return r
 
     def document_status(self, document_id):
@@ -166,7 +176,7 @@ class ApiCalls:
             # logger.debug(r.url)
             log_api('GET', uri, r)
         except requests.exceptions.ConnectionError:
-                    raise ConnectionFailed("Could not connect to Lingotek")
+            self.handleError()
         return r
 
     def document_translation_status(self, document_id):
@@ -176,7 +186,7 @@ class ApiCalls:
             r = requests.get(self.host + uri, headers=self.headers)
             log_api('GET', uri, r)
         except requests.exceptions.ConnectionError:
-                    raise ConnectionFailed("Could not connect to Lingotek")
+            self.handleError()
         return r
 
     def document_content(self, document_id, locale_code, auto_format):
@@ -191,7 +201,7 @@ class ApiCalls:
             r = requests.get(self.host + uri, headers=self.headers, params=payload, stream=True)
             log_api('GET', uri, r)
         except requests.exceptions.ConnectionError:
-                    raise ConnectionFailed("Could not connect to Lingotek")
+            self.handleError()
         return r
 
     def document_update(self, document_id, file_name=None, **kwargs):
@@ -210,7 +220,7 @@ class ApiCalls:
                 r = requests.patch(self.host + uri, headers=self.headers, data=payload)
             log_api('PATCH', uri, r)
         except requests.exceptions.ConnectionError:
-                    raise ConnectionFailed("Could not connect to Lingotek")
+            self.handleError()
         return r
 
     def document_delete_target(self, document_id, locale):
@@ -219,7 +229,7 @@ class ApiCalls:
             r = requests.delete(self.host + uri, headers=self.headers)
             log_api('DELETE', uri, r)
         except requests.exceptions.ConnectionError:
-                    raise ConnectionFailed("Could not connect to Lingotek")
+            self.handleError()
         return r
 
     def document_delete(self, document_id):
@@ -228,7 +238,7 @@ class ApiCalls:
             r = requests.delete(self.host + uri, headers=self.headers)
             log_api('DELETE', uri, r)
         except requests.exceptions.ConnectionError:
-                    raise ConnectionFailed("Could not connect to Lingotek")
+            self.handleError()
         return r
 
     def list_workflows(self, community_id):
@@ -238,7 +248,7 @@ class ApiCalls:
             r = requests.get(self.host + uri, headers=self.headers, params=payload)
             log_api('GET', uri, r)
         except requests.exceptions.ConnectionError:
-                    raise ConnectionFailed("Could not connect to Lingotek")
+            self.handleError()
         return r
 
     def list_locales(self):
@@ -246,7 +256,7 @@ class ApiCalls:
             uri = 'http://gmc.lingotek.com/v1/locales'
             r = requests.get(uri)
         except requests.exceptions.ConnectionError:
-                    raise ConnectionFailed("Could not connect to Lingotek")
+            self.handleError()
         return r
 
     def list_filters(self):
@@ -255,7 +265,7 @@ class ApiCalls:
             r = requests.get(self.host + uri, headers=self.headers)
             log_api('GET', uri, r)
         except requests.exceptions.ConnectionError:
-                    raise ConnectionFailed("Could not connect to Lingotek")
+            self.handleError()
         return r
 
     def get_project_info(self, community_id):
