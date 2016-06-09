@@ -113,7 +113,7 @@ class WatchAction(Action):
         # add action
         file_path = event.src_path
         # if it's a hidden document, don't do anything 
-        if not is_hidden_file(file_path) and self.watch_folder:
+        if not is_hidden_file(file_path):
             relative_path = file_path.replace(self.path, '')
             title = os.path.basename(os.path.normpath(file_path))
             curr_ext = os.path.splitext(file_path)[1]
@@ -123,7 +123,7 @@ class WatchAction(Action):
                 return
             # only add or update the document if it's not a hidden document and it's a new file
             try:
-                if self.doc_manager.is_doc_new(relative_path):
+                if self.doc_manager.is_doc_new(relative_path) and self.watch_folder:
                     self.add_document(file_path, title, locale=self.locale)
                 elif self.doc_manager.is_doc_modified(relative_path, self.path):
                     self.update_content(relative_path)
@@ -183,6 +183,7 @@ class WatchAction(Action):
 
     def watch_add_target(self, file_name, document_id):
         # print "watching add target, watch queue:", self.watch_queue
+        title = os.path.basename(file_name)
         if document_id not in self.watch_queue:
             self.watch_queue.append(document_id)
         # Only add target if doc exists on the cloud
