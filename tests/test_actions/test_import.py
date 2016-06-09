@@ -37,7 +37,7 @@ class TestImport(unittest.TestCase):
         self.action.close()
 
     def test_import_all(self):
-        self.action.import_action(True, False, None)
+        self.action.import_action(True, True, None)
         for doc_id in self.doc_ids:
             doc = self.action.doc_manager.get_doc_by_prop('id', doc_id)
             assert doc
@@ -48,13 +48,13 @@ class TestImport(unittest.TestCase):
         doc_id = self.doc_ids[0]
         response = self.action.api.document_add_target(doc_id, locale)
         assert response.status_code == 201
-        self.action.import_action(False, False, None, doc_id)
+        self.action.import_action(False, True, None, doc_id)
         entry = self.action.doc_manager.get_doc_by_prop("id", doc_id)
         assert locale in entry["locales"]
         self.imported.append(entry['id'])
 
     def test_import_no_locale(self):
-        self.action.import_action(False, False, None, self.doc_ids[0])
+        self.action.import_action(False, True, None, self.doc_ids[0])
         entry = self.action.doc_manager.get_doc_by_prop("id", self.doc_ids[0])
         assert not entry.get("locales")
         self.imported.append(entry['id'])
