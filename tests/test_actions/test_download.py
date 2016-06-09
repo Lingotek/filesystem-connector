@@ -24,11 +24,11 @@ class TestDownload(unittest.TestCase):
         self.first_doc = 'sample.txt'
         for fn in self.files:
             create_txt_file(fn)
-        self.action.add_action(None, ['sample*.txt'], force=True)
+        self.action.add_action(['sample*.txt'], force=True)
         self.doc_ids = self.action.doc_manager.get_doc_ids()
         for doc_id in self.doc_ids:
             assert poll_doc(self.action, doc_id)
-        self.action.target_action(None, self.locales, False, None, None)
+        self.action.target_action(None, None, self.locales, False, None, None)
 
     def tearDown(self):
         for curr_file in self.files:
@@ -49,7 +49,7 @@ class TestDownload(unittest.TestCase):
         return dl_path
 
     def test_download_name(self):
-        self.action.download_by_name(self.first_doc, self.locales[0], False)
+        self.action.download_by_path(self.first_doc, self.locales[0], False)
         dl_file = self.get_dl_path(self.locales[0], self.first_doc)
         assert self.locales[0] in dl_file
         assert os.path.isfile(dl_file)

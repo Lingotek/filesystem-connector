@@ -180,7 +180,7 @@ class WatchAction(Action):
             locales = self.watch_locales
         return locales
 
-    def watch_add_target(self, title, document_id):
+    def watch_add_target(self, file_name, document_id):
         # print "watching add target, watch queue:", self.watch_queue
         if document_id not in self.watch_queue:
             self.watch_queue.append(document_id)
@@ -194,7 +194,7 @@ class WatchAction(Action):
             #     for target in locales_to_add:
             #         printStr += target+","
             # print(printStr)
-            self.target_action(title, locales_to_add, None, None, None, document_id)
+            self.target_action(file_name, file_name, locales_to_add, None, None, None, document_id)
             self.watch_queue.remove(document_id)
 
     def process_queue(self):

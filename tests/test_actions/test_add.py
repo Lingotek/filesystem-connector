@@ -28,7 +28,7 @@ class TestAdd(unittest.TestCase):
         file_name = 'sample.txt'
         self.added_files.append(file_name)
         create_txt_file(file_name)
-        self.action.add_action(None, [file_name], force=True)
+        self.action.add_action([file_name], force=True)
         doc_id = self.action.doc_manager.get_doc_ids()[0]
         poll_doc(self.action, doc_id)
         # check that document is added in db
@@ -39,7 +39,7 @@ class TestAdd(unittest.TestCase):
         file_name = 'sample.txt'
         self.added_files.append(file_name)
         create_txt_file(file_name)
-        self.action.add_action(None, [file_name], force=True)
+        self.action.add_action([file_name], force=True)
         doc_id = self.action.doc_manager.get_doc_ids()[0]
         assert poll_doc(self.action, doc_id)
 
@@ -49,7 +49,8 @@ class TestAdd(unittest.TestCase):
         self.added_files = files
         for fn in files:
             create_txt_file(fn)
-        self.action.add_action(None, ['sample*.txt'])
+        # self.action.add_action(['sample*.txt'])
+        os.system('ltk add sample*.txt') # Let the command line handle parsing the file pattern
         for fn in files:
             doc = self.action.doc_manager.get_doc_by_prop('name', fn)
             assert doc
@@ -61,7 +62,8 @@ class TestAdd(unittest.TestCase):
         self.added_files = files
         for fn in files:
             create_txt_file(fn)
-        self.action.add_action(None, ['sample*.txt'])
+        # self.action.add_action(['sample*.txt'])
+        os.system('ltk add sample*.txt') # Let the command line handle parsing the file pattern
         doc_ids = self.action.doc_manager.get_doc_ids()
         for doc_id in doc_ids:
             assert poll_doc(self.action, doc_id)

@@ -214,7 +214,7 @@ class Action:
                     continue
             # todo separate function somewhere around here maybe..
             self.add_document(file_name, title, **kwargs)
-            # response = self.api.add_document(file_name, locale, self.project_id, title, **kwargs)
+            # response = self.api.add_document(locale, file_name, self.project_id, title, **kwargs)
             # if response.status_code != 202:
             #     raise_error(response.json(), "Failed to add document {0}".format(title), True)
             # else:
@@ -535,7 +535,7 @@ class Action:
                         downloaded_name = name_parts[0] + '.' + locale_code
                 else:
                     downloaded_name = base_name
-                if '--same' in self.download_dir or '--default' in self.download_dir:
+                if not self.download_dir or '--same' in self.download_dir or '--default' in self.download_dir:
                     download_path = os.path.dirname(file_name)
                 download_path = os.path.join(self.path,os.path.join(download_path, downloaded_name))
                 logger.info('Downloaded: {0} ({1} - {2})'.format(downloaded_name, base_name, locale_code))
@@ -680,15 +680,16 @@ class Action:
         if path:
             files = get_files(path)
             docs = self.doc_manager.get_file_names()
+            # Efficiently go through the files in case of a large number of files to check or a large number of remote documents.
             if len(files) > len(docs):
                 for file_name in docs:
                     if file_name in files:
-                        entry = self.doc_manager.get_doc_by_prop('file_name', file_name)
+                        entry = self.doc_manager.get_doc_by_prop('file_name', self.norm_path(file_name))
                         if entry:
                             locals_to_delete.append(entry['id'])
             else:
                 for file_name in files:
-                    entry = self.doc_manager.get_doc_by_prop('file_name', file_name)
+                    entry = self.doc_manager.get_doc_by_prop('file_name', self.norm_path(file_name))
                     if entry:
                         locals_to_delete.append(entry['id'])
         else:
@@ -991,11 +992,14 @@ def get_files(patterns):
     """ gets all files matching pattern from root
         pattern supports any unix shell-style wildcards (not same as RE) """
 
-    # root = os.getcwd()
+    cwd = os.getcwd()
     if isinstance(patterns,str):
         patterns = [patterns]
-    matched_files = []
+    allPatterns = []
     for pattern in patterns:
+        allPatterns.extend(getRegexFiles(pattern,cwd))
+    matched_files = []
+    for pattern in allPatterns:
         path = os.path.abspath(pattern)
         # check if pattern contains subdirectory
         if os.path.exists(path):
@@ -1026,6 +1030,12 @@ def get_files(patterns):
         #                 matched_files.append(os.path.join(path, fn))
     return matched_files
 
+def getRegexFiles(pattern,path):
+    matched_files = []
+    for path, subdirs, files in os.walk(path):
+        for fn in fnmatch.filter(files, pattern):
+            matched_files.append(os.path.join(path, fn))
+    return matched_files
 
 def log_id_names(json):
     """
