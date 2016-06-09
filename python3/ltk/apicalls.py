@@ -118,7 +118,7 @@ class ApiCalls:
                 if kwargs[key]:
                     payload[key] = kwargs[key]
             detected_format = ltk.utils.detect_format(file_name)
-            if 'format' not in kwargs and detected_format != 'PLAINTEXT_OKAPI':
+            if ('format' not in kwargs or kwargs['format'] is None):
                 payload['format'] = detected_format
             document = open(file_name, 'rb')
             files = {'content': (file_name, document)}
@@ -208,7 +208,7 @@ class ApiCalls:
                 document.close()
             else:
                 r = requests.patch(self.host + uri, headers=self.headers, data=payload)
-            log_api('PATCH', uri, r)        
+            log_api('PATCH', uri, r)
         except requests.exceptions.ConnectionError:
                     raise ConnectionFailed("Could not connect to Lingotek")
         return r
