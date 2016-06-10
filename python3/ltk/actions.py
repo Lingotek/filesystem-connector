@@ -291,6 +291,7 @@ class Action:
                 response = self.api.project_add_target(self.project_id, locale, due_date) if not to_delete \
                     else self.api.project_delete_target(self.project_id, locale)
                 if response.status_code != expected_code:
+                    print(response.json()['messages'][0])
                     raise_error(response.json(), '{message} {locale} for project'.format(message=failure_message,
                                                                                          locale=locale), True)
                     change_db_entry = False
@@ -326,6 +327,7 @@ class Action:
                 response = self.api.document_add_target(document_id, locale, workflow, due_date) if not to_delete \
                     else self.api.document_delete_target(document_id, locale)
                 if response.status_code != expected_code:
+                    print(response.json()['messages'][0])
                     raise_error(response.json(), '{message} {locale} for document {name}'.format(message=failure_message,
                                                                                           locale=locale,name=document_name), True)
                     change_db_entry = False
@@ -510,8 +512,9 @@ class Action:
 
     def download_action(self, document_id, locale_code, auto_format, locale_ext=True):
         response = self.api.document_content(document_id, locale_code, auto_format)
+        entry = None
+        entry = self.doc_manager.get_doc_by_prop('id', document_id)
         if response.status_code == 200:
-            entry = self.doc_manager.get_doc_by_prop('id', document_id)
             if self.download_dir and not '--same' in self.download_dir and not '--default' in self.download_dir:
                 download_path = self.download_dir
             else:
@@ -559,7 +562,10 @@ class Action:
             return download_path
         else:
             printResponseMessages(response)
-            raise_error(response.json(), 'Failed to download content for id: {0}'.format(document_id), True)
+            if entry:
+                raise_error(response.json(), 'Failed to download content for {0} ({1})'.format(entry['name'], document_id), True)
+            else:
+                raise_error(response.json(), 'Failed to download content for id: {0}'.format(document_id), True)
 
     def pull_action(self, locale_code, auto_format):
         if not locale_code:
