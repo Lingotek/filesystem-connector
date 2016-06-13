@@ -13,7 +13,7 @@ from ltk.logger import logger
 
 
 class Action:
-    def __init__(self, path, watch=False, timeout=5):
+    def __init__(self, path, watch=False, timeout=60):
         self.host = ''
         self.access_token = ''
         self.project_id = ''
@@ -171,10 +171,11 @@ class Action:
             target_locales = ','.join(target for target in target_locales)
             self.update_config_file('watch_locales', target_locales, conf_parser, config_file_name, log_info)
 
-        print ('Host: {0}\nAccess_token: {1}\nProject id: {2}\nProject name: {3}\nProject path: {4}\nCommunity id: {5}\nWorkflow id: {6}\n' \
-              'Locale: {7}\nDownloads folder: {8}\nWatch folder: {9}\nWatch target locales: {10}'.format(
-            self.host, self.access_token, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale,
-            self.download_dir, self.watch_dir, ', '.join(x for x in self.watch_locales)))
+        #print ('Token: {0}'.format(self.access_token))
+        print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity id: {4}\nWorkflow id: {5}\n' \
+              'Default Source Locale: {6}\nWatch - Source Folder: {7}\nWatch - Download Folder: {8}\nWatch - Target Locales: {9}'.format(
+            self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.watch_dir,
+            self.download_dir, ', '.join(x for x in self.watch_locales)))
 
     def add_document(self, file_name, title, **kwargs):
         if not 'locale' in kwargs or not kwargs['locale']:
@@ -261,7 +262,7 @@ class Action:
         if response.status_code != 202:
             raise_error(response.json(), "Failed to update document {0}".format(file_name), True)
         self._update_document(relative_path)
-      
+
 
     def _target_action_db(self, to_delete, locales, document_id):
         if to_delete:
@@ -604,7 +605,7 @@ class Action:
                 file_name = doc['file_name']
         response = self.api.document_delete(document_id)
         #print (response)
-        if response.status_code != 204:            
+        if response.status_code != 204:
             # raise_error(response.json(), "Failed to delete document {0}".format(document_name), True)
             logger.error("Failed to delete document {0} remotely".format(file_name))
         else:
@@ -613,7 +614,7 @@ class Action:
             else:
                 logger.info("{0} has been deleted remotely.".format(file_name))
             if doc:
-                if force:               
+                if force:
                     self.delete_local(file_name, document_id)
                 self.doc_manager.remove_element(document_id)
 
@@ -756,13 +757,13 @@ class Action:
             title = document_id
         message = 'Deleting local file {0}'.format(title) if not message else message
         try:
-            file_name = self.doc_manager.get_doc_by_prop('id', document_id)['file_name']     
+            file_name = self.doc_manager.get_doc_by_prop('id', document_id)['file_name']
         except TypeError:
             logger.info('Document to remove not found in the local database')
             return
         try:
             os.remove(os.path.join(self.path, file_name))
-            logger.info(message)            
+            logger.info(message)
         except OSError:
             logger.info('Something went wrong trying to delete the local file.')
 
@@ -771,7 +772,7 @@ class Action:
         message = 'Deleting local file {0}'.format(path) if not message else message
         try:
             os.remove(path)
-            logger.info(message)            
+            logger.info(message)
         except OSError:
             logger.info('Something went wrong trying to delete the local file.')
 
@@ -846,10 +847,10 @@ def choice_mapper(info):
     mapper = {}
     import operator
 
-    #sorted_info = sorted(info.iteritems(), key=operator.itemgetter(1))    
-    sorted_info = sorted(info.items(), key = operator.itemgetter(1))  
+    #sorted_info = sorted(info.iteritems(), key=operator.itemgetter(1))
+    sorted_info = sorted(info.items(), key = operator.itemgetter(1))
 
-    index = 0    
+    index = 0
     for entry in sorted_info:
         mapper[index] = {entry[0]: entry[1]}
         index += 1

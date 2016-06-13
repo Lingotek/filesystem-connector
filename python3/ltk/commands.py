@@ -108,12 +108,13 @@ def init(host, access_token, path, project_name, workflow_id, locale, delete, re
 
 
 @ltk.command()
+#TO-DO: @click.option('-a', '--all', help='List all configuration settings (including access token)')
 @click.option('-l', '--locale', help='Change the default source locale for the project')
 @click.option('-w', '--workflow_id', help='Change the default workflow id for the project')
 @click.option('-d', '--download_folder',
               help='Specify a folder for where downloaded translations should go. Enter -d --default, or -d --same, or leave blank for target translations to be downloaded to the same folder as their corresponding source files.')
 @click.option('-f', '--watch_folder',
-              help='Specify a folder to watch when running ltk watch. Enter -f --default or leave blank to only watch added files in the project directory.')
+              help='Specify a folder to watch when running ltk watch. Enter -f --default or leave blank to only watch files explicitly added to the project.')
 @click.option('-t', '--target_locales', multiple=True,
               help='Specify target locales that documents in watch_folder should be assigned; may either specify '
                    'with multiple -t flags (ex: -t locale -t locale) or give a list separated by commas and no spaces '
