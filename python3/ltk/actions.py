@@ -208,7 +208,7 @@ class Action:
                     else:
                         confirm = 'not confirmed'
                     while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-                        confirm = input("This document already exists. Would you like to overwrite it? [y/n]: ")
+                        confirm = input("This document already exists. Would you like to overwrite it? [Y/n]: ")
                     # confirm if would like to overwrite existing document in Lingotek Cloud
                     if not confirm or confirm in ['n', 'N']:
                         continue
@@ -813,7 +813,7 @@ def reinit(host, project_path, delete, reset):
         while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
             confirm = input(
                 "Are you sure you want to delete the current project? "
-                "This will also delete the project in your community. [y/n]: ")
+                "This will also delete the project in your community. [Y/n]: ")
         # confirm if deleting existing folder
         if not confirm or confirm in ['n', 'N']:
             return False
@@ -972,7 +972,7 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
     if len(project_info) > 0:
         confirm = 'none'
         while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-            confirm = input('Would you like to use an existing Lingotek project? [y/n]:')
+            confirm = input('Would you like to use an existing Lingotek project? [Y/n]:')
         if confirm and confirm in ['y', 'Y', 'yes', 'Yes']:
             project_id, project_name = display_choice('project', project_info)
             config_parser.set('main', 'project_id', project_id)
