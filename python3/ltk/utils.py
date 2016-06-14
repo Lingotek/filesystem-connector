@@ -72,7 +72,7 @@ def map_locale(locale):
     #         unsupported_locales.append(locale)
     # return valid_locales, unsupported_locales
 
-def restart(message, interval=5):
+def restart(message="Restarting watch", interval=5):
     """Restarts the program. Used after exceptions. Otherwise, watch doesn't work anymore."""
     time.sleep(interval)
     print(message)
