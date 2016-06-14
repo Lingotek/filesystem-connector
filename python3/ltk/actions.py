@@ -375,10 +375,9 @@ class Action:
         if not ids:
             print ('No local documents')
             return
-        print ('Local documents:\tID\t\t Name\t\tLocales')
+        print ('%-30s' % 'Filename' + ' %-38s' % 'Lingotek ID' + 'Locales')
         for i in range(len(ids)):
-            info = '{id} \t {title} \t\t {locales}'.format(id=ids[i], title=titles[i],
-                                                           locales=', '.join(locale for locale in locales[i]))
+            info = '%-30s' % titles[i][:30] + ' %-38s' % ids[i] + ', '.join(locale for locale in locales[i])
             print (info)
 
     def list_remote_action(self):
@@ -442,7 +441,7 @@ class Action:
         if response.status_code != 200:
             raise_error(response.json(), 'Failed to get filters')
         filter_entities = response.json()['entities']
-        print (bytes('Filters: id, title', 'UTF-8'))
+        print ('Filters: id, title')
         for entry in filter_entities:
             properties = entry['properties']
             title = properties['title']

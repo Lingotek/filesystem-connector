@@ -193,7 +193,7 @@ def request(doc_name, path, locales, to_delete, due_date, workflow):
 
 
 # todo add a --all option to see all document ids once only show relative to cwd is implemented
-@ltk.command(name='list')
+@ltk.command(name='list', short_help='Shows docs, workflows, locales, formats, or filters')
 @click.option('-d', '--documents', 'id_type', flag_value='document', help='List added documents')
 @click.option('-p', '--path', 'path', flag_value=True, help='List file paths of documents instead of titles')
 @click.option('-w', '--workflows', 'id_type', flag_value='workflow', help='List available workflows')
@@ -202,7 +202,7 @@ def request(doc_name, path, locales, to_delete, due_date, workflow):
 @click.option('-r', '--remote', 'id_type', flag_value='remote', help='List all project documents on Lingotek Cloud')
 @click.option('--filters', 'id_type', flag_value='filter', help='List default and custom filters')
 def list_ids(id_type, path):
-    """ Shows docs, workflows, locales, or formats """
+    """ Shows docs, workflows, locales, formats, or filters """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
@@ -241,12 +241,12 @@ def status(**kwargs):
         return
 
 
-@ltk.command()
+@ltk.command(short_help='Download specified translations')
 @click.option('-a', '--auto_format', flag_value=True, help='Flag to auto apply formatting during download')
 @click.argument('locales', required=True, nargs=1)
 @click.argument('file_names', type=click.Path(exists=True), required=True, nargs=-1)
 def download(auto_format, locales, file_names):
-    """ Downloads the translated content of document(s) for the specified locales. For multiple locales give a list separated by commas and no spaces
+    """ Downloads translated content specified by filename for specified locales. For multiple locales give a list separated by commas and no spaces
     (ex: en_US,en_GB)"""
     try:
         action = actions.Action(os.getcwd())
@@ -263,7 +263,7 @@ def download(auto_format, locales, file_names):
 @click.option('-a', '--auto_format', flag_value=True, help='Flag to auto apply formatting during download')
 @click.argument('locales', nargs=-1)
 def pull(auto_format, locales):
-    """ Pulls translations for all added documents for the specified locales or for all locales by default """
+    """ Pulls translations for all added documents for all locales or by specified locales """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
@@ -302,7 +302,7 @@ def rm(file_names, **kwargs):
         return
 
 
-@ltk.command(name='import')
+@ltk.command(name='import', short_help="Import docs from Lingotek")
 @click.option('-a', '--all', 'import_all', flag_value=True, help='Import all documents from Lingotek Cloud')
 @click.option('-f', '--force', flag_value=True, help='Overwrites existing documents without prompt')
 @click.option('-p', '--path', type=click.Path(exists=True), help='Import documents to a specified path')
