@@ -109,15 +109,15 @@ class Action:
         logger.info(log_info)
 
     def norm_path(self, file_location):
-        print("original path: "+file_location)
+        # print("original path: "+file_location)
         if file_location:
             # abspath=os.path.abspath(file_location)
             # print("abspath: "+abspath)
             # print("self.path: "+self.path)
             norm_path = os.path.abspath(os.path.expanduser(file_location)).replace(self.path, '')
-            print("normalized path: "+norm_path)
+            # print("normalized path: "+norm_path)
             if not os.path.exists(norm_path) and os.path.exists(os.path.join(self.path,file_location)):
-                print("Starting path at project directory: "+file_location.replace(self.path, ''))
+                # print("Starting path at project directory: "+file_location.replace(self.path, ''))
                 return file_location.replace(self.path, '')
             return norm_path
         else:
@@ -311,17 +311,20 @@ class Action:
         else:
             # todo: document name or file name? since file name will be relative to root
             # todo: clean this code up some
-            if not document_id:
+            if document_id:
+                entry = self.doc_manager.get_doc_by_prop('id', document_id)
+                if not entry:
+                    logger.error('Document specified for target doesn\'t exist: {0}'.format(document_id))
+                    return
+            elif document_name:
                 entry = self.doc_manager.get_doc_by_prop('name', document_name)
                 if not entry:
                     logger.error('Document name specified for target doesn\'t exist: {0}'.format(document_name))
                     return
                     # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
-            if not document_name:
-                entry = self.doc_manager.get_doc_by_prop('id', document_id)
-                if not entry:
-                    logger.error('Document specified for target doesn\'t exist: {0}'.format(document_id))
-                    return
+            if not entry:
+                logger.error('Could not add target. No valid file specified.')
+                return
             docs.append(entry)
         # print("docs: "+str(docs))
         for entry in docs:
@@ -589,18 +592,20 @@ class Action:
             for document_id in document_ids:
                 self.download_action(document_id, locale_code, auto_format)
 
-    def rm_document(self, file_name, useID, force, doc_name=None):
+    def rm_document(self, file_name, useID, force, doc_name=None, directory=False):
         doc = None
         if not useID:
             relative_path = self.norm_path(file_name)
             doc = self.doc_manager.get_doc_by_prop('file_name', relative_path)
+            if not doc:
+                doc = self.doc_manager.get_doc_by_prop('name', file_name)
             title = os.path.basename(self.norm_path(file_name))
             # print("relative_path: "+relative_path)
             try:
-                doc = self.doc_manager.get_doc_by_prop('file_name', relative_path)
                 document_id = doc['id']
             except TypeError: # Documents specified by name must be found in the local database to be removed.
-                logger.warning("Document name specified for remove isn't in the local database: {0}".format(relative_path))
+                if not directory:
+                    logger.warning("Document name specified for remove isn't in the local database: {0}".format(relative_path))
                 return
                 # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
         else:
@@ -761,7 +766,7 @@ class Action:
         # print('local delete:', title, document_id)
         if not title:
             title = document_id
-        message = 'Deleting local file {0}'.format(title) if not message else message
+        message = '{0} has been deleted locally.'.format(title) if not message else message
         try:
             file_name = self.doc_manager.get_doc_by_prop('id', document_id)['file_name']
         except TypeError:
@@ -775,7 +780,7 @@ class Action:
 
     def delete_local_path(self, path, message=None):
         path = self.norm_path(path)
-        message = 'Deleting local file {0}'.format(path) if not message else message
+        message = '{0} has been deleted locally.'.format(path) if not message else message
         try:
             os.remove(path)
             logger.info(message)
@@ -1025,11 +1030,16 @@ def get_files(patterns):
     allPatterns = []
     # print("patterns: "+str(patterns))
     for pattern in patterns:
-        allPatterns.extend(getRegexFiles(pattern,cwd))
+        basename = os.path.basename(pattern)
+        if basename and basename != "":
+            allPatterns.extend(getRegexFiles(pattern,cwd))
+        else:
+            allPatterns.append(pattern)
     matched_files = []
     # print("all patterns: "+str(allPatterns))
     for pattern in allPatterns:
         path = os.path.abspath(pattern)
+        # print("looking at path "+str(path))
         # check if pattern contains subdirectory
         if os.path.exists(path):
             if os.path.isdir(path):
@@ -1057,14 +1067,24 @@ def get_files(patterns):
         #         if fnmatch.fnmatch(subdir, subdir_pat):
         #             for fn in fnmatch.filter(files, fn_pat):
         #                 matched_files.append(os.path.join(path, fn))
+    if len(matched_files) == 0:
+        return None
     return matched_files
 
 def getRegexFiles(pattern,path):
-    pattern = os.path.basename(pattern)
+    dir_name = os.path.dirname(pattern)
+    if dir_name:
+        path = os.path.join(path,dir_name)
+    pattern_name = os.path.basename(pattern)
+    # print("path: "+path)
+    # print("pattern: "+str(pattern))
     matched_files = []
+    if pattern_name and not "*" in pattern:
+        return [pattern]
     for path, subdirs, files in os.walk(path):
         for fn in fnmatch.filter(files, pattern):
             matched_files.append(os.path.join(path, fn))
+    # print("matched files: "+str(matched_files))
     return matched_files
 
 def log_id_names(json):

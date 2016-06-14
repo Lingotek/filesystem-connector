@@ -180,7 +180,8 @@ class WatchAction(Action):
         # print "watching add target, watch queue:", self.watch_queue
         if not file_name:
             title=self.doc_manager.get_doc_by_prop("id", document_id)
-        title = os.path.basename(file_name)
+        else:
+            title = os.path.basename(file_name)
         if document_id not in self.watch_queue:
             self.watch_queue.append(document_id)
         # Only add target if doc exists on the cloud
