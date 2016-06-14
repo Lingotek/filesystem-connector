@@ -109,7 +109,7 @@ class Action:
         logger.info(log_info)
 
     def norm_path(self, file_location):
-        # print("original path: "+file_location)
+        # print("original path: "+str(file_location))
         if file_location:
             # abspath=os.path.abspath(file_location)
             # print("abspath: "+abspath)
@@ -131,6 +131,16 @@ class Action:
             file_name = self.norm_path(file)
             if file_name in db_files:
                 docs.append(self.doc_manager.get_doc_by_prop('file_name',file_name))
+        return docs
+
+    def get_doc_filenames_in_path(self, path):
+        files = get_files(path)
+        db_files = self.doc_manager.get_file_names()
+        docs = []
+        for file in files:
+            file_name = self.norm_path(file)
+            if file_name in db_files:
+                docs.append(file_name)
         return docs
 
     def config_action(self, locale, workflow_id, download_folder, watch_folder, target_locales):
@@ -592,7 +602,7 @@ class Action:
             for document_id in document_ids:
                 self.download_action(document_id, locale_code, auto_format)
 
-    def rm_document(self, file_name, useID, force, doc_name=None, directory=False):
+    def rm_document(self, file_name, useID, force, doc_name=None, is_directory=False):
         doc = None
         if not useID:
             relative_path = self.norm_path(file_name)
@@ -604,7 +614,7 @@ class Action:
             try:
                 document_id = doc['id']
             except TypeError: # Documents specified by name must be found in the local database to be removed.
-                if not directory:
+                if not is_directory:
                     logger.warning("Document name specified for remove isn't in the local database: {0}".format(relative_path))
                 return
                 # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
@@ -664,11 +674,19 @@ class Action:
                 matched_files = self.doc_manager.get_file_names()
         elif not useID:
             # use current working directory as root for files instead of project root
-            matched_files = get_files(file_patterns)
+            matched_files = self.get_doc_filenames_in_path(file_patterns)
         else:
             matched_files = file_patterns
-        if matched_files is None:
-            raise exceptions.ResourceNotFound("Could not find the specified file/pattern")
+        if not matched_files or len(matched_files) == 0:
+            if useID:
+                raise exceptions.ResourceNotFound("No documents to remove with the specified id")
+            else:
+                raise exceptions.ResourceNotFound("No documents to remove with the specified file path")
+        is_directory = False
+        for pattern in file_patterns: # If attemping to remove any directory, don't print failure message
+            basename = os.path.basename(pattern)
+            if not basename or basename == "":
+                is_directory = True
         for file_name in matched_files:
             # title = os.path.basename(os.path.normpath(file_name)).split('.')[0]
             self.rm_document(self.norm_path(file_name).replace(self.path,""), useID, force)
