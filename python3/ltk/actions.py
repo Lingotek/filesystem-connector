@@ -109,13 +109,16 @@ class Action:
         logger.info(log_info)
 
     def norm_path(self, file_location):
-        # print("original path: "+file_location)
+        print("original path: "+file_location)
         if file_location:
-            abspath=os.path.abspath(file_location)
+            # abspath=os.path.abspath(file_location)
             # print("abspath: "+abspath)
             # print("self.path: "+self.path)
             norm_path = os.path.abspath(os.path.expanduser(file_location)).replace(self.path, '')
-            # print("normalized path: "+norm_path)
+            print("normalized path: "+norm_path)
+            if not os.path.exists(norm_path) and os.path.exists(os.path.join(self.path,file_location)):
+                print("Starting path at project directory: "+file_location.replace(self.path, ''))
+                return file_location.replace(self.path, '')
             return norm_path
         else:
             return None
@@ -338,7 +341,7 @@ class Action:
             if change_db_entry:
                 self._target_action_db(to_delete, locales, document_id)
 
-    def list_ids_action(self):
+    def list_ids_action(self, path):
         """ lists ids of list_type specified """
         ids = []
         titles = []
@@ -347,8 +350,11 @@ class Action:
         for entry in entries:
             # if entry['file_name'].startswith(cwd.replace(self.path, '')):
             ids.append(entry['id'])
-            relative_path = self.norm_path(entry['file_name'])
-            titles.append(relative_path)
+            if path:
+                name = self.norm_path(entry['file_name'])
+            else:
+                name = entry['name']
+            titles.append(name)
             try:
                 locales.append(entry['locales'])
             except KeyError:
@@ -356,7 +362,7 @@ class Action:
         if not ids:
             print ('No local documents')
             return
-        print ('Local documents:\tID\t\t File name\t\tLocales')
+        print ('Local documents:\tID\t\t Name\t\tLocales')
         for i in range(len(ids)):
             info = '{id} \t {title} \t\t {locales}'.format(id=ids[i], title=titles[i],
                                                            locales=', '.join(locale for locale in locales[i]))
