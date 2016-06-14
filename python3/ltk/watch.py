@@ -242,12 +242,13 @@ class WatchAction(Action):
 
     def watch_action(self, watch_path, ignore, delimiter):
         # print self.path
-        # print("timeout: " + str(self.timeout))
-        if not watch_path and not self.watch_dir or "--default" in self.watch_dir:
-            watch_path = self.path
-            self.watch_folder = False
-        elif not watch_path:
+        if watch_path:  # Use watch path specified as an option/parameter
+            self.watch_folder = True
+        elif self.watch_dir and not "--default" in self.watch_dir: # Use watch path from config
             watch_path = self.watch_dir
+        else:
+            watch_path = self.path # Watch from the project root
+            self.watch_folder = False # Only watch added files
         if self.watch_folder:
             watch_path = self.complete_path(watch_path)
             print ("Watching for updates in: {0}".format(watch_path))
