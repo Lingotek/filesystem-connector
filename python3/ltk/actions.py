@@ -127,20 +127,22 @@ class Action:
         files = get_files(path)
         db_files = self.doc_manager.get_file_names()
         docs = []
-        for file in files:
-            file_name = self.norm_path(file)
-            if file_name in db_files:
-                docs.append(self.doc_manager.get_doc_by_prop('file_name',file_name))
+        if files:
+            for file in files:
+                file_name = self.norm_path(file)
+                if file_name in db_files:
+                    docs.append(self.doc_manager.get_doc_by_prop('file_name',file_name))
         return docs
 
     def get_doc_filenames_in_path(self, path):
         files = get_files(path)
         db_files = self.doc_manager.get_file_names()
         docs = []
-        for file in files:
-            file_name = self.norm_path(file)
-            if file_name in db_files:
-                docs.append(file_name)
+        if files:
+            for file in files:
+                file_name = self.norm_path(file)
+                if file_name in db_files:
+                    docs.append(file_name)
         return docs
 
     def config_action(self, locale, workflow_id, download_folder, watch_folder, target_locales):
@@ -285,6 +287,14 @@ class Action:
         else:
             self.doc_manager.update_document('locales', list(locales), document_id)
 
+    def update_doc_locales(self, document_id):
+        try:
+            locale_map = self.import_locale_info(document_id)
+            locale_info = list(iter(locale_map))
+        except exceptions.RequestFailedError:
+            locale_info = []
+        self.doc_manager.update_document('locales', locale_info, document_id)
+
     def target_action(self, document_name, path, locales, to_delete, due_date, workflow, document_id=None):
         if path:
             document_id = None
@@ -309,6 +319,7 @@ class Action:
                     raise_error(response.json(), '{message} {locale} for project'.format(message=failure_message,
                                                                                          locale=locale), True)
                     change_db_entry = False
+                    self.update_doc_locales(document_id)
                     continue
                 logger.info('{message} {locale} for project {project_name}'.format(message=info_message, locale=locale,
                                                                                    project_name=self.project_name))
@@ -336,7 +347,6 @@ class Action:
                 logger.error('Could not add target. No valid file specified.')
                 return
             docs.append(entry)
-        # print("docs: "+str(docs))
         for entry in docs:
             document_id = entry['id']
             document_name = entry['file_name']
@@ -348,6 +358,7 @@ class Action:
                     raise_error(response.json(), '{message} {locale} for document {name}'.format(message=failure_message,
                                                                                           locale=locale,name=document_name), True)
                     change_db_entry = False
+                    self.update_doc_locales(document_id)
                     continue
                 logger.info('{message} {locale} for document {name}'.format(message=info_message,
                                                                             locale=locale, name=document_name))
@@ -606,8 +617,6 @@ class Action:
         if not useID:
             relative_path = self.norm_path(file_name)
             doc = self.doc_manager.get_doc_by_prop('file_name', relative_path)
-            if not doc:
-                doc = self.doc_manager.get_doc_by_prop('name', file_name)
             title = os.path.basename(self.norm_path(file_name))
             # print("relative_path: "+relative_path)
             try:
@@ -673,7 +682,12 @@ class Action:
                 matched_files = self.doc_manager.get_file_names()
         elif not useID:
             # use current working directory as root for files instead of project root
-            matched_files = self.get_doc_filenames_in_path(file_patterns)
+            if 'name' in kwargs and kwargs['name']:
+                matched_files = []
+                for pattern in file_patterns:
+                    matched_files.append(self.doc_manager.get_doc_by_prop("name",pattern)['file_name'])
+            else:
+                matched_files = self.get_doc_filenames_in_path(file_patterns)
         else:
             matched_files = file_patterns
         if not matched_files or len(matched_files) == 0:

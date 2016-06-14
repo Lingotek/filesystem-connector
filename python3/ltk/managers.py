@@ -70,6 +70,13 @@ class DocumentManager:
             file_names.append(entry['file_name'])
         return file_names
 
+    def get_names(self):
+        """ returns all the names of documents that the user has added """
+        file_names = []
+        for entry in self._db.all():
+            file_names.append(entry['file_name'])
+        return file_names
+
     def remove_element(self, doc_id):
         self._db.remove(where('id') == doc_id)
 

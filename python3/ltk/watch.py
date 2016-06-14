@@ -212,8 +212,7 @@ class WatchAction(Action):
 
     @retry(logger)
     def poll_remote(self):
-        """ poll lingotek servers to check if MT finished """
-        # todo eventually: poll for other jobs (prefill, analyze, etc...)
+        """ poll lingotek servers to check if translation is finished """
         documents = self.doc_manager.get_all_entries()  # todo this gets all documents, not necessarily only ones in watch folder
         for doc in documents:
             doc_id = doc['id']

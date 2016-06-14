@@ -281,13 +281,14 @@ def pull(auto_format, locales):
 @ltk.command(short_help="Disassociates local doc(s) from Lingotek Cloud and deletes the remote copy")
 @click.argument('file_names', required=False, nargs=-1)
 @click.option('-i', '--id', flag_value=True, help='Delete documents with the specified ids (instead of file names) on Lingotek Cloud')
+@click.option('-n', '--name', flag_value=True, help='Delete documents with the specified names (instead of file names or paths) on Lingotek Cloud')
 @click.option('-a', '--all', flag_value=True, help='Delete all documents from Lingotek Cloud that are found locally')
 @click.option('-r', '--remote', flag_value=True, help='When used with -a, deletes all documents from Lingotek Cloud for the current project')
 @click.option('-f', '--force', flag_value=True, help='Delete both local and remote files')
 def rm(file_names, **kwargs):
     """
     Disassociates local doc(s) from Lingotek Cloud and deletes the remote copy.
-    If the remote copy should not be kept, please use ltk clean.
+    If the remote copy should be kept, please use ltk clean.
     """
     try:
         action = actions.Action(os.getcwd())
