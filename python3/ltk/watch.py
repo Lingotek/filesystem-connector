@@ -167,7 +167,7 @@ class WatchAction(Action):
             try:
                 locales = [self.detected_locales[document_id]]
             except KeyError:
-                logger.error("Something went wrong, could not detect a locale")
+                logger.error("Something went wrong. Could not detect a locale")
             return locales
         entry = self.doc_manager.get_doc_by_prop("id", document_id)
         try:
@@ -264,12 +264,16 @@ class WatchAction(Action):
             self.observer.start()
         except KeyboardInterrupt:
             self.observer.stop()
-
+        queue_timeout = 3
+        # start_time = time.clock()
         try:
             while True:
-                # print 'Watching....'
                 self.poll_remote()
-                self.process_queue()
+                current_timeout = self.timeout
+                while len(self.watch_queue) and current_timeout > 0:
+                    self.process_queue()
+                    time.sleep(queue_timeout)
+                    current_timeout -= queue_timeout
                 time.sleep(self.timeout)
         except KeyboardInterrupt:
             self.observer.stop()
