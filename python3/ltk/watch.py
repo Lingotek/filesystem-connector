@@ -95,6 +95,7 @@ class WatchAction(Action):
                         # self.update_document_action(os.path.join(self.path, fn))
                         # logger.info('Updating remote content: {0}'.format(fn))
                         self.update_content(fn)
+                        print("Called update_content")
                 except KeyboardInterrupt:
                     self.observer.stop()
                 except ConnectionError:
@@ -107,6 +108,7 @@ class WatchAction(Action):
             self.observer.stop()
         except Exception as err:
             restart("Error on modified: "+str(err)+"\nRestarting watch.")
+        print("finish _on_modified")
 
     def _on_created(self, event):
         # get path
@@ -147,7 +149,7 @@ class WatchAction(Action):
                         curr_locale = title.split(self.locale_delimiter)[-2]
                         fixed_locale = map_locale(curr_locale)
                         if fixed_locale:
-                            print ("fixed locale:", fixed_locale)
+                            print ("fixed locale: ", fixed_locale)
                             # self.watch_locales.add(fixed_locale)
                             self.detected_locales[document_id] = fixed_locale
                         else:
@@ -225,9 +227,24 @@ class WatchAction(Action):
         self.update_document_action(os.path.join(self.path, relative_path))
         logger.info('Updating remote content: {0}'.format(relative_path))
 
+    def check_modified(self, doc):
+        old_date = doc['last_mod']
+        print("old_date: "+str(old_date))
+        response = self.api.get_document(doc['id'])
+        if response.status_code == 200:
+            new_date = response.json()['properties']['modified_date']
+            print("new_date: "+str(new_date))
+            # orig_count = response.json()['entities'][1]['properties']['count']['character']
+        else:
+            print("Document not found on Lingotek Cloud: "+str(doc['name']))
+            return False
+        return True
+
     @retry(logger)
     def poll_remote(self):
         """ poll lingotek servers to check if translation is finished """
+        print("poll_remote")
+        print("self.watch_queue: "+str(self.watch_queue))
         documents = self.doc_manager.get_all_entries()  # todo this gets all documents, not necessarily only ones in watch folder
         for doc in documents:
             doc_id = doc['id']
@@ -235,6 +252,9 @@ class WatchAction(Action):
                 # if doc id in queue, not imported yet
                 continue
             locale_progress = self.import_locale_info(doc_id, True)
+            if self.check_modified(doc):
+                print("Document modified")
+                self.doc_manager.clear_prop(doc_id, 'downloaded')
             try:
                 downloaded = doc['downloaded']
             except KeyError:
@@ -248,6 +268,7 @@ class WatchAction(Action):
                         self.download_action(doc_id, locale, False, False)
                     else:
                         self.download_action(doc_id, locale, False)
+
 
     def complete_path(self, file_location):
         # print("self.path: "+self.path)

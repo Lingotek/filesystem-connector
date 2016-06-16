@@ -922,38 +922,56 @@ def display_choice(display_type, info):
         return v, mapper[choice][v]
 
 
-def check_global():
-    # check for a global config file
+def check_global(host):
+    # check for a global config file and return the access token
     home_path = os.path.expanduser('~')
     sys_file = os.path.join(home_path, SYSTEM_FILE)
     if os.path.isfile(sys_file):
         # get the access token
+        print("Using configuration in file "+str(sys_file))
         conf_parser = configparser.ConfigParser()
         conf_parser.read(sys_file)
-        return conf_parser.get('main', 'access_token')
+        if conf_parser.has_section('alternative') and conf_parser.get('alternative', 'host') == host:
+            return conf_parser.get('alternative', 'access_token')
+        if conf_parser.has_section('main'):
+            if not conf_parser.has_option('main','host') or conf_parser.get('main', 'host') == host:
+                return conf_parser.get('main', 'access_token')
     else:
         return None
 
 
-def create_global(access_token):
+def create_global(access_token, host):
     """
     create a .lingotek file in user's $HOME directory
     """
     # go to the home dir
     home_path = os.path.expanduser('~')
     file_name = os.path.join(home_path, SYSTEM_FILE)
-    sys_file = open(file_name, 'w')
-
     config_parser = configparser.ConfigParser()
-    config_parser.add_section('main')
-    config_parser.set('main', 'access_token', access_token)
+    if os.path.isfile(file_name):
+        config_parser.read(file_name)
+    sys_file = open(file_name, 'w')
+    if config_parser.has_section('main'):
+        if not config_parser.has_option('main', host) and config_parser.has_option('main', 'access_token') and config_parser.get('main', 'access_token') == access_token:
+            config_parser.set('main', 'host', host)
+        elif config_parser.has_option('main', host) and config_parser.get('main', host) == host:
+            config_parser.set('main', 'access_token', access_token)
+        else:
+            if config_parser.has_section('alternative') and config_parser.has_option('alternative', 'host') and config_parser.get('alternative', 'host') == host:
+                config_parser.set('alternative','access_token', access_token)
+            config_parser.add_section('alternative')
+            config_parser.set('alternative', 'access_token', access_token)
+            config_parser.set('alternative', 'host', host)
+    else:
+        config_parser.add_section('main')
+        config_parser.set('main', 'access_token', access_token)
+        config_parser.set('main', 'host', host)
     config_parser.write(sys_file)
     sys_file.close()
 
 
 def init_action(host, access_token, project_path, folder_name, workflow_id, locale, delete, reset):
     # check if Lingotek directory already exists
-    # print("init_action")
     to_init = reinit(host, project_path, delete, reset)
     # print("to_init: "+str(to_init))
     if not to_init:
@@ -963,16 +981,15 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
 
     ran_oauth = False
     if not access_token:
-        access_token = check_global()
+        access_token = check_global(host)
         if not access_token or reset:
             from ltk.auth import run_oauth
-
             access_token = run_oauth(host)
             ran_oauth = True
     # print("access_token: "+str(access_token))
     if ran_oauth:
         # create or overwrite global file
-        create_global(access_token)
+        create_global(access_token, host)
 
     api = ApiCalls(host, access_token)
     # create a directory
@@ -995,8 +1012,14 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
     config_parser.set('main', 'default_locale', locale)
     # get community id
     community_info = api.get_communities_info()
-    # print("Community INFO")
-    # print(len(community_info))
+    if not community_info:
+        from ltk.auth import run_oauth
+        access_token = run_oauth(host)
+        create_global(access_token, host)
+        community_info = api.get_communities_info()
+        if not community_info:
+            raise exceptions.RequestFailedError("Unable to get user's list of communities")
+
     if len(community_info) == 0:
         raise exceptions.ResourceNotFound('You are not part of any communities in Lingotek Cloud')
     if len(community_info) > 1:
@@ -1015,7 +1038,7 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
         confirm = 'none'
         while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
             confirm = input('Would you like to use an existing Lingotek project? [Y/n]:')
-        if confirm and confirm in ['y', 'Y', 'yes', 'Yes']:
+        if not confirm or not confirm in ['n', 'N', 'no', 'No']:
             project_id, project_name = display_choice('project', project_info)
             config_parser.set('main', 'project_id', project_id)
             config_parser.set('main', 'project_name', project_name)

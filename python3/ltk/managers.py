@@ -74,11 +74,23 @@ class DocumentManager:
         """ returns all the names of documents that the user has added """
         file_names = []
         for entry in self._db.all():
-            file_names.append(entry['file_name'])
+            file_names.append(entry['name'])
         return file_names
 
     def remove_element(self, doc_id):
         self._db.remove(where('id') == doc_id)
+
+    def clear_prop(self, doc_id, prop):
+        """ Clear specified property of a document according to its type """
+        entry = self._db.get(where('id') == doc_id)
+        if isinstance(entry[prop],str):
+            self.update_document(prop,"",doc_id)
+        elif isinstance(entry[prop],int):
+            self.update_document(prop,0,doc_id)
+        elif isinstance(entry[prop],list):
+            self.update_document(prop,[],doc_id)
+        elif isinstance(entry[prop],dict):
+            self.update_document(prop,{},doc_id)
 
     def clear_all(self):
         self._db.purge()

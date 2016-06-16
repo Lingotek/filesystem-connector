@@ -286,7 +286,8 @@ class ApiCalls:
     def get_communities_info(self):
         response = self.list_communities()
         if response.status_code != 200:
-            raise RequestFailedError("Unable to get user's list of communities")
+            # raise RequestFailedError("Unable to get user's list of communities")
+            return None # Don't stop execution upon incorrect access token
         entities = response.json()['entities']
         info = {}
         for entity in entities:
