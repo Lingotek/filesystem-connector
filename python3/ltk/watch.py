@@ -106,7 +106,7 @@ class WatchAction(Action):
         except KeyboardInterrupt:
             self.observer.stop()
         except Exception as err:
-            restart("Error: "+str(err)+"\nRestarting watch.")
+            restart("Error on modified: "+str(err)+"\nRestarting watch.")
 
     def _on_created(self, event):
         # get path
@@ -161,7 +161,7 @@ class WatchAction(Action):
         except KeyboardInterrupt:
             self.observer.stop()
         except Exception as err:
-            restart("Error: "+str(err)+"\nRestarting watch.")
+            restart("Error on created: "+str(err)+"\nRestarting watch.")
 
     def _on_moved(self, event):
         """Used for programs, such as gedit, that modify documents by moving (overwriting)
@@ -173,7 +173,7 @@ class WatchAction(Action):
         except KeyboardInterrupt:
             self.observer.stop()
         except Exception as err:
-            restart("Error: "+str(err)+"\nRestarting watch.")
+            restart("Error on moved: "+str(err)+"\nRestarting watch.")
 
     def get_watch_locales(self, document_id):
         """ determine the locales that should be added for a watched doc """
