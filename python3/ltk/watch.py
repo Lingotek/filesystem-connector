@@ -77,88 +77,103 @@ class WatchAction(Action):
 
     def _on_modified(self, event):
         """ Notify Lingotek cloud when a previously added file is modified """
-        db_entries = self.doc_manager.get_all_entries()
-        in_db = False
-        fn = ''
-        # print event.src_path
-        for entry in db_entries:
-            # print entry['file_name']
-            if event.src_path.endswith(entry['file_name']):
-                fn = entry['file_name']
-                in_db = True
-        if not event.is_directory and in_db:
-            try:
-                # check that document is added in TMS before updating
-                if self.check_remote_doc_exist(fn) and self.doc_manager.is_doc_modified(fn, self.path):
-                    # logger.info('Detected local content modified: {0}'.format(fn))
-                    # self.update_document_action(os.path.join(self.path, fn))
-                    # logger.info('Updating remote content: {0}'.format(fn))
-                    self.update_content(fn)
-            except KeyboardInterrupt:
-                self.observer.stop()
-            except ConnectionError:
-                print("Could not connect to remote server.")
-                restart()
-            except ValueError:
-                print(sys.exc_info()[1])
-                restart()
+        try:
+            db_entries = self.doc_manager.get_all_entries()
+            in_db = False
+            fn = ''
+            # print event.src_path
+            for entry in db_entries:
+                # print entry['file_name']
+                if event.src_path.endswith(entry['file_name']):
+                    fn = entry['file_name']
+                    in_db = True
+            if not event.is_directory and in_db:
+                try:
+                    # check that document is added in TMS before updating
+                    if self.check_remote_doc_exist(fn) and self.doc_manager.is_doc_modified(fn, self.path):
+                        # logger.info('Detected local content modified: {0}'.format(fn))
+                        # self.update_document_action(os.path.join(self.path, fn))
+                        # logger.info('Updating remote content: {0}'.format(fn))
+                        self.update_content(fn)
+                except KeyboardInterrupt:
+                    self.observer.stop()
+                except ConnectionError:
+                    print("Could not connect to remote server.")
+                    restart()
+                except ValueError:
+                    print(sys.exc_info()[1])
+                    restart()
+        except KeyboardInterrupt:
+            self.observer.stop()
+        except Exception as err:
+            restart("Error: "+str(err)+"\nRestarting watch.")
 
     def _on_created(self, event):
         # get path
         # add action
-        file_path = event.src_path
-        # if it's a hidden document, don't do anything 
-        if not is_hidden_file(file_path):
-            relative_path = file_path.replace(self.path, '')
-            title = os.path.basename(os.path.normpath(file_path))
-            curr_ext = os.path.splitext(file_path)[1]
-            # return if the extension should be ignored or if the path is not a file
-            if curr_ext in self.ignore_ext or not os.path.isfile(file_path):
-                # logger.info("Detected a file with an extension in the ignore list, ignoring..")
-                return
-            # only add or update the document if it's not a hidden document and it's a new file
-            try:
-                if self.doc_manager.is_doc_new(relative_path) and self.watch_folder:
-                    self.add_document(file_path, title, locale=self.locale)
-                elif self.doc_manager.is_doc_modified(relative_path, self.path):
-                    self.update_content(relative_path)
-                else:
+        try:
+            file_path = event.src_path
+            # if it's a hidden document, don't do anything 
+            if not is_hidden_file(file_path):
+                relative_path = file_path.replace(self.path, '')
+                title = os.path.basename(os.path.normpath(file_path))
+                curr_ext = os.path.splitext(file_path)[1]
+                # return if the extension should be ignored or if the path is not a file
+                if curr_ext in self.ignore_ext or not os.path.isfile(file_path):
+                    # logger.info("Detected a file with an extension in the ignore list, ignoring..")
                     return
-            except KeyboardInterrupt:
-                self.observer.stop()
-            except ConnectionError:
-                print("Could not connect to remote server.")
-                restart()
-            except ValueError:
-                print(sys.exc_info()[1])
-                restart()
-
-            document_id = self.doc_manager.get_doc_by_prop('name', title)['id']
-            if self.locale_delimiter:
+                # only add or update the document if it's not a hidden document and it's a new file
                 try:
-                    # curr_locale = title.split(self.locale_delimiter)[1]
-                    # todo locale detection needs to be more robust
-                    curr_locale = title.split(self.locale_delimiter)[-2]
-                    fixed_locale = map_locale(curr_locale)
-                    if fixed_locale:
-                        print ("fixed locale:", fixed_locale)
-                        # self.watch_locales.add(fixed_locale)
-                        self.detected_locales[document_id] = fixed_locale
+                    if self.doc_manager.is_doc_new(relative_path) and self.watch_folder:
+                        self.add_document(file_path, title, locale=self.locale)
+                    elif self.doc_manager.is_doc_modified(relative_path, self.path):
+                        self.update_content(relative_path)
                     else:
-                        logger.warning('This document\'s detected locale: {0} is not supported.'.format(curr_locale))
-                except IndexError:
-                    logger.warning('Cannot detect locales from file: {0}, not adding any locales'.format(title))
-            self.watch_add_target(title, document_id)
-            # logger.info('Added new document {0}'.format(title
-        # else:
-        #     print("Skipping hidden file "+file_path)
+                        return
+                except KeyboardInterrupt:
+                    self.observer.stop()
+                except ConnectionError:
+                    print("Could not connect to remote server.")
+                    restart()
+                except ValueError:
+                    print(sys.exc_info()[1])
+                    restart()
+
+                document_id = self.doc_manager.get_doc_by_prop('name', title)['id']
+                if self.locale_delimiter:
+                    try:
+                        # curr_locale = title.split(self.locale_delimiter)[1]
+                        # todo locale detection needs to be more robust
+                        curr_locale = title.split(self.locale_delimiter)[-2]
+                        fixed_locale = map_locale(curr_locale)
+                        if fixed_locale:
+                            print ("fixed locale:", fixed_locale)
+                            # self.watch_locales.add(fixed_locale)
+                            self.detected_locales[document_id] = fixed_locale
+                        else:
+                            logger.warning('This document\'s detected locale: {0} is not supported.'.format(curr_locale))
+                    except IndexError:
+                        logger.warning('Cannot detect locales from file: {0}, not adding any locales'.format(title))
+                self.watch_add_target(title, document_id)
+                # logger.info('Added new document {0}'.format(title
+            # else:
+            #     print("Skipping hidden file "+file_path)
+        except KeyboardInterrupt:
+            self.observer.stop()
+        except Exception as err:
+            restart("Error: "+str(err)+"\nRestarting watch.")
 
     def _on_moved(self, event):
         """Used for programs, such as gedit, that modify documents by moving (overwriting)
         the previous document with the temporary file. Only the moved event contains the name of the
         destination file."""
-        event = FileSystemEvent(event.dest_path)
-        self._on_modified(event)
+        try:
+            event = FileSystemEvent(event.dest_path)
+            self._on_modified(event)
+        except KeyboardInterrupt:
+            self.observer.stop()
+        except Exception as err:
+            restart("Error: "+str(err)+"\nRestarting watch.")
 
     def get_watch_locales(self, document_id):
         """ determine the locales that should be added for a watched doc """
@@ -258,11 +273,8 @@ class WatchAction(Action):
             print ("Watching for updates to added documents")
         self.ignore_ext.extend(ignore)
         self.locale_delimiter = delimiter
-        try:
-            self.observer.schedule(self.handler, path=watch_path, recursive=True)
-            self.observer.start()
-        except KeyboardInterrupt:
-            self.observer.stop()
+        self.observer.schedule(self.handler, path=watch_path, recursive=True)
+        self.observer.start()
         queue_timeout = 3
         # start_time = time.clock()
         try:
@@ -276,5 +288,7 @@ class WatchAction(Action):
                 time.sleep(self.timeout)
         except KeyboardInterrupt:
             self.observer.stop()
+        except Exception as err:
+            restart("Error: "+str(err)+"\nRestarting watch.")
 
         self.observer.join()
