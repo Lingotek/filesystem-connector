@@ -92,6 +92,12 @@ class DocumentManager:
         elif isinstance(entry[prop],dict):
             self.update_document(prop,{},doc_id)
 
+    def remove_element_in_prop(self, doc_id, prop, element):
+        doc_prop = self.get_doc_by_prop('id', doc_id)[prop]
+        if element in doc_prop:
+            doc_prop.remove(element)
+        self.update_document(prop, doc_prop, doc_id)
+
     def clear_all(self):
         self._db.purge()
 
@@ -104,8 +110,11 @@ def _update_entry_list(field, new_val):
             element[field] = []
         if new_val:
             # element[field].extend(new_val)
-            element[field].extend([val.replace('-', '_') for val in new_val])
-            element[field] = list(set(element[field]))
+            for i in range(len(new_val)):
+                new_val[i] = new_val[i].replace('-', '_')
+            # element[field].extend([val.replace('-', '_') for val in new_val])
+            # element[field] = list(set(element[field]))
+            element[field] = new_val
         else:
             element[field] = []
 

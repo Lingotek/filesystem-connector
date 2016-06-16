@@ -227,24 +227,22 @@ class WatchAction(Action):
         self.update_document_action(os.path.join(self.path, relative_path))
         logger.info('Updating remote content: {0}'.format(relative_path))
 
-    def check_modified(self, doc):
+    def check_modified(self, doc): # Checks if the version of a document on Lingotek's system is more recent than the local version
         old_date = doc['last_mod']
-        print("old_date: "+str(old_date))
         response = self.api.get_document(doc['id'])
         if response.status_code == 200:
             new_date = response.json()['properties']['modified_date']
-            print("new_date: "+str(new_date))
             # orig_count = response.json()['entities'][1]['properties']['count']['character']
         else:
             print("Document not found on Lingotek Cloud: "+str(doc['name']))
             return False
-        return True
+        if int(old_date)<int(str(new_date)[0:10]):
+            return True
+        return False
 
     @retry(logger)
     def poll_remote(self):
         """ poll lingotek servers to check if translation is finished """
-        print("poll_remote")
-        print("self.watch_queue: "+str(self.watch_queue))
         documents = self.doc_manager.get_all_entries()  # todo this gets all documents, not necessarily only ones in watch folder
         for doc in documents:
             doc_id = doc['id']
@@ -252,9 +250,6 @@ class WatchAction(Action):
                 # if doc id in queue, not imported yet
                 continue
             locale_progress = self.import_locale_info(doc_id, True)
-            if self.check_modified(doc):
-                print("Document modified")
-                self.doc_manager.clear_prop(doc_id, 'downloaded')
             try:
                 downloaded = doc['downloaded']
             except KeyError:
@@ -263,11 +258,15 @@ class WatchAction(Action):
             for locale in locale_progress:
                 progress = locale_progress[locale]
                 if progress == 100 and locale not in downloaded:
+
                     logger.info('Translation completed ({0} - {1})'.format(doc_id, locale))
                     if self.locale_delimiter:
                         self.download_action(doc_id, locale, False, False)
                     else:
                         self.download_action(doc_id, locale, False)
+                elif progress != 100 and locale in downloaded:
+                    print("Locale "+str(locale)+" for document "+doc['name']+" is no longer completed.")
+                    self.doc_manager.remove_element_in_prop(doc_id, 'downloaded', locale)
 
 
     def complete_path(self, file_location):
@@ -309,7 +308,7 @@ class WatchAction(Action):
                 time.sleep(self.timeout)
         except KeyboardInterrupt:
             self.observer.stop()
-        except Exception as err:
-            restart("Error: "+str(err)+"\nRestarting watch.")
+        # except Exception as err:
+        #     restart("Error: "+str(err)+"\nRestarting watch.")
 
         self.observer.join()
