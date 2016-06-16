@@ -5,7 +5,7 @@ import fnmatch
 import time
 from ltk import exceptions
 from ltk.apicalls import ApiCalls
-from ltk.utils import detect_format
+from ltk.utils import detect_format, map_locale
 from ltk.managers import DocumentManager
 from ltk.constants import CONF_DIR, CONF_FN, SYSTEM_FILE
 
@@ -180,6 +180,17 @@ class Action:
                 logger.warning('Error: Invalid value for "-f" / "--watch_folder": Path "'+watch_folder+'" does not exist.')
                 return
         if target_locales:
+            valid_locales = []
+            response = self.api.list_locales()
+            if response.status_code != 200:
+              raise exceptions.RequestFailedError("Unable to check valid locale codes")
+            locale_json = response.json()
+            for entry in locale_json:
+              valid_locales.append(locale_json[entry]['locale'])
+            for locale in target_locales:
+                if locale.replace("-","_") not in valid_locales:
+                    logger.warning('The locale code "'+str(locale)+'" failed to be added since it is invalid (see "ltk list -l" for the list of valid codes).')
+                    return
             log_info = 'Added target locales: {} for watch folder'.format(
                 ','.join(target for target in target_locales))
             self.watch_locales = set(target_locales)
@@ -187,10 +198,16 @@ class Action:
             self.update_config_file('watch_locales', target_locales, conf_parser, config_file_name, log_info)
 
         #print ('Token: {0}'.format(self.access_token))
+        watch_dir = "None"
+        if self.watch_dir and self.watch_dir != "--default":
+            watch_dir = self.watch_dir
+        download_dir = "None"
+        if self.download_dir and self.download_dir != "--default" and self.download_dir != "--same":
+            download_dir = self.download_dir
         print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity id: {4}\nWorkflow id: {5}\n' \
               'Default Source Locale: {6}\nWatch - Source Folder: {7}\nWatch - Download Folder: {8}\nWatch - Target Locales: {9}'.format(
-            self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.watch_dir,
-            self.download_dir, ', '.join(x for x in self.watch_locales)))
+            self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, watch_dir,
+            download_dir, ', '.join(x for x in self.watch_locales)))
 
     def add_document(self, file_name, title, **kwargs):
         if not 'locale' in kwargs or not kwargs['locale']:

@@ -95,7 +95,6 @@ class WatchAction(Action):
                         # self.update_document_action(os.path.join(self.path, fn))
                         # logger.info('Updating remote content: {0}'.format(fn))
                         self.update_content(fn)
-                        print("Called update_content")
                 except KeyboardInterrupt:
                     self.observer.stop()
                 except ConnectionError:
@@ -108,7 +107,6 @@ class WatchAction(Action):
             self.observer.stop()
         except Exception as err:
             restart("Error on modified: "+str(err)+"\nRestarting watch.")
-        print("finish _on_modified")
 
     def _on_created(self, event):
         # get path
