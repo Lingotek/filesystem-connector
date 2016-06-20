@@ -224,8 +224,11 @@ class Action:
             self._add_document(relative_path, title, response.json()['properties']['id'])
 
     def add_action(self, file_patterns, **kwargs):
+        print("add_action")
+        print("kwargs: "+str(kwargs))
         # format will be automatically detected by extension but may not be what user expects
         # use current working directory as root for files instead of project root
+        print("file patterns: "+str(file_patterns))
         matched_files = get_files(file_patterns)
         if not matched_files:
             raise exceptions.ResourceNotFound("Could not find the specified file/pattern")

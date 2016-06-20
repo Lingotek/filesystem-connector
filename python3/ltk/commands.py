@@ -147,7 +147,7 @@ def config(locale, workflow_id, download_folder, watch_folder, target_locales):
 @click.option('-fsi', '--fprm_subfilter_id', help='fprm subfilter id')
 @click.option('-v', '--vault_id', help='Save-to TM vault id')
 @click.option('-e', '--external_url', help='Source url')
-@click.option('-f', '--force', flag_value=True, help='Overwrite previously added file if the file has been modified')
+@click.option('-o', '--force', flag_value=True, help='Overwrite previously added file if the file has been modified')
 def add(file_names, **kwargs):
     """ Adds content. Could be one or more files specified by a Unix shell pattern """
     try:
