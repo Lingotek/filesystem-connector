@@ -41,4 +41,13 @@ Here is video that shows the basics...
 
 [![Lingotek Filesystem Connector](http://img.youtube.com/vi/CbsvVar2rFs/0.jpg)](http://www.youtube.com/watch?v=CbsvVar2rFs)
 
+
+Next, is a video that demonstrates how a folder can be watched for new files and changes for automating the translation process... (see: ''ltk watch --help'')
+
+[![Lingotek Filesystem Connector](http://img.youtube.com/vi/CTRm-ythnPI/0.jpg)](https://www.youtube.com/watch?v=CTRm-ythnP)
+
+
+
 Checkout other installation notes [here](https://github.com/Lingotek/translation-utility/wiki/Other-Installation-Notes).
+
+
