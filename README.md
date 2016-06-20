@@ -44,7 +44,7 @@ Here is video that shows the basics...
 
 Next, is a video that demonstrates how a folder can be watched for new files and changes for automating the translation process... (see: ''ltk watch --help'')
 
-[![Lingotek Filesystem Connector](http://img.youtube.com/vi/CTRm-ythnPI/0.jpg)](https://www.youtube.com/watch?v=CTRm-ythnP)
+[![Lingotek Filesystem Connector](http://img.youtube.com/vi/CTRm-ythnPI/0.jpg)](https://youtu.be/CTRm-ythnPI)
 
 
 
