@@ -13,12 +13,6 @@ Developers love how easily it can be used to interact with the Translation Netwo
 pip install ltk
 ```
 
-If you have Python 2 and pip installed and you want to use the filesystem-connector with Python 2, you can specify the version of ltk that supports Python 2 during the install process.
-
-```bash
-pip install==0.1.2
-```
-
 You can also install the latest version by downloading this repository and then, from the root directly, run:
 
 ```bash
@@ -47,4 +41,13 @@ Here is video that shows the basics...
 
 [![Lingotek Filesystem Connector](http://img.youtube.com/vi/CbsvVar2rFs/0.jpg)](http://www.youtube.com/watch?v=CbsvVar2rFs)
 
+
+Next, is a video that demonstrates how a folder can be watched for new files and changes for automating the translation process... (see: ''ltk watch --help'')
+
+[![Lingotek Filesystem Connector](http://img.youtube.com/vi/CTRm-ythnPI/0.jpg)](https://youtu.be/CTRm-ythnPI)
+
+
+
 Checkout other installation notes [here](https://github.com/Lingotek/translation-utility/wiki/Other-Installation-Notes).
+
+
