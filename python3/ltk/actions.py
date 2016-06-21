@@ -224,11 +224,8 @@ class Action:
             self._add_document(relative_path, title, response.json()['properties']['id'])
 
     def add_action(self, file_patterns, **kwargs):
-        print("add_action")
-        print("kwargs: "+str(kwargs))
         # format will be automatically detected by extension but may not be what user expects
         # use current working directory as root for files instead of project root
-        print("file patterns: "+str(file_patterns))
         matched_files = get_files(file_patterns)
         if not matched_files:
             raise exceptions.ResourceNotFound("Could not find the specified file/pattern")
@@ -367,6 +364,8 @@ class Action:
                 logger.error('Could not add target. No valid file specified.')
                 return
             docs.append(entry)
+        if len(docs) == 0:
+            logger.info("No documents to request target.")
         for entry in docs:
             document_id = entry['id']
             document_name = entry['file_name']
