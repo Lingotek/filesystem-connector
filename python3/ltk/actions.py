@@ -313,6 +313,17 @@ class Action:
         self.doc_manager.update_document('locales', locale_info, document_id)
 
     def target_action(self, document_name, path, locales, to_delete, due_date, workflow, document_id=None):
+        valid_locales = []
+        response = self.api.list_locales()
+        if response.status_code != 200:
+          raise exceptions.RequestFailedError("Unable to check valid locale codes")
+        locale_json = response.json()
+        for entry in locale_json:
+          valid_locales.append(locale_json[entry]['locale'])
+        for locale in locales:
+            if locale.replace("-","_") not in valid_locales:
+                logger.warning('The locale code "'+str(locale)+'" failed to be added since it is invalid (see "ltk list -l" for the list of valid codes).')
+                return
         if path:
             document_id = None
             document_name = None
@@ -344,6 +355,7 @@ class Action:
             if change_db_entry:
                 for document_id in document_ids:
                     self._target_action_db(to_delete, locales, document_id)
+            return
         elif path:
             docs = self.get_docs_in_path(path)
         else:
@@ -365,7 +377,10 @@ class Action:
                 return
             docs.append(entry)
         if len(docs) == 0:
-            logger.info("No documents to request target.")
+            if path and len(path) > 0:
+                logger.info("File "+str(path)+" not found.")
+            else:
+                logger.info("No documents to request target locale.")
         for entry in docs:
             document_id = entry['id']
             document_name = entry['file_name']
