@@ -98,6 +98,12 @@ class DocumentManager:
             doc_prop.remove(element)
         self.update_document(prop, doc_prop, doc_id)
 
+    def add_element_to_prop(self, doc_id, prop, element):
+        doc_prop = self.get_doc_by_prop('id',doc_id)[prop]
+        if element not in doc_prop:
+            doc_prop.append(element)
+        self.update_document(prop, doc_prop, doc_id)
+
     def clear_all(self):
         self._db.purge()
 
