@@ -145,6 +145,21 @@ class Action:
                     docs.append(file_name)
         return docs
 
+    def get_doc_locales(self, doc_id):
+        locales = []
+        response = self.api.document_translation_status(doc_id)
+        if response.status_code != 200:
+            raise_error(response.json(), 'Failed to get detailed status of document', True, doc_id, doc_name)
+        try:
+            if 'entities' in response.json():
+                for entry in response.json()['entities']:
+                    locales.append(entry['properties']['locale_code'])
+        except KeyError as e:
+            print("Error listing translations")
+            return
+            # return detailed_status
+        return locales
+
     def config_action(self, locale, workflow_id, download_folder, watch_folder, target_locales):
         config_file_name, conf_parser = self.init_config_file()
         if locale:
@@ -215,6 +230,7 @@ class Action:
         else:
             locale = kwargs['locale']
         response = self.api.add_document(locale, file_name, self.project_id, title, **kwargs)
+        # print("response: "+str(response.json()))
         if response.status_code != 202:
             raise_error(response.json(), "Failed to add document {0}".format(title), True)
         else:
@@ -235,7 +251,7 @@ class Action:
             title = os.path.basename(relative_path)
             if not self.doc_manager.is_doc_new(relative_path):
                 if self.doc_manager.is_doc_modified(relative_path, self.path):
-                    if 'force' in kwargs and kwargs['force']:
+                    if 'overwrite' in kwargs and kwargs['overwrite']:
                         confirm = 'Y'
                     else:
                         confirm = 'not confirmed'
@@ -312,7 +328,8 @@ class Action:
             locale_info = []
         self.doc_manager.update_document('locales', locale_info, document_id)
 
-    def target_action(self, document_name, path, locales, to_delete, due_date, workflow, document_id=None):
+    # def request_action
+    def target_action(self, document_name, path, entered_locales, to_delete, due_date, workflow, document_id=None):
         valid_locales = []
         response = self.api.list_locales()
         if response.status_code != 200:
@@ -320,10 +337,12 @@ class Action:
         locale_json = response.json()
         for entry in locale_json:
           valid_locales.append(locale_json[entry]['locale'])
-        for locale in locales:
+        locales = []
+        for locale in entered_locales:
             if locale.replace("-","_") not in valid_locales:
                 logger.warning('The locale code "'+str(locale)+'" failed to be added since it is invalid (see "ltk list -l" for the list of valid codes).')
-                return
+            else:
+                locales.append(locale.replace("-","_"))
         if path:
             document_id = None
             document_name = None
@@ -339,23 +358,7 @@ class Action:
         # print("doc_name: "+str(document_name))
         docs = []
         if not path and not document_name and not document_id:
-            for locale in locales:
-                response = self.api.project_add_target(self.project_id, locale, due_date) if not to_delete \
-                    else self.api.project_delete_target(self.project_id, locale)
-                if response.status_code != expected_code:
-                    print(response.json()['messages'][0])
-                    raise_error(response.json(), '{message} {locale} for project'.format(message=failure_message,
-                                                                                         locale=locale), True)
-                    change_db_entry = False
-                    self.update_doc_locales(document_id)
-                    continue
-                logger.info('{message} {locale} for project {project_name}'.format(message=info_message, locale=locale,
-                                                                                   project_name=self.project_name))
-            document_ids = self.doc_manager.get_doc_ids()
-            if change_db_entry:
-                for document_id in document_ids:
-                    self._target_action_db(to_delete, locales, document_id)
-            return
+            docs = self.doc_manager.get_all_entries()
         elif path:
             docs = self.get_docs_in_path(path)
         else:
@@ -373,7 +376,7 @@ class Action:
                     return
                     # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
             if not entry:
-                logger.error('Could not add target. No valid file specified.')
+                logger.error('Could not add target. File specified is invalid.')
                 return
             docs.append(entry)
         if len(docs) == 0:
@@ -392,12 +395,13 @@ class Action:
                     raise_error(response.json(), '{message} {locale} for document {name}'.format(message=failure_message,
                                                                                           locale=locale,name=document_name), True)
                     change_db_entry = False
-                    self.update_doc_locales(document_id)
+                    # self.update_doc_locales(document_id)
                     continue
                 logger.info('{message} {locale} for document {name}'.format(message=info_message,
                                                                             locale=locale, name=document_name))
-            if change_db_entry:
-                self._target_action_db(to_delete, locales, document_id)
+            remote_locales = self.get_doc_locales(document_id)
+            if change_db_entry and remote_locales:
+                self._target_action_db(to_delete, remote_locales, document_id)
 
     def list_ids_action(self, path):
         """ lists ids of list_type specified """

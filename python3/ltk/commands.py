@@ -90,7 +90,7 @@ def ltk(is_quiet, verbosity_lvl):
               help='Delete the current project remotely and re-initialize')
 # todo add a 'change' option so don't delete remote project
 # @click.option('-c', '--change', flag_value=True, help='Change the Lingotek project. ')
-@click.option('--reset', flag_value=True, help='Re-authorize and reset any stored access tokens')
+@click.option('--reset', flag_value=True, help='Reauthorize and reset any stored access tokens')
 def init(host, access_token, path, project_name, workflow_id, locale, delete, reset):
     """ Connects a local project to Lingotek """
     try:
@@ -147,7 +147,7 @@ def config(locale, workflow_id, download_folder, watch_folder, target_locales):
 @click.option('-fsi', '--fprm_subfilter_id', help='fprm subfilter id')
 @click.option('-v', '--vault_id', help='Save-to TM vault id')
 @click.option('-e', '--external_url', help='Source url')
-@click.option('-o', '--force', flag_value=True, help='Overwrite previously added file if the file has been modified')
+@click.option('-o', '--overwrite', flag_value=True, help='Overwrite previously added file if the file has been modified')
 def add(file_names, **kwargs):
     """ Adds content. Could be one or more files specified by a Unix shell pattern """
     try:
@@ -185,6 +185,8 @@ def request(doc_name, path, locales, to_delete, due_date, workflow):
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
+        if isinstance(locales,str):
+            locales = [locales]
         action.target_action(doc_name, path, locales, to_delete, due_date, workflow)
     except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
         print_log(e)
