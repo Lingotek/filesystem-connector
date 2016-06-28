@@ -578,13 +578,18 @@ class Action:
             for doc_id in doc_ids:
                 response = self.api.document_status(doc_id)
                 if response.status_code != 200:
-                    raise_error(response.json(), "Failed to get status of document", True, doc_id)
+                    entry = self.doc_manager.get_doc_by_prop('id', doc_id)
+                    if entry:
+                        error_message = "Failed to get status of document "+entry['name']
+                    else:
+                        error_message = "Failed to get status of document "+str(doc_id)
+                    raise_error(response.json(), error_message, True, doc_id)
                 else:
                     title = response.json()['properties']['title']
                     progress = response.json()['properties']['progress']
                     self.print_status(title, progress)
-                if 'detailed' in kwargs and kwargs['detailed']:
-                    self.print_detailed(doc_id, title)
+                    if 'detailed' in kwargs and kwargs['detailed']:
+                        self.print_detailed(doc_id, title)
         except requests.exceptions.ConnectionError:
             logger.warning("Could not connect to Lingotek")
             exit()
