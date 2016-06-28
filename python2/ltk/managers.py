@@ -1,11 +1,17 @@
 from tinydb import TinyDB, where
 import os
-from constants import CONF_DIR, DB_FN
+from ltk.constants import CONF_DIR, DB_FN
 
 class DocumentManager:
     def __init__(self, path):
-        db_file = os.path.join(path, CONF_DIR, DB_FN)
-        self._db = TinyDB(db_file)
+        self.db_file = os.path.join(path, CONF_DIR, DB_FN)
+        self._db = TinyDB(self.db_file)
+
+    def open_db(self):
+        self._db = TinyDB(self.db_file)
+
+    def close_db(self):
+        self._db.close()
 
     def doc_exists(self, file_name, title):
         entries = self._db.search((where('file_name') == file_name) & (where('name') == title))
@@ -51,14 +57,52 @@ class DocumentManager:
         return self._db.all()
 
     def get_doc_ids(self):
-        """ returns all the ids of documents that user has added """
+        """ returns all the ids of documents that the user has added """
         doc_ids = []
         for entry in self._db.all():
             doc_ids.append(entry['id'])
         return doc_ids
 
+    def get_file_names(self):
+        """ returns all the file names of documents that the user has added """
+        file_names = []
+        for entry in self._db.all():
+            file_names.append(entry['file_name'])
+        return file_names
+
+    def get_names(self):
+        """ returns all the names of documents that the user has added """
+        file_names = []
+        for entry in self._db.all():
+            file_names.append(entry['name'])
+        return file_names
+
     def remove_element(self, doc_id):
         self._db.remove(where('id') == doc_id)
+
+    def clear_prop(self, doc_id, prop):
+        """ Clear specified property of a document according to its type """
+        entry = self._db.get(where('id') == doc_id)
+        if isinstance(entry[prop],str):
+            self.update_document(prop,"",doc_id)
+        elif isinstance(entry[prop],int):
+            self.update_document(prop,0,doc_id)
+        elif isinstance(entry[prop],list):
+            self.update_document(prop,[],doc_id)
+        elif isinstance(entry[prop],dict):
+            self.update_document(prop,{},doc_id)
+
+    def remove_element_in_prop(self, doc_id, prop, element):
+        doc_prop = self.get_doc_by_prop('id', doc_id)[prop]
+        if element in doc_prop:
+            doc_prop.remove(element)
+        self.update_document(prop, doc_prop, doc_id)
+
+    def add_element_to_prop(self, doc_id, prop, element):
+        doc_prop = self.get_doc_by_prop('id',doc_id)[prop]
+        if element not in doc_prop:
+            doc_prop.append(element)
+        self.update_document(prop, doc_prop, doc_id)
 
     def clear_all(self):
         self._db.purge()
@@ -72,8 +116,11 @@ def _update_entry_list(field, new_val):
             element[field] = []
         if new_val:
             # element[field].extend(new_val)
-            element[field].extend([val.replace('-', '_') for val in new_val])
-            element[field] = list(set(element[field]))
+            for i in range(len(new_val)):
+                new_val[i] = new_val[i].replace('-', '_')
+            # element[field].extend([val.replace('-', '_') for val in new_val])
+            # element[field] = list(set(element[field]))
+            element[field] = new_val
         else:
             element[field] = []
 
