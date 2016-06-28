@@ -410,9 +410,15 @@ class Action:
                     continue
                 logger.info('{message} {locale} for document {name}'.format(message=info_message,
                                                                             locale=locale, name=document_name))
-            remote_locales = self.get_doc_locales(document_id)
-            if change_db_entry and remote_locales:
-                self._target_action_db(to_delete, remote_locales, document_id)
+            remote_locales = self.get_doc_locales(document_id) # Get locales from Lingotek Cloud
+            locales_to_add = []
+            if change_db_entry:
+                # Make sure that the locales that were just added are added to the database as well as the previous remote locales (since they were only just recently added to Lingotek's system)
+                if remote_locales and not to_delete:
+                    for locale in remote_locales:
+                        if locale not in locales:
+                            locales_to_add.append(locale)
+                self._target_action_db(to_delete, locales_to_add, document_id)
 
     def list_ids_action(self, path):
         """ lists ids of list_type specified """
@@ -633,7 +639,8 @@ class Action:
                     download_path = os.path.dirname(file_name)
                 download_path = os.path.join(self.path,os.path.join(download_path, downloaded_name))
                 logger.info('Downloaded: {0} ({1} - {2})'.format(downloaded_name, base_name, locale_code))
-                self.doc_manager.update_document('downloaded', [locale_code], document_id)
+
+            self.doc_manager.add_element_to_prop(document_id, 'downloaded', locale_code)
 
             with open(download_path, 'wb') as fh:
                 for chunk in response.iter_content(1024):
