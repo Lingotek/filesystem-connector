@@ -155,7 +155,7 @@ class Action:
         locales = []
         response = self.api.document_translation_status(doc_id)
         if response.status_code != 200:
-            raise_error(response.json(), 'Failed to get detailed status of document', True, doc_id, doc_name)
+            raise_error(response.json(), 'Failed to get detailed status of document', True, doc_id)
         try:
             if 'entities' in response.json():
                 for entry in response.json()['entities']:
@@ -403,9 +403,12 @@ class Action:
                 response = self.api.document_add_target(document_id, locale, workflow, due_date) if not to_delete \
                     else self.api.document_delete_target(document_id, locale)
                 if response.status_code != expected_code:
-                    print(response.json()['messages'][0])
-                    raise_error(response.json(), '{message} {locale} for document {name}'.format(message=failure_message,
-                                                                                          locale=locale,name=document_name), True)
+                    if (response.json() and response.json()['messages']):
+                        response_message = response.json()['messages'][0]
+                        print(response_message.replace(document_id, document_name + ' (' + document_id + ')'))
+                        if 'not found' in response_message:
+                            return
+                    raise_error(response.json(), '{message} {locale} for document {name}'.format(message=failure_message, locale=locale, name=document_name), True)
                     change_db_entry = False
                     # self.update_doc_locales(document_id)
                     continue
@@ -583,6 +586,9 @@ class Action:
                 if 'detailed' in kwargs and kwargs['detailed']:
                     self.print_detailed(doc_id, title)
         except requests.exceptions.ConnectionError:
+            logger.warning("Could not connect to Lingotek")
+            exit()
+        except json.decoder.JSONDecodeError:
             logger.warning("Could not connect to Lingotek")
             exit()
 
