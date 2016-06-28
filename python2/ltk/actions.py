@@ -4,6 +4,7 @@ from ConfigParser import ConfigParser, NoOptionError
 # Python 3
 # from configparser import ConfigParser, NoOptionError
 # End Python 3
+import requests
 import os
 import shutil
 import fnmatch
