@@ -108,7 +108,7 @@ class Action:
 
     def update_config_file(self, option, value, conf_parser, config_file_name, log_info):
         conf_parser.set('main', option, value)
-        with open(config_file_name, 'wb') as new_file:
+        with open(config_file_name, 'w') as new_file:
             conf_parser.write(new_file)
         # self._initialize_self()
         logger.info(log_info)
