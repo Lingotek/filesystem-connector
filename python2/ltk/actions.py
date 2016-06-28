@@ -1,21 +1,18 @@
 # Python 2
 from ConfigParser import ConfigParser, NoOptionError
-# End Python 2
 # Python 3
 # from configparser import ConfigParser, NoOptionError
-# End Python 3
 import requests
 import os
 import shutil
 import fnmatch
 import time
-import json
 from ltk import exceptions
 from ltk.apicalls import ApiCalls
 from ltk.utils import detect_format, map_locale
 from ltk.managers import DocumentManager
 from ltk.constants import CONF_DIR, CONF_FN, SYSTEM_FILE
-
+import json
 from ltk.logger import logger
 
 
@@ -156,7 +153,7 @@ class Action:
         locales = []
         response = self.api.document_translation_status(doc_id)
         if response.status_code != 200:
-            raise_error(response.json(), 'Failed to get detailed status of document', True, doc_id, doc_name)
+            raise_error(response.json(), 'Failed to get detailed status of document', True, doc_id)
         try:
             if 'entities' in response.json():
                 for entry in response.json()['entities']:
@@ -266,10 +263,8 @@ class Action:
                         prompt_message = "This document already exists. Would you like to overwrite it? [Y/n]: "
                         # Python 2
                         confirm = raw_input(prompt_message)
-                        # End Python 2
                         # Python 3
-                        # confirm = input(prompt_message)
-                        # End Python 3
+#                         confirm = input(prompt_message)
                     # confirm if would like to overwrite existing document in Lingotek Cloud
                     if not confirm or confirm in ['n', 'N']:
                         continue
@@ -404,9 +399,12 @@ class Action:
                 response = self.api.document_add_target(document_id, locale, workflow, due_date) if not to_delete \
                     else self.api.document_delete_target(document_id, locale)
                 if response.status_code != expected_code:
-                    print(response.json()['messages'][0])
-                    raise_error(response.json(), '{message} {locale} for document {name}'.format(message=failure_message,
-                                                                                          locale=locale,name=document_name), True)
+                    if (response.json() and response.json()['messages']):
+                        response_message = response.json()['messages'][0]
+                        print(response_message.replace(document_id, document_name + ' (' + document_id + ')'))
+                        if 'not found' in response_message:
+                            return
+                    raise_error(response.json(), '{message} {locale} for document {name}'.format(message=failure_message, locale=locale, name=document_name), True)
                     change_db_entry = False
                     # self.update_doc_locales(document_id)
                     continue
@@ -576,14 +574,23 @@ class Action:
             for doc_id in doc_ids:
                 response = self.api.document_status(doc_id)
                 if response.status_code != 200:
-                    raise_error(response.json(), "Failed to get status of document", True, doc_id)
+                    entry = self.doc_manager.get_doc_by_prop('id', doc_id)
+                    if entry:
+                        error_message = "Failed to get status of document "+entry['name']
+                    else:
+                        error_message = "Failed to get status of document "+str(doc_id)
+                    raise_error(response.json(), error_message, True, doc_id)
                 else:
                     title = response.json()['properties']['title']
                     progress = response.json()['properties']['progress']
                     self.print_status(title, progress)
-                if 'detailed' in kwargs and kwargs['detailed']:
-                    self.print_detailed(doc_id, title)
+                    if 'detailed' in kwargs and kwargs['detailed']:
+                        self.print_detailed(doc_id, title)
         except requests.exceptions.ConnectionError:
+            logger.warning("Could not connect to Lingotek")
+            exit()
+        except json.decoder.JSONDecodeError:
+            print("test json error")
             logger.warning("Could not connect to Lingotek")
             exit()
 
@@ -915,10 +922,8 @@ def reinit(host, project_path, delete, reset):
                 "This will also delete the project in your community. [Y/n]: "
             # Python 2
             confirm = raw_input(prompt_message)
-            # End Python 2
             # Python 3
-            # confirm = input(prompt_message)
-            # End Python 3
+#             confirm = input(prompt_message)
         # confirm if deleting existing folder
         if not confirm or confirm in ['n', 'N']:
             return False
@@ -977,10 +982,8 @@ def display_choice(display_type, info):
     while choice not in mapper:
         # Python 2
         choice = raw_input(prompt_message)
-        # End Python 2
         # Python 3
-        # choice = input(prompt_message)
-        # End Python 3
+#         choice = input(prompt_message)
         try:
             choice = int(choice)
         except ValueError:
@@ -1108,10 +1111,8 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
             prompt_message = 'Would you like to use an existing Lingotek project? [Y/n]:'
             # Python 2
             confirm = raw_input(prompt_message)
-            # End Python 2
             # Python 3
-            # confirm = input(prompt_message)
-            # End Python 3
+#             confirm = input(prompt_message)
         if not confirm or not confirm in ['n', 'N', 'no', 'No']:
             project_id, project_name = display_choice('project', project_info)
             config_parser.set('main', 'project_id', project_id)
@@ -1122,10 +1123,8 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
     prompt_message = "Please enter a new Lingotek project name: %s" % folder_name + chr(8) * len(folder_name)
     # Python 2
     project_name = raw_input(prompt_message)
-    # End Python 2
     # Python 3
-    # project_name = input(prompt_message)
-    # End Python 3
+#     project_name = input(prompt_message)
     if not project_name:
         project_name = folder_name
     response = api.add_project(project_name, community_id, workflow_id)

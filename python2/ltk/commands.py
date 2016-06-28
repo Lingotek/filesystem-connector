@@ -2,10 +2,9 @@ import click
 import sys
 python_version = sys.version
 # Python 3
-# if python_version[0] < '3':
-#    print('Python 3 is required to run this version of the Lingotek Filesystem connector.\n\nFor other versions and troubleshooting, see: https://github.com/lingotek/filesystem-connector')
-#    exit()
-# End Python 3
+# # if python_version[0] < '3':
+# #    print('Python 3 is required to run this version of the Lingotek Filesystem connector.\n\nFor other versions and troubleshooting, see: https://github.com/lingotek/filesystem-connector')
+# #    exit()
 from ltk import actions
 import os
 from ltk.exceptions import UninitializedError, ResourceNotFound, RequestFailedError, AlreadyExistsError
@@ -68,10 +67,8 @@ def print_log(error):
 @click.group()
 # Python 2
 @click.version_option(version=__version__, message='%(prog)s version %(version)s (Lingotek Filesystem Connector - Python 2)')
-# End Python 2
 # Python 3
-# @click.version_option(version=__version__, message='%(prog)s version %(version)s (Lingotek Filesystem Connector - Python 3)')
-# End Python 3
+# # @click.version_option(version=__version__, message='%(prog)s version %(version)s (Lingotek Filesystem Connector - Python 3)')
 @click.option('-q', 'is_quiet', flag_value=True, help='Will only show warnings')
 @click.option('-v', 'verbosity_lvl', count=True, help='Show API calls. Use -vv for API responses.')
 def ltk(is_quiet, verbosity_lvl):
@@ -81,9 +78,9 @@ def ltk(is_quiet, verbosity_lvl):
 
 
 @ltk.command()
-@click.option('--access_token', help='your access token')
+@click.option('--access_token', help='Your access token')
 @click.option('--host', type=click.Choice(['myaccount.lingotek.com', 'cms.lingotek.com']), default='myaccount.lingotek.com',
-              help='environment: myaccount for production, cms for sandbox; default is production')
+              help='Environment: myaccount for production, cms for sandbox; the default is production')
 # @click.option('--host', help='host')
 @click.option('--path', type=click.Path(exists=True),
               help='The path to the project directory to be initialized; defaults to the current directory')
