@@ -424,7 +424,7 @@ class Action:
                             locales_to_add.append(locale)
                 self._target_action_db(to_delete, locales_to_add, document_id)
 
-    def list_ids_action(self, path):
+    def list_ids_action(self, path=False):
         """ lists ids of list_type specified """
         ids = []
         titles = []
