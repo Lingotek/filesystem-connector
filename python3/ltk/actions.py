@@ -14,7 +14,7 @@ from ltk.apicalls import ApiCalls
 from ltk.utils import detect_format, map_locale
 from ltk.managers import DocumentManager
 from ltk.constants import CONF_DIR, CONF_FN, SYSTEM_FILE
-
+import json
 from ltk.logger import logger
 
 
@@ -594,6 +594,7 @@ class Action:
             logger.warning("Could not connect to Lingotek")
             exit()
         except json.decoder.JSONDecodeError:
+            print("test json error")
             logger.warning("Could not connect to Lingotek")
             exit()
 
