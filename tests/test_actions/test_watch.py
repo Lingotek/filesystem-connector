@@ -18,7 +18,7 @@ class TestWatch(unittest.TestCase):
         self.action = WatchAction(os.getcwd())
         self.action.clean_action(False, False, None)
         self.downloaded = []
-        self.action.add_action(['sample*.txt'], force=True)
+        self.action.add_action(['sample*.txt'], overwrite=True)
         self.doc_ids = self.action.doc_manager.get_doc_ids()
         for doc_id in self.doc_ids:
             assert poll_doc(self.action, doc_id)
@@ -54,7 +54,7 @@ class TestWatch(unittest.TestCase):
     #     self.files = ['sample.txt']
     #     for fn in self.files:
     #         create_txt_file(fn)
-    #     self.action.add_action(None, ['sample*.txt'], force=True)
+    #     self.action.add_action(None, ['sample*.txt'], overwrite=True)
     #     self.doc_ids = self.action.doc_manager.get_doc_ids()
     #     for doc_id in self.doc_ids:
     #         assert poll_doc(self.action, doc_id)
