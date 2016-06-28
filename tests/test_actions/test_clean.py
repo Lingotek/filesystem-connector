@@ -20,7 +20,7 @@ class TestClean(unittest.TestCase):
         self.forced = []
         for fn in self.files:
             create_txt_file(fn)
-        subprocess.call(['ltk','add','-f','sample*.txt'])
+        subprocess.call(['ltk','add','-o','sample*.txt'])
         self.entries = self.action.doc_manager.get_all_entries()
         for entry in self.entries:
             assert poll_doc(self.action, entry['id'])

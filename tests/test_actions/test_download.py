@@ -24,7 +24,7 @@ class TestDownload(unittest.TestCase):
         self.first_doc = 'sample.txt'
         for fn in self.files:
             create_txt_file(fn)
-        self.action.add_action(['sample*.txt'], force=True)
+        self.action.add_action(['sample*.txt'], overwrite=True)
         self.doc_ids = self.action.doc_manager.get_doc_ids()
         for doc_id in self.doc_ids:
             assert poll_doc(self.action, doc_id)

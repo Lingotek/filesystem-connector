@@ -26,7 +26,7 @@ class TestList(unittest.TestCase):
         file_paths = []
         for fn in files:
             file_paths.append(create_txt_file(fn))
-        self.action.add_action(['sample*.txt'], force=True)
+        self.action.add_action(['sample*.txt'], overwrite=True)
         doc_ids = self.action.doc_manager.get_doc_ids()
         for doc_id in doc_ids:
             assert poll_doc(self.action, doc_id)
