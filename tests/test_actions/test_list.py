@@ -97,8 +97,8 @@ class TestList(unittest.TestCase):
             info = out.getvalue()
             decoded_info = info
             assert 'Filters:' in info
-            assert 'okf_html@wordpress.fprm' in info
-            assert '0adc9a9d-ca67-4217-9525-d5a6af7ba91f' in info
+            assert 'okf_html@drupal8-subfilter.fprm' in info
+            assert '0e79f34d-f27b-4a0c-880e-cd9181a5d265' in info
         finally:
             sys.stdout = sys.__stdout__
 
