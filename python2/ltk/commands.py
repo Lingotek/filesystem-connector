@@ -81,9 +81,9 @@ def ltk(is_quiet, verbosity_lvl):
 
 
 @ltk.command()
-@click.option('--access_token', help='Your access token')
-@click.option('--host', type=click.Choice(['myaccount.lingotek.com', 'cms.lingotek.com']), default='cms.lingotek.com',
-              help='Environment: myaccount for production, cms for sandbox; the default is sandbox')
+@click.option('--access_token', help='your access token')
+@click.option('--host', type=click.Choice(['myaccount.lingotek.com', 'cms.lingotek.com']), default='myaccount.lingotek.com',
+              help='environment: myaccount for production, cms for sandbox; default is production')
 # @click.option('--host', help='host')
 @click.option('--path', type=click.Path(exists=True),
               help='The path to the project directory to be initialized; defaults to the current directory')
