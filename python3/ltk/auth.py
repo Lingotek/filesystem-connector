@@ -3,8 +3,16 @@ import sys
 
 # from six.moves import BaseHTTPServer
 # from six.moves import urllib
+# Python 2
+# from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
+# import urlparse
+# import urllib
+# End Python 2
+
+# Python 3
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import urllib.parse
+# End Python 3
 # import warnings
 #
 # with warnings.catch_warnings():
@@ -70,7 +78,12 @@ class ClientRedirectHandler(BaseHTTPRequestHandler, object):
             Should only ever be sending self urlencoded so
         """
         length = int(self.headers['content-length'])
-        post_vars = urllib.parse.parse_qsl(self.rfile.read(length))
+        # Python 2
+        post_vars = urlparse.parse_qsl(self.rfile.read(length))
+        # End Python 2
+        # Python 3
+        # post_vars = urllib.parse.parse_qsl(self.rfile.read(length))
+        # End Python 3
         self.server.query_params = dict(post_vars)
         self.send_response(200)
         self.send_header("Content-type", "text/html")
@@ -104,7 +117,13 @@ def run_oauth(host):
     client_id = 'ab33b8b9-4c01-43bd-a209-b59f933e4fc4'
     response_type = 'token'
     payload = {'client_id': client_id, 'redirect_uri': oauth_callback, 'response_type': response_type}
-    authorize_url = host + '/auth/authorize.html?' + urllib.parse.urlencode(payload)
+    # Python 2
+    payload_url = urllib.urlencode(payload)
+    # End Python 2
+    # Python 3
+    # payload_url = urllib.parse.urlencode(payload)
+    # End Python 3
+    authorize_url = host + '/auth/authorize.html?' + payload_url
     import webbrowser
     webbrowser.open_new(authorize_url)
     print ('Your browser has been opened to visit: \n{0}\n'.format(authorize_url))
@@ -115,7 +134,7 @@ def run_oauth(host):
     if b'access_token' in httpd.query_params:
         print ('Access token has been successfully stored!')
         print ('(If you haven\'t already, you may close your browser.)\n')
-        init_token = httpd.query_params[b'access_token']
+        # init_token = httpd.query_params[b'access_token']
         init_token = init_token.decode("utf-8")
         print('init token',init_token)
 

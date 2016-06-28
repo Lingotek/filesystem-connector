@@ -1,4 +1,9 @@
-import configparser
+# Python 2
+# from ConfigParser import ConfigParser, NoOptionError
+# End Python 2
+# Python 3
+from configparser import ConfigParser, NoOptionError
+# End Python 3
 import os
 import shutil
 import fnmatch
@@ -44,7 +49,7 @@ class Action:
 
     def _initialize_self(self):
         config_file_name = os.path.join(self.path, CONF_DIR, CONF_FN)
-        conf_parser = configparser.ConfigParser()
+        conf_parser = ConfigParser()
         conf_parser.read(config_file_name)
         self.host = conf_parser.get('main', 'host')
         self.access_token = conf_parser.get('main', 'access_token')
@@ -59,7 +64,7 @@ class Action:
             self.watch_dir = conf_parser.get('main', 'watch_folder')
             watch_locales = conf_parser.get('main', 'watch_locales')
             self.watch_locales = set(watch_locales.split(','))
-        except configparser.NoOptionError:
+        except NoOptionError:
             if not self.project_name:
                 self.api = ApiCalls(self.host, self.access_token)
                 project_info = self.api.get_project_info(self.community_id)
@@ -97,13 +102,13 @@ class Action:
 
     def init_config_file(self):
         config_file_name = os.path.join(self.path, CONF_DIR, CONF_FN)
-        conf_parser = configparser.ConfigParser()
+        conf_parser = ConfigParser()
         conf_parser.read(config_file_name)
         return config_file_name, conf_parser
 
     def update_config_file(self, option, value, conf_parser, config_file_name, log_info):
         conf_parser.set('main', option, value)
-        with open(config_file_name, 'w') as new_file:
+        with open(config_file_name, 'wb') as new_file:
             conf_parser.write(new_file)
         # self._initialize_self()
         logger.info(log_info)
@@ -256,7 +261,13 @@ class Action:
                     else:
                         confirm = 'not confirmed'
                     while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-                        confirm = input("This document already exists. Would you like to overwrite it? [Y/n]: ")
+                        prompt_message = "This document already exists. Would you like to overwrite it? [Y/n]: "
+                        # Python 2
+                        # confirm = raw_input(prompt_message)
+                        # End Python 2
+                        # Python 3
+                        confirm = input(prompt_message)
+                        # End Python 3
                     # confirm if would like to overwrite existing document in Lingotek Cloud
                     if not confirm or confirm in ['n', 'N']:
                         continue
@@ -891,9 +902,14 @@ def reinit(host, project_path, delete, reset):
             return False
         confirm = 'not confirmed'
         while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-            confirm = input(
-                "Are you sure you want to delete the current project? "
-                "This will also delete the project in your community. [Y/n]: ")
+            prompt_message = "Are you sure you want to delete the current project? " + \
+                "This will also delete the project in your community. [Y/n]: "
+            # Python 2
+            # confirm = raw_input(prompt_message)
+            # End Python 2
+            # Python 3
+            confirm = input(prompt_message)
+            # End Python 3
         # confirm if deleting existing folder
         if not confirm or confirm in ['n', 'N']:
             return False
@@ -902,7 +918,7 @@ def reinit(host, project_path, delete, reset):
             logger.info('Deleting old project folder and creating new one...')
             config_file_name = os.path.join(project_path, CONF_DIR, CONF_FN)
             if os.path.isfile(config_file_name):
-                old_config = configparser.ConfigParser()
+                old_config = ConfigParser()
                 old_config.read(config_file_name)
                 project_id = old_config.get('main', 'project_id')
                 access_token = old_config.get('main', 'access_token')
@@ -942,15 +958,20 @@ def choice_mapper(info):
 
 def display_choice(display_type, info):
     if display_type == 'community':
-        input_prompt = 'Which community should this project belong to? '
+        prompt_message = 'Which community should this project belong to? '
     elif display_type == 'project':
-        input_prompt = 'Which existing project should be used? '
+        prompt_message = 'Which existing project should be used? '
     else:
         raise exceptions.ResourceNotFound("Cannot display info asked for")
     mapper = choice_mapper(info)
     choice = 'none-chosen'
     while choice not in mapper:
-        choice = input(input_prompt)
+        # Python 2
+        # choice = raw_input(prompt_message)
+        # End Python 2
+        # Python 3
+        choice = input(prompt_message)
+        # End Python 3
         try:
             choice = int(choice)
         except ValueError:
@@ -967,7 +988,7 @@ def check_global(host):
     if os.path.isfile(sys_file):
         # get the access token
         print("Using configuration in file "+str(sys_file))
-        conf_parser = configparser.ConfigParser()
+        conf_parser = ConfigParser()
         conf_parser.read(sys_file)
         if conf_parser.has_section('alternative') and conf_parser.get('alternative', 'host') == host:
             return conf_parser.get('alternative', 'access_token')
@@ -985,7 +1006,7 @@ def create_global(access_token, host):
     # go to the home dir
     home_path = os.path.expanduser('~')
     file_name = os.path.join(home_path, SYSTEM_FILE)
-    config_parser = configparser.ConfigParser()
+    config_parser = ConfigParser()
     if os.path.isfile(file_name):
         config_parser.read(file_name)
     sys_file = open(file_name, 'w')
@@ -1041,7 +1062,7 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
     # create the config file and add info
     config_file = open(config_file_name, 'w')
 
-    config_parser = configparser.ConfigParser()
+    config_parser = ConfigParser()
     config_parser.add_section('main')
     config_parser.set('main', 'access_token', access_token)
     config_parser.set('main', 'host', host)
@@ -1075,7 +1096,13 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
     if len(project_info) > 0:
         confirm = 'none'
         while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-            confirm = input('Would you like to use an existing Lingotek project? [Y/n]:')
+            prompt_message = 'Would you like to use an existing Lingotek project? [Y/n]:'
+            # Python 2
+            # confirm = raw_input(prompt_message)
+            # End Python 2
+            # Python 3
+            confirm = input(prompt_message)
+            # End Python 3
         if not confirm or not confirm in ['n', 'N', 'no', 'No']:
             project_id, project_name = display_choice('project', project_info)
             config_parser.set('main', 'project_id', project_id)
@@ -1083,7 +1110,13 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
             config_parser.write(config_file)
             config_file.close()
             return
-    project_name = input("Please enter a new Lingotek project name: %s" % folder_name + chr(8) * len(folder_name))
+    prompt_message = "Please enter a new Lingotek project name: %s" % folder_name + chr(8) * len(folder_name)
+    # Python 2
+    # project_name = raw_input(prompt_message)
+    # End Python 2
+    # Python 3
+    project_name = input(prompt_message)
+    # End Python 3
     if not project_name:
         project_name = folder_name
     response = api.add_project(project_name, community_id, workflow_id)

@@ -34,10 +34,20 @@ class ImportAction(Action):
 
         if not ids_to_import:
             if import_all:
+                # Python 2
+                # ids_to_import = tms_doc_info.iterkeys()
+                # End Python 2
+                # Python 3
                 ids_to_import = iter(tms_doc_info)
+                # End Python 3
             else:
                 import_doc_info = {}
+                # Python 2
+                # for k, v in tms_doc_info.iteritems():
+                # End Python 2
+                # Python 3
                 for k, v in tms_doc_info.items():
+                # End Python 3
                     import_doc_info[k] = v['title']
                 ids_to_import = self.get_import_ids(import_doc_info)
         else:
@@ -111,7 +121,12 @@ class ImportAction(Action):
         # use status action to get locale info for importing
         try:
             locale_map = self.import_locale_info(document_id)
+            # Python 2
+            # locale_info = list(locale_map.iterkeys())
+            # End Python 2
+            # Python 3
             locale_info = list(iter(locale_map))
+            # End Python 3
         except exceptions.RequestFailedError:
             locale_info = []
 
