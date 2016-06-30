@@ -16,8 +16,9 @@ class TestWatch(unittest.TestCase):
         cleanup()
 
     def setUp(self):
-        self.action = WatchAction(os.getcwd())
+        self.action = WatchAction(os.getcwd(), 1)
         self.action.clean_action(False, False, None)
+        self.action.open()
         self.downloaded = []
         self.files = []
         # todo current problem: watchdog does not seem to detect changes in daemon
@@ -59,9 +60,9 @@ class TestWatch(unittest.TestCase):
         doc = None
         time_passed = 0
         while doc is None and time_passed < 10:
-           doc = self.action.doc_manager.get_doc_by_prop('file_name', file_name)
-           time.sleep(1)
-           time_passed += 1
+            doc = self.action.doc_manager.get_doc_by_prop('file_name', file_name)
+            time.sleep(1)
+            time_passed += 1
         assert doc
         assert poll_doc(self.action, doc['id'])
         append_file(file_name)

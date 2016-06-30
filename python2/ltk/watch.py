@@ -213,7 +213,8 @@ class WatchAction(Action):
             #         printStr += target+","
             # print(printStr)
             self.target_action(title, file_name, locales_to_add, None, None, None, document_id)
-            self.watch_queue.remove(document_id)
+            if document_id in self.watch_queue:
+                self.watch_queue.remove(document_id)
 
     def process_queue(self):
         """do stuff with documents in queue (currently just add targets)"""
@@ -283,12 +284,9 @@ class WatchAction(Action):
 
     def watch_action(self, watch_path, ignore, delimiter=None):
         # print self.path
-        print("watch_path: "+str(watch_path))
-        print("self watch dir: "+str(self.watch_dir))
         if watch_path:  # Use watch path specified as an option/parameter
             self.watch_folder = True
         elif self.watch_dir and not "--default" in self.watch_dir: # Use watch path from config
-            print("using self watch_dir: "+self.watch_dir)
             self.watch_folder = True
             watch_path = self.watch_dir
         else:
