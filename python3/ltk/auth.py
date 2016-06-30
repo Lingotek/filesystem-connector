@@ -134,7 +134,7 @@ def run_oauth(host):
     if b'access_token' in httpd.query_params:
         print ('Access token has been successfully stored!')
         print ('(If you haven\'t already, you may close your browser.)\n')
-        # init_token = httpd.query_params[b'access_token']
+        init_token = httpd.query_params[b'access_token']
         init_token = init_token.decode("utf-8")
         print('init token',init_token)
 
