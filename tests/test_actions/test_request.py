@@ -1,6 +1,6 @@
 from tests.test_actions import *
 from ltk.actions import Action
-
+import time
 import unittest
 
 class TestRequest(unittest.TestCase):

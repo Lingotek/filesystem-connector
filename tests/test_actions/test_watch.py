@@ -2,6 +2,7 @@ from tests.test_actions import *
 from ltk.watch import WatchAction
 from threading import Thread
 import unittest
+import os
 
 # @unittest.skip("skip testing watch for now")
 class TestWatch(unittest.TestCase):
@@ -18,13 +19,10 @@ class TestWatch(unittest.TestCase):
         self.action = WatchAction(os.getcwd())
         self.action.clean_action(False, False, None)
         self.downloaded = []
-        self.action.add_action(['sample*.txt'], overwrite=True)
-        self.doc_ids = self.action.doc_manager.get_doc_ids()
-        for doc_id in self.doc_ids:
-            assert poll_doc(self.action, doc_id)
+        self.files = []
         # todo current problem: watchdog does not seem to detect changes in daemon
         # but not daemonizing watch causes tests to hang..
-        watch_thread = Thread(target=self.action.watch_action, args=(None, (), None, 5,))
+        watch_thread = Thread(target=self.action.watch_action, args=('.', (), None))
         watch_thread.daemon = True
         watch_thread.start()
 
@@ -38,34 +36,41 @@ class TestWatch(unittest.TestCase):
 
     def test_watch_new_file(self):
         file_name = "new_file.txt"
-        added_file = create_txt_file(file_name)
-        # self.files.append(file_name)
+        self.files.append(file_name)
+        if os.path.exists(file_name):
+            delete_file(file_name)
+        create_txt_file(file_name)
         # check if watch detected file and added it to db
         doc = None
         time_passed = 0
-        while doc is None and time_passed < 60:
-            doc = self.action.doc_manager.get_doc_by_prop('name', file_name)
+        while doc is None and time_passed < 10:
+            doc = self.action.doc_manager.get_doc_by_prop('file_name', file_name)
             time.sleep(1)
             time_passed += 1
         assert doc
-        assert poll_doc()
+        assert poll_doc(self.action, doc['id'])
 
-    # def test_watch_update(self):
-    #     self.files = ['sample.txt']
-    #     for fn in self.files:
-    #         create_txt_file(fn)
-    #     self.action.add_action(None, ['sample*.txt'], overwrite=True)
-    #     self.doc_ids = self.action.doc_manager.get_doc_ids()
-    #     for doc_id in self.doc_ids:
-    #         assert poll_doc(self.action, doc_id)
-
-    #     append_file(self.files[0])
-    #     check_updated_ids([self.doc_ids[0]])
-    #     downloaded_path = self.action.download_action(self.doc_ids[0], None, False)
-    #     self.downloaded.append(downloaded_path)
-    #     with open(downloaded_path, 'r') as f:
-    #         downloaded = f.read()
-    #     assert "Appended text. " in downloaded
+    def test_watch_update(self):
+        file_name = "new_file.txt"
+        self.files.append(file_name)
+        if os.path.exists(file_name):
+            delete_file(file_name)
+        create_txt_file(file_name)
+        doc = None
+        time_passed = 0
+        while doc is None and time_passed < 10:
+           doc = self.action.doc_manager.get_doc_by_prop('file_name', file_name)
+           time.sleep(1)
+           time_passed += 1
+        assert doc
+        assert poll_doc(self.action, doc['id'])
+        append_file(file_name)
+        check_updated_ids(self.action, [doc['id']])
+        downloaded_path = self.action.download_action(doc['id'], None, False)
+        self.downloaded.append(downloaded_path)
+        with open(downloaded_path, 'r') as f:
+            downloaded = f.read()
+        assert "Appended text. " in downloaded
 
 
 # todo make download dir for watch, then just delete folder in teardown or teardownclass

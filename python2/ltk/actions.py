@@ -149,11 +149,17 @@ class Action:
                     docs.append(file_name)
         return docs
 
-    def get_doc_locales(self, doc_id):
+    def get_doc_locales(self, doc_id, doc_name):
         locales = []
         response = self.api.document_translation_status(doc_id)
         if response.status_code != 200:
-            raise_error(response.json(), 'Failed to get detailed status of document', True, doc_id)
+            if response.json()['messages'] and 'No translations exist' in response.json()['messages'][0]:
+                return locales
+            if doc_name:
+                raise_error(response.json(), 'Failed to check target locales for document '+doc_name, True, doc_id)
+            else:
+                raise_error(response.json(), 'Failed to check target locales for document '+doc_id, True, doc_id)
+
         try:
             if 'entities' in response.json():
                 for entry in response.json()['entities']:
@@ -410,14 +416,17 @@ class Action:
                     continue
                 logger.info('{message} {locale} for document {name}'.format(message=info_message,
                                                                             locale=locale, name=document_name))
-            remote_locales = self.get_doc_locales(document_id) # Get locales from Lingotek Cloud
+            remote_locales = self.get_doc_locales(document_id, document_name) # Get locales from Lingotek Cloud
             locales_to_add = []
             if change_db_entry:
                 # Make sure that the locales that were just added are added to the database as well as the previous remote locales (since they were only just recently added to Lingotek's system)
-                if remote_locales and not to_delete:
-                    for locale in remote_locales:
-                        if locale not in locales:
-                            locales_to_add.append(locale)
+                if to_delete:
+                    locales_to_add = locales
+                else:
+                    if remote_locales:
+                        for locale in remote_locales:
+                            if locale not in locales:
+                                locales_to_add.append(locale)
                 self._target_action_db(to_delete, locales_to_add, document_id)
 
     def list_ids_action(self, path=False):
