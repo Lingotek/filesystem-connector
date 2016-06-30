@@ -47,7 +47,7 @@ def has_hidden_attribute(file_path):
 
 class WatchAction(Action):
     # def __init__(self, path, remote=False):
-    def __init__(self, path, timeout):
+    def __init__(self, path=None, timeout=60):
         Action.__init__(self, path, True, timeout)
         self.observer = Observer()  # watchdog observer that will watch the files
         self.handler = WatchHandler()
@@ -160,8 +160,8 @@ class WatchAction(Action):
             #     print("Skipping hidden file "+file_path)
         except KeyboardInterrupt:
             self.observer.stop()
-        except Exception as err:
-            restart("Error on created: "+str(err)+"\nRestarting watch.")
+        # except Exception as err:
+        #     restart("Error on created: "+str(err)+"\nRestarting watch.")
 
     def _on_moved(self, event):
         """Used for programs, such as gedit, that modify documents by moving (overwriting)
@@ -254,11 +254,11 @@ class WatchAction(Action):
                 downloaded = []
                 self.doc_manager.update_document('downloaded', downloaded, doc_id)
             # Python 2
-            for locale, progress in locale_progress.iteritems():
+            # for locale, progress in locale_progress.iteritems():
             # End Python 2
             # Python 3
-            # for locale in locale_progress:
-            #     progress = locale_progress[locale]
+            for locale in locale_progress:
+                progress = locale_progress[locale]
             # End Python 3
                 if progress == 100 and locale not in downloaded:
                     
@@ -280,7 +280,7 @@ class WatchAction(Action):
         # norm_path = os.path.abspath(file_location).replace(self.path, '')
         return abspath
 
-    def watch_action(self, watch_path, ignore, delimiter):
+    def watch_action(self, watch_path, ignore, delimiter=None):
         # print self.path
         if watch_path:  # Use watch path specified as an option/parameter
             self.watch_folder = True
