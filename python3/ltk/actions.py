@@ -59,13 +59,16 @@ class Action:
         self.workflow_id = conf_parser.get('main', 'workflow_id')
         self.locale = conf_parser.get('main', 'default_locale')
         try:
-            # todo this try block will stop once one of them gets an exception..
-            self.project_name = conf_parser.get('main', 'project_name')
-            self.download_dir = conf_parser.get('main', 'download_folder')
-            self.watch_dir = conf_parser.get('main', 'watch_folder')
-            watch_locales = conf_parser.get('main', 'watch_locales')
-            self.watch_locales = set(watch_locales.split(','))
-        except NoOptionError:
+            if conf_parser.has_option('main', 'project_name'):
+                self.project_name = conf_parser.get('main', 'project_name')
+            if conf_parser.has_option('main', 'download_folder'):
+                self.download_dir = conf_parser.get('main', 'download_folder')
+            if conf_parser.has_option('main', 'watch_folder'):
+                self.watch_dir = conf_parser.get('main', 'watch_folder')
+            if conf_parser.has_option('main', 'watch_locales'):
+                watch_locales = conf_parser.get('main', 'watch_locales')
+                self.watch_locales = set(watch_locales.split(','))
+        except NoOptionError as e:
             if not self.project_name:
                 self.api = ApiCalls(self.host, self.access_token)
                 project_info = self.api.get_project_info(self.community_id)
@@ -111,7 +114,7 @@ class Action:
         conf_parser.set('main', option, value)
         with open(config_file_name, 'w') as new_file:
             conf_parser.write(new_file)
-        # self._initialize_self()
+        self._initialize_self()
         logger.info(log_info)
 
     def norm_path(self, file_location):
@@ -207,6 +210,7 @@ class Action:
                 logger.warning('Error: Invalid value for "-f" / "--watch_folder": Path "'+watch_folder+'" does not exist.')
                 return
         if target_locales:
+            target_locales = target_locales[0].split(',')
             valid_locales = []
             response = self.api.list_locales()
             if response.status_code != 200:
@@ -218,12 +222,10 @@ class Action:
                 if locale.replace("-","_") not in valid_locales:
                     logger.warning('The locale code "'+str(locale)+'" failed to be added since it is invalid (see "ltk list -l" for the list of valid codes).')
                     return
-            log_info = 'Added target locales: {} for watch folder'.format(
-                ','.join(target for target in target_locales))
-            self.watch_locales = set(target_locales)
-            target_locales = ','.join(target for target in target_locales)
-            self.update_config_file('watch_locales', target_locales, conf_parser, config_file_name, log_info)
-
+            target_locales_str = ','.join(target for target in target_locales)
+            log_info = 'Added target locales: {} for watch folder'.format(target_locales_str)
+            self.update_config_file('watch_locales', target_locales_str, conf_parser, config_file_name, log_info)
+            self.watch_locales = target_locales
         #print ('Token: {0}'.format(self.access_token))
         watch_dir = "None"
         if self.watch_dir and self.watch_dir != "--default":
@@ -234,7 +236,7 @@ class Action:
         print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity id: {4}\nWorkflow id: {5}\n' \
               'Default Source Locale: {6}\nWatch - Source Folder: {7}\nWatch - Download Folder: {8}\nWatch - Target Locales: {9}'.format(
             self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, watch_dir,
-            download_dir, ', '.join(x for x in self.watch_locales)))
+            download_dir, ','.join(target for target in self.watch_locales)))
 
     def add_document(self, file_name, title, **kwargs):
         if not 'locale' in kwargs or not kwargs['locale']:

@@ -38,7 +38,12 @@ def is_hidden_file(file_path):
 def has_hidden_attribute(file_path):
     """ Detects if a file has hidden attributes """
     try:
-        attrs = ctypes.windll.kernel32.GetFileAttributesW(unicode(file_path))
+        # Python 2
+        # attrs = ctypes.windll.kernel32.GetFileAttributesW(unicode(file_path))
+        # End Python 2
+        # Python 3
+        attrs = ctypes.windll.kernel32.GetFileAttributesW(str(file_path))
+        # End Python 3
         assert attrs != -1
         result = bool(attrs & 2)
     except (AttributeError, AssertionError):
@@ -282,9 +287,13 @@ class WatchAction(Action):
 
     def watch_action(self, watch_path, ignore, delimiter=None):
         # print self.path
+        print("watch_path: "+str(watch_path))
+        print("self watch dir: "+str(self.watch_dir))
         if watch_path:  # Use watch path specified as an option/parameter
             self.watch_folder = True
         elif self.watch_dir and not "--default" in self.watch_dir: # Use watch path from config
+            print("using self watch_dir: "+self.watch_dir)
+            self.watch_folder = True
             watch_path = self.watch_dir
         else:
             watch_path = self.path # Watch from the project root
