@@ -512,10 +512,25 @@ class Action:
                 print ("{0} ({1}, {2})".format(locale[0], locale[1], locale[2]))
 
     def list_format_action(self):
+        format_info = self.api.get_document_formats()
         format_mapper = detect_format(None, True)
-        print ("Formats Lingotek supports:")
-        for format_name in sorted(set(format_mapper.values())):
-            print (format_name)
+
+        format_list = {}
+        for format_name in sorted(set(format_info.values())):
+            format_list[format_name] = []
+
+        for extension in format_mapper.keys():
+            key = format_mapper[extension]
+            if key not in format_list:
+                format_list[key] = []
+            format_list[key].append(extension)
+
+        print("Lingotek Cloud accepts content using any of the formats listed below. File formats will be auto-detected for the extensions as specified below. Alternatively, formats may be specified explicitly upon add. Lingotek supports variations and customizations on these formats with filters.")
+        print()
+        print('%-30s' % "Format" + '%s' % "Auto-detected File Extensions")
+        print("-----------------------------------------------------------")
+        for k,v in sorted(format_list.items()):
+            print('%-30s' % k + '%s' % ' '.join(v))
 
     def list_filter_action(self):
         response = self.api.list_filters()
