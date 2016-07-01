@@ -710,7 +710,7 @@ class Action:
                 file_name = doc['file_name']
         response = self.api.document_delete(document_id)
         #print (response)
-        if response.status_code != 204:
+        if response.status_code != 204 and response.status_code != 202:
             # raise_error(response.json(), "Failed to delete document {0}".format(document_name), True)
             logger.error("Failed to delete document {0} remotely".format(file_name))
         else:
