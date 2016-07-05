@@ -12,6 +12,7 @@ API_URI = {
     'document_status': '/api/document/%(document_id)s/status',
     'document_content': '/api/document/%(document_id)s/content',
     'document_translation_locale': '/api/document/%(document_id)s/translation/%(locale)s',  # gets the status of target
+    'document_format': '/api/document/format',
     'workflow': '/api/workflow',
     'filter': '/api/filter'
 }

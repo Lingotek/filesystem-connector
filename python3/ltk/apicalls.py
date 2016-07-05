@@ -32,6 +32,17 @@ class ApiCalls:
             self.handleError()
         return r
 
+    def list_document_formats(self):
+        """ gets the communities that a user is in """
+        try:
+            uri = API_URI['document_format']
+            payload = {'limit': 1000}
+            r = requests.get(self.host + uri, headers=self.headers, params=payload)
+            log_api('GET', uri, r)
+        except requests.exceptions.ConnectionError:
+            self.handleError()
+        return r
+
     def list_projects(self, community_id):
         """ gets the projects a user has """
         try:
@@ -292,6 +303,17 @@ class ApiCalls:
         info = {}
         for entity in entities:
             info[entity['properties']['id']] = entity['properties']['title']
+        return info
+
+    def get_document_formats(self):
+        response = self.list_document_formats()
+        info = {}
+        if response.status_code != 200:
+            # raise RequestFailedError("Unable to get document formats")
+            return info # Don't stop execution upon incorrect access token
+        entities = response.json()['entities']
+        for entity in entities:
+            info[entity['properties']['type']] = entity['properties']['type']
         return info
 
 

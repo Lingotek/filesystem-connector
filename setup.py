@@ -16,7 +16,7 @@ except (IOError, ImportError, OSError):
 
 setup(
     name='ltk',
-    version='0.2.4',
+    version='0.2.5',
     url='https://github.com/Lingotek/client',
     description='Command line tool that connects your content to the Lingotek Translation Network',
     long_description=long_description,

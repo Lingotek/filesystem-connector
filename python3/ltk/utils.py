@@ -31,6 +31,7 @@ def detect_format(file_name, get_mapper=False):
         '.ppt': 'PPT_OKAPI',
         '.pptx': 'PPTX_OKAPI',
         '.resx': 'RESX',
+        '.regex': 'REGEX',
         '.rtf': 'RTF_OKAPI',
         '.srt': 'SUBTITLE_RIP',
         '.tsv': 'TABLE',  # catkeys?
