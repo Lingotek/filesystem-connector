@@ -330,6 +330,7 @@ class Action:
         if response.status_code != 202:
             raise_error(response.json(), "Failed to update document {0}".format(file_name), True)
         self._update_document(relative_path)
+        return True
 
 
     def _target_action_db(self, to_delete, locales, document_id):
@@ -417,7 +418,8 @@ class Action:
                         if 'not found' in response_message:
                             return
                     raise_error(response.json(), '{message} {locale} for document {name}'.format(message=failure_message, locale=locale, name=document_name), True)
-                    change_db_entry = False
+                    if not 'already exists' in response_message:
+                        change_db_entry = False
                     # self.update_doc_locales(document_id)
                     continue
                 logger.info('{message} {locale} for document {name}'.format(message=info_message,
@@ -665,7 +667,6 @@ class Action:
                 logger.info('Downloaded: {0} ({1} - {2})'.format(downloaded_name, base_name, locale_code))
 
             self.doc_manager.add_element_to_prop(document_id, 'downloaded', locale_code)
-
             with open(download_path, 'wb') as fh:
                 for chunk in response.iter_content(1024):
                     fh.write(chunk)

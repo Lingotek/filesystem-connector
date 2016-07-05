@@ -261,6 +261,7 @@ def download(auto_format, locales, file_names):
         action = actions.Action(os.getcwd())
         init_logger(action.path)
         for name in file_names:
+            print("download_by_path for "+name)
             action.download_by_path(name, locales, auto_format)
     except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
         print_log(e)

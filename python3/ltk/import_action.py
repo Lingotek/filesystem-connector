@@ -93,7 +93,7 @@ class ImportAction(Action):
                         delete_file = True
             # Confirm overwriting a local file
             if os.path.exists(new_path):
-                confirmation_msg = 'Would you like to overwrite the existing document at '+new_path+'? [y/n]:'
+                confirmation_msg = 'Would you like to overwrite the existing document at '+new_path+'? [y/N]:'
                 confirm = 'none'
                 while confirm not in ['y', 'yes', 'n', 'no', '']:
                     confirm = input(confirmation_msg).lower()
@@ -142,6 +142,7 @@ class ImportAction(Action):
             with open(new_path, 'wb') as fh:
                 for chunk in response.iter_content(1024):
                     fh.write(chunk)
+        new_path = self.norm_path(new_path)
         if document_id not in local_ids:
             self._add_document(new_path, title, document_id)
             self.doc_manager.update_document('locales', locale_info, document_id)
