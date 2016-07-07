@@ -143,6 +143,13 @@ class ApiCalls:
                 payload['format'] = detected_format
             document = open(file_name, 'rb')
             files = {'content': (file_name, document)}
+            if 'srx' in kwargs and kwargs['srx'] is not None:
+                files.update({'srx': (kwargs['srx'], open(kwargs['srx'], 'rb'))})
+            if 'its' in kwargs and kwargs['its'] is not None:
+                files.update({'its': (kwargs['its'], open(kwargs['its'], 'rb'))})
+            if 'fprm' in kwargs and kwargs['fprm'] is not None:
+                fprm_file = open(kwargs['fprm'], 'rb')
+                files.update({'fprm': (kwargs['fprm'], fprm_file)})
             r = requests.post(self.host + uri, headers=self.headers, data=payload, files=files)
             log_api('POST', uri, r)
             document.close()
@@ -225,6 +232,12 @@ class ApiCalls:
             if file_name:
                 document = open(file_name, 'rb')
                 files = {'content': (file_name, document)}
+                if 'srx' in kwargs and kwargs['srx'] is not None:
+                    files.update({'srx': (kwargs['srx'], open(kwargs['srx'], 'rb'))})
+                if 'its' in kwargs and kwargs['its'] is not None:
+                    files.update({'its': (kwargs['its'], open(kwargs['its'], 'rb'))})
+                if 'fprm' in kwargs and kwargs['fprm'] is not None:
+                    files.update({'fprm': (kwargs['fprm'], open(kwargs['fprm'], 'rb'))})
                 r = requests.patch(self.host + uri, headers=self.headers, data=payload, files=files)
                 document.close()
             else:
