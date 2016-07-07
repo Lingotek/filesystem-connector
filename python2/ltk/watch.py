@@ -226,8 +226,8 @@ class WatchAction(Action):
 
     def update_content(self, relative_path):
         logger.info('Detected local content modified: {0}'.format(relative_path))
-        self.update_document_action(os.path.join(self.path, relative_path))
-        logger.info('Updating remote content: {0}'.format(relative_path))
+        if self.update_document_action(os.path.join(self.path, relative_path)):
+            logger.info('Updating remote content: {0}'.format(relative_path))
 
     def check_modified(self, doc): # Checks if the version of a document on Lingotek's system is more recent than the local version
         old_date = doc['last_mod']

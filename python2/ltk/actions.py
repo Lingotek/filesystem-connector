@@ -326,6 +326,7 @@ class Action:
         if response.status_code != 202:
             raise_error(response.json(), "Failed to update document {0}".format(file_name), True)
         self._update_document(relative_path)
+        return True
 
 
     def _target_action_db(self, to_delete, locales, document_id):
@@ -413,7 +414,8 @@ class Action:
                         if 'not found' in response_message:
                             return
                     raise_error(response.json(), '{message} {locale} for document {name}'.format(message=failure_message, locale=locale, name=document_name), True)
-                    change_db_entry = False
+                    if not 'already exists' in response_message:
+                        change_db_entry = False
                     # self.update_doc_locales(document_id)
                     continue
                 logger.info('{message} {locale} for document {name}'.format(message=info_message,
@@ -508,10 +510,25 @@ class Action:
                 print ("{0} ({1}, {2})".format(locale[0], locale[1], locale[2]))
 
     def list_format_action(self):
+        format_info = self.api.get_document_formats()
         format_mapper = detect_format(None, True)
-        print ("Formats Lingotek supports:")
-        for format_name in sorted(set(format_mapper.values())):
-            print (format_name)
+
+        format_list = {}
+        for format_name in sorted(set(format_info.values())):
+            format_list[format_name] = []
+
+        for extension in format_mapper.keys():
+            key = format_mapper[extension]
+            if key not in format_list:
+                format_list[key] = []
+            format_list[key].append(extension)
+
+        print("Lingotek Cloud accepts content using any of the formats listed below. File formats will be auto-detected for the extensions as specified below. Alternatively, formats may be specified explicitly upon add. Lingotek supports variations and customizations on these formats with filters.")
+        print()
+        print('%-30s' % "Format" + '%s' % "Auto-detected File Extensions")
+        print("-----------------------------------------------------------")
+        for k,v in sorted(format_list.items()):
+            print('%-30s' % k + '%s' % ' '.join(v))
 
     def list_filter_action(self):
         response = self.api.list_filters()
@@ -607,6 +624,8 @@ class Action:
 
     def download_by_path(self, file_path, locale_codes, auto_format):
         docs = self.get_docs_in_path(file_path)
+        if len(docs) == 0:
+            logger.warning("No document found with file path "+str(file_path))
         for entry in docs:
             self.download_locales(entry['id'], locale_codes, auto_format)
 
@@ -661,7 +680,6 @@ class Action:
                 logger.info('Downloaded: {0} ({1} - {2})'.format(downloaded_name, base_name, locale_code))
 
             self.doc_manager.add_element_to_prop(document_id, 'downloaded', locale_code)
-
             with open(download_path, 'wb') as fh:
                 for chunk in response.iter_content(1024):
                     fh.write(chunk)

@@ -139,7 +139,7 @@ def config(locale, workflow_id, download_folder, watch_folder, target_locales):
 @click.argument('file_names', required=True, nargs=-1)
 @click.option('-l', '--locale', help='If source locale is different from the default configuration. Use ltk list -l to see possible locales')
 @click.option('-f', '--format',
-              help='Format of file; if not specified, will use extension to detect; defaults to plaintext. Use ltk list -f to see possible formats')
+              help="Format of file; if not specified, will use extension to detect; defaults to plaintext. Use ltk list -f to see possible formats. Files may not be added to Lingotek's system if not formatted correctly according to the specified format")
 @click.option('-s', '--srx', type=click.Path(exists=True), help='srx file')
 @click.option('-si', '--srx_id', help='srx id')
 @click.option('-i', '--its', type=click.Path(exists=True), help='its file')

@@ -32,6 +32,17 @@ class ApiCalls:
             self.handleError()
         return r
 
+    def list_document_formats(self):
+        """ gets the communities that a user is in """
+        try:
+            uri = API_URI['document_format']
+            payload = {'limit': 1000}
+            r = requests.get(self.host + uri, headers=self.headers, params=payload)
+            log_api('GET', uri, r)
+        except requests.exceptions.ConnectionError:
+            self.handleError()
+        return r
+
     def list_projects(self, community_id):
         """ gets the projects a user has """
         try:
@@ -132,6 +143,13 @@ class ApiCalls:
                 payload['format'] = detected_format
             document = open(file_name, 'rb')
             files = {'content': (file_name, document)}
+            if 'srx' in kwargs and kwargs['srx'] is not None:
+                files.update({'srx': (kwargs['srx'], open(kwargs['srx'], 'rb'))})
+            if 'its' in kwargs and kwargs['its'] is not None:
+                files.update({'its': (kwargs['its'], open(kwargs['its'], 'rb'))})
+            if 'fprm' in kwargs and kwargs['fprm'] is not None:
+                fprm_file = open(kwargs['fprm'], 'rb')
+                files.update({'fprm': (kwargs['fprm'], fprm_file)})
             r = requests.post(self.host + uri, headers=self.headers, data=payload, files=files)
             log_api('POST', uri, r)
             document.close()
@@ -214,6 +232,12 @@ class ApiCalls:
             if file_name:
                 document = open(file_name, 'rb')
                 files = {'content': (file_name, document)}
+                if 'srx' in kwargs and kwargs['srx'] is not None:
+                    files.update({'srx': (kwargs['srx'], open(kwargs['srx'], 'rb'))})
+                if 'its' in kwargs and kwargs['its'] is not None:
+                    files.update({'its': (kwargs['its'], open(kwargs['its'], 'rb'))})
+                if 'fprm' in kwargs and kwargs['fprm'] is not None:
+                    files.update({'fprm': (kwargs['fprm'], open(kwargs['fprm'], 'rb'))})
                 r = requests.patch(self.host + uri, headers=self.headers, data=payload, files=files)
                 document.close()
             else:
@@ -292,6 +316,17 @@ class ApiCalls:
         info = {}
         for entity in entities:
             info[entity['properties']['id']] = entity['properties']['title']
+        return info
+
+    def get_document_formats(self):
+        response = self.list_document_formats()
+        info = {}
+        if response.status_code != 200:
+            # raise RequestFailedError("Unable to get document formats")
+            return info # Don't stop execution upon incorrect access token
+        entities = response.json()['entities']
+        for entity in entities:
+            info[entity['properties']['type']] = entity['properties']['type']
         return info
 
 
