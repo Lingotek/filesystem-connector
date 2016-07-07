@@ -628,6 +628,8 @@ class Action:
 
     def download_by_path(self, file_path, locale_codes, auto_format):
         docs = self.get_docs_in_path(file_path)
+        if len(docs) == 0:
+            logger.warning("No document found with file path "+str(file_path))
         for entry in docs:
             self.download_locales(entry['id'], locale_codes, auto_format)
 

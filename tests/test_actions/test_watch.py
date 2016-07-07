@@ -18,7 +18,7 @@ class TestWatch(unittest.TestCase):
     def setUp(self):
         self.action = WatchAction(os.getcwd(), 1)
         self.action.clean_action(False, False, None)
-        self.action.open()
+        # self.action.open()
         self.downloaded = []
         self.files = []
         # todo current problem: watchdog does not seem to detect changes in daemon
@@ -33,7 +33,6 @@ class TestWatch(unittest.TestCase):
         self.action.clean_action(False, False, None)
         for fn in self.downloaded:
             os.remove(fn)
-        self.action.close()
 
     def test_watch_new_file(self):
         file_name = "new_file.txt"
@@ -41,7 +40,7 @@ class TestWatch(unittest.TestCase):
         if os.path.exists(file_name):
             delete_file(file_name)
         create_txt_file(file_name)
-        # check if watch detected file and added it to db
+        # # check if watch detected file and added it to db
         doc = None
         time_passed = 0
         while doc is None and time_passed < 10:
