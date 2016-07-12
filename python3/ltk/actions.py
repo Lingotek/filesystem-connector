@@ -782,8 +782,11 @@ class Action:
             # use current working directory as root for files instead of project root
             if 'name' in kwargs and kwargs['name']:
                 matched_files = []
+
                 for pattern in file_patterns:
-                    matched_files.append(self.doc_manager.get_doc_by_prop("name",pattern)['file_name'])
+                    doc = self.doc_manager.get_doc_by_prop("name",pattern)
+                    if doc:
+                        matched_files.append(doc['file_name'])
             else:
                 matched_files = self.get_doc_filenames_in_path(file_patterns)
         else:
@@ -791,8 +794,10 @@ class Action:
         if not matched_files or len(matched_files) == 0:
             if useID:
                 raise exceptions.ResourceNotFound("No documents to remove with the specified id")
-            else:
+            elif not 'all' in kwargs or not kwargs['all']:
                 raise exceptions.ResourceNotFound("No documents to remove with the specified file path")
+            else:
+                raise exceptions.ResourceNotFound("No documents to remove")
         is_directory = False
         for pattern in file_patterns: # If attemping to remove any directory, don't print failure message
             basename = os.path.basename(pattern)
