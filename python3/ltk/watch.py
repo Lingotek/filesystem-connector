@@ -260,7 +260,7 @@ class WatchAction(Action):
             file_name = doc['file_name']
             # Wait for Lingotek's system to no longer show translationas as completed
             if file_name in self.updated:
-                if self.updated[file_name] > 15:
+                if self.updated[file_name] > 3:
                     self.updated.pop(file_name, None)
                 else:
                     self.updated[file_name] += self.timeout
