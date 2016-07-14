@@ -65,7 +65,7 @@ class WatchAction(Action):
         self.detected_locales = {}  # dict to keep track of detected locales
         self.watch_folder = True
         self.timeout = timeout
-        self.updated = []
+        self.updated = {}
         # if remote:  # poll lingotek cloud periodically if this option enabled
         # self.remote_thread = threading.Thread(target=self.poll_remote(), args=())
         # self.remote_thread.daemon = True
@@ -231,9 +231,8 @@ class WatchAction(Action):
             self.watch_add_target(None, document_id)
 
     def update_content(self, relative_path):
-        logger.info('Detected local content modified: {0}'.format(relative_path))
         if self.update_document_action(os.path.join(self.path, relative_path)):
-            self.updated.append(relative_path)
+            self.updated[relative_path] = 0
             logger.info('Updating remote content: {0}'.format(relative_path))
 
     def check_modified(self, doc): # Checks if the version of a document on Lingotek's system is more recent than the local version
@@ -253,16 +252,19 @@ class WatchAction(Action):
     def poll_remote(self):
         """ poll lingotek servers to check if translation is finished """
         documents = self.doc_manager.get_all_entries()  # todo this gets all documents, not necessarily only ones in watch folder
-        has_waited = False
         for doc in documents:
             doc_id = doc['id']
             if doc_id in self.watch_queue:
                 # if doc id in queue, not imported yet
                 continue
-            if doc['file_name'] in self.updated and not has_waited:
-                self.updated.remove(doc['file_name'])
-                time.sleep(3) # Wait for Lingotek's system to no longer show translationas as completed
-                has_waited = True
+            file_name = doc['file_name']
+            # Wait for Lingotek's system to no longer show translationas as completed
+            if file_name in self.updated:
+                if self.updated[file_name] > 15:
+                    self.updated.pop(file_name, None)
+                else:
+                    self.updated[file_name] += self.timeout
+                    continue
             locale_progress = self.import_locale_info(doc_id, True)
             try:
                 downloaded = doc['downloaded']
@@ -276,16 +278,16 @@ class WatchAction(Action):
             for locale in locale_progress:
                 progress = locale_progress[locale]
             # End Python 3
-            if progress == 100 and locale not in downloaded:
-                
-                logger.info('Translation completed ({0} - {1})'.format(doc_id, locale))
-                if self.locale_delimiter:
-                    self.download_action(doc_id, locale, False, False)
-                else:
-                    self.download_action(doc_id, locale, False)
-            elif progress != 100 and locale in downloaded:
-                print("Locale "+str(locale)+" for document "+doc['name']+" is no longer completed.")
-                self.doc_manager.remove_element_in_prop(doc_id, 'downloaded', locale)
+                if progress == 100 and locale not in downloaded:
+                    
+                    logger.info('Translation completed ({0} - {1})'.format(doc_id, locale))
+                    if self.locale_delimiter:
+                        self.download_action(doc_id, locale, False, False)
+                    else:
+                        self.download_action(doc_id, locale, False)
+                elif progress != 100 and locale in downloaded:
+                    print("Locale "+str(locale)+" for document "+doc['name']+" is no longer completed.")
+                    self.doc_manager.remove_element_in_prop(doc_id, 'downloaded', locale)
 
 
     def complete_path(self, file_location):
