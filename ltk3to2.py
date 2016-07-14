@@ -1,5 +1,6 @@
 import os
 import shutil
+import fnmatch
 
 def get_files(patterns):
     """ gets all files matching pattern from root
@@ -20,7 +21,8 @@ def get_files(patterns):
                     split_path = root.split('/')
                     for file in files:
                         # print(os.path.join(root, file))
-                        matched_files.append(os.path.join(root, file))
+                        if fnmatch.fnmatch(file, '*.py'):
+                            matched_files.append(os.path.join(root, file))
             else:
                 matched_files.append(path)
         else:

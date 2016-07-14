@@ -10,7 +10,11 @@ class ImportAction(Action):
         mapper = choice_mapper(info)
         chosen_ids = []
         while not len(chosen_ids) > 0:
-            choice = input('Documents to import: (Separate indices by comma) ')
+            prompt_message = 'Documents to import: (Separate indices by comma) '
+            # Python 2
+            confirm = raw_input(prompt_message)
+            # Python 3
+#             choice = input(prompt_message)
             try:
                 chosen_ids = [list(mapper[int(index)].keys())[0] for index in choice.split(',')]
             except ValueError:
@@ -71,28 +75,37 @@ class ImportAction(Action):
             if not curr_path and not os.path.exists(new_path):
                 return path_changed, new_path, write_file, delete_file
             if path_changed and curr_path: # Confirm changing the file path saved in docs.json
-                confirmation_msg = 'Would you like to change ' \
+                prompt_message = 'Would you like to change ' \
                                    'the current saved path of '+title+' from '+curr_path+' to '+new_path+'? [y/n]:'
                 confirm = 'none'
                 while confirm not in ['y', 'yes', 'n', 'no', '']:
-                    confirm = input(confirmation_msg).lower()
+                    # Python 2
+                    confirm = raw_input(prompt_message).lower()
+                    # Python 3
+#                     confirm = input(prompt_message).lower()
                 if not confirm or confirm in ['n', 'no']:
                     logger.info('Retaining old path "{0}"'.format(curr_path))
                     path_changed = False
                     new_path = curr_path
                 else:
-                    confirmation_msg = 'Delete '+curr_path+'? [y/n]:'
+                    prompt_message = 'Delete '+curr_path+'? [y/n]:'
                     confirm = 'none'
                     while confirm not in ['y', 'yes', 'n', 'no', '']:
-                        confirm = input(confirmation_msg).lower()
+                        # Python 2
+                        confirm = raw_input(prompt_message).lower()
+                        # Python 3
+#                         confirm = input(prompt_message).lower()
                     if confirm and confirm in ['y', 'yes']:
                         delete_file = True
             # Confirm overwriting a local file
             if os.path.exists(new_path):
-                confirmation_msg = 'Would you like to overwrite the existing document at '+new_path+'? [y/N]:'
+                prompt_message = 'Would you like to overwrite the existing document at '+new_path+'? [y/N]:'
                 confirm = 'none'
                 while confirm not in ['y', 'yes', 'n', 'no', '']:
-                    confirm = input(confirmation_msg).lower()
+                    # Python 2
+                    confirm = raw_input(prompt_message).lower()
+                    # Python 3
+#                     confirm = input(prompt_message).lower()
                 if not confirm or confirm in ['n', 'no']:
                     logger.info('Skipped importing "{0}"'.format(title))
                     write_file = False
