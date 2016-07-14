@@ -208,7 +208,6 @@ class Action:
                 logger.warning('Error: Invalid value for "-f" / "--watch_folder": Path "'+watch_folder+'" does not exist.')
                 return
         if target_locales:
-            print("locales: "+str(target_locales))
             target_locales = target_locales[0].split(',')
             valid_locales = []
             response = self.api.list_locales()
