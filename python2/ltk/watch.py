@@ -282,7 +282,7 @@ class WatchAction(Action):
                     else:
                         self.download_action(doc_id, locale, False)
                 elif progress != 100 and locale in downloaded:
-                    print("Locale "+str(locale)+" for document "+doc['name']+" is no longer completed.")
+                    # print("Locale "+str(locale)+" for document "+doc['name']+" is no longer completed.")
                     self.doc_manager.remove_element_in_prop(doc_id, 'downloaded', locale)
 
 
