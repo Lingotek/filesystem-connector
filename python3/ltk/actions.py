@@ -210,6 +210,7 @@ class Action:
                 logger.warning('Error: Invalid value for "-f" / "--watch_folder": Path "'+watch_folder+'" does not exist.')
                 return
         if target_locales:
+            print("locales: "+str(target_locales))
             target_locales = target_locales[0].split(',')
             valid_locales = []
             response = self.api.list_locales()
@@ -321,7 +322,6 @@ class Action:
             document_id = entry['id']
         except TypeError:
             logger.error("Document name specified for update doesn't exist: {0}".format(title))
-            print (file_name, entry['prolerty'])
             return
         if title:
             response = self.api.document_update(document_id, file_name, title=title, **kwargs)
