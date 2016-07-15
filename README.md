@@ -48,6 +48,6 @@ Next, is a video that demonstrates how a folder can be watched for new files and
 
 
 
-Checkout other installation notes [here](https://github.com/Lingotek/translation-utility/wiki/Other-Installation-Notes).
+Checkout other installation notes [here](https://github.com/Lingotek/translation-utility/wiki/Other-Installation-Notes)
 
 
