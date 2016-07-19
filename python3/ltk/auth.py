@@ -140,7 +140,7 @@ def run_oauth(host):
 
         token = init_token.split('&')[0]
         # store the token because apparently it doesn't expire..
-        webbrowser.open_new('https://www.youtube.com/watch?v=CbsvVar2rFs')
+        # webbrowser.open_new('https://www.youtube.com/watch?v=CbsvVar2rFs')
         return token
     sys.exit('Something went wrong with the authentication request, please try again.')
 
