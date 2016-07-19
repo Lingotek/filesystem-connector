@@ -79,7 +79,7 @@ class ClientRedirectHandler(BaseHTTPRequestHandler, object):
         # Python 2
         post_vars = urlparse.parse_qsl(self.rfile.read(length))
         # Python 3
-#         # post_vars = urllib.parse.parse_qsl(self.rfile.read(length))
+#         post_vars = urllib.parse.parse_qsl(self.rfile.read(length))
         self.server.query_params = dict(post_vars)
         self.send_response(200)
         self.send_header("Content-type", "text/html")
@@ -116,7 +116,7 @@ def run_oauth(host):
     # Python 2
     payload_url = urllib.urlencode(payload)
     # Python 3
-#     # payload_url = urllib.parse.urlencode(payload)
+#     payload_url = urllib.parse.urlencode(payload)
     authorize_url = host + '/auth/authorize.html?' + payload_url
     import webbrowser
     webbrowser.open_new(authorize_url)
