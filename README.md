@@ -39,15 +39,13 @@ Running `ltk` without any parameters will show all of the commands available: ad
 
 Here is video that shows the basics...
 
-[![Lingotek Filesystem Connector](http://img.youtube.com/vi/CbsvVar2rFs/0.jpg)](http://www.youtube.com/watch?v=CbsvVar2rFs)
+[![Lingotek Filesystem Connector1](http://img.youtube.com/vi/CbsvVar2rFs/0.jpg)](http://www.youtube.com/watch?v=CbsvVar2rFs)
 
 
-Next, is a video that demonstrates how a folder can be watched for new files and changes for automating the translation process... (see: ''ltk watch --help'')
+Next, is a video that demonstrates how a folder can be watched for new files and changes for automating the translation process...
 
-[![Lingotek Filesystem Connector](http://img.youtube.com/vi/CTRm-ythnPI/0.jpg)](https://youtu.be/CTRm-ythnPI)
-
-
-
-Checkout other installation notes [here](https://github.com/Lingotek/translation-utility/wiki/Other-Installation-Notes).
+[![Lingotek Filesystem Connector2](http://img.youtube.com/vi/CTRm-ythnPI/0.jpg)](https://youtu.be/CTRm-ythnPI)
 
 
+
+Checkout other installation notes [here](https://github.com/Lingotek/translation-utility/wiki/Other-Installation-Notes)
