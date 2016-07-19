@@ -1005,8 +1005,11 @@ def choice_mapper(info):
             mapper[index] = {entry[0]: entry[1]}
             index += 1
     for k,v in mapper.items():
-        for values in v:
-            print ('({0}) {1} ({2})'.format(k, v[values], values))
+        try:
+            for values in v:
+                print ('({0}) {1} ({2})'.format(k, v[values], values))
+        except UnicodeEncodeError:
+            continue
     return mapper
 
 
