@@ -8,6 +8,7 @@ from apicalls import ApiCalls
 from utils import detect_format
 from managers import DocumentManager
 from constants import CONF_DIR, CONF_FN, SYSTEM_FILE
+from git_auto import Git_Auto
 
 from logger import logger
 
@@ -25,11 +26,13 @@ class Action:
         self.download_dir = None  # directory where downloaded translation will be stored
         self.watch_dir = None  # if specified, only watch this directory
         self.watch_locales = set()  # if specified, add these target locales to any files in the watch folder
+        self.git_autocommit = None
         if not self._is_initialized():
             raise exceptions.UninitializedError("This project is not initialized. Please run init command.")
         self._initialize_self()
         self.api = ApiCalls(self.host, self.access_token)
         self.doc_manager = DocumentManager(self.path)
+        self.git_auto = Git_Auto(self.path)
 
     def _is_initialized(self):
         actual_path = find_conf(self.path)
@@ -50,6 +53,7 @@ class Action:
         self.community_id = conf_parser.get('main', 'community_id')
         self.workflow_id = conf_parser.get('main', 'workflow_id')
         self.locale = conf_parser.get('main', 'default_locale')
+        # self.git_autocommit = conf_parser.get('main', 'git_autocommit')
         try:
             # todo this try block will stop once one of them gets an exception..
             self.project_name = conf_parser.get('main', 'project_name')
@@ -100,7 +104,7 @@ class Action:
         # self._initialize_self()
         logger.info(log_info)
 
-    def config_action(self, locale, workflow_id, download_folder, watch_folder, target_locales):
+    def config_action(self, locale, workflow_id, download_folder, watch_folder, target_locales, git_toggle):
         config_file_name, conf_parser = self.init_config_file()
         if locale:
             self.locale = locale
@@ -130,11 +134,25 @@ class Action:
             self.watch_locales = set(target_locales)
             target_locales = ','.join(target for target in target_locales)
             self.update_config_file('watch_locales', target_locales, conf_parser, config_file_name, log_info)
-
+        git_autocommit = conf_parser.get('main', 'git_autocommit')
+        self.git_autocommit = git_autocommit
+        if git_toggle:
+            log_info = 'Git auto-commit status changed from {0}active'.format(
+                ('active to in' if self.git_autocommit == "True" else 'inactive to '))
+            config_file = open(config_file_name, 'w')
+            if git_autocommit == "True":
+                self.update_config_file('git_autocommit', False, conf_parser, config_file_name, log_info)
+                git_autocommit = "False"
+            else:
+                self.update_config_file('git_autocommit', True, conf_parser, config_file_name, log_info)
+                git_autocommit = "True"
+            self.git_autocommit = git_autocommit
         print 'host: {0}\naccess_token: {1}\nproject id: {2}\nproject name: {6}\ncommunity id: {3}\nworkflow id: {4}\n' \
-              'locale: {5}\ndownloads folder: {7}\nwatch folder: {8}\nwatch target locales: {9}'.format(
+              'locale: {5}\ndownloads folder: {7}\nwatch folder: {8}\nwatch target locales: {9}\ngit auto-commit: {10}'.format(
             self.host, self.access_token, self.project_id, self.community_id, self.workflow_id, self.locale,
-            self.project_name, self.download_dir, self.watch_dir, ', '.join(x for x in self.watch_locales))
+            self.project_name, self.download_dir, self.watch_dir, ', '.join(x for x in self.watch_locales), 
+            ('active' if self.git_autocommit == "True" else 'inactive'))
+
 
     def add_document(self, locale, file_name, title, **kwargs):
         response = self.api.add_document(file_name, locale, self.project_id, title, **kwargs)
@@ -439,24 +457,39 @@ class Action:
             with open(download_path, 'wb') as fh:
                 for chunk in response.iter_content(1024):
                     fh.write(chunk)
+            config_file_name, conf_parser = self.init_config_file()
+            git_autocommit = conf_parser.get('main', 'git_autocommit')
+            if git_autocommit == "True":
+                self.git_auto.add_file(download_path)
             return download_path
         else:
             raise_error(response.json(), 'Failed to download content for id: {0}'.format(document_id), True)
 
     def pull_action(self, locale_code, auto_format):
+        git_commit_message = ""
         if not locale_code:
             entries = self.doc_manager.get_all_entries()
             for entry in entries:
+                git_commit_message += entry['file_name'] + " "
                 try:
                     locales = entry['locales']
                     for locale in locales:
                         self.download_action(entry['id'], locale, auto_format)
+                        git_commit_message += locale + " "
                 except KeyError:
                     self.download_action(entry['id'], None, auto_format)
         else:
             document_ids = self.doc_manager.get_doc_ids()
+            git_commit_message += locale_code + " "
             for document_id in document_ids:
                 self.download_action(document_id, locale_code, auto_format)
+                document = self.doc_manager.get_doc_by_prop('id', document_id)
+                git_commit_message +=  document['name'] + " "
+        config_file_name, conf_parser = self.init_config_file()
+        git_autocommit = conf_parser.get('main', 'git_autocommit')
+        if git_autocommit == "True":
+            self.git_auto.commit(git_commit_message)
+            self.git_auto.push()
 
     def rm_action(self, document_name, force):
         try:
@@ -726,7 +759,7 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
 
     api = ApiCalls(host, access_token)
     # create a directory
-    try:
+    try: 
         os.mkdir(os.path.join(project_path, CONF_DIR))
     except OSError:
         pass
@@ -743,6 +776,7 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
     # config_parser.set('main', 'root_path', project_path)
     config_parser.set('main', 'workflow_id', workflow_id)
     config_parser.set('main', 'default_locale', locale)
+    config_parser.set('main', 'git_autocommit', False)
     # get community id
     community_info = api.get_communities_info()
     if len(community_info) == 0:

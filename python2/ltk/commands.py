@@ -113,12 +113,13 @@ def init(host, access_token, path, project_name, workflow_id, locale, delete, re
               help='specify target locales that documents in watch_folder should be assigned, may either specify '
                    'with multiple -t flags (ex: -t locale -t locale) or give a list separated by commas and no spaces '
                    '(ex: -t locale,locale)')
-def config(locale, workflow_id, download_folder, watch_folder, target_locales):
+@click.option('-g', '--git', type=click.Path(exists=True), help='toggle git auto-commit')
+def config(locale, workflow_id, download_folder, watch_folder, target_locales, git):
     """ view or change local configuration """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
-        action.config_action(locale, workflow_id, download_folder, watch_folder, target_locales)
+        action.config_action(locale, workflow_id, download_folder, watch_folder, target_locales, git)
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)

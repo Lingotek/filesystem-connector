@@ -37,9 +37,10 @@ def retry(logger, timeout=5, exec_type=None):
     return decorator
 
 def is_hidden_file(file_path):
-    # todo more robust checking for OSX files that doesn't start with '.'
+    # todo more robust checking for OSX files that don't start with '.'
     name = os.path.basename(os.path.abspath(file_path))
-    return name and (name.startswith('.') or has_hidden_attribute(file_path) or name == "4913")
+    directory = file_path.replace(os.getcwd()+"/", "", 1)
+    return name and (name.startswith('.') or directory.startswith('.') or has_hidden_attribute(file_path) or name == "4913")
 
 def has_hidden_attribute(file_path):
     """ Detects if a file has hidden attributes """
@@ -216,7 +217,10 @@ class WatchAction(Action):
         """ poll lingotek servers to check if MT finished """
         # todo eventually: poll for other jobs (prefill, analyze, etc...)
         documents = self.doc_manager.get_all_entries()  # todo this gets all documents, not necessarily only ones in watch folder
+        documents_downloaded = False
+        git_commit_message = ""
         for doc in documents:
+            git_commit_message += doc['name'] + " "
             doc_id = doc['id']
             if doc_id in self.watch_queue:
                 # if doc id in queue, not imported yet
@@ -229,11 +233,18 @@ class WatchAction(Action):
                 self.doc_manager.update_document('downloaded', downloaded, doc_id)
             for locale, progress in locale_progress.iteritems():
                 if progress == 100 and locale not in downloaded:
+                    git_commit_message += locale + " "
+                    documents_downloaded = True
                     logger.info('Translation completed ({0} - {1})'.format(doc_id, locale))
                     if self.locale_delimiter:
                         self.download_action(doc_id, locale, False, False)
                     else:
                         self.download_action(doc_id, locale, False)
+        config_file_name, conf_parser = self.init_config_file()
+        git_autocommit = conf_parser.get('main', 'git_autocommit')
+        if git_autocommit == "True" and documents_downloaded == True:
+            self.git_auto.commit(git_commit_message)
+            self.git_auto.push()
 
     def watch_action(self, watch_path, ignore, delimiter, timeout):
         # print self.path
