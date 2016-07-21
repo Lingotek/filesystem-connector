@@ -11,7 +11,7 @@ import fnmatch
 import time
 from ltk import exceptions
 from ltk.apicalls import ApiCalls
-from ltk.utils import detect_format, map_locale, is_locale
+from ltk.utils import detect_format, map_locale, get_valid_locales
 from ltk.managers import DocumentManager
 from ltk.constants import CONF_DIR, CONF_FN, SYSTEM_FILE
 import json
@@ -210,18 +210,7 @@ class Action:
                 logger.warning('Error: Invalid value for "-f" / "--watch_folder": Path "'+watch_folder+'" does not exist.')
                 return
         if target_locales:
-            target_locales = target_locales[0].split(',')
-            valid_locales = []
-            response = self.api.list_locales()
-            if response.status_code != 200:
-              raise exceptions.RequestFailedError("Unable to check valid locale codes")
-            locale_json = response.json()
-            for entry in locale_json:
-              valid_locales.append(locale_json[entry]['locale'])
-            for locale in target_locales:
-                if locale.replace("-","_") not in valid_locales:
-                    logger.warning('The locale code "'+str(locale)+'" failed to be added since it is invalid (see "ltk list -l" for the list of valid codes).')
-                    return
+            target_locales = get_valid_locales(self.api, target_locales[0].split(','))
             target_locales_str = ','.join(target for target in target_locales)
             log_info = 'Added target locales: {} for watch folder'.format(target_locales_str)
             self.update_config_file('watch_locales', target_locales_str, conf_parser, config_file_name, log_info)
@@ -361,21 +350,7 @@ class Action:
 
     # def request_action
     def target_action(self, document_name, path, entered_locales, to_delete, due_date, workflow, document_id=None):
-        valid_locales = []
-        response = self.api.list_locales()
-        remote_check = False
-        if response.status_code == 200:
-            remote_check = True
-        locale_json = response.json()
-        for entry in locale_json:
-            # print('"'+str(locale_json[entry]['locale'])+'", ')
-            valid_locales.append(locale_json[entry]['locale'])
-        locales = []
-        for locale in entered_locales:
-            if remote_check and locale.replace("-","_") not in valid_locales or not remote_check and not is_locale(locale):
-                logger.warning('The locale code "'+str(locale)+'" failed to be added since it is invalid (see "ltk list -l" for the list of valid codes).')
-            else:
-                locales.append(locale.replace("-","_"))
+        locales = get_valid_locales(self.api, entered_locales)
         if path:
             document_id = None
             document_name = None

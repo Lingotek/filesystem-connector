@@ -1,5 +1,6 @@
 import os, sys
 from ltk.locales import default_locales, locale_list
+from ltk.logger import logger
 import time
 # from constants import APP_ID
 
@@ -80,6 +81,21 @@ def restart(message="Restarting watch", interval=5):
     python = sys.executable
     os.execl(python, python, * sys.argv)
 
-def is_locale(locale):
-    # Check locales file for specified locale
-    return locale in locale_list
+def get_valid_locales(api, entered_locales):
+    """Return the list of valid locales, checking locales either remotely or using a local list of locales."""
+    valid_locales = []
+    response = api.list_locales()
+    remote_check = False
+    if response.status_code == 200:
+        remote_check = True
+    locale_json = response.json()
+    for entry in locale_json:
+        valid_locales.append(locale_json[entry]['locale'])
+    locales = []
+    for locale in entered_locales:
+        locale = locale.replace("-","_")
+        if remote_check and locale not in valid_locales or not remote_check and not locale in locale_list:
+            logger.warning('The locale code "'+str(locale)+'" failed to be added since it is invalid (see "ltk list -l" for the list of valid codes).')
+        else:
+            locales.append(locale)
+    return locales
