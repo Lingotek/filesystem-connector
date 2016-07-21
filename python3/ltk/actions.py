@@ -11,7 +11,7 @@ import fnmatch
 import time
 from ltk import exceptions
 from ltk.apicalls import ApiCalls
-from ltk.utils import detect_format, map_locale
+from ltk.utils import detect_format, map_locale, is_locale
 from ltk.managers import DocumentManager
 from ltk.constants import CONF_DIR, CONF_FN, SYSTEM_FILE
 import json
@@ -239,19 +239,24 @@ class Action:
             download_dir, ','.join(target for target in self.watch_locales)))
 
     def add_document(self, file_name, title, **kwargs):
-        if not 'locale' in kwargs or not kwargs['locale']:
-            locale = self.locale
-        else:
-            locale = kwargs['locale']
-        response = self.api.add_document(locale, file_name, self.project_id, title, **kwargs)
-        # print("response: "+str(response.json()))
-        if response.status_code != 202:
-            raise_error(response.json(), "Failed to add document {0}".format(title), True)
-        else:
-            logger.info('Added document {0}'.format(title))
-            relative_path = self.norm_path(file_name)
-            # print("relative path: "+relative_path)
-            self._add_document(relative_path, title, response.json()['properties']['id'])
+        try:
+            if not 'locale' in kwargs or not kwargs['locale']:
+                locale = self.locale
+            else:
+                locale = kwargs['locale']
+            response = self.api.add_document(locale, file_name, self.project_id, title, **kwargs)
+            # print("response: "+str(response.json()))
+            if response.status_code != 202:
+                raise_error(response.json(), "Failed to add document {0}".format(title), True)
+            else:
+                logger.info('Added document {0}'.format(title))
+                relative_path = self.norm_path(file_name)
+                # print("relative path: "+relative_path)
+                self._add_document(relative_path, title, response.json()['properties']['id'])
+        except KeyboardInterrupt:
+            raise_error("", "Canceled adding document")
+        except Exception as e:
+            logger.error("Error on adding document "+str(file_name)+": "+str(e))
 
     def add_action(self, file_patterns, **kwargs):
         # format will be automatically detected by extension but may not be what user expects
@@ -260,34 +265,40 @@ class Action:
         if not matched_files:
             raise exceptions.ResourceNotFound("Could not find the specified file/pattern")
         for file_name in matched_files:
-            # title = os.path.basename(os.path.normpath(file_name)).split('.')[0]
-            relative_path = self.norm_path(file_name)
-            title = os.path.basename(relative_path)
-            if not self.doc_manager.is_doc_new(relative_path):
-                if self.doc_manager.is_doc_modified(relative_path, self.path):
-                    if 'overwrite' in kwargs and kwargs['overwrite']:
-                        confirm = 'Y'
+            try:
+                # title = os.path.basename(os.path.normpath(file_name)).split('.')[0]
+                relative_path = self.norm_path(file_name)
+                title = os.path.basename(relative_path)
+                if not self.doc_manager.is_doc_new(relative_path):
+                    if self.doc_manager.is_doc_modified(relative_path, self.path):
+                        if 'overwrite' in kwargs and kwargs['overwrite']:
+                            confirm = 'Y'
+                        else:
+                            confirm = 'not confirmed'
+                        try:
+                            while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
+                                prompt_message = "This document already exists. Would you like to overwrite it? [Y/n]: "
+                                # Python 2
+                                # confirm = raw_input(prompt_message)
+                                # End Python 2
+                                # Python 3
+                                confirm = input(prompt_message)
+                                # End Python 3
+                            # confirm if would like to overwrite existing document in Lingotek Cloud
+                            if not confirm or confirm in ['n', 'N']:
+                                continue
+                            else:
+                                logger.info('Overwriting document: {0} in Lingotek Cloud...'.format(title))
+                                self.update_document_action(file_name, title, **kwargs)
+                                continue
+                        except KeyboardInterrupt:
+                            logger.error("Add canceled")
+                            return
                     else:
-                        confirm = 'not confirmed'
-                    while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-                        prompt_message = "This document already exists. Would you like to overwrite it? [Y/n]: "
-                        # Python 2
-                        # confirm = raw_input(prompt_message)
-                        # End Python 2
-                        # Python 3
-                        confirm = input(prompt_message)
-                        # End Python 3
-                    # confirm if would like to overwrite existing document in Lingotek Cloud
-                    if not confirm or confirm in ['n', 'N']:
+                        logger.error("This document has already been added: {0}".format(title))
                         continue
-                    else:
-                        logger.info('Overwriting document: {0} in Lingotek Cloud...'.format(title))
-                        self.update_document_action(file_name, title, **kwargs)
-                        continue
-                else:
-                    logger.error("This document has already been added: {0}".format(title))
-                    continue
-            # todo separate function somewhere around here maybe..
+            except json.decoder.JSONDecodeError:
+                logger.error("JSON error on adding document.")
             self.add_document(file_name, title, **kwargs)
             # response = self.api.add_document(locale, file_name, self.project_id, title, **kwargs)
             # if response.status_code != 202:
@@ -352,14 +363,16 @@ class Action:
     def target_action(self, document_name, path, entered_locales, to_delete, due_date, workflow, document_id=None):
         valid_locales = []
         response = self.api.list_locales()
-        if response.status_code != 200:
-          raise exceptions.RequestFailedError("Unable to check valid locale codes")
+        remote_check = False
+        if response.status_code == 200:
+            remote_check = True
         locale_json = response.json()
         for entry in locale_json:
-          valid_locales.append(locale_json[entry]['locale'])
+            # print('"'+str(locale_json[entry]['locale'])+'", ')
+            valid_locales.append(locale_json[entry]['locale'])
         locales = []
         for locale in entered_locales:
-            if locale.replace("-","_") not in valid_locales:
+            if remote_check and locale.replace("-","_") not in valid_locales or not remote_check and not is_locale(locale):
                 logger.warning('The locale code "'+str(locale)+'" failed to be added since it is invalid (see "ltk list -l" for the list of valid codes).')
             else:
                 locales.append(locale.replace("-","_"))
@@ -621,7 +634,7 @@ class Action:
             logger.warning("Could not connect to Lingotek")
             exit()
         except json.decoder.JSONDecodeError:
-            print("test json error")
+            print("JSON error on getting status")
             logger.warning("Could not connect to Lingotek")
             exit()
 
@@ -710,39 +723,47 @@ class Action:
                 self.download_action(document_id, locale_code, auto_format)
 
     def rm_document(self, file_name, useID, force, doc_name=None, is_directory=False):
-        doc = None
-        if not useID:
-            relative_path = self.norm_path(file_name)
-            doc = self.doc_manager.get_doc_by_prop('file_name', relative_path)
-            title = os.path.basename(self.norm_path(file_name))
-            # print("relative_path: "+relative_path)
-            try:
-                document_id = doc['id']
-            except TypeError: # Documents specified by name must be found in the local database to be removed.
-                if not is_directory:
-                    logger.warning("Document name specified for remove isn't in the local database: {0}".format(relative_path))
-                return
-                # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
-        else:
-            document_id = file_name
-            doc = self.doc_manager.get_doc_by_prop('id', document_id)
-            # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
-            if doc:
-                file_name = doc['file_name']
-        response = self.api.document_delete(document_id)
-        #print (response)
-        if response.status_code != 204 and response.status_code != 202:
-            # raise_error(response.json(), "Failed to delete document {0}".format(document_name), True)
-            logger.error("Failed to delete document {0} remotely".format(file_name))
-        else:
-            if doc_name:
-                logger.info("{0} ({1}) has been deleted remotely.".format(doc_name, file_name))
+        try:
+            doc = None
+            if not useID:
+                relative_path = self.norm_path(file_name)
+                doc = self.doc_manager.get_doc_by_prop('file_name', relative_path)
+                title = os.path.basename(self.norm_path(file_name))
+                # print("relative_path: "+relative_path)
+                try:
+                    document_id = doc['id']
+                except TypeError: # Documents specified by name must be found in the local database to be removed.
+                    if not is_directory:
+                        logger.warning("Document name specified for remove isn't in the local database: {0}".format(relative_path))
+                    return
+                    # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
             else:
-                logger.info("{0} has been deleted remotely.".format(file_name))
-            if doc:
-                if force:
-                    self.delete_local(file_name, document_id)
-                self.doc_manager.remove_element(document_id)
+                document_id = file_name
+                doc = self.doc_manager.get_doc_by_prop('id', document_id)
+                # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
+                if doc:
+                    file_name = doc['file_name']
+            response = self.api.document_delete(document_id)
+            #print (response)
+            if response.status_code != 204 and response.status_code != 202:
+                # raise_error(response.json(), "Failed to delete document {0}".format(document_name), True)
+                logger.error("Failed to delete document {0} remotely".format(file_name))
+            else:
+                if doc_name:
+                    logger.info("{0} ({1}) has been deleted remotely.".format(doc_name, file_name))
+                else:
+                    logger.info("{0} has been deleted remotely.".format(file_name))
+                if doc:
+                    if force:
+                        self.delete_local(file_name, document_id)
+                    self.doc_manager.remove_element(document_id)
+        except json.decoder.JSONDecodeError:
+            logger.error("JSON error on removing document.")
+        except KeyboardInterrupt:
+            raise_error("", "Canceled removing document")
+            return
+        except Exception as e:
+            logger.error("Error on removing document "+str(file_name)+": "+str(e))
 
     def rm_action(self, file_patterns, **kwargs):
         matched_files = None
@@ -953,16 +974,20 @@ def reinit(host, project_path, delete, reset):
         logger.warning('This project is already initialized!')
         if not delete:
             return False
-        confirm = 'not confirmed'
-        while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-            prompt_message = "Are you sure you want to delete the current project? " + \
-                "This will also delete the project in your community. [Y/n]: "
-            # Python 2
-            # confirm = raw_input(prompt_message)
-            # End Python 2
-            # Python 3
-            confirm = input(prompt_message)
-            # End Python 3
+        try:
+            confirm = 'not confirmed'
+            while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
+                prompt_message = "Are you sure you want to delete the current project? " + \
+                    "This will also delete the project in your community. [Y/n]: "
+                # Python 2
+                # confirm = raw_input(prompt_message)
+                # End Python 2
+                # Python 3
+                confirm = input(prompt_message)
+                # End Python 3
+        except KeyboardInterrupt:
+            logger.error("Reinit canceled")
+            return
         # confirm if deleting existing folder
         if not confirm or confirm in ['n', 'N']:
             return False
@@ -1023,12 +1048,16 @@ def display_choice(display_type, info):
     mapper = choice_mapper(info)
     choice = 'none-chosen'
     while choice not in mapper:
-        # Python 2
-        # choice = raw_input(prompt_message)
-        # End Python 2
-        # Python 3
-        choice = input(prompt_message)
-        # End Python 3
+        try:
+            # Python 2
+            # choice = raw_input(prompt_message)
+            # End Python 2
+            # Python 3
+            choice = input(prompt_message)
+            # End Python 3
+        except KeyboardInterrupt:
+            logger.error("Init canceled")
+            return
         try:
             choice = int(choice)
         except ValueError:
@@ -1152,28 +1181,36 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
     project_info = api.get_project_info(community_id)
     if len(project_info) > 0:
         confirm = 'none'
-        while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-            prompt_message = 'Would you like to use an existing Lingotek project? [Y/n]:'
-            # Python 2
-            # confirm = raw_input(prompt_message)
-            # End Python 2
-            # Python 3
-            confirm = input(prompt_message)
-            # End Python 3
-        if not confirm or not confirm in ['n', 'N', 'no', 'No']:
-            project_id, project_name = display_choice('project', project_info)
-            config_parser.set('main', 'project_id', project_id)
-            config_parser.set('main', 'project_name', project_name)
-            config_parser.write(config_file)
-            config_file.close()
+        try:
+            while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
+                prompt_message = 'Would you like to use an existing Lingotek project? [Y/n]:'
+                # Python 2
+                # confirm = raw_input(prompt_message)
+                # End Python 2
+                # Python 3
+                confirm = input(prompt_message)
+                # End Python 3
+            if not confirm or not confirm in ['n', 'N', 'no', 'No']:
+                project_id, project_name = display_choice('project', project_info)
+                config_parser.set('main', 'project_id', project_id)
+                config_parser.set('main', 'project_name', project_name)
+                config_parser.write(config_file)
+                config_file.close()
+                return
+        except KeyboardInterrupt:
+            logger.error("Init canceled")
             return
     prompt_message = "Please enter a new Lingotek project name: %s" % folder_name + chr(8) * len(folder_name)
-    # Python 2
-    # project_name = raw_input(prompt_message)
-    # End Python 2
-    # Python 3
-    project_name = input(prompt_message)
-    # End Python 3
+    try:
+        # Python 2
+        # project_name = raw_input(prompt_message)
+        # End Python 2
+        # Python 3
+        project_name = input(prompt_message)
+        # End Python 3
+    except KeyboardInterrupt:
+        logger.error("Init canceled")
+        return
     if not project_name:
         project_name = folder_name
     response = api.add_project(project_name, community_id, workflow_id)

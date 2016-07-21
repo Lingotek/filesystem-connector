@@ -1,5 +1,5 @@
 import os, sys
-from ltk.locales import default_locales
+from ltk.locales import default_locales, locale_list
 import time
 # from constants import APP_ID
 
@@ -79,3 +79,7 @@ def restart(message="Restarting watch", interval=5):
     print(message)
     python = sys.executable
     os.execl(python, python, * sys.argv)
+
+def is_locale(locale):
+    # Check locales file for specified locale
+    return locale in locale_list
