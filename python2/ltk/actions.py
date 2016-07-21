@@ -9,7 +9,7 @@ import fnmatch
 import time
 from ltk import exceptions
 from ltk.apicalls import ApiCalls
-from ltk.utils import detect_format, map_locale, get_valid_locales
+from ltk.utils import detect_format, map_locale, get_valid_locales, is_valid_locale
 from ltk.managers import DocumentManager
 from ltk.constants import CONF_DIR, CONF_FN, SYSTEM_FILE
 import json
@@ -29,6 +29,7 @@ class Action:
         self.download_dir = None  # directory where downloaded translation will be stored
         self.watch_dir = None  # if specified, only watch this directory
         self.watch_locales = set()  # if specified, add these target locales to any files in the watch folder
+        self.locale_folders = {}
         if not self._is_initialized():
             raise exceptions.UninitializedError("This project is not initialized. Please run init command.")
         self._initialize_self()
@@ -66,6 +67,8 @@ class Action:
             if conf_parser.has_option('main', 'watch_locales'):
                 watch_locales = conf_parser.get('main', 'watch_locales')
                 self.watch_locales = set(watch_locales.split(','))
+            if conf_parser.has_option('main', 'locale_folders'):
+                self.locale_folders = json.loads(conf_parser.get('main', 'locale_folders'))
         except NoOptionError as e:
             if not self.project_name:
                 self.api = ApiCalls(self.host, self.access_token)
@@ -119,13 +122,13 @@ class Action:
         # print("original path: "+str(file_location))
         if file_location:
             # abspath=os.path.abspath(file_location)
-            # print("abspath: "+abspath)
+            # print("abspath: "+str(os.path.abspath(os.path.expanduser(file_location))))
             # print("self.path: "+self.path)
             norm_path = os.path.abspath(os.path.expanduser(file_location)).replace(self.path, '')
             # print("normalized path: "+norm_path)
             if not os.path.exists(norm_path) and os.path.exists(os.path.join(self.path,file_location)):
                 # print("Starting path at project directory: "+file_location.replace(self.path, ''))
-                return file_location.replace(self.path, '')
+                return os.path.abspath(os.path.expanduser(file_location.replace(self.path, ''))).replace(self.path, '')
             return norm_path
         else:
             return None
@@ -173,7 +176,7 @@ class Action:
             # return detailed_status
         return locales
 
-    def config_action(self, locale, workflow_id, download_folder, watch_folder, target_locales):
+    def config_action(self, locale, workflow_id, download_folder, watch_folder, target_locales, locale_folders):
         config_file_name, conf_parser = self.init_config_file()
         if locale:
             self.locale = locale
@@ -213,6 +216,39 @@ class Action:
             log_info = 'Added target locales: {} for watch folder'.format(target_locales_str)
             self.update_config_file('watch_locales', target_locales_str, conf_parser, config_file_name, log_info)
             self.watch_locales = target_locales
+        if locale_folders:
+            mult_folders = False
+            if len(locale_folders) > 1:
+                mult_folders = True
+            folders_string = ""
+            count = 0
+            for folder in locale_folders:
+                count += 1
+                if not folder[0] or not folder[1]:
+                    logger.warning("Please specify a valid locale and a directory for that locale.")
+                    continue
+                locale = folder[0]
+                path = folder[1]
+                if not is_valid_locale(self.api, locale):
+                    logger.warning(str(locale+' is not a valid locale. See "ltk list -l" for the list of valid locales.'))
+                    continue
+                if path is '--none':
+                    self.locale_folders.pop(locale, None)
+                    continue
+                if os.path.exists(self.norm_path(path)):
+                    self.locale_folders[locale] = path
+                else:
+                    logger.warning(str(path)+" is not a valid directory.")
+                    continue
+                folders_string += str(locale) + ": " + str(path)
+                if count < len(locale_folders):
+                    folders_string += ", "
+            if mult_folders:
+                log_info = 'Adding locale folders {0}'.format(folders_string)
+            else:
+                log_info = 'Adding locale folder {0}'.format(folders_string)
+            locale_folders_str = json.dumps(self.locale_folders)
+            self.update_config_file('locale_folders', locale_folders_str, conf_parser, config_file_name, log_info)
         #print ('Token: {0}'.format(self.access_token))
         watch_dir = "None"
         if self.watch_dir and self.watch_dir != "--default":
@@ -220,10 +256,11 @@ class Action:
         download_dir = "None"
         if self.download_dir and self.download_dir != "--default" and self.download_dir != "--same":
             download_dir = self.download_dir
+        locale_folders_str = json.dumps(self.locale_folders).replace("{","").replace("}","")
         print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity id: {4}\nWorkflow id: {5}\n' \
-              'Default Source Locale: {6}\nWatch - Source Folder: {7}\nWatch - Download Folder: {8}\nWatch - Target Locales: {9}'.format(
+              'Default Source Locale: {6}\nWatch - Source Folder: {7}\nWatch - Download Folder: {8}\nWatch - Target Locales: {9}\nLocale folders: {10}'.format(
             self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, watch_dir,
-            download_dir, ','.join(target for target in self.watch_locales)))
+            download_dir, ','.join(target for target in self.watch_locales), locale_folders_str))
 
     def add_document(self, file_name, title, **kwargs):
         try:

@@ -126,12 +126,13 @@ def init(host, access_token, path, project_name, workflow_id, locale, delete, re
               help='Specify target locales that documents in watch_folder should be assigned; may either specify '
                    'with multiple -t flags (ex: -t locale -t locale) or give a list separated by commas and no spaces '
                    '(ex: -t locale,locale)')
-def config(locale, workflow_id, download_folder, watch_folder, target_locales):
+@click.option('-p', '--locale_folder', nargs=2, type=str, multiple=True, help='For a specific locale, specify the root folder where downloaded translations should appear.')
+def config(locale, workflow_id, download_folder, watch_folder, target_locales, locale_folder):
     """ View or change local configuration """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
-        action.config_action(locale, workflow_id, download_folder, watch_folder, target_locales)
+        action.config_action(locale, workflow_id, download_folder, watch_folder, target_locales, locale_folder)
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)

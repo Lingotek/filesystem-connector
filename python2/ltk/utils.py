@@ -81,6 +81,23 @@ def restart(message="Restarting watch", interval=5):
     python = sys.executable
     os.execl(python, python, * sys.argv)
 
+def is_valid_locale(api, locale):
+    """Returns true if the locale is found in Lingotek's remote list of locales or, if the api call fails, if the locale is found in the local list of locales."""
+    valid_locales = []
+    response = api.list_locales()
+    remote_check = False
+    if response.status_code == 200:
+        remote_check = True
+    locale_json = response.json()
+    for entry in locale_json:
+        valid_locales.append(locale_json[entry]['locale'])
+    locales = []
+    locale = locale.replace("-","_")
+    if remote_check and locale not in valid_locales or not remote_check and not locale in locale_list:
+        return False
+    else:
+        return True
+
 def get_valid_locales(api, entered_locales):
     """Return the list of valid locales, checking locales either remotely or using a local list of locales."""
     valid_locales = []
