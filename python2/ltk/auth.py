@@ -3,9 +3,14 @@ import sys
 
 # from six.moves import BaseHTTPServer
 # from six.moves import urllib
+# Python 2
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 import urlparse
 import urllib
+
+# Python 3
+# from http.server import HTTPServer, BaseHTTPRequestHandler
+# import urllib.parse
 # import warnings
 #
 # with warnings.catch_warnings():
@@ -71,7 +76,10 @@ class ClientRedirectHandler(BaseHTTPRequestHandler, object):
             Should only ever be sending self urlencoded so
         """
         length = int(self.headers['content-length'])
+        # Python 2
         post_vars = urlparse.parse_qsl(self.rfile.read(length))
+        # Python 3
+#         post_vars = urllib.parse.parse_qsl(self.rfile.read(length))
         self.server.query_params = dict(post_vars)
         self.send_response(200)
         self.send_header("Content-type", "text/html")
@@ -82,6 +90,7 @@ class ClientRedirectHandler(BaseHTTPRequestHandler, object):
 
 
 def run_oauth(host):
+    print ('running oauth')
     r_host = 'localhost'  # host to redirect to
     r_ports = [9000, 9001, 9002]
     httpd = None
@@ -104,20 +113,28 @@ def run_oauth(host):
     client_id = 'ab33b8b9-4c01-43bd-a209-b59f933e4fc4'
     response_type = 'token'
     payload = {'client_id': client_id, 'redirect_uri': oauth_callback, 'response_type': response_type}
-    authorize_url = host + '/auth/authorize.html?' + urllib.urlencode(payload)
+    # Python 2
+    payload_url = urllib.urlencode(payload)
+    # Python 3
+#     payload_url = urllib.parse.urlencode(payload)
+    authorize_url = host + '/auth/authorize.html?' + payload_url
     import webbrowser
     webbrowser.open_new(authorize_url)
-    print 'Your browser has been opened to visit: \n{0}\n'.format(authorize_url)
-    print '--------------------------------------'
+    print ('Your browser has been opened to visit: \n{0}\n'.format(authorize_url))
+    print ('--------------------------------------')
     httpd.handle_request()  # handle the GET redirect
     httpd.handle_request()  # handle the POST for token info
-    print '--------------------------------------\n'
-    if 'access_token' in httpd.query_params:
-        print 'Access token has been successfully stored!'
-        print '(If you haven\'t already, you may close your browser.)\n'
-        init_token = httpd.query_params['access_token']
+    print ('--------------------------------------\n')
+    if b'access_token' in httpd.query_params:
+        print ('Access token has been successfully stored!')
+        print ('(If you haven\'t already, you may close your browser.)\n')
+        init_token = httpd.query_params[b'access_token']
+        init_token = init_token.decode("utf-8")
+        print('init token',init_token)
+
         token = init_token.split('&')[0]
         # store the token because apparently it doesn't expire..
+        # webbrowser.open_new('https://www.youtube.com/watch?v=CbsvVar2rFs')
         return token
     sys.exit('Something went wrong with the authentication request, please try again.')
 

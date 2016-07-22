@@ -10,3 +10,5 @@ class AlreadyExistsError(Exception):
 class RequestFailedError(Exception):
     """ Request went wrong """
 
+class ConnectionFailed(Exception):
+	""" Could not connect to Lingotek """

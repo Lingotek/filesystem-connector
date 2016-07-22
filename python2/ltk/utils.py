@@ -1,5 +1,6 @@
-import os
-from locales import default_locales
+import os, sys
+from ltk.locales import default_locales
+import time
 # from constants import APP_ID
 
 class Enum(set):
@@ -30,6 +31,7 @@ def detect_format(file_name, get_mapper=False):
         '.ppt': 'PPT_OKAPI',
         '.pptx': 'PPTX_OKAPI',
         '.resx': 'RESX',
+        '.regex': 'REGEX',
         '.rtf': 'RTF_OKAPI',
         '.srt': 'SUBTITLE_RIP',
         '.tsv': 'TABLE',  # catkeys?
@@ -70,3 +72,10 @@ def map_locale(locale):
     #     except KeyError:
     #         unsupported_locales.append(locale)
     # return valid_locales, unsupported_locales
+
+def restart(message="Restarting watch", interval=5):
+    """Restarts the program. Used after exceptions. Otherwise, watch doesn't work anymore."""
+    time.sleep(interval)
+    print(message)
+    python = sys.executable
+    os.execl(python, python, * sys.argv)
