@@ -466,30 +466,30 @@ class Action:
             raise_error(response.json(), 'Failed to download content for id: {0}'.format(document_id), True)
 
     def pull_action(self, locale_code, auto_format):
-        git_commit_message = ""
+        # git_commit_message = ""
         if not locale_code:
             entries = self.doc_manager.get_all_entries()
             for entry in entries:
-                git_commit_message += entry['file_name'] + " "
+                # git_commit_message += entry['file_name'] + " "
                 try:
                     locales = entry['locales']
                     for locale in locales:
                         self.download_action(entry['id'], locale, auto_format)
-                        git_commit_message += locale + " "
+                        # git_commit_message += locale + " "
                 except KeyError:
                     self.download_action(entry['id'], None, auto_format)
         else:
             document_ids = self.doc_manager.get_doc_ids()
-            git_commit_message += locale_code + " "
+            # git_commit_message += locale_code + " "
             for document_id in document_ids:
                 self.download_action(document_id, locale_code, auto_format)
-                document = self.doc_manager.get_doc_by_prop('id', document_id)
-                git_commit_message +=  document['name'] + " "
-        config_file_name, conf_parser = self.init_config_file()
-        git_autocommit = conf_parser.get('main', 'git_autocommit')
-        if git_autocommit == "True":
-            self.git_auto.commit(git_commit_message)
-            self.git_auto.push()
+                # document = self.doc_manager.get_doc_by_prop('id', document_id)
+        #         git_commit_message +=  document['name'] + " "
+        # config_file_name, conf_parser = self.init_config_file()
+        # git_autocommit = conf_parser.get('main', 'git_autocommit')
+        # if git_autocommit == "True":
+        #     self.git_auto.commit(git_commit_message)
+            # self.git_auto.push()
 
     def rm_action(self, document_name, force):
         try:
