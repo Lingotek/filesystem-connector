@@ -175,7 +175,7 @@ class Action:
             # return detailed_status
         return locales
 
-    def config_action(self, locale, workflow_id, download_folder, watch_folder, target_locales, git_toggle):
+    def config_action(self, locale, workflow_id, download_folder, watch_folder, target_locales, git_toggle): #, git_username, git_password):
         config_file_name, conf_parser = self.init_config_file()
         if locale:
             self.locale = locale
@@ -237,6 +237,12 @@ class Action:
             else:
                 self.update_config_file('git_autocommit', True, conf_parser, config_file_name, log_info)
                 self.git_autocommit = "True"
+        # if git_username:
+        #     log_info = 'Git username set to ' + git_username
+        #     self.update_config_file('git_username', git_username, conf_parser, config_file_name, log_info)
+        # if git_password:
+        #     log_info = 'Git password set to ' + git_password
+        #     self.update_config_file('git_password', git_password, conf_parser, config_file_name, log_info)
         #print ('Token: {0}'.format(self.access_token))
         watch_dir = "None"
         if self.watch_dir and self.watch_dir != "--default":
@@ -1136,6 +1142,8 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
     config_parser.set('main', 'workflow_id', workflow_id)
     config_parser.set('main', 'default_locale', locale)
     config_parser.set('main', 'git_autocommit', False)
+    # config_parser.set('main', 'git_username', '')
+    # config_parser.set('main', 'git_password', '')
     # get community id
     community_info = api.get_communities_info()
     if not community_info:

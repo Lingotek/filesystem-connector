@@ -10,6 +10,7 @@ import sys
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEvent
 from ltk.watchhandler import WatchHandler
+from git_auto import Git_Auto
 
 # retry decorator to retry connections
 def retry(logger, timeout=5, exec_type=None):
@@ -64,6 +65,7 @@ class WatchAction(Action):
         self.watch_folder = True
         self.timeout = timeout
         self.updated = {}
+        self.git_auto = Git_Auto(path)
         # if remote:  # poll lingotek cloud periodically if this option enabled
         # self.remote_thread = threading.Thread(target=self.poll_remote(), args=())
         # self.remote_thread.daemon = True
@@ -291,8 +293,10 @@ class WatchAction(Action):
         config_file_name, conf_parser = self.init_config_file()
         git_autocommit = conf_parser.get('main', 'git_autocommit')
         if git_autocommit == "True" and documents_downloaded == True:
+            # username = conf_parser.get('main', 'git_username')
+            # password = conf_parser.get('main', 'git_password')
             self.git_auto.commit(git_commit_message)
-            self.git_auto.push()
+            self.git_auto.push() #[username, password] if username != '' and password != '' else None)
 
 
     def complete_path(self, file_location):
