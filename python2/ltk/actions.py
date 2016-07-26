@@ -10,7 +10,7 @@ import time
 from ltk import exceptions
 from ltk.apicalls import ApiCalls
 from ltk.utils import detect_format, map_locale, get_valid_locales, is_valid_locale
-from ltk.managers import DocumentManager
+from ltk.managers import DocumentManager, FolderManager
 from ltk.constants import CONF_DIR, CONF_FN, SYSTEM_FILE
 import json
 from ltk.logger import logger
@@ -35,6 +35,7 @@ class Action:
         self._initialize_self()
         self.watch = watch
         self.doc_manager = DocumentManager(self.path)
+        self.folder_manager = FolderManager(self.path)
         self.timeout = timeout
         self.api = ApiCalls(self.host, self.access_token, self.watch, self.timeout)
 
@@ -99,6 +100,16 @@ class Action:
         # whenever a document is updated, it should have new translations
         self.doc_manager.update_document('downloaded', [], doc_id)
 
+    def _is_folder_added(self, file_name):
+        """ checks if a folder has been added or is a subfolder of an added folder """
+        folder_names = self.folder_manager.get_file_names()
+        for folder in folder_names:
+            # print("folder: "+str(os.path.join(self.path,folder)))
+            # print("folder to be added: "+os.path.abspath(file_name))
+            if os.path.join(self.path,folder) in os.path.abspath(file_name):
+                return True
+        return False
+
     def close(self):
         self.doc_manager.close_db()
 
@@ -124,9 +135,14 @@ class Action:
             # abspath=os.path.abspath(file_location)
             # print("abspath: "+str(os.path.abspath(os.path.expanduser(file_location))))
             # print("self.path: "+self.path)
+            # print("cwd: "+str(os.getcwd()))
             norm_path = os.path.abspath(os.path.expanduser(file_location)).replace(self.path, '')
             # print("normalized path: "+norm_path)
-            if not os.path.exists(norm_path) and os.path.exists(os.path.join(self.path,file_location)):
+            # print("joined path: "+str(os.path.join(self.path,file_location)))
+            if file_location is not "." and os.path.exists(os.path.join(self.path,file_location)):
+                # print("returning original path: "+str(file_location))
+                return file_location.replace(self.path, '')
+            if not os.path.exists(os.path.join(self.path,norm_path)) and os.path.exists(os.path.join(self.path,file_location)):
                 # print("Starting path at project directory: "+file_location.replace(self.path, ''))
                 return os.path.abspath(os.path.expanduser(file_location.replace(self.path, ''))).replace(self.path, '')
             return norm_path
@@ -275,7 +291,6 @@ class Action:
             else:
                 logger.info('Added document {0}'.format(title))
                 relative_path = self.norm_path(file_name)
-                # print("relative path: "+relative_path)
                 self._add_document(relative_path, title, response.json()['properties']['id'])
         except KeyboardInterrupt:
             raise_error("", "Canceled adding document")
@@ -285,6 +300,16 @@ class Action:
     def add_action(self, file_patterns, **kwargs):
         # format will be automatically detected by extension but may not be what user expects
         # use current working directory as root for files instead of project root
+        for pattern in file_patterns:
+            if os.path.exists(pattern):
+                if os.path.isdir(pattern):
+                    if not self._is_folder_added(pattern):
+                        self.folder_manager.add_folder(self.norm_path(pattern))
+                        logger.info("Added folder "+str(pattern))
+                    else:
+                        logger.warning("Folder "+str(pattern)+" has already been added.")
+            else:
+                logger.warning("Path "+str(pattern)+" doesn't exist.")
         matched_files = get_files(file_patterns)
         if not matched_files:
             raise exceptions.ResourceNotFound("Could not find the specified file/pattern")
@@ -459,6 +484,12 @@ class Action:
 
     def list_ids_action(self, path=False):
         """ lists ids of list_type specified """
+        folders = self.folder_manager.get_file_names()
+        if len(folders):
+            print("Folder name")
+            for folder in folders:
+                print(folder)
+            print("")
         ids = []
         titles = []
         locales = []
@@ -774,6 +805,14 @@ class Action:
             logger.error("Error on removing document "+str(file_name)+": "+str(e))
 
     def rm_action(self, file_patterns, **kwargs):
+        for pattern in file_patterns:
+            if os.path.isdir(pattern):
+                # print("checking folder "+self.norm_path(pattern))
+                if self.folder_manager.folder_exists(self.norm_path(pattern)):
+                    self.folder_manager.remove_element(self.norm_path(pattern))
+                    logger.info("Removed folder "+str(file_patterns[0]))
+                else:
+                    logger.warning("Folder "+str(pattern)+" has not been added and so can not be removed.")
         matched_files = None
         if isinstance(file_patterns,str):
             file_patterns = [file_patterns]
@@ -786,6 +825,7 @@ class Action:
         else:
             useID = False
         if 'all' in kwargs and kwargs['all']:
+            self.folder_manager.clear_all()
             if 'remote' in kwargs and kwargs['remote']:
                 response = self.api.list_documents(self.project_id)
                 if response.status_code == 204:

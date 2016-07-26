@@ -360,7 +360,7 @@ def clean(force, dis_all, file_paths):
 
 
 @ltk.command(short_help="Watches local and remote files")
-@click.option('-p', '--path', type=click.Path(exists=True), help='Specify a folder to watch; defaults to project path')
+@click.option('-p', '--path', type=click.Path(exists=True), multiple=True, help='Specify a folder to watch; defaults to project path')
 @click.option('--ignore', multiple=True, help='Specify types of files to ignore')
 @click.option('--auto', 'delimiter', help='Automatically detects locale from the file name; specify locale delimiter')
 @click.option('-t', '--timeout', type=click.INT, default=60,
