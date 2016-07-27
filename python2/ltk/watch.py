@@ -47,6 +47,11 @@ def has_hidden_attribute(file_path):
         result = bool(attrs & 2)
     except (AttributeError, AssertionError):
         result = False
+    if not result:
+        directories = os.path.normpath(file_path).split(os.path.sep)
+        for directory in directories:
+            if directory.startswith('.'):
+                result = True
     return result
 
 class WatchAction(Action):
@@ -255,7 +260,6 @@ class WatchAction(Action):
         documents_downloaded = False
         git_commit_message = ""
         for doc in documents:
-            git_commit_message += doc['name'] + " "
             doc_id = doc['id']
             if doc_id in self.watch_queue:
                 # if doc id in queue, not imported yet
@@ -280,6 +284,8 @@ class WatchAction(Action):
 #             for locale in locale_progress:
 #                 progress = locale_progress[locale]
                 if progress == 100 and locale not in downloaded:
+                    if (doc['name']+" ") not in git_commit_message:
+                        git_commit_message += doc['name'] + " "
                     git_commit_message += locale + " "
                     documents_downloaded = True
                     logger.info('Translation completed ({0} - {1})'.format(doc_id, locale))
@@ -293,11 +299,19 @@ class WatchAction(Action):
         config_file_name, conf_parser = self.init_config_file()
         git_autocommit = conf_parser.get('main', 'git_autocommit')
         if git_autocommit == "True" and documents_downloaded == True:
-            # username = conf_parser.get('main', 'git_username')
-            # password = conf_parser.get('main', 'git_password')
+            username = conf_parser.get('main', 'git_username')
+            password = conf_parser.get('main', 'git_password')
             self.git_auto.commit(git_commit_message)
-            self.git_auto.push() #[username, password] if username != '' and password != '' else None)
-
+            if username and username != "":
+                if password and password != "":
+                    self.git_auto.push(username=username, password=password)
+                else:
+                    self.git_auto.push(username=username)
+            else:
+                if password and password != "":
+                    self.git_auto.push(password=password)
+                else:
+                    self.git_auto.push()
 
     def complete_path(self, file_location):
         # print("self.path: "+self.path)

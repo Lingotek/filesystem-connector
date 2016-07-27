@@ -124,14 +124,14 @@ def init(host, access_token, path, project_name, workflow_id, locale, delete, re
                    'with multiple -t flags (ex: -t locale -t locale) or give a list separated by commas and no spaces '
                    '(ex: -t locale,locale)')
 @click.option('-g', '--git', is_flag=True, help='Toggle Git auto-commit')
-#@click.option('-gu', '--git_username', help='Set Git username for auto-filling')
-#@click.option('-gp', '--git_password', help='Set Git username for auto-filling')
-def config(locale, workflow_id, download_folder, watch_folder, target_locales, git): #, git_username, git_password):
+@click.option('-gu', '--git_username', help='Set Git username for auto-fill (\'none\' to unset)')
+@click.option('-gp', '--git_password', help='Set Git password for auto-fill (\'none\' to unset)')
+def config(locale, workflow_id, download_folder, watch_folder, target_locales, git, git_username, git_password):
     """ View or change local configuration """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
-        action.config_action(locale, workflow_id, download_folder, watch_folder, target_locales, git) #, git_username, git_password)
+        action.config_action(locale, workflow_id, download_folder, watch_folder, target_locales, git, git_username, git_password)
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)

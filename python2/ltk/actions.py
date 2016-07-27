@@ -175,7 +175,7 @@ class Action:
             # return detailed_status
         return locales
 
-    def config_action(self, locale, workflow_id, download_folder, watch_folder, target_locales, git_toggle): #, git_username, git_password):
+    def config_action(self, locale, workflow_id, download_folder, watch_folder, target_locales, git_toggle, git_username, git_password):
         config_file_name, conf_parser = self.init_config_file()
         if locale:
             self.locale = locale
@@ -237,12 +237,20 @@ class Action:
             else:
                 self.update_config_file('git_autocommit', True, conf_parser, config_file_name, log_info)
                 self.git_autocommit = "True"
-        # if git_username:
-        #     log_info = 'Git username set to ' + git_username
-        #     self.update_config_file('git_username', git_username, conf_parser, config_file_name, log_info)
-        # if git_password:
-        #     log_info = 'Git password set to ' + git_password
-        #     self.update_config_file('git_password', git_password, conf_parser, config_file_name, log_info)
+        if git_username:
+            if git_username in ['None', 'none', 'N', 'n']:
+                git_username = ""
+                log_info = "Git username disabled"
+            else:
+                log_info = 'Git username set to ' + git_username
+            self.update_config_file('git_username', git_username, conf_parser, config_file_name, log_info)
+        if git_password:
+            if git_password in ['None', 'none', 'N', 'n']:
+                git_password = ""
+                log_info = "Git password disabled"
+            else:
+                log_info = 'Git password set'
+            self.update_config_file('git_password', self.git_auto.encrypt(git_password), conf_parser, config_file_name, log_info)
         #print ('Token: {0}'.format(self.access_token))
         watch_dir = "None"
         if self.watch_dir and self.watch_dir != "--default":
@@ -701,7 +709,15 @@ class Action:
             config_file_name, conf_parser = self.init_config_file()     
             git_autocommit = conf_parser.get('main', 'git_autocommit')      
             if git_autocommit == "True":        
-                self.git_auto.add_file(download_path)
+                if not self.git_auto.repo_is_defined:
+                    repo_directory = download_path
+                    while repo_directory != "" and not (os.path.isdir(repo_directory + "/.git")):
+                        repo_directory = repo_directory.split(os.sep)[:-1]
+                        repo_directory = (os.sep).join(repo_directory)
+                    if repo_directory != "":
+                        self.git_auto.initialize_repo(repo_directory)
+                if os.path.isfile(download_path):
+                    self.git_auto.add_file(download_path)
             with open(download_path, 'wb') as fh:
                 for chunk in response.iter_content(1024):
                     fh.write(chunk)
@@ -1142,8 +1158,8 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
     config_parser.set('main', 'workflow_id', workflow_id)
     config_parser.set('main', 'default_locale', locale)
     config_parser.set('main', 'git_autocommit', False)
-    # config_parser.set('main', 'git_username', '')
-    # config_parser.set('main', 'git_password', '')
+    config_parser.set('main', 'git_username', '')
+    config_parser.set('main', 'git_password', '')
     # get community id
     community_info = api.get_communities_info()
     if not community_info:

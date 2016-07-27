@@ -1,9 +1,9 @@
 import sys
 import os.path
-import time
+import codecs
 from git import Repo
 from git import RemoteProgress
-# import pexpect
+import pexpect
 
 class Git_Auto:
 	def __init__(self, path):
@@ -12,19 +12,37 @@ class Git_Auto:
 		self.join = os.path.join
 		self.repo_is_defined = False
 
+	def initialize_repo(self, repo_directory):
+		self.repo = Repo(repo_directory)
+		self.repo_is_defined = True
+
 	def add_file(self, file_name):
+		assert self.repo_is_defined
 		self.repo.git.add(file_name)
 
 	def commit(self, message):
-		current_time = (time.strftime("%Y-%m-%d %H:%M:%S"))
+		assert self.repo_is_defined
 		message.rstrip(' ')
 		self.repo.index.commit("automated commit " + message)
 
-	def push(self, credential_input=None):
-		# g = pexpect.spawn('POST')
-		# g.expect('Username for ')
-		# g.send(credential_input[0])
-		self.repo.remotes['origin'].push()
-		# if credential_input and len(credential_input) >= 2:
-		# 	g.expect('Password for %')
-		# 	g.send(credential_input[1])
+	def encrypt(self, password):
+		password = codecs.encode(password, 'base64')
+		return password
+
+	def push(self, username=None, password=None):
+		assert self.repo_is_defined
+		if username or password:
+			g = pexpect.spawn('git push')
+			g.logfile_read = sys.stdout
+			if not username: username = ''
+			if not password: password = ''
+			while True:
+				i = g.expect(['Username for .*', 'Password for .*', pexpect.EOF])
+				if(i == 0):
+					g.send(username+'\n')
+				elif(i == 1):
+					g.send(codecs.decode(password, 'base64')+'\n')
+				else:
+					break
+		else:
+			self.repo.remotes['origin'].push()
