@@ -38,7 +38,12 @@ def is_hidden_file(file_path):
 def has_hidden_attribute(file_path):
     """ Detects if a file has hidden attributes """
     try:
-        attrs = ctypes.windll.kernel32.GetFileAttributesW(unicode(file_path))
+        # Python 2
+        # attrs = ctypes.windll.kernel32.GetFileAttributesW(unicode(file_path))
+        # End Python 2
+        # Python 3
+        attrs = ctypes.windll.kernel32.GetFileAttributesW(str(file_path))
+        # End Python 3
         assert attrs != -1
         result = bool(attrs & 2)
     except (AttributeError, AssertionError):
@@ -47,7 +52,7 @@ def has_hidden_attribute(file_path):
 
 class WatchAction(Action):
     # def __init__(self, path, remote=False):
-    def __init__(self, path, timeout):
+    def __init__(self, path=None, timeout=60):
         Action.__init__(self, path, True, timeout)
         self.observer = Observer()  # watchdog observer that will watch the files
         self.handler = WatchHandler()
@@ -60,6 +65,7 @@ class WatchAction(Action):
         self.detected_locales = {}  # dict to keep track of detected locales
         self.watch_folder = True
         self.timeout = timeout
+        self.updated = {}
         # if remote:  # poll lingotek cloud periodically if this option enabled
         # self.remote_thread = threading.Thread(target=self.poll_remote(), args=())
         # self.remote_thread.daemon = True
@@ -138,8 +144,11 @@ class WatchAction(Action):
                 except ValueError:
                     print(sys.exc_info()[1])
                     restart()
-
-                document_id = self.doc_manager.get_doc_by_prop('name', title)['id']
+                doc = self.doc_manager.get_doc_by_prop('name', title)
+                if doc:
+                    document_id = doc['id']
+                else:
+                    return
                 if self.locale_delimiter:
                     try:
                         # curr_locale = title.split(self.locale_delimiter)[1]
@@ -160,8 +169,8 @@ class WatchAction(Action):
             #     print("Skipping hidden file "+file_path)
         except KeyboardInterrupt:
             self.observer.stop()
-        except Exception as err:
-            restart("Error on created: "+str(err)+"\nRestarting watch.")
+        # except Exception as err:
+        #     restart("Error on created: "+str(err)+"\nRestarting watch.")
 
     def _on_moved(self, event):
         """Used for programs, such as gedit, that modify documents by moving (overwriting)
@@ -210,7 +219,8 @@ class WatchAction(Action):
             #         printStr += target+","
             # print(printStr)
             self.target_action(title, file_name, locales_to_add, None, None, None, document_id)
-            self.watch_queue.remove(document_id)
+            if document_id in self.watch_queue:
+                self.watch_queue.remove(document_id)
 
     def process_queue(self):
         """do stuff with documents in queue (currently just add targets)"""
@@ -221,9 +231,9 @@ class WatchAction(Action):
             self.watch_add_target(None, document_id)
 
     def update_content(self, relative_path):
-        logger.info('Detected local content modified: {0}'.format(relative_path))
-        self.update_document_action(os.path.join(self.path, relative_path))
-        logger.info('Updating remote content: {0}'.format(relative_path))
+        if self.update_document_action(os.path.join(self.path, relative_path)):
+            self.updated[relative_path] = 0
+            logger.info('Updating remote content: {0}'.format(relative_path))
 
     def check_modified(self, doc): # Checks if the version of a document on Lingotek's system is more recent than the local version
         old_date = doc['last_mod']
@@ -247,23 +257,36 @@ class WatchAction(Action):
             if doc_id in self.watch_queue:
                 # if doc id in queue, not imported yet
                 continue
+            file_name = doc['file_name']
+            # Wait for Lingotek's system to no longer show translationas as completed
+            if file_name in self.updated:
+                if self.updated[file_name] > 3:
+                    self.updated.pop(file_name, None)
+                else:
+                    self.updated[file_name] += self.timeout
+                    continue
             locale_progress = self.import_locale_info(doc_id, True)
             try:
                 downloaded = doc['downloaded']
             except KeyError:
                 downloaded = []
                 self.doc_manager.update_document('downloaded', downloaded, doc_id)
+            # Python 2
+            # for locale, progress in locale_progress.iteritems():
+            # End Python 2
+            # Python 3
             for locale in locale_progress:
                 progress = locale_progress[locale]
+            # End Python 3
                 if progress == 100 and locale not in downloaded:
-
+                    
                     logger.info('Translation completed ({0} - {1})'.format(doc_id, locale))
                     if self.locale_delimiter:
                         self.download_action(doc_id, locale, False, False)
                     else:
                         self.download_action(doc_id, locale, False)
                 elif progress != 100 and locale in downloaded:
-                    print("Locale "+str(locale)+" for document "+doc['name']+" is no longer completed.")
+                    # print("Locale "+str(locale)+" for document "+doc['name']+" is no longer completed.")
                     self.doc_manager.remove_element_in_prop(doc_id, 'downloaded', locale)
 
 
@@ -275,11 +298,12 @@ class WatchAction(Action):
         # norm_path = os.path.abspath(file_location).replace(self.path, '')
         return abspath
 
-    def watch_action(self, watch_path, ignore, delimiter):
+    def watch_action(self, watch_path, ignore, delimiter=None):
         # print self.path
         if watch_path:  # Use watch path specified as an option/parameter
             self.watch_folder = True
         elif self.watch_dir and not "--default" in self.watch_dir: # Use watch path from config
+            self.watch_folder = True
             watch_path = self.watch_dir
         else:
             watch_path = self.path # Watch from the project root

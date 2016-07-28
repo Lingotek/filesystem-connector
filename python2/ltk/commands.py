@@ -123,15 +123,13 @@ def init(host, access_token, path, project_name, workflow_id, locale, delete, re
               help='Specify target locales that documents in watch_folder should be assigned; may either specify '
                    'with multiple -t flags (ex: -t locale -t locale) or give a list separated by commas and no spaces '
                    '(ex: -t locale,locale)')
-@click.option('-g', '--git', is_flag=True, help='Toggle Git auto-commit')
-@click.option('-gu', '--git_username', help='Set Git username for auto-fill (\'none\' to unset)')
-@click.option('-gp', '--git_password', help='Set Git password for auto-fill (\'none\' to unset)')
-def config(locale, workflow_id, download_folder, watch_folder, target_locales, git, git_username, git_password):
+@click.option('-p', '--locale_folder', nargs=2, type=str, multiple=True, help='For a specific locale, specify the root folder where downloaded translations should appear.')
+def config(locale, workflow_id, download_folder, watch_folder, target_locales, locale_folder):
     """ View or change local configuration """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
-        action.config_action(locale, workflow_id, download_folder, watch_folder, target_locales, git, git_username, git_password)
+        action.config_action(locale, workflow_id, download_folder, watch_folder, target_locales, locale_folder)
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
@@ -359,7 +357,7 @@ def clean(force, dis_all, file_paths):
 
 
 @ltk.command(short_help="Watches local and remote files")
-@click.option('-p', '--path', type=click.Path(exists=True), help='Specify a folder to watch; defaults to project path')
+@click.option('-p', '--path', type=click.Path(exists=True), multiple=True, help='Specify a folder to watch; defaults to project path')
 @click.option('--ignore', multiple=True, help='Specify types of files to ignore')
 @click.option('--auto', 'delimiter', help='Automatically detects locale from the file name; specify locale delimiter')
 @click.option('-t', '--timeout', type=click.INT, default=60,

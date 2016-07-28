@@ -1,9 +1,11 @@
 import click
 import sys
 python_version = sys.version
-if python_version[0] < '3':
-   print('Python 3 is required to run this version of the Lingotek Filesystem connector.\n\nFor other versions and troubleshooting, see: https://github.com/lingotek/filesystem-connector')
-   exit()
+# Python 3
+# if python_version[0] < '3':
+#    print('Python 3 is required to run this version of the Lingotek Filesystem connector.\n\nFor other versions and troubleshooting, see: https://github.com/lingotek/filesystem-connector')
+#    exit()
+# End Python 3
 from ltk import actions
 import os
 from ltk.exceptions import UninitializedError, ResourceNotFound, RequestFailedError, AlreadyExistsError
@@ -64,7 +66,12 @@ def print_log(error):
 
 
 @click.group()
+# Python 2
+# @click.version_option(version=__version__, message='%(prog)s version %(version)s (Lingotek Filesystem Connector - Python 2)')
+# End Python 2
+# Python 3
 @click.version_option(version=__version__, message='%(prog)s version %(version)s (Lingotek Filesystem Connector - Python 3)')
+# End Python 3
 @click.option('-q', 'is_quiet', flag_value=True, help='Will only show warnings')
 @click.option('-v', 'verbosity_lvl', count=True, help='Show API calls. Use -vv for API responses.')
 def ltk(is_quiet, verbosity_lvl):
@@ -75,8 +82,8 @@ def ltk(is_quiet, verbosity_lvl):
 
 @ltk.command()
 @click.option('--access_token', help='Your access token')
-@click.option('--host', type=click.Choice(['myaccount.lingotek.com', 'cms.lingotek.com']), default='cms.lingotek.com',
-              help='Environment: myaccount for production, cms for sandbox; the default is sandbox')
+@click.option('--host', type=click.Choice(['myaccount.lingotek.com', 'cms.lingotek.com']), default='myaccount.lingotek.com',
+              help='Environment: myaccount for production, cms for sandbox; the default is production')
 # @click.option('--host', help='host')
 @click.option('--path', type=click.Path(exists=True),
               help='The path to the project directory to be initialized; defaults to the current directory')
@@ -90,7 +97,7 @@ def ltk(is_quiet, verbosity_lvl):
               help='Delete the current project remotely and re-initialize')
 # todo add a 'change' option so don't delete remote project
 # @click.option('-c', '--change', flag_value=True, help='Change the Lingotek project. ')
-@click.option('--reset', flag_value=True, help='Re-authorize and reset any stored access tokens')
+@click.option('--reset', flag_value=True, help='Reauthorize and reset any stored access tokens')
 def init(host, access_token, path, project_name, workflow_id, locale, delete, reset):
     """ Connects a local project to Lingotek """
     try:
@@ -119,12 +126,13 @@ def init(host, access_token, path, project_name, workflow_id, locale, delete, re
               help='Specify target locales that documents in watch_folder should be assigned; may either specify '
                    'with multiple -t flags (ex: -t locale -t locale) or give a list separated by commas and no spaces '
                    '(ex: -t locale,locale)')
-def config(locale, workflow_id, download_folder, watch_folder, target_locales):
+@click.option('-p', '--locale_folder', nargs=2, type=str, multiple=True, help='For a specific locale, specify the root folder where downloaded translations should appear.')
+def config(locale, workflow_id, download_folder, watch_folder, target_locales, locale_folder):
     """ View or change local configuration """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
-        action.config_action(locale, workflow_id, download_folder, watch_folder, target_locales)
+        action.config_action(locale, workflow_id, download_folder, watch_folder, target_locales, locale_folder)
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
@@ -135,7 +143,7 @@ def config(locale, workflow_id, download_folder, watch_folder, target_locales):
 @click.argument('file_names', required=True, nargs=-1)
 @click.option('-l', '--locale', help='If source locale is different from the default configuration. Use ltk list -l to see possible locales')
 @click.option('-f', '--format',
-              help='Format of file; if not specified, will use extension to detect; defaults to plaintext. Use ltk list -f to see possible formats')
+              help="Format of file; if not specified, will use extension to detect; defaults to plaintext. Use ltk list -f to see possible formats. Files may not be added to Lingotek's system if not formatted correctly according to the specified format")
 @click.option('-s', '--srx', type=click.Path(exists=True), help='srx file')
 @click.option('-si', '--srx_id', help='srx id')
 @click.option('-i', '--its', type=click.Path(exists=True), help='its file')
@@ -147,7 +155,7 @@ def config(locale, workflow_id, download_folder, watch_folder, target_locales):
 @click.option('-fsi', '--fprm_subfilter_id', help='fprm subfilter id')
 @click.option('-v', '--vault_id', help='Save-to TM vault id')
 @click.option('-e', '--external_url', help='Source url')
-@click.option('-o', '--force', flag_value=True, help='Overwrite previously added file if the file has been modified')
+@click.option('-o', '--overwrite', flag_value=True, help='Overwrite previously added file if the file has been modified')
 def add(file_names, **kwargs):
     """ Adds content. Could be one or more files specified by a Unix shell pattern """
     try:
@@ -185,6 +193,8 @@ def request(doc_name, path, locales, to_delete, due_date, workflow):
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
+        if isinstance(locales,str):
+            locales = [locales]
         action.target_action(doc_name, path, locales, to_delete, due_date, workflow)
     except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
         print_log(e)
@@ -350,7 +360,7 @@ def clean(force, dis_all, file_paths):
 
 
 @ltk.command(short_help="Watches local and remote files")
-@click.option('-p', '--path', type=click.Path(exists=True), help='Specify a folder to watch; defaults to project path')
+@click.option('-p', '--path', type=click.Path(exists=True), multiple=True, help='Specify a folder to watch; defaults to project path')
 @click.option('--ignore', multiple=True, help='Specify types of files to ignore')
 @click.option('--auto', 'delimiter', help='Automatically detects locale from the file name; specify locale delimiter')
 @click.option('-t', '--timeout', type=click.INT, default=60,

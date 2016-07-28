@@ -17,6 +17,7 @@ def create_config():
     shutil.copyfile(config_file_path, new_config_file_path)
 
 def create_txt_file(file_name):
+    print("create_txt_file")
     file_path = os.path.join(os.getcwd(), file_name)
     with open(file_path, 'w') as txt_file:
         txt_file.write('This is a sample text file. ')
@@ -24,6 +25,7 @@ def create_txt_file(file_name):
     return file_path
 
 def delete_file(file_name):
+    print("delete_file")
     file_path = os.path.join(os.getcwd(), file_name)
     os.remove(file_name)
 

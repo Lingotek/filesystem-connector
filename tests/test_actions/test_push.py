@@ -14,7 +14,7 @@ class TestPush(unittest.TestCase):
         self.files = ['sample.txt', 'sample1.txt', 'sample2.txt']
         for fn in self.files:
             create_txt_file(fn)
-        self.action.add_action(['sample*.txt'], force=True)
+        self.action.add_action(['sample*.txt'], overwrite=True)
         self.doc_ids = self.action.doc_manager.get_doc_ids()
         for doc_id in self.doc_ids:
             assert poll_doc(self.action, doc_id)
@@ -32,7 +32,7 @@ class TestPush(unittest.TestCase):
         append_file(self.files[0])
         locales = ['ja_JP']
         test_doc_id = self.action.doc_manager.get_doc_by_prop('file_name',self.files[0])['id']
-        self.action.target_action(None, locales, False, None, None, test_doc_id)
+        self.action.target_action(None, None, locales, False, None, None, test_doc_id)
         with open(self.files[0]) as f:
             downloaded = f.read()
         self.action.push_action()
@@ -51,8 +51,8 @@ class TestPush(unittest.TestCase):
         doc_id0 = self.action.doc_manager.get_doc_by_prop('file_name',self.files[0])['id']
         doc_id1 = self.action.doc_manager.get_doc_by_prop('file_name',self.files[1])['id']
         locales = ['ja_JP']
-        self.action.target_action(None, locales, False, None, None, doc_id0)
-        self.action.target_action(None, locales, False, None, None, doc_id1)
+        self.action.target_action(None, None, locales, False, None, None, doc_id0)
+        self.action.target_action(None, None, locales, False, None, None, doc_id1)
         self.action.push_action()
         assert check_updated_ids(self.action, [doc_id0, doc_id1]) # Poll and wait until the modification has taken effect on the cloud
         dl_path = self.action.download_action(doc_id0, None, False)

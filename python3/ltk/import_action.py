@@ -10,7 +10,13 @@ class ImportAction(Action):
         mapper = choice_mapper(info)
         chosen_ids = []
         while not len(chosen_ids) > 0:
-            choice = input('Documents to import: (Separate indices by comma) ')
+            prompt_message = 'Documents to import: (Separate indices by comma) '
+            # Python 2
+            # confirm = raw_input(prompt_message)
+            # End Python 2
+            # Python 3
+            choice = input(prompt_message)
+            # End Python 3
             try:
                 chosen_ids = [list(mapper[int(index)].keys())[0] for index in choice.split(',')]
             except ValueError:
@@ -34,10 +40,20 @@ class ImportAction(Action):
 
         if not ids_to_import:
             if import_all:
+                # Python 2
+                # ids_to_import = tms_doc_info.iterkeys()
+                # End Python 2
+                # Python 3
                 ids_to_import = iter(tms_doc_info)
+                # End Python 3
             else:
                 import_doc_info = {}
+                # Python 2
+                # for k, v in tms_doc_info.iteritems():
+                # End Python 2
+                # Python 3
                 for k, v in tms_doc_info.items():
+                # End Python 3
                     import_doc_info[k] = v['title']
                 ids_to_import = self.get_import_ids(import_doc_info)
         else:
@@ -65,28 +81,43 @@ class ImportAction(Action):
             if not curr_path and not os.path.exists(new_path):
                 return path_changed, new_path, write_file, delete_file
             if path_changed and curr_path: # Confirm changing the file path saved in docs.json
-                confirmation_msg = 'Would you like to change ' \
+                prompt_message = 'Would you like to change ' \
                                    'the current saved path of '+title+' from '+curr_path+' to '+new_path+'? [y/n]:'
                 confirm = 'none'
                 while confirm not in ['y', 'yes', 'n', 'no', '']:
-                    confirm = input(confirmation_msg).lower()
+                    # Python 2
+                    # confirm = raw_input(prompt_message).lower()
+                    # End Python 2
+                    # Python 3
+                    confirm = input(prompt_message).lower()
+                    # End Python 3
                 if not confirm or confirm in ['n', 'no']:
                     logger.info('Retaining old path "{0}"'.format(curr_path))
                     path_changed = False
                     new_path = curr_path
                 else:
-                    confirmation_msg = 'Delete '+curr_path+'? [y/n]:'
+                    prompt_message = 'Delete '+curr_path+'? [y/n]:'
                     confirm = 'none'
                     while confirm not in ['y', 'yes', 'n', 'no', '']:
-                        confirm = input(confirmation_msg).lower()
+                        # Python 2
+                        # confirm = raw_input(prompt_message).lower()
+                        # End Python 2
+                        # Python 3
+                        confirm = input(prompt_message).lower()
+                        # End Python 3
                     if confirm and confirm in ['y', 'yes']:
                         delete_file = True
             # Confirm overwriting a local file
             if os.path.exists(new_path):
-                confirmation_msg = 'Would you like to overwrite the existing document at '+new_path+'? [y/n]:'
+                prompt_message = 'Would you like to overwrite the existing document at '+new_path+'? [y/N]:'
                 confirm = 'none'
                 while confirm not in ['y', 'yes', 'n', 'no', '']:
-                    confirm = input(confirmation_msg).lower()
+                    # Python 2
+                    # confirm = raw_input(prompt_message).lower()
+                    # End Python 2
+                    # Python 3
+                    confirm = input(prompt_message).lower()
+                    # End Python 3
                 if not confirm or confirm in ['n', 'no']:
                     logger.info('Skipped importing "{0}"'.format(title))
                     write_file = False
@@ -111,7 +142,12 @@ class ImportAction(Action):
         # use status action to get locale info for importing
         try:
             locale_map = self.import_locale_info(document_id)
+            # Python 2
+            # locale_info = list(locale_map.iterkeys())
+            # End Python 2
+            # Python 3
             locale_info = list(iter(locale_map))
+            # End Python 3
         except exceptions.RequestFailedError:
             locale_info = []
 
@@ -127,6 +163,7 @@ class ImportAction(Action):
             with open(new_path, 'wb') as fh:
                 for chunk in response.iter_content(1024):
                     fh.write(chunk)
+        new_path = self.norm_path(new_path)
         if document_id not in local_ids:
             self._add_document(new_path, title, document_id)
             self.doc_manager.update_document('locales', locale_info, document_id)
