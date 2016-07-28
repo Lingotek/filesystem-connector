@@ -29,7 +29,6 @@ class Action:
         self.workflow_id = ''  # default workflow id; MT phase only
         self.locale = ''
         self.download_dir = None  # directory where downloaded translation will be stored
-        self.watch_dir = None  # if specified, only watch this directory
         self.watch_locales = set()  # if specified, add these target locales to any files in the watch folder
         self.locale_folders = {}
         if not self._is_initialized():
@@ -65,8 +64,6 @@ class Action:
                 self.project_name = conf_parser.get('main', 'project_name')
             if conf_parser.has_option('main', 'download_folder'):
                 self.download_dir = conf_parser.get('main', 'download_folder')
-            if conf_parser.has_option('main', 'watch_folder'):
-                self.watch_dir = conf_parser.get('main', 'watch_folder')
             if conf_parser.has_option('main', 'watch_locales'):
                 watch_locales = conf_parser.get('main', 'watch_locales')
                 self.watch_locales = set(watch_locales.split(','))
@@ -194,7 +191,7 @@ class Action:
             # return detailed_status
         return locales
 
-    def config_action(self, locale, workflow_id, download_folder, watch_folder, target_locales, locale_folders):
+    def config_action(self, locale, workflow_id, download_folder, target_locales, locale_folders):
         config_file_name, conf_parser = self.init_config_file()
         if locale:
             self.locale = locale
@@ -217,16 +214,6 @@ class Action:
                 self.update_config_file('download_folder', download_path, conf_parser, config_file_name, log_info)
             else:
                 logger.warning('Error: Invalid value for "-d" / "--download_folder": Path "'+download_folder+'" does not exist.')
-                return
-        if watch_folder:
-            if os.path.exists(os.path.abspath(watch_folder)) or "--default" in watch_folder:
-                # watch_path = os.path.join(self.path, watch_folder)
-                watch_path = self.norm_path(watch_folder)
-                self.watch_dir = watch_path
-                log_info = 'Set watch folder to {0}'.format(watch_path)
-                self.update_config_file('watch_folder', watch_path, conf_parser, config_file_name, log_info)
-            else:
-                logger.warning('Error: Invalid value for "-f" / "--watch_folder": Path "'+watch_folder+'" does not exist.')
                 return
         if target_locales:
             target_locales = get_valid_locales(self.api, target_locales[0].split(','))
@@ -268,16 +255,13 @@ class Action:
             locale_folders_str = json.dumps(self.locale_folders)
             self.update_config_file('locale_folders', locale_folders_str, conf_parser, config_file_name, log_info)
         #print ('Token: {0}'.format(self.access_token))
-        watch_dir = "None"
-        if self.watch_dir and self.watch_dir != "--default":
-            watch_dir = self.watch_dir
         download_dir = "None"
         if self.download_dir and self.download_dir != "--default" and self.download_dir != "--same":
             download_dir = self.download_dir
         locale_folders_str = json.dumps(self.locale_folders).replace("{","").replace("}","")
         print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity id: {4}\nWorkflow id: {5}\n' \
-              'Default Source Locale: {6}\nWatch - Source Folder: {7}\nWatch - Download Folder: {8}\nWatch - Target Locales: {9}\nLocale folders: {10}'.format(
-            self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, watch_dir,
+              'Default Source Locale: {6}\nWatch - Download Folder: {8}\nWatch - Target Locales: {9}\nLocale folders: {10}'.format(
+            self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale,
             download_dir, ','.join(target for target in self.watch_locales), locale_folders_str))
 
     def add_document(self, file_name, title, **kwargs):
@@ -291,7 +275,7 @@ class Action:
             if response.status_code != 202:
                 raise_error(response.json(), "Failed to add document {0}".format(title), True)
             else:
-                logger.info('Added document {0}'.format(title))
+                logger.info('Added document {0} with ID {1}'.format(title,response.json()['properties']['id']))
                 relative_path = self.norm_path(file_name)
                 self._add_document(relative_path, title, response.json()['properties']['id'])
         except KeyboardInterrupt:
@@ -302,6 +286,7 @@ class Action:
     def add_action(self, file_patterns, **kwargs):
         # format will be automatically detected by extension but may not be what user expects
         # use current working directory as root for files instead of project root
+        added_folder = False
         for pattern in file_patterns:
             if os.path.exists(pattern):
                 if os.path.isdir(pattern):
@@ -310,11 +295,15 @@ class Action:
                         logger.info("Added folder "+str(pattern))
                     else:
                         logger.warning("Folder "+str(pattern)+" has already been added.")
+                    added_folder = True
             else:
                 logger.warning("Path "+str(pattern)+" doesn't exist.")
         matched_files = get_files(file_patterns)
         if not matched_files:
-            raise exceptions.ResourceNotFound("Could not find the specified file/pattern")
+            if added_folder:
+                return
+            else:
+                raise exceptions.ResourceNotFound("Could not find the specified file/pattern.")
         for file_name in matched_files:
             try:
                 # title = os.path.basename(os.path.normpath(file_name)).split('.')[0]
@@ -412,6 +401,7 @@ class Action:
 
     # def request_action
     def target_action(self, document_name, path, entered_locales, to_delete, due_date, workflow, document_id=None):
+        is_successful = False
         locales = get_valid_locales(self.api, entered_locales)
         if path:
             document_id = None
@@ -485,6 +475,8 @@ class Action:
                             if locale not in locales:
                                 locales_to_add.append(locale)
                 self._target_action_db(to_delete, locales_to_add, document_id)
+                is_successful = True
+        return is_successful
 
     def list_ids_action(self, path=False):
         """ lists ids of list_type specified """
