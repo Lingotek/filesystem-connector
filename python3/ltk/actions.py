@@ -258,9 +258,11 @@ class Action:
         download_dir = "None"
         if self.download_dir and self.download_dir != "--default" and self.download_dir != "--same":
             download_dir = self.download_dir
-        locale_folders_str = json.dumps(self.locale_folders).replace("{","").replace("}","")
+        locale_folders_str = "None"
+        if self.locale_folders:
+            locale_folders_str = json.dumps(self.locale_folders).replace("{","").replace("}","")
         print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity id: {4}\nWorkflow id: {5}\n' \
-              'Default Source Locale: {6}\nWatch - Download Folder: {8}\nWatch - Target Locales: {9}\nLocale folders: {10}'.format(
+              'Default Source Locale: {6}\nWatch - Download Folder: {7}\nWatch - Target Locales: {8}\nLocale folders: {9}'.format(
             self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale,
             download_dir, ','.join(target for target in self.watch_locales), locale_folders_str))
 
@@ -350,6 +352,20 @@ class Action:
     def push_action(self):
         entries = self.doc_manager.get_all_entries()
         updated = False
+        folders = self.folder_manager.get_file_names()
+        if len(folders):
+            for folder in folders:
+                matched_files = get_files(folder)
+                if matched_files:
+                    for file_name in matched_files:
+                        try:
+                            relative_path = self.norm_path(file_name)
+                            title = os.path.basename(relative_path)
+                            if self.doc_manager.is_doc_new(relative_path):
+                                self.add_document(file_name, title)
+                                print
+                        except json.decoder.JSONDecodeError:
+                            logger.error("JSON error on adding document.")
         for entry in entries:
             if not self.doc_manager.is_doc_modified(entry['file_name'], self.path):
                 continue
