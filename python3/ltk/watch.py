@@ -302,7 +302,7 @@ class WatchAction(Action):
         # norm_path = os.path.abspath(file_location).replace(self.path, '')
         return abspath
 
-    def watch_action(self, watch_paths, ignore, delimiter=None):
+    def watch_action(self, watch_paths, ignore, delimiter=None, no_folders=False):
         # print self.path
         if not watch_paths:
             watch_paths = self.folder_manager.get_file_names()
@@ -311,7 +311,7 @@ class WatchAction(Action):
             for path in watch_paths:
                 watch_paths_list.append(path)
             watch_paths = watch_paths_list
-        if len(watch_paths): # Use watch path specified as an option/parameter
+        if len(watch_paths) and not no_folders: # Use watch path specified as an option/parameter
             self.watch_folders = True
         else:
             self.watch_folder = False # Only watch added files
