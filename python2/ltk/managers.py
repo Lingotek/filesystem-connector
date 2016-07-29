@@ -1,6 +1,6 @@
 from tinydb import TinyDB, where
 import os
-from ltk.constants import CONF_DIR, DB_FN
+from ltk.constants import CONF_DIR, DB_FN, FOLDER_DB_FN
 
 class DocumentManager:
     def __init__(self, path):
@@ -125,3 +125,43 @@ def _update_entry_list(field, new_val):
             element[field] = []
 
     return transform
+
+class FolderManager:
+    def __init__(self, path):
+        self.db_file = os.path.join(path, CONF_DIR, FOLDER_DB_FN)
+        self._db = TinyDB(self.db_file)
+
+    def open_db(self):
+        self._db = TinyDB(self.db_file)
+
+    def close_db(self):
+        self._db.close()
+
+    def add_folder(self, file_name):
+        if not self.folder_exists(file_name):
+            entry = {'file_name': file_name}
+            self._db.insert(entry)
+
+    def get_all_entries(self):
+        return self._db.all()
+
+    def folder_exists(self, file_name):
+        """ checks if a folder has been added """
+        entries = self._db.search(where('file_name') == file_name)
+        if entries:
+            return True
+        else:
+            return False
+
+    def remove_element(self, file_name):
+        self._db.remove(where('file_name') == file_name)
+
+    def get_file_names(self):
+        """ returns all the file names of folders that the user has added """
+        file_names = []
+        for entry in self._db.all():
+            file_names.append(entry['file_name'])
+        return file_names
+
+    def clear_all(self):
+        self._db.purge()
