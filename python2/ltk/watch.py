@@ -10,6 +10,7 @@ import sys
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEvent
 from ltk.watchhandler import WatchHandler
+from git_auto import Git_Auto
 
 # retry decorator to retry connections
 def retry(logger, timeout=5, exec_type=None):
@@ -64,6 +65,7 @@ class WatchAction(Action):
         self.watch_folder = True
         self.timeout = timeout
         self.updated = {}
+        self.git_auto = Git_Auto(path)
         # if remote:  # poll lingotek cloud periodically if this option enabled
         # self.remote_thread = threading.Thread(target=self.poll_remote(), args=())
         # self.remote_thread.daemon = True
@@ -254,6 +256,8 @@ class WatchAction(Action):
     def poll_remote(self):
         """ poll lingotek servers to check if translation is finished """
         documents = self.doc_manager.get_all_entries()  # todo this gets all documents, not necessarily only ones in watch folder
+        documents_downloaded = False
+        git_commit_message = ""
         for doc in documents:
             doc_id = doc['id']
             if doc_id in self.watch_queue:
@@ -279,7 +283,16 @@ class WatchAction(Action):
 #             for locale in locale_progress:
 #                 progress = locale_progress[locale]
                 if progress == 100 and locale not in downloaded:
-                    
+                    document_added = False
+                    if (doc['name']+": ") not in git_commit_message:
+                        if documents_downloaded: git_commit_message += '; '
+                        git_commit_message += doc['name'] + ": "
+                        document_added = True
+                    if document_added:
+                        git_commit_message += locale
+                    else:
+                        git_commit_message += ', ' + locale
+                    documents_downloaded = True
                     logger.info('Translation completed ({0} - {1})'.format(doc_id, locale))
                     if self.locale_delimiter:
                         self.download_action(doc_id, locale, False, False)
@@ -288,6 +301,22 @@ class WatchAction(Action):
                 elif progress != 100 and locale in downloaded:
                     # print("Locale "+str(locale)+" for document "+doc['name']+" is no longer completed.")
                     self.doc_manager.remove_element_in_prop(doc_id, 'downloaded', locale)
+        config_file_name, conf_parser = self.init_config_file()
+        git_autocommit = conf_parser.get('main', 'git_autocommit')
+        if git_autocommit == "True" and documents_downloaded == True:
+            username = conf_parser.get('main', 'git_username')
+            password = conf_parser.get('main', 'git_password')
+            self.git_auto.commit(git_commit_message)
+            if username and username != "":
+                if password and password != "":
+                    self.git_auto.push(username=username, password=password)
+                else:
+                    self.git_auto.push(username=username)
+            else:
+                if password and password != "":
+                    self.git_auto.push(password=password)
+                else:
+                    self.git_auto.push()
 
 
     def complete_path(self, file_location):
