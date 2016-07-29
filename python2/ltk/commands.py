@@ -117,18 +117,17 @@ def init(host, access_token, path, project_name, workflow_id, locale, delete, re
 @click.option('-w', '--workflow_id', help='Change the default workflow id for the project')
 @click.option('-d', '--download_folder',
               help='Specify a folder for where downloaded translations should go. Enter -d --default, or -d --same, or leave blank for target translations to be downloaded to the same folder as their corresponding source files.')
-@click.option('-f', '--watch_folder',
-              help='Specify a folder to watch when running ltk watch. Enter -f --default or leave blank to only watch files explicitly added to the project.')
 @click.option('-t', '--target_locales', multiple=True,
               help='Specify target locales that documents in watch_folder should be assigned; may either specify '
                    'with multiple -t flags (ex: -t locale -t locale) or give a list separated by commas and no spaces '
                    '(ex: -t locale,locale)')
-def config(locale, workflow_id, download_folder, watch_folder, target_locales):
+@click.option('-p', '--locale_folder', nargs=2, type=str, multiple=True, help='For a specific locale, specify the root folder where downloaded translations should appear.')
+def config(locale, workflow_id, download_folder, target_locales, locale_folder):
     """ View or change local configuration """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
-        action.config_action(locale, workflow_id, download_folder, watch_folder, target_locales)
+        action.config_action(locale, workflow_id, download_folder, target_locales, locale_folder)
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
@@ -356,12 +355,13 @@ def clean(force, dis_all, file_paths):
 
 
 @ltk.command(short_help="Watches local and remote files")
-@click.option('-p', '--path', type=click.Path(exists=True), help='Specify a folder to watch; defaults to project path')
+@click.option('-p', '--path', type=click.Path(exists=True), multiple=True, help='Specify a folder to watch. Use option multiple times to specify multiple folders.')
 @click.option('--ignore', multiple=True, help='Specify types of files to ignore')
 @click.option('--auto', 'delimiter', help='Automatically detects locale from the file name; specify locale delimiter')
 @click.option('-t', '--timeout', type=click.INT, default=60,
               help='The amount of time watch will sleep between polls, in seconds. Defaults to 1 minute')
-def watch(path, ignore, delimiter, timeout):
+@click.option('-n','--no_folders', flag_value=True, help='Ignore files added to watch folders and only watch documents that have already been added.')
+def watch(path, ignore, delimiter, timeout, no_folders):
     """
     Watches local files added or imported by ltk, and sends a PATCH when a document is changed.
     Also watches remote files, and automatically downloads finished translations.
@@ -369,7 +369,7 @@ def watch(path, ignore, delimiter, timeout):
     try:
         action = WatchAction(os.getcwd(), timeout)
         init_logger(action.path)
-        action.watch_action(path, ignore, delimiter)
+        action.watch_action(path, ignore, delimiter, no_folders)
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
