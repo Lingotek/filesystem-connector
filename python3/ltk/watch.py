@@ -54,7 +54,7 @@ class WatchAction(Action):
     # def __init__(self, path, remote=False):
     def __init__(self, path=None, timeout=60):
         Action.__init__(self, path, True, timeout)
-        self.observer = Observer()  # watchdog observer that will watch the files
+        self.observers = []  # watchdog observers that will watch the files
         self.handler = WatchHandler()
         self.handler.on_modified = self._on_modified
         self.handler.on_created = self._on_created
@@ -102,7 +102,8 @@ class WatchAction(Action):
                         # logger.info('Updating remote content: {0}'.format(fn))
                         self.update_content(fn)
                 except KeyboardInterrupt:
-                    self.observer.stop()
+                    for observer in self.observers:
+                        observer.stop()
                 except ConnectionError:
                     print("Could not connect to remote server.")
                     restart()
@@ -110,7 +111,8 @@ class WatchAction(Action):
                     print(sys.exc_info()[1])
                     restart()
         except KeyboardInterrupt:
-            self.observer.stop()
+            for observer in self.observers:
+                observer.stop()
         except Exception as err:
             restart("Error on modified: "+str(err)+"\nRestarting watch.")
 
@@ -137,14 +139,15 @@ class WatchAction(Action):
                     else:
                         return
                 except KeyboardInterrupt:
-                    self.observer.stop()
+                    for observer in self.observers:
+                        observer.stop()
                 except ConnectionError:
                     print("Could not connect to remote server.")
                     restart()
                 except ValueError:
                     print(sys.exc_info()[1])
                     restart()
-                doc = self.doc_manager.get_doc_by_prop('name', title)
+                doc = self.doc_manager.get_doc_by_prop('file_name', relative_path)
                 if doc:
                     document_id = doc['id']
                 else:
@@ -168,7 +171,8 @@ class WatchAction(Action):
             # else:
             #     print("Skipping hidden file "+file_path)
         except KeyboardInterrupt:
-            self.observer.stop()
+            for observer in self.observers:
+                observer.stop()
         # except Exception as err:
         #     restart("Error on created: "+str(err)+"\nRestarting watch.")
 
@@ -180,7 +184,8 @@ class WatchAction(Action):
             event = FileSystemEvent(event.dest_path)
             self._on_modified(event)
         except KeyboardInterrupt:
-            self.observer.stop()
+            for observer in self.observers:
+                observer.stop()
         except Exception as err:
             restart("Error on moved: "+str(err)+"\nRestarting watch.")
 
@@ -201,7 +206,6 @@ class WatchAction(Action):
         return locales
 
     def watch_add_target(self, file_name, document_id):
-        # print "watching add target, watch queue:", self.watch_queue
         if not file_name:
             title=self.doc_manager.get_doc_by_prop("id", document_id)
         else:
@@ -218,9 +222,9 @@ class WatchAction(Action):
             #     for target in locales_to_add:
             #         printStr += target+","
             # print(printStr)
-            self.target_action(title, file_name, locales_to_add, None, None, None, document_id)
-            if document_id in self.watch_queue:
-                self.watch_queue.remove(document_id)
+            if self.api.get_document(document_id):
+                if self.target_action(title, file_name, locales_to_add, None, None, None, document_id) and document_id in self.watch_queue:
+                    self.watch_queue.remove(document_id)
 
     def process_queue(self):
         """do stuff with documents in queue (currently just add targets)"""
@@ -298,25 +302,36 @@ class WatchAction(Action):
         # norm_path = os.path.abspath(file_location).replace(self.path, '')
         return abspath
 
-    def watch_action(self, watch_path, ignore, delimiter=None):
+    def watch_action(self, watch_paths, ignore, delimiter=None, no_folders=False):
         # print self.path
-        if watch_path:  # Use watch path specified as an option/parameter
-            self.watch_folder = True
-        elif self.watch_dir and not "--default" in self.watch_dir: # Use watch path from config
-            self.watch_folder = True
-            watch_path = self.watch_dir
+        if not watch_paths:
+            watch_paths = self.folder_manager.get_file_names()
         else:
-            watch_path = self.path # Watch from the project root
+            watch_paths_list = []
+            for path in watch_paths:
+                watch_paths_list.append(path)
+            watch_paths = watch_paths_list
+        if len(watch_paths) and not no_folders: # Use watch path specified as an option/parameter
+            self.watch_folders = True
+        else:
             self.watch_folder = False # Only watch added files
         if self.watch_folder:
-            watch_path = self.complete_path(watch_path)
-            print ("Watching for updates in: {0}".format(watch_path))
+            watch_message = "Watching for updates in "
+            for i in range(len(watch_paths)):
+                watch_paths[i] = self.complete_path(watch_paths[i])
+                watch_message += "{0}".format(watch_paths[i])
+                if i < len(watch_paths)-1:
+                    watch_message += " "
+            print (watch_message)
         else:
             print ("Watching for updates to added documents")
         self.ignore_ext.extend(ignore)
         self.locale_delimiter = delimiter
-        self.observer.schedule(self.handler, path=watch_path, recursive=True)
-        self.observer.start()
+        for watch_path in watch_paths:
+            observer = Observer()
+            observer.schedule(self.handler, path=watch_path, recursive=True)
+            observer.start()
+            self.observers.append(observer)
         queue_timeout = 3
         # start_time = time.clock()
         try:
@@ -329,8 +344,9 @@ class WatchAction(Action):
                     current_timeout -= queue_timeout
                 time.sleep(self.timeout)
         except KeyboardInterrupt:
-            self.observer.stop()
+            for observer in self.observers:
+                observer.stop()
         # except Exception as err:
         #     restart("Error: "+str(err)+"\nRestarting watch.")
-
-        self.observer.join()
+        for observer in self.observers:
+            observer.join()
