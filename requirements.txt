@@ -2,3 +2,5 @@ click >= 5.0
 tinydb >= 2.0
 requests >= 2.6.0
 watchdog >= 0.8
+gitpython >= 2.0.7
+pexpect >= 4.2.0
