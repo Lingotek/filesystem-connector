@@ -116,3 +116,25 @@ def get_valid_locales(api, entered_locales):
         else:
             locales.append(locale)
     return locales
+
+def raise_error(json, error_message, is_warning=False, doc_id=None, file_name=None):
+    try:
+        error = json['messages'][0]
+        file_name = file_name.replace("Status of ", "")
+        if file_name is not None and doc_id is not None:
+            error = error.replace(doc_id, file_name+" ("+doc_id+")")
+        # Sometimes api returns vague errors like 'Unknown error'
+        if error == 'Unknown error':
+            error = error_message
+        if not is_warning:
+            raise exceptions.RequestFailedError(error)
+        # warnings.warn(error)
+        logger.error(error)
+    except (AttributeError, IndexError):
+        if not is_warning:
+            raise exceptions.RequestFailedError(error_message)
+        # warnings.warn(error_message)
+        logger.error(error_message)
+
+def error(error_message):
+    logger.error(error_message)

@@ -5,11 +5,11 @@ from git import Repo
 from git import RemoteProgress
 import pexpect
 import binascii
+from ltk.utils import error
 
 class Git_Auto:
 	def __init__(self, path):
 		self.path = path
-		self.repo = Repo(os.getcwd())
 		self.join = os.path.join
 		self.repo_is_defined = False
 
@@ -18,11 +18,15 @@ class Git_Auto:
 		self.repo_is_defined = True
 
 	def add_file(self, file_name):
-		assert self.repo_is_defined
+		if not self.repo_is_defined:
+			error("Git repository is not defined.")
+			return
 		self.repo.git.add(file_name)
 
 	def commit(self, message):
-		assert self.repo_is_defined
+		if not self.repo_is_defined:
+			error("Git repository is not defined.")
+			return
 		message.rstrip(' ')
 		self.repo.index.commit("Translations updated for " + message)
 
@@ -38,7 +42,9 @@ class Git_Auto:
 		return password
 
 	def push(self, username=None, password=None):
-		assert self.repo_is_defined
+		if not self.repo_is_defined:
+			error("Git repository is not defined.")
+			return
 		g = pexpect.spawnu('git push')
 		g.logfile_read = sys.stdout
 		if not username: username = ''

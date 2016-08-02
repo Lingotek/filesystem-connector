@@ -209,7 +209,7 @@ class Action:
                 return locale
         return False
 
-    def config_action(locale, workflow_id, download_option, download_folder, target_locales, locale_folder, git_toggle, git_username, git_password, clear_locales):
+    def config_action(self, locale, workflow_id, download_option, download_folder, target_locales, locale_folders, git_toggle, git_username, git_password, clear_locales):
         config_file_name, conf_parser = self.init_config_file()
         if locale:
             self.locale = locale
