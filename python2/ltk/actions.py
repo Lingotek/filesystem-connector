@@ -14,7 +14,7 @@ from ltk.managers import DocumentManager, FolderManager
 from ltk.constants import CONF_DIR, CONF_FN, SYSTEM_FILE
 import json
 from ltk.logger import logger
-from git_auto import Git_Auto
+from ltk.git_auto import Git_Auto
 
 
 class Action:
@@ -257,7 +257,7 @@ class Action:
             self.update_config_file('locale_folders', locale_folders_str, conf_parser, config_file_name, log_info)
         #print ('Token: {0}'.format(self.access_token))
         if not conf_parser.has_option('main', 'git_autocommit'):
-            self.update_config_file('git_autocommit', False, conf_parser, config_file_name, 'Update: Added \'git auto-commit\' option (ltk config --help)')
+            self.update_config_file('git_autocommit', 'False', conf_parser, config_file_name, 'Update: Added \'git auto-commit\' option (ltk config --help)')
             self.update_config_file('git_username', '', conf_parser, config_file_name, 'Update: Added \'git username\' option (ltk config --help)')
             self.update_config_file('git_password', '', conf_parser, config_file_name, 'Update: Added \'git password\' option (ltk config --help)')
         self.git_autocommit = conf_parser.get('main', 'git_autocommit')     
@@ -266,10 +266,10 @@ class Action:
                 ('active to in' if self.git_autocommit == "True" else 'inactive to '))      
             config_file = open(config_file_name, 'w')       
             if self.git_autocommit == "True":        
-                self.update_config_file('git_autocommit', False, conf_parser, config_file_name, log_info)       
+                self.update_config_file('git_autocommit', 'False', conf_parser, config_file_name, log_info)       
                 self.git_autocommit = "False"
             else:
-                self.update_config_file('git_autocommit', True, conf_parser, config_file_name, log_info)
+                self.update_config_file('git_autocommit', 'True', conf_parser, config_file_name, log_info)
                 self.git_autocommit = "True"
         if git_username:
             if git_username in ['None', 'none', 'N', 'n']:
@@ -1259,7 +1259,7 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
     # config_parser.set('main', 'root_path', project_path)
     config_parser.set('main', 'workflow_id', workflow_id)
     config_parser.set('main', 'default_locale', locale)
-    config_parser.set('main', 'git_autocommit', False)
+    config_parser.set('main', 'git_autocommit', 'False')
     config_parser.set('main', 'git_username', '')
     config_parser.set('main', 'git_password', '')
     # get community id

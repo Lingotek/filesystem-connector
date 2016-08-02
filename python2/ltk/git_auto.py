@@ -4,6 +4,7 @@ import codecs
 from git import Repo
 from git import RemoteProgress
 import pexpect
+import binascii
 
 class Git_Auto:
 	def __init__(self, path):
@@ -26,20 +27,28 @@ class Git_Auto:
 		self.repo.index.commit("Translations updated for " + message)
 
 	def encrypt(self, password):
+		# Python 2
 		password = codecs.encode(password, 'base64')
+        # Python 3
+# 		password = bytes(password, 'utf-8')
+# 		password = codecs.encode(password, 'base64')
+# 		password = str(password, 'utf-8')
 		return password
 
 	def push(self, username=None, password=None):
 		assert self.repo_is_defined
-		g = pexpect.spawn('git push')
+		g = pexpect.spawnu('git push')
 		g.logfile_read = sys.stdout
 		if not username: username = ''
 		if not password: password = ''
 		while True:
-			i = g.expect(['Username for .*', 'Password for .*', pexpect.EOF])
+			i = g.expect([u'Username for .*', u'Password for .*', pexpect.EOF])
 			if(i == 0):
 				g.send(username+'\n')
 			elif(i == 1):
+				# Python 2
 				g.send(codecs.decode(password, 'base64')+'\n')
+       			# Python 3
+# 				g.send(str(codecs.decode(password.encode(), 'base64'), 'utf-8')+'\n')
 			else:
 				break

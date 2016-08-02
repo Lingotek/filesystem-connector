@@ -10,7 +10,7 @@ import sys
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEvent
 from ltk.watchhandler import WatchHandler
-from git_auto import Git_Auto
+from ltk.git_auto import Git_Auto
 
 # retry decorator to retry connections
 def retry(logger, timeout=5, exec_type=None):
