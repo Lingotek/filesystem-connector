@@ -126,7 +126,8 @@ class Action:
         with open(config_file_name, 'w') as new_file:
             conf_parser.write(new_file)
         self._initialize_self()
-        logger.info(log_info)
+        if (len(log_info)):
+            logger.info(log_info+"\n")
 
     def norm_path(self, file_location):
         # print("original path: "+str(file_location))
@@ -191,7 +192,7 @@ class Action:
             # return detailed_status
         return locales
 
-    def config_action(self, locale, workflow_id, download_folder, target_locales, locale_folders):
+    def config_action(self, locale, workflow_id, download_folder, target_locales, locale_folders, clear_locales):
         config_file_name, conf_parser = self.init_config_file()
         if locale:
             self.locale = locale
@@ -223,10 +224,10 @@ class Action:
             self.watch_locales = target_locales
         if locale_folders:
             mult_folders = False
-            if len(locale_folders) > 1:
-                mult_folders = True
+            folders_count = len(locale_folders)
             folders_string = ""
             count = 0
+            log_info = ""
             for folder in locale_folders:
                 count += 1
                 if not folder[0] or not folder[1]:
@@ -237,8 +238,13 @@ class Action:
                 if not is_valid_locale(self.api, locale):
                     logger.warning(str(locale+' is not a valid locale. See "ltk list -l" for the list of valid locales.'))
                     continue
-                if path is '--none':
-                    self.locale_folders.pop(locale, None)
+                if path == '--none':
+                    folders_count -= 1
+                    if locale in self.locale_folders:
+                        self.locale_folders.pop(locale, None)
+                        logger.info("Removing download folder for locale "+str(locale)+"\n")
+                    else:
+                        logger.info("The locale "+str(locale)+" already has no download folder.\n")
                     continue
                 if os.path.exists(self.norm_path(path)):
                     self.locale_folders[locale] = path
@@ -248,10 +254,16 @@ class Action:
                 folders_string += str(locale) + ": " + str(path)
                 if count < len(locale_folders):
                     folders_string += ", "
-            if mult_folders:
-                log_info = 'Adding locale folders {0}'.format(folders_string)
-            else:
-                log_info = 'Adding locale folder {0}'.format(folders_string)
+            if len(folders_string):
+                if folders_count > 1:
+                    log_info = 'Adding locale folders {0}'.format(folders_string)
+                else:
+                    log_info = 'Adding locale folder for {0}'.format(folders_string)
+            locale_folders_str = json.dumps(self.locale_folders)
+            self.update_config_file('locale_folders', locale_folders_str, conf_parser, config_file_name, log_info)
+        if clear_locales:
+            log_info = "Cleared all locale specific download folders."
+            self.locale_folders = {}
             locale_folders_str = json.dumps(self.locale_folders)
             self.update_config_file('locale_folders', locale_folders_str, conf_parser, config_file_name, log_info)
         #print ('Token: {0}'.format(self.access_token))
