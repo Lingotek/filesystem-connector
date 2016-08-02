@@ -28,6 +28,7 @@ class Action:
         self.community_id = ''
         self.workflow_id = ''  # default workflow id; MT phase only
         self.locale = ''
+        self.download_option = 'same'
         self.download_dir = None  # directory where downloaded translation will be stored
         self.watch_locales = set()  # if specified, add these target locales to any files in the watch folder
         self.locale_folders = {}
@@ -69,6 +70,8 @@ class Action:
                 self.watch_locales = set(watch_locales.split(','))
             if conf_parser.has_option('main', 'locale_folders'):
                 self.locale_folders = json.loads(conf_parser.get('main', 'locale_folders'))
+            if conf_parser.has_option('main', 'download_option'):
+                self.download_option = json.loads(conf_parser.get('main', 'download_option'))
         except NoOptionError as e:
             if not self.project_name:
                 self.api = ApiCalls(self.host, self.access_token)
@@ -192,7 +195,18 @@ class Action:
             # return detailed_status
         return locales
 
-    def config_action(self, locale, workflow_id, download_folder, target_locales, locale_folders, clear_locales):
+    def is_locale_folder_taken(self, new_locale, path):
+        # Python 2
+        # for locale, folder in self.locale_folders.iteritems():
+        # End Python 2
+        # Python 3
+        for locale, folder in self.locale_folders.items():
+        # End Python 3
+            if path == folder and not locale == new_locale:
+                return locale
+        return False
+
+    def config_action(self, locale, workflow_id, download_option, download_folder, target_locales, locale_folders, clear_locales):
         config_file_name, conf_parser = self.init_config_file()
         if locale:
             self.locale = locale
@@ -207,7 +221,7 @@ class Action:
             self.update_config_file('workflow_id', workflow_id, conf_parser, config_file_name, log_info)
             conf_parser.set('main', 'workflow_id', workflow_id)
         if download_folder:
-            if os.path.exists(os.path.abspath(download_folder)) or "--same" in download_folder or "--default" in download_folder:
+            if os.path.exists(os.path.abspath(download_folder)) or "--same" in download_folder or "--default" in download_folder or "--clone" in download_folder:
                 # download_path = os.path.join(self.path, download_folder)
                 download_path = self.norm_path(download_folder)
                 self.download_dir = download_path
@@ -234,7 +248,7 @@ class Action:
                     logger.warning("Please specify a valid locale and a directory for that locale.")
                     continue
                 locale = folder[0]
-                path = folder[1]
+                path = self.norm_path(folder[1])
                 if not is_valid_locale(self.api, locale):
                     logger.warning(str(locale+' is not a valid locale. See "ltk list -l" for the list of valid locales.'))
                     continue
@@ -246,8 +260,13 @@ class Action:
                     else:
                         logger.info("The locale "+str(locale)+" already has no download folder.\n")
                     continue
-                if os.path.exists(self.norm_path(path)):
-                    self.locale_folders[locale] = path
+                if os.path.exists(path):
+                    taken_locale = self.is_locale_folder_taken(locale, path)
+                    if taken_locale:
+                        logger.info("The folder "+str(path)+" is already taken by the locale "+str(taken_locale)+".\n")
+                        continue
+                    else:
+                        self.locale_folders[locale] = path
                 else:
                     logger.warning(str(path)+" is not a valid directory.")
                     continue
@@ -273,9 +292,9 @@ class Action:
         locale_folders_str = "None"
         if self.locale_folders:
             locale_folders_str = json.dumps(self.locale_folders).replace("{","").replace("}","")
-        print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity id: {4}\nWorkflow id: {5}\n' \
-              'Default Source Locale: {6}\nWatch - Download Folder: {7}\nWatch - Target Locales: {8}\nLocale folders: {9}'.format(
-            self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale,
+        print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity ID: {4}\nWorkflow ID: {5}\n' \
+              'Default Source Locale: {6}\nDownload Option: {7}\nDownload Folder: {8}\nWatch - Target Locales: {9}\nLocale folders: {10}'.format(
+            self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.download_option,
             download_dir, ','.join(target for target in self.watch_locales), locale_folders_str))
 
     def add_document(self, file_name, title, **kwargs):
