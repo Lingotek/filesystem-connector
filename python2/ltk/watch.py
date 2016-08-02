@@ -41,8 +41,10 @@ def has_hidden_attribute(file_path):
     try:
         # Python 2
         attrs = ctypes.windll.kernel32.GetFileAttributesW(unicode(file_path))
+        # End Python 2
         # Python 3
 #         attrs = ctypes.windll.kernel32.GetFileAttributesW(str(file_path))
+        # End Python 3
         assert attrs != -1
         result = bool(attrs & 2)
     except (AttributeError, AssertionError):
@@ -279,9 +281,11 @@ class WatchAction(Action):
                 self.doc_manager.update_document('downloaded', downloaded, doc_id)
             # Python 2
             for locale, progress in locale_progress.iteritems():
+            # End Python 2
             # Python 3
 #             for locale in locale_progress:
 #                 progress = locale_progress[locale]
+            # End Python 3
                 if progress == 100 and locale not in downloaded:
                     document_added = False
                     if (doc['name']+": ") not in git_commit_message:

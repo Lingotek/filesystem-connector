@@ -7,10 +7,12 @@ import sys
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 import urlparse
 import urllib
+# End Python 2
 
 # Python 3
 # from http.server import HTTPServer, BaseHTTPRequestHandler
 # import urllib.parse
+# End Python 3
 # import warnings
 #
 # with warnings.catch_warnings():
@@ -78,8 +80,10 @@ class ClientRedirectHandler(BaseHTTPRequestHandler, object):
         length = int(self.headers['content-length'])
         # Python 2
         post_vars = urlparse.parse_qsl(self.rfile.read(length))
+        # End Python 2
         # Python 3
 #         post_vars = urllib.parse.parse_qsl(self.rfile.read(length))
+        # End Python 3
         self.server.query_params = dict(post_vars)
         self.send_response(200)
         self.send_header("Content-type", "text/html")
@@ -115,8 +119,10 @@ def run_oauth(host):
     payload = {'client_id': client_id, 'redirect_uri': oauth_callback, 'response_type': response_type}
     # Python 2
     payload_url = urllib.urlencode(payload)
+    # End Python 2
     # Python 3
 #     payload_url = urllib.parse.urlencode(payload)
+    # End Python 3
     authorize_url = host + '/auth/authorize.html?' + payload_url
     import webbrowser
     webbrowser.open_new(authorize_url)

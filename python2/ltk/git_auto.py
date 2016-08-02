@@ -29,10 +29,12 @@ class Git_Auto:
 	def encrypt(self, password):
 		# Python 2
 		password = codecs.encode(password, 'base64')
+        # End Python 2
         # Python 3
 # 		password = bytes(password, 'utf-8')
 # 		password = codecs.encode(password, 'base64')
 # 		password = str(password, 'utf-8')
+        # End Python 3
 		return password
 
 	def push(self, username=None, password=None):
@@ -48,7 +50,9 @@ class Git_Auto:
 			elif(i == 1):
 				# Python 2
 				g.send(codecs.decode(password, 'base64')+'\n')
+				# End Python 2
        			# Python 3
 # 				g.send(str(codecs.decode(password.encode(), 'base64'), 'utf-8')+'\n')
+				# End Python 3
 			else:
 				break

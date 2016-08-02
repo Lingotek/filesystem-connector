@@ -1,7 +1,9 @@
 # Python 2
 from ConfigParser import ConfigParser, NoOptionError
+# End Python 2
 # Python 3
 # from configparser import ConfigParser, NoOptionError
+# End Python 3
 import requests
 import os
 import shutil
@@ -27,6 +29,7 @@ class Action:
         self.community_id = ''
         self.workflow_id = ''  # default workflow id; MT phase only
         self.locale = ''
+        self.download_option = 'same'
         self.download_dir = None  # directory where downloaded translation will be stored
         self.watch_locales = set()  # if specified, add these target locales to any files in the watch folder
         self.git_autocommit = None
@@ -70,6 +73,8 @@ class Action:
                 self.watch_locales = set(watch_locales.split(','))
             if conf_parser.has_option('main', 'locale_folders'):
                 self.locale_folders = json.loads(conf_parser.get('main', 'locale_folders'))
+            if conf_parser.has_option('main', 'download_option'):
+                self.download_option = json.loads(conf_parser.get('main', 'download_option'))
         except NoOptionError as e:
             if not self.project_name:
                 self.api = ApiCalls(self.host, self.access_token)
@@ -127,7 +132,8 @@ class Action:
         with open(config_file_name, 'w') as new_file:
             conf_parser.write(new_file)
         self._initialize_self()
-        logger.info(log_info)
+        if (len(log_info)):
+            logger.info(log_info+"\n")
 
     def norm_path(self, file_location):
         # print("original path: "+str(file_location))
@@ -192,7 +198,18 @@ class Action:
             # return detailed_status
         return locales
 
-    def config_action(self, locale, workflow_id, download_folder, target_locales, locale_folders, git_toggle, git_username, git_password):
+    def is_locale_folder_taken(self, new_locale, path):
+        # Python 2
+        for locale, folder in self.locale_folders.iteritems():
+        # End Python 2
+        # Python 3
+#         for locale, folder in self.locale_folders.items():
+        # End Python 3
+            if path == folder and not locale == new_locale:
+                return locale
+        return False
+
+    def config_action(locale, workflow_id, download_option, download_folder, target_locales, locale_folder, git_toggle, git_username, git_password, clear_locales):
         config_file_name, conf_parser = self.init_config_file()
         if locale:
             self.locale = locale
@@ -207,7 +224,7 @@ class Action:
             self.update_config_file('workflow_id', workflow_id, conf_parser, config_file_name, log_info)
             conf_parser.set('main', 'workflow_id', workflow_id)
         if download_folder:
-            if os.path.exists(os.path.abspath(download_folder)) or "--same" in download_folder or "--default" in download_folder:
+            if os.path.exists(os.path.abspath(download_folder)) or "--same" in download_folder or "--default" in download_folder or "--clone" in download_folder:
                 # download_path = os.path.join(self.path, download_folder)
                 download_path = self.norm_path(download_folder)
                 self.download_dir = download_path
@@ -224,35 +241,51 @@ class Action:
             self.watch_locales = target_locales
         if locale_folders:
             mult_folders = False
-            if len(locale_folders) > 1:
-                mult_folders = True
+            folders_count = len(locale_folders)
             folders_string = ""
             count = 0
+            log_info = ""
             for folder in locale_folders:
                 count += 1
                 if not folder[0] or not folder[1]:
                     logger.warning("Please specify a valid locale and a directory for that locale.")
                     continue
                 locale = folder[0]
-                path = folder[1]
+                path = self.norm_path(folder[1])
                 if not is_valid_locale(self.api, locale):
                     logger.warning(str(locale+' is not a valid locale. See "ltk list -l" for the list of valid locales.'))
                     continue
-                if path is '--none':
-                    self.locale_folders.pop(locale, None)
+                if path == '--none':
+                    folders_count -= 1
+                    if locale in self.locale_folders:
+                        self.locale_folders.pop(locale, None)
+                        logger.info("Removing download folder for locale "+str(locale)+"\n")
+                    else:
+                        logger.info("The locale "+str(locale)+" already has no download folder.\n")
                     continue
-                if os.path.exists(self.norm_path(path)):
-                    self.locale_folders[locale] = path
+                if os.path.exists(path):
+                    taken_locale = self.is_locale_folder_taken(locale, path)
+                    if taken_locale:
+                        logger.info("The folder "+str(path)+" is already taken by the locale "+str(taken_locale)+".\n")
+                        continue
+                    else:
+                        self.locale_folders[locale] = path
                 else:
                     logger.warning(str(path)+" is not a valid directory.")
                     continue
                 folders_string += str(locale) + ": " + str(path)
                 if count < len(locale_folders):
                     folders_string += ", "
-            if mult_folders:
-                log_info = 'Adding locale folders {0}'.format(folders_string)
-            else:
-                log_info = 'Adding locale folder {0}'.format(folders_string)
+            if len(folders_string):
+                if folders_count > 1:
+                    log_info = 'Adding locale folders {0}'.format(folders_string)
+                else:
+                    log_info = 'Adding locale folder for {0}'.format(folders_string)
+            locale_folders_str = json.dumps(self.locale_folders)
+            self.update_config_file('locale_folders', locale_folders_str, conf_parser, config_file_name, log_info)
+        if clear_locales:
+            log_info = "Cleared all locale specific download folders."
+            self.locale_folders = {}
             locale_folders_str = json.dumps(self.locale_folders)
             self.update_config_file('locale_folders', locale_folders_str, conf_parser, config_file_name, log_info)
         #print ('Token: {0}'.format(self.access_token))
@@ -299,9 +332,9 @@ class Action:
                 git_output += (' (' + current_git_username + ', password:' + ('YES' if current_git_password != '' else 'NO')) + ')'
             else:
                 git_output += (' (password:YES)' if current_git_password != '' else ' (no credentials set, recommend SSH key)')
-        print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity id: {4}\nWorkflow id: {5}\n' \
-              'Default Source Locale: {6}\nWatch - Download Folder: {7}\nWatch - Target Locales: {8}\nLocale folders: {9}\ngit auto-commit: {10}'.format(
-            self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale,
+        print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity ID: {4}\nWorkflow ID: {5}\n' \
+              'Default Source Locale: {6}\nDownload Option: {7}\nDownload Folder: {8}\nWatch - Target Locales: {9}\nLocale folders: {10}\nGit auto-commit: {11}'.format(
+            self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.download_option,
             download_dir, ','.join(target for target in self.watch_locales), locale_folders_str, git_output))
 
     def add_document(self, file_name, title, **kwargs):
@@ -360,8 +393,10 @@ class Action:
                                 prompt_message = "This document already exists. Would you like to overwrite it? [Y/n]: "
                                 # Python 2
                                 confirm = raw_input(prompt_message)
+                                # End Python 2
                                 # Python 3
 #                                 confirm = input(prompt_message)
+                                # End Python 3
                             # confirm if would like to overwrite existing document in Lingotek Cloud
                             if not confirm or confirm in ['n', 'N']:
                                 continue
@@ -1089,8 +1124,10 @@ def reinit(host, project_path, delete, reset):
                     "This will also delete the project in your community. [Y/n]: "
                 # Python 2
                 confirm = raw_input(prompt_message)
+                # End Python 2
                 # Python 3
 #                 confirm = input(prompt_message)
+                # End Python 3
         except KeyboardInterrupt:
             logger.error("Reinit canceled")
             return
@@ -1157,8 +1194,10 @@ def display_choice(display_type, info):
         try:
             # Python 2
             choice = raw_input(prompt_message)
+            # End Python 2
             # Python 3
 #             choice = input(prompt_message)
+            # End Python 3
         except KeyboardInterrupt:
             logger.error("Init canceled")
             return
@@ -1293,8 +1332,10 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
                 prompt_message = 'Would you like to use an existing Lingotek project? [Y/n]:'
                 # Python 2
                 confirm = raw_input(prompt_message)
+                # End Python 2
                 # Python 3
 #                 confirm = input(prompt_message)
+                # End Python 3
             if not confirm or not confirm in ['n', 'N', 'no', 'No']:
                 project_id, project_name = display_choice('project', project_info)
                 config_parser.set('main', 'project_id', project_id)
@@ -1309,8 +1350,10 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
     try:
         # Python 2
         project_name = raw_input(prompt_message)
+        # End Python 2
         # Python 3
 #         project_name = input(prompt_message)
+        # End Python 3
     except KeyboardInterrupt:
         logger.error("Init canceled")
         return
