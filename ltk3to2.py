@@ -54,13 +54,11 @@ for fpath in files3:
             elif is_python2:
                 if '# End Python 2' in line:
                     is_python2 = False
-                    continue
                 line = line.replace('# ','')
             elif '# Python 3' in line:
                 is_python3 = True
             elif is_python3:
                 if '# End Python 3' in line:
                     is_python3 = False
-                    continue
                 line = '# '+str(line)
             f.write(line)
