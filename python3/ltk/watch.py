@@ -10,7 +10,7 @@ import sys
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEvent
 from ltk.watchhandler import WatchHandler
-from git_auto import Git_Auto
+from ltk.git_auto import Git_Auto
 
 # retry decorator to retry connections
 def retry(logger, timeout=5, exec_type=None):
@@ -34,7 +34,7 @@ def retry(logger, timeout=5, exec_type=None):
 def is_hidden_file(file_path):
     # todo more robust checking for OSX files that doesn't start with '.'
     name = os.path.basename(os.path.abspath(file_path))
-    return name and (name.startswith('.') or has_hidden_attribute(file_path) or name == "4913")
+    return name and (name.startswith('.') or ('.git' in file_path) or has_hidden_attribute(file_path) or name == "4913")
 
 def has_hidden_attribute(file_path):
     """ Detects if a file has hidden attributes """
