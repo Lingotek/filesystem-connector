@@ -10,6 +10,7 @@ import sys
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEvent
 from ltk.watchhandler import WatchHandler
+from ltk.git_auto import Git_Auto
 
 # retry decorator to retry connections
 def retry(logger, timeout=5, exec_type=None):
@@ -33,7 +34,7 @@ def retry(logger, timeout=5, exec_type=None):
 def is_hidden_file(file_path):
     # todo more robust checking for OSX files that doesn't start with '.'
     name = os.path.basename(os.path.abspath(file_path))
-    return name and (name.startswith('.') or has_hidden_attribute(file_path) or name == "4913")
+    return name and (name.startswith('.') or ('.git' in file_path) or has_hidden_attribute(file_path) or name == "4913")
 
 def has_hidden_attribute(file_path):
     """ Detects if a file has hidden attributes """
@@ -54,7 +55,7 @@ class WatchAction(Action):
     # def __init__(self, path, remote=False):
     def __init__(self, path=None, timeout=60):
         Action.__init__(self, path, True, timeout)
-        self.observer = Observer()  # watchdog observer that will watch the files
+        self.observers = []  # watchdog observers that will watch the files
         self.handler = WatchHandler()
         self.handler.on_modified = self._on_modified
         self.handler.on_created = self._on_created
@@ -66,6 +67,7 @@ class WatchAction(Action):
         self.watch_folder = True
         self.timeout = timeout
         self.updated = {}
+        self.git_auto = Git_Auto(path)
         # if remote:  # poll lingotek cloud periodically if this option enabled
         # self.remote_thread = threading.Thread(target=self.poll_remote(), args=())
         # self.remote_thread.daemon = True
@@ -102,7 +104,8 @@ class WatchAction(Action):
                         # logger.info('Updating remote content: {0}'.format(fn))
                         self.update_content(fn)
                 except KeyboardInterrupt:
-                    self.observer.stop()
+                    for observer in self.observers:
+                        observer.stop()
                 except ConnectionError:
                     print("Could not connect to remote server.")
                     restart()
@@ -110,7 +113,8 @@ class WatchAction(Action):
                     print(sys.exc_info()[1])
                     restart()
         except KeyboardInterrupt:
-            self.observer.stop()
+            for observer in self.observers:
+                observer.stop()
         except Exception as err:
             restart("Error on modified: "+str(err)+"\nRestarting watch.")
 
@@ -137,14 +141,15 @@ class WatchAction(Action):
                     else:
                         return
                 except KeyboardInterrupt:
-                    self.observer.stop()
+                    for observer in self.observers:
+                        observer.stop()
                 except ConnectionError:
                     print("Could not connect to remote server.")
                     restart()
                 except ValueError:
                     print(sys.exc_info()[1])
                     restart()
-                doc = self.doc_manager.get_doc_by_prop('name', title)
+                doc = self.doc_manager.get_doc_by_prop('file_name', relative_path)
                 if doc:
                     document_id = doc['id']
                 else:
@@ -168,7 +173,8 @@ class WatchAction(Action):
             # else:
             #     print("Skipping hidden file "+file_path)
         except KeyboardInterrupt:
-            self.observer.stop()
+            for observer in self.observers:
+                observer.stop()
         # except Exception as err:
         #     restart("Error on created: "+str(err)+"\nRestarting watch.")
 
@@ -180,7 +186,8 @@ class WatchAction(Action):
             event = FileSystemEvent(event.dest_path)
             self._on_modified(event)
         except KeyboardInterrupt:
-            self.observer.stop()
+            for observer in self.observers:
+                observer.stop()
         except Exception as err:
             restart("Error on moved: "+str(err)+"\nRestarting watch.")
 
@@ -201,7 +208,6 @@ class WatchAction(Action):
         return locales
 
     def watch_add_target(self, file_name, document_id):
-        # print "watching add target, watch queue:", self.watch_queue
         if not file_name:
             title=self.doc_manager.get_doc_by_prop("id", document_id)
         else:
@@ -218,9 +224,9 @@ class WatchAction(Action):
             #     for target in locales_to_add:
             #         printStr += target+","
             # print(printStr)
-            self.target_action(title, file_name, locales_to_add, None, None, None, document_id)
-            if document_id in self.watch_queue:
-                self.watch_queue.remove(document_id)
+            if self.api.get_document(document_id):
+                if self.target_action(title, file_name, locales_to_add, None, None, None, document_id) and document_id in self.watch_queue:
+                    self.watch_queue.remove(document_id)
 
     def process_queue(self):
         """do stuff with documents in queue (currently just add targets)"""
@@ -252,6 +258,8 @@ class WatchAction(Action):
     def poll_remote(self):
         """ poll lingotek servers to check if translation is finished """
         documents = self.doc_manager.get_all_entries()  # todo this gets all documents, not necessarily only ones in watch folder
+        documents_downloaded = False
+        git_commit_message = ""
         for doc in documents:
             doc_id = doc['id']
             if doc_id in self.watch_queue:
@@ -279,7 +287,16 @@ class WatchAction(Action):
                 progress = locale_progress[locale]
             # End Python 3
                 if progress == 100 and locale not in downloaded:
-                    
+                    document_added = False
+                    if (doc['name']+": ") not in git_commit_message:
+                        if documents_downloaded: git_commit_message += '; '
+                        git_commit_message += doc['name'] + ": "
+                        document_added = True
+                    if document_added:
+                        git_commit_message += locale
+                    else:
+                        git_commit_message += ', ' + locale
+                    documents_downloaded = True
                     logger.info('Translation completed ({0} - {1})'.format(doc_id, locale))
                     if self.locale_delimiter:
                         self.download_action(doc_id, locale, False, False)
@@ -288,6 +305,22 @@ class WatchAction(Action):
                 elif progress != 100 and locale in downloaded:
                     # print("Locale "+str(locale)+" for document "+doc['name']+" is no longer completed.")
                     self.doc_manager.remove_element_in_prop(doc_id, 'downloaded', locale)
+        config_file_name, conf_parser = self.init_config_file()
+        git_autocommit = conf_parser.get('main', 'git_autocommit')
+        if git_autocommit == "True" and documents_downloaded == True:
+            username = conf_parser.get('main', 'git_username')
+            password = conf_parser.get('main', 'git_password')
+            self.git_auto.commit(git_commit_message)
+            if username and username != "":
+                if password and password != "":
+                    self.git_auto.push(username=username, password=password)
+                else:
+                    self.git_auto.push(username=username)
+            else:
+                if password and password != "":
+                    self.git_auto.push(password=password)
+                else:
+                    self.git_auto.push()
 
 
     def complete_path(self, file_location):
@@ -298,25 +331,36 @@ class WatchAction(Action):
         # norm_path = os.path.abspath(file_location).replace(self.path, '')
         return abspath
 
-    def watch_action(self, watch_path, ignore, delimiter=None):
+    def watch_action(self, watch_paths, ignore, delimiter=None, no_folders=False):
         # print self.path
-        if watch_path:  # Use watch path specified as an option/parameter
-            self.watch_folder = True
-        elif self.watch_dir and not "--default" in self.watch_dir: # Use watch path from config
-            self.watch_folder = True
-            watch_path = self.watch_dir
+        if not watch_paths:
+            watch_paths = self.folder_manager.get_file_names()
         else:
-            watch_path = self.path # Watch from the project root
+            watch_paths_list = []
+            for path in watch_paths:
+                watch_paths_list.append(path)
+            watch_paths = watch_paths_list
+        if len(watch_paths) and not no_folders: # Use watch path specified as an option/parameter
+            self.watch_folders = True
+        else:
             self.watch_folder = False # Only watch added files
         if self.watch_folder:
-            watch_path = self.complete_path(watch_path)
-            print ("Watching for updates in: {0}".format(watch_path))
+            watch_message = "Watching for updates in "
+            for i in range(len(watch_paths)):
+                watch_paths[i] = self.complete_path(watch_paths[i])
+                watch_message += "{0}".format(watch_paths[i])
+                if i < len(watch_paths)-1:
+                    watch_message += " "
+            print (watch_message)
         else:
             print ("Watching for updates to added documents")
         self.ignore_ext.extend(ignore)
         self.locale_delimiter = delimiter
-        self.observer.schedule(self.handler, path=watch_path, recursive=True)
-        self.observer.start()
+        for watch_path in watch_paths:
+            observer = Observer()
+            observer.schedule(self.handler, path=watch_path, recursive=True)
+            observer.start()
+            self.observers.append(observer)
         queue_timeout = 3
         # start_time = time.clock()
         try:
@@ -329,8 +373,9 @@ class WatchAction(Action):
                     current_timeout -= queue_timeout
                 time.sleep(self.timeout)
         except KeyboardInterrupt:
-            self.observer.stop()
+            for observer in self.observers:
+                observer.stop()
         # except Exception as err:
         #     restart("Error: "+str(err)+"\nRestarting watch.")
-
-        self.observer.join()
+        for observer in self.observers:
+            observer.join()

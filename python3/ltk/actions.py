@@ -16,6 +16,7 @@ from ltk.managers import DocumentManager, FolderManager
 from ltk.constants import CONF_DIR, CONF_FN, SYSTEM_FILE
 import json
 from ltk.logger import logger
+from ltk.git_auto import Git_Auto
 
 
 class Action:
@@ -29,8 +30,8 @@ class Action:
         self.workflow_id = ''  # default workflow id; MT phase only
         self.locale = ''
         self.download_dir = None  # directory where downloaded translation will be stored
-        self.watch_dir = None  # if specified, only watch this directory
         self.watch_locales = set()  # if specified, add these target locales to any files in the watch folder
+        self.git_autocommit = None
         self.locale_folders = {}
         if not self._is_initialized():
             raise exceptions.UninitializedError("This project is not initialized. Please run init command.")
@@ -40,6 +41,7 @@ class Action:
         self.folder_manager = FolderManager(self.path)
         self.timeout = timeout
         self.api = ApiCalls(self.host, self.access_token, self.watch, self.timeout)
+        self.git_auto = Git_Auto(self.path)
 
     def _is_initialized(self):
         actual_path = find_conf(self.path)
@@ -65,8 +67,6 @@ class Action:
                 self.project_name = conf_parser.get('main', 'project_name')
             if conf_parser.has_option('main', 'download_folder'):
                 self.download_dir = conf_parser.get('main', 'download_folder')
-            if conf_parser.has_option('main', 'watch_folder'):
-                self.watch_dir = conf_parser.get('main', 'watch_folder')
             if conf_parser.has_option('main', 'watch_locales'):
                 watch_locales = conf_parser.get('main', 'watch_locales')
                 self.watch_locales = set(watch_locales.split(','))
@@ -194,7 +194,7 @@ class Action:
             # return detailed_status
         return locales
 
-    def config_action(self, locale, workflow_id, download_folder, watch_folder, target_locales, locale_folders):
+    def config_action(self, locale, workflow_id, download_folder, target_locales, locale_folders, git_toggle, git_username, git_password):
         config_file_name, conf_parser = self.init_config_file()
         if locale:
             self.locale = locale
@@ -217,16 +217,6 @@ class Action:
                 self.update_config_file('download_folder', download_path, conf_parser, config_file_name, log_info)
             else:
                 logger.warning('Error: Invalid value for "-d" / "--download_folder": Path "'+download_folder+'" does not exist.')
-                return
-        if watch_folder:
-            if os.path.exists(os.path.abspath(watch_folder)) or "--default" in watch_folder:
-                # watch_path = os.path.join(self.path, watch_folder)
-                watch_path = self.norm_path(watch_folder)
-                self.watch_dir = watch_path
-                log_info = 'Set watch folder to {0}'.format(watch_path)
-                self.update_config_file('watch_folder', watch_path, conf_parser, config_file_name, log_info)
-            else:
-                logger.warning('Error: Invalid value for "-f" / "--watch_folder": Path "'+watch_folder+'" does not exist.')
                 return
         if target_locales:
             target_locales = get_valid_locales(self.api, target_locales[0].split(','))
@@ -268,17 +258,53 @@ class Action:
             locale_folders_str = json.dumps(self.locale_folders)
             self.update_config_file('locale_folders', locale_folders_str, conf_parser, config_file_name, log_info)
         #print ('Token: {0}'.format(self.access_token))
-        watch_dir = "None"
-        if self.watch_dir and self.watch_dir != "--default":
-            watch_dir = self.watch_dir
+        if not conf_parser.has_option('main', 'git_autocommit'):
+            self.update_config_file('git_autocommit', 'False', conf_parser, config_file_name, 'Update: Added \'git auto-commit\' option (ltk config --help)')
+            self.update_config_file('git_username', '', conf_parser, config_file_name, 'Update: Added \'git username\' option (ltk config --help)')
+            self.update_config_file('git_password', '', conf_parser, config_file_name, 'Update: Added \'git password\' option (ltk config --help)')
+        self.git_autocommit = conf_parser.get('main', 'git_autocommit')     
+        if git_toggle:      
+            log_info = 'Git auto-commit status changed from {0}active'.format(      
+                ('active to in' if self.git_autocommit == "True" else 'inactive to '))      
+            config_file = open(config_file_name, 'w')       
+            if self.git_autocommit == "True":        
+                self.update_config_file('git_autocommit', 'False', conf_parser, config_file_name, log_info)       
+                self.git_autocommit = "False"
+            else:
+                self.update_config_file('git_autocommit', 'True', conf_parser, config_file_name, log_info)
+                self.git_autocommit = "True"
+        if git_username:
+            if git_username in ['None', 'none', 'N', 'n']:
+                git_username = ""
+                log_info = "Git username disabled"
+            else:
+                log_info = 'Git username set to ' + git_username
+            self.update_config_file('git_username', git_username, conf_parser, config_file_name, log_info)
+        if git_password:
+            if git_password in ['None', 'none', 'N', 'n']:
+                git_password = ""
+                log_info = "Git password disabled"
+            else:
+                log_info = 'Git password set'
+            self.update_config_file('git_password', self.git_auto.encrypt(git_password), conf_parser, config_file_name, log_info)
         download_dir = "None"
         if self.download_dir and self.download_dir != "--default" and self.download_dir != "--same":
             download_dir = self.download_dir
-        locale_folders_str = json.dumps(self.locale_folders).replace("{","").replace("}","")
+        locale_folders_str = "None"
+        if self.locale_folders:
+            locale_folders_str = json.dumps(self.locale_folders).replace("{","").replace("}","")
+        current_git_username = conf_parser.get('main', 'git_username')
+        current_git_password = conf_parser.get('main', 'git_password')
+        git_output = ('active' if self.git_autocommit == "True" else 'inactive')
+        if self.git_autocommit == "True":
+            if current_git_username != "":
+                git_output += (' (' + current_git_username + ', password:' + ('YES' if current_git_password != '' else 'NO')) + ')'
+            else:
+                git_output += (' (password:YES)' if current_git_password != '' else ' (no credentials set, recommend SSH key)')
         print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity id: {4}\nWorkflow id: {5}\n' \
-              'Default Source Locale: {6}\nWatch - Source Folder: {7}\nWatch - Download Folder: {8}\nWatch - Target Locales: {9}\nLocale folders: {10}'.format(
-            self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, watch_dir,
-            download_dir, ','.join(target for target in self.watch_locales), locale_folders_str))
+              'Default Source Locale: {6}\nWatch - Download Folder: {7}\nWatch - Target Locales: {8}\nLocale folders: {9}\ngit auto-commit: {10}'.format(
+            self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale,
+            download_dir, ','.join(target for target in self.watch_locales), locale_folders_str, git_output))
 
     def add_document(self, file_name, title, **kwargs):
         try:
@@ -291,7 +317,7 @@ class Action:
             if response.status_code != 202:
                 raise_error(response.json(), "Failed to add document {0}".format(title), True)
             else:
-                logger.info('Added document {0}'.format(title))
+                logger.info('Added document {0} with ID {1}'.format(title,response.json()['properties']['id']))
                 relative_path = self.norm_path(file_name)
                 self._add_document(relative_path, title, response.json()['properties']['id'])
         except KeyboardInterrupt:
@@ -302,6 +328,7 @@ class Action:
     def add_action(self, file_patterns, **kwargs):
         # format will be automatically detected by extension but may not be what user expects
         # use current working directory as root for files instead of project root
+        added_folder = False
         for pattern in file_patterns:
             if os.path.exists(pattern):
                 if os.path.isdir(pattern):
@@ -310,11 +337,15 @@ class Action:
                         logger.info("Added folder "+str(pattern))
                     else:
                         logger.warning("Folder "+str(pattern)+" has already been added.")
+                    added_folder = True
             else:
                 logger.warning("Path "+str(pattern)+" doesn't exist.")
         matched_files = get_files(file_patterns)
         if not matched_files:
-            raise exceptions.ResourceNotFound("Could not find the specified file/pattern")
+            if added_folder:
+                return
+            else:
+                raise exceptions.ResourceNotFound("Could not find the specified file/pattern.")
         for file_name in matched_files:
             try:
                 # title = os.path.basename(os.path.normpath(file_name)).split('.')[0]
@@ -361,6 +392,20 @@ class Action:
     def push_action(self):
         entries = self.doc_manager.get_all_entries()
         updated = False
+        folders = self.folder_manager.get_file_names()
+        if len(folders):
+            for folder in folders:
+                matched_files = get_files(folder)
+                if matched_files:
+                    for file_name in matched_files:
+                        try:
+                            relative_path = self.norm_path(file_name)
+                            title = os.path.basename(relative_path)
+                            if self.doc_manager.is_doc_new(relative_path):
+                                self.add_document(file_name, title)
+                                print
+                        except json.decoder.JSONDecodeError:
+                            logger.error("JSON error on adding document.")
         for entry in entries:
             if not self.doc_manager.is_doc_modified(entry['file_name'], self.path):
                 continue
@@ -412,6 +457,7 @@ class Action:
 
     # def request_action
     def target_action(self, document_name, path, entered_locales, to_delete, due_date, workflow, document_id=None):
+        is_successful = False
         locales = get_valid_locales(self.api, entered_locales)
         if path:
             document_id = None
@@ -485,6 +531,8 @@ class Action:
                             if locale not in locales:
                                 locales_to_add.append(locale)
                 self._target_action_db(to_delete, locales_to_add, document_id)
+                is_successful = True
+        return is_successful
 
     def list_ids_action(self, path=False):
         """ lists ids of list_type specified """
@@ -739,6 +787,18 @@ class Action:
                 logger.info('Downloaded: {0} ({1} - {2})'.format(downloaded_name, base_name, locale_code))
 
             self.doc_manager.add_element_to_prop(document_id, 'downloaded', locale_code)
+            config_file_name, conf_parser = self.init_config_file()     
+            git_autocommit = conf_parser.get('main', 'git_autocommit')      
+            if git_autocommit == "True":        
+                if not self.git_auto.repo_is_defined:
+                    repo_directory = download_path
+                    while repo_directory != "" and not (os.path.isdir(repo_directory + "/.git")):
+                        repo_directory = repo_directory.split(os.sep)[:-1]
+                        repo_directory = (os.sep).join(repo_directory)
+                    if repo_directory != "":
+                        self.git_auto.initialize_repo(repo_directory)
+                if os.path.isfile(download_path):
+                    self.git_auto.add_file(download_path)
             with open(download_path, 'wb') as fh:
                 for chunk in response.iter_content(1024):
                     fh.write(chunk)
@@ -1207,6 +1267,9 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
     # config_parser.set('main', 'root_path', project_path)
     config_parser.set('main', 'workflow_id', workflow_id)
     config_parser.set('main', 'default_locale', locale)
+    config_parser.set('main', 'git_autocommit', 'False')
+    config_parser.set('main', 'git_username', '')
+    config_parser.set('main', 'git_password', '')
     # get community id
     community_info = api.get_communities_info()
     if not community_info:
