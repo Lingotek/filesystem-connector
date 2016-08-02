@@ -294,16 +294,17 @@ class Action:
             self.update_config_file('git_username', '', conf_parser, config_file_name, 'Update: Added \'git username\' option (ltk config --help)')
             self.update_config_file('git_password', '', conf_parser, config_file_name, 'Update: Added \'git password\' option (ltk config --help)')
         self.git_autocommit = conf_parser.get('main', 'git_autocommit')     
-        if git_toggle:      
-            log_info = 'Git auto-commit status changed from {0}active'.format(      
-                ('active to in' if self.git_autocommit == "True" else 'inactive to '))      
-            config_file = open(config_file_name, 'w')       
-            if self.git_autocommit == "True":        
-                self.update_config_file('git_autocommit', 'False', conf_parser, config_file_name, log_info)       
-                self.git_autocommit = "False"
-            else:
-                self.update_config_file('git_autocommit', 'True', conf_parser, config_file_name, log_info)
-                self.git_autocommit = "True"
+        if git_toggle:
+            if self.git_autocommit == 'True' or self.git_auto.repo_exists(self.path):
+                log_info = 'Git auto-commit status changed from {0}active'.format(      
+                    ('active to in' if self.git_autocommit == "True" else 'inactive to '))      
+                config_file = open(config_file_name, 'w')       
+                if self.git_autocommit == "True":        
+                    self.update_config_file('git_autocommit', 'False', conf_parser, config_file_name, log_info)       
+                    self.git_autocommit = "False"
+                else:
+                    self.update_config_file('git_autocommit', 'True', conf_parser, config_file_name, log_info)
+                    self.git_autocommit = "True"
         if git_username:
             if git_username in ['None', 'none', 'N', 'n']:
                 git_username = ""
@@ -822,12 +823,8 @@ class Action:
             git_autocommit = conf_parser.get('main', 'git_autocommit')      
             if git_autocommit == "True":        
                 if not self.git_auto.repo_is_defined:
-                    repo_directory = download_path
-                    while repo_directory != "" and not (os.path.isdir(repo_directory + "/.git")):
-                        repo_directory = repo_directory.split(os.sep)[:-1]
-                        repo_directory = (os.sep).join(repo_directory)
-                    if repo_directory != "":
-                        self.git_auto.initialize_repo(repo_directory)
+                    if self.git_auto.repo_exists(download_path):
+                        self.git_auto.initialize_repo()
                 if os.path.isfile(download_path):
                     self.git_auto.add_file(download_path)
             with open(download_path, 'wb') as fh:
