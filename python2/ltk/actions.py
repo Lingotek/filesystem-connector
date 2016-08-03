@@ -9,6 +9,7 @@ import os
 import shutil
 import fnmatch
 import time
+import getpass
 from ltk import exceptions
 from ltk.apicalls import ApiCalls
 from ltk.utils import detect_format, map_locale, get_valid_locales, is_valid_locale
@@ -209,7 +210,7 @@ class Action:
                 return locale
         return False
 
-    def config_action(self, locale, workflow_id, download_option, download_folder, target_locales, locale_folders, git_toggle, git_username, git_password, clear_locales):
+    def config_action(self, locale, workflow_id, download_option, download_folder, target_locales, locale_folders, git_toggle, git_credentials, clear_locales):
         config_file_name, conf_parser = self.init_config_file()
         if locale:
             self.locale = locale
@@ -305,14 +306,20 @@ class Action:
                 else:
                     self.update_config_file('git_autocommit', 'True', conf_parser, config_file_name, log_info)
                     self.git_autocommit = "True"
-        if git_username:
+        if git_credentials:
+            # Python 2
+            git_username = raw_input('Username: ')
+            # End Python 2
+            # Python 3
+#             git_username = input('Username: ')
+            # End Python 3
+            git_password = getpass.getpass()
             if git_username in ['None', 'none', 'N', 'n']:
                 git_username = ""
                 log_info = "Git username disabled"
             else:
                 log_info = 'Git username set to ' + git_username
             self.update_config_file('git_username', git_username, conf_parser, config_file_name, log_info)
-        if git_password:
             if git_password in ['None', 'none', 'N', 'n']:
                 git_password = ""
                 log_info = "Git password disabled"
