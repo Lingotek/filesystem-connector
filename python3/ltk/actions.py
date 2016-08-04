@@ -34,6 +34,8 @@ class Action:
         self.download_dir = None  # directory where downloaded translation will be stored
         self.watch_locales = set()  # if specified, add these target locales to any files in the watch folder
         self.git_autocommit = None
+        self.git_username = ''
+        self.git_password = ''
         self.locale_folders = {}
         if not self._is_initialized():
             raise exceptions.UninitializedError("This project is not initialized. Please run init command.")
@@ -69,13 +71,40 @@ class Action:
                 self.project_name = conf_parser.get('main', 'project_name')
             if conf_parser.has_option('main', 'download_folder'):
                 self.download_dir = conf_parser.get('main', 'download_folder')
+            else:
+                self.download_dir = None
+                self.update_config_file('download_folder', self.download_folder, conf_parser, config_file_name, "")
             if conf_parser.has_option('main', 'watch_locales'):
                 watch_locales = conf_parser.get('main', 'watch_locales')
                 self.watch_locales = set(watch_locales.split(','))
+            else:
+                self.watch_locales = set()
+                self.update_config_file('watch_locales', self.watch_locales, conf_parser, config_file_name, "")
             if conf_parser.has_option('main', 'locale_folders'):
                 self.locale_folders = json.loads(conf_parser.get('main', 'locale_folders'))
+            else:
+                self.locale_folders = {}
+                self.update_config_file('locale_folders', self.locale_folders, conf_parser, config_file_name, "")
             if conf_parser.has_option('main', 'download_option'):
-                self.download_option = json.loads(conf_parser.get('main', 'download_option'))
+                self.download_option = conf_parser.get('main', 'download_option')
+            else:
+                self.download_option = 'same'
+                self.update_config_file('download_option', self.download_option, conf_parser, config_file_name, "")
+            if conf_parser.has_option('main', 'git_autocommit'):
+                self.git_autocommit = conf_parser.get('main', 'git_autocommit')
+            else:
+                self.git_autocommit = ''
+                self.update_config_file('git_autocommit', self.git_autocommit, conf_parser, config_file_name, "")
+            if conf_parser.has_option('main', 'git_username'):
+                self.git_username = conf_parser.get('main', 'git_username')
+            else:
+                self.git_username = ''
+                self.update_config_file('git_username', self.git_username, conf_parser, config_file_name, "")
+            if conf_parser.has_option('main', 'git_password'):
+                self.git_password = conf_parser.get('main', 'git_password')
+            else:
+                self.git_password = ''
+                self.update_config_file('git_password', self.git_password, conf_parser, config_file_name, "")
         except NoOptionError as e:
             if not self.project_name:
                 self.api = ApiCalls(self.host, self.access_token)
@@ -225,7 +254,7 @@ class Action:
             self.update_config_file('workflow_id', workflow_id, conf_parser, config_file_name, log_info)
             conf_parser.set('main', 'workflow_id', workflow_id)
         if download_folder:
-            if os.path.exists(os.path.abspath(download_folder)) or "--same" in download_folder or "--default" in download_folder or "--clone" in download_folder:
+            if os.path.exists(os.path.abspath(download_folder)):
                 # download_path = os.path.join(self.path, download_folder)
                 download_path = self.norm_path(download_folder)
                 self.download_dir = download_path
@@ -234,6 +263,14 @@ class Action:
             else:
                 logger.warning('Error: Invalid value for "-d" / "--download_folder": Path "'+download_folder+'" does not exist.')
                 return
+        if download_option:
+            if download_option in {'same','folder','clone'}:
+                self.download_option = download_option
+                log_info = 'Set download option to {0}'.format(download_option)
+                self.update_config_file('download_option', download_option, conf_parser, config_file_name, log_info)
+            else:
+                logger.warning('Error: Invalid value for "-o" / "--download_option": Must be one of "same", "folder", or "clone".')
+                return 
         if target_locales:
             target_locales = get_valid_locales(self.api, target_locales[0].split(','))
             target_locales_str = ','.join(target for target in target_locales)
@@ -299,7 +336,7 @@ class Action:
             if self.git_autocommit == 'True' or self.git_auto.repo_exists(self.path):
                 log_info = 'Git auto-commit status changed from {0}active'.format(      
                     ('active to in' if self.git_autocommit == "True" else 'inactive to '))      
-                config_file = open(config_file_name, 'w')       
+                config_file = open(config_file_name, 'w')
                 if self.git_autocommit == "True":        
                     self.update_config_file('git_autocommit', 'False', conf_parser, config_file_name, log_info)       
                     self.git_autocommit = "False"
@@ -602,7 +639,7 @@ class Action:
             return
         print ('%-30s' % 'Filename' + ' %-38s' % 'Lingotek ID' + 'Locales')
         for i in range(len(ids)):
-            info = '%-30s' % titles[i][:30] + ' %-38s' % ids[i] + ', '.join(locale for locale in locales[i])
+            info = '%-30s' % titles[i][(len(titles[i])-30):] + ' %-38s' % ids[i] + ', '.join(locale for locale in locales[i])
             print (info)
 
     def list_remote_action(self):
@@ -768,25 +805,42 @@ class Action:
             logger.warning("Could not connect to Lingotek")
             exit()
 
-    def download_by_path(self, file_path, locale_codes, auto_format):
+    def download_by_path(self, file_path, locale_codes, locale_ext, no_ext, auto_format):
         docs = self.get_docs_in_path(file_path)
         if len(docs) == 0:
             logger.warning("No document found with file path "+str(file_path))
         for entry in docs:
-            self.download_locales(entry['id'], locale_codes, auto_format)
+            locales = []
+            if locale_codes:
+                locales = locale_codes.split(",")
+            else:
+                locales = entry['locales']
+            if 'clone' in self.download_option and not locale_ext or (no_ext and not locale_ext):
+                self.download_locales(entry['id'], locales, auto_format, False)
+            else:
+                self.download_locales(entry['id'], locales, auto_format, True)
+
 
     def download_locales(self, document_id, locale_codes, auto_format, locale_ext=True):
-        locales = locale_codes.split(",")
-        for locale_code in locales:
-            self.download_action(document_id, locale_code, auto_format)
+        for locale_code in locale_codes:
+            self.download_action(document_id, locale_code, auto_format, locale_ext)
 
     def download_action(self, document_id, locale_code, auto_format, locale_ext=True):
+
         response = self.api.document_content(document_id, locale_code, auto_format)
         entry = None
         entry = self.doc_manager.get_doc_by_prop('id', document_id)
         if response.status_code == 200:
-            if self.download_dir and not '--same' in self.download_dir and not '--default' in self.download_dir:
-                download_path = self.download_dir
+            if 'clone' in self.download_option:
+                if locale_code in self.locale_folders:
+                    download_path = self.locale_folders[locale_code]
+                elif self.download_dir:
+                    download_path = self.download_dir
+            elif 'folder' in self.download_option:
+                if locale_code in self.locale_folders:
+                    download_path = self.locale_folders[locale_code]
+                else:
+                    download_path = self.download_dir
             else:
                 download_path = self.path
             if not entry:
@@ -811,6 +865,7 @@ class Action:
                 if not locale_code:
                     logger.info("No target locales for "+file_name+". Downloading the source document instead.")
                     locale_code = self.locale
+                print("locale ext: "+str(locale_ext))
                 if locale_ext:
                     name_parts = base_name.split('.')
                     if len(name_parts) > 1:
@@ -820,7 +875,7 @@ class Action:
                         downloaded_name = name_parts[0] + '.' + locale_code
                 else:
                     downloaded_name = base_name
-                if not self.download_dir or '--same' in self.download_dir or '--default' in self.download_dir:
+                if 'same' in self.download_option:
                     download_path = os.path.dirname(file_name)
                 download_path = os.path.join(self.path,os.path.join(download_path, downloaded_name))
                 logger.info('Downloaded: {0} ({1} - {2})'.format(downloaded_name, base_name, locale_code))
@@ -845,20 +900,25 @@ class Action:
             else:
                 raise_error(response.json(), 'Failed to download content for id: {0}'.format(document_id), True)
 
-    def pull_action(self, locale_code, auto_format):
+    def pull_action(self, locale_code, locale_ext, no_ext, auto_format):
+        if 'clone' in self.download_option and not locale_ext or (no_ext and not locale_ext):
+            locale_ext = False
+        else:
+            locale_ext = True
+        print("pull locale ext: "+str(locale_ext))
         if not locale_code:
             entries = self.doc_manager.get_all_entries()
             for entry in entries:
                 try:
                     locales = entry['locales']
                     for locale in locales:
-                        self.download_action(entry['id'], locale, auto_format)
+                        self.download_action(entry['id'], locale, auto_format, locale_ext)
                 except KeyError:
-                    self.download_action(entry['id'], None, auto_format)
+                    self.download_action(entry['id'], None, auto_format, locale_ext)
         else:
             document_ids = self.doc_manager.get_doc_ids()
             for document_id in document_ids:
-                self.download_action(document_id, locale_code, auto_format)
+                self.download_action(document_id, locale_code, auto_format, locale_ext)
 
     def rm_document(self, file_name, useID, force, doc_name=None, is_directory=False):
         try:

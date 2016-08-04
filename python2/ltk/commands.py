@@ -255,16 +255,18 @@ def status(**kwargs):
 
 @ltk.command(short_help='Download specified translations')
 @click.option('-a', '--auto_format', flag_value=True, help='Flag to auto apply formatting during download')
-@click.argument('locales', required=True, nargs=1)
+@click.option('-l', '--locales', help="Specify locales to download (defaults to all target locales for the document). For multiple locales give a list separated by commas and no spaces (ex: en_US,en_GB).")
+@click.option('-e', '--locale_ext', flag_value=True, help="Specifies to add the name of the locale as an extension to the file name (ex: doc1.fr_FR.docx). This is the default unless the clone download option is active.")
+@click.option('-n', '--no_ext', flag_value=True, help="Specifies to not add the name of the locale as an extension to the file name. This is the default if the clone download option is active.")
 @click.argument('file_names', type=click.Path(exists=True), required=True, nargs=-1)
-def download(auto_format, locales, file_names):
-    """ Downloads translated content specified by filename for specified locales. For multiple locales give a list separated by commas and no spaces
-    (ex: en_US,en_GB). Change download options and folders using ltk config."""
+def download(auto_format, locales, locale_ext, no_ext, file_names):
+    """ Downloads translated content specified by filename for specified locales, or all locales if none are specified. Change download options and folders using ltk config."""
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
         for name in file_names:
-            action.download_by_path(name, locales, auto_format)
+            action.download_by_path(name, locales, locale_ext, no_ext, auto_format)
+
     except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
@@ -273,17 +275,19 @@ def download(auto_format, locales, file_names):
 
 @ltk.command()
 @click.option('-a', '--auto_format', flag_value=True, help='Flag to auto apply formatting during download')
+@click.option('-e', '--locale_ext', flag_value=True, help="Specifies to add the name of the locale as an extension to the file name (ex: doc1.fr_FR.docx). This is the default unless the clone download option is active.")
+@click.option('-n', '--no_ext', flag_value=True, help="Specifies to not add the name of the locale as an extension to the file name. This is the default if the clone download option is active.")
 @click.argument('locales', nargs=-1)
-def pull(auto_format, locales):
+def pull(auto_format, locale_ext, no_ext, locales):
     """ Pulls translations for all added documents for all locales or by specified locales """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
         if locales:
             for locale in locales:
-                action.pull_action(locale, auto_format)
+                action.pull_action(locale, locale_ext, no_ext, auto_format)
         else:
-            action.pull_action(None, auto_format)
+            action.pull_action(None, locale_ext, no_ext, auto_format)
     except UninitializedError as e:
         print_log(e)
         logger.error(e)

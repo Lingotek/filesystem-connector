@@ -19,7 +19,7 @@ class Git_Auto:
 			repo_directory = repo_directory.split(os.sep)[:-1]
 			repo_directory = (os.sep).join(repo_directory)
 		if not repo_directory or repo_directory == "":
-			error("Git repository is not defined.")
+			error("No Git repository found for the current directory.")
 			return False
 		else:
 			self.repo_directory = repo_directory
@@ -34,13 +34,13 @@ class Git_Auto:
 
 	def add_file(self, file_name):
 		if not self.repo_is_defined:
-			error("Git repository is not defined.")
+			error("No Git repository found for the current directory.")
 			return
 		self.repo.git.add(file_name)
 
 	def commit(self, message):
 		if not self.repo_is_defined:
-			error("Git repository is not defined.")
+			error("No Git repository found for the current directory.")
 			return
 		message.rstrip(' ')
 		self.repo.index.commit("Translations updated for " + message)
@@ -58,7 +58,7 @@ class Git_Auto:
 
 	def push(self, username=None, password=None):
 		if not self.repo_is_defined:
-			error("Git repository is not defined.")
+			error("No Git repository found for the current directory.")
 			return
 		g = pexpect.spawnu('git push')
 		g.logfile_read = sys.stdout
