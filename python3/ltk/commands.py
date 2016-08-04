@@ -118,7 +118,7 @@ def init(host, access_token, path, project_name, workflow_id, locale, delete, re
 #TO-DO: @click.option('-a', '--all', help='List all configuration settings (including access token)')
 @click.option('-l', '--locale', help='Change the default source locale for the project')
 @click.option('-w', '--workflow_id', help='Change the default workflow id for the project')
-@click.option('-o', '--download_option', help='Select the option for downloaded files, as one of same, folder, locales, or clone. Same (default): Target translations are downloaded to the same folder as their corresponding source files. Folder: Translations will be downloaded to the locale folders specified or to the default download folder listed in config (where no locale folder is specified). Clone: Translations will be downloaded to a cloned folder structure, where the root folder for each locale is the locale folder specified in config or a locale folder inside of the default download folder.')
+@click.option('-o', '--download_option', help='Select the option for downloaded files, as one of same, folder, or clone. Same (default): Target translations are downloaded to the same folder as their corresponding source files. Folder: Translations will be downloaded to the locale folders specified or to the default download folder listed in config (where no locale folder is specified). Clone: Translations will be downloaded to a cloned folder structure, where the root folder for each locale is the locale folder specified in config or a locale folder inside of the default download folder.')
 @click.option('-d', '--download_folder',
               help='Specify a default folder for where downloaded translations should go.')
 @click.option('-t', '--target_locales', multiple=True,
@@ -260,7 +260,7 @@ def status(**kwargs):
 @click.argument('file_names', type=click.Path(exists=True), required=True, nargs=-1)
 def download(auto_format, locales, file_names):
     """ Downloads translated content specified by filename for specified locales. For multiple locales give a list separated by commas and no spaces
-    (ex: en_US,en_GB)"""
+    (ex: en_US,en_GB). Change download options and folders using ltk config."""
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
