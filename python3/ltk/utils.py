@@ -137,4 +137,4 @@ def raise_error(json, error_message, is_warning=False, doc_id=None, file_name=No
         logger.error(error_message)
 
 def error(error_message):
-    logger.error(error_message)
+    logger.error(error_message+"\n")
