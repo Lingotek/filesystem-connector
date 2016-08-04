@@ -73,18 +73,18 @@ class Action:
                 self.download_dir = conf_parser.get('main', 'download_folder')
             else:
                 self.download_dir = None
-                self.update_config_file('download_folder', self.download_folder, conf_parser, config_file_name, "")
+                self.update_config_file('download_folder', json.dumps(self.download_folder), conf_parser, config_file_name, "")
             if conf_parser.has_option('main', 'watch_locales'):
                 watch_locales = conf_parser.get('main', 'watch_locales')
                 self.watch_locales = set(watch_locales.split(','))
             else:
                 self.watch_locales = set()
-                self.update_config_file('watch_locales', self.watch_locales, conf_parser, config_file_name, "")
+                self.update_config_file('watch_locales', json.dumps(self.watch_locales), conf_parser, config_file_name, "")
             if conf_parser.has_option('main', 'locale_folders'):
                 self.locale_folders = json.loads(conf_parser.get('main', 'locale_folders'))
             else:
                 self.locale_folders = {}
-                self.update_config_file('locale_folders', self.locale_folders, conf_parser, config_file_name, "")
+                self.update_config_file('locale_folders', json.dumps(self.locale_folders), conf_parser, config_file_name, "")
             if conf_parser.has_option('main', 'download_option'):
                 self.download_option = conf_parser.get('main', 'download_option')
             else:
