@@ -128,14 +128,13 @@ def init(host, access_token, path, project_name, workflow_id, locale, delete, re
 @click.option('-p', '--locale_folder', nargs=2, type=str, multiple=True, help='For a specific locale, specify the root folder where downloaded translations should appear. Use --none for the path to clear the download folder for a specific locale. Example: -p fr_FR translations/fr_FR')
 @click.option('-c', '--clear_locales', flag_value=True, help='Clear all locale folders and use the default download location instead.')
 @click.option('-g', '--git', is_flag=True, help='Toggle Git auto-commit')
-@click.option('-gu', '--git_username', help='Set Git username for auto-fill (\'none\' to unset)')
-@click.option('-gp', '--git_password', help='Set Git password for auto-fill (\'none\' to unset)')
-def config(locale, workflow_id, download_option, download_folder, target_locales, locale_folder, git, git_username, git_password, clear_locales):
+@click.option('-gc', '--git_credentials', is_flag=True, help='Open prompt for Git credentials for auto-fill (\'none\' to unset)')
+def config(locale, workflow_id, download_option, download_folder, target_locales, locale_folder, git, git_credentials, clear_locales):
     """ View or change local configuration """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
-        action.config_action(locale, workflow_id, download_option, download_folder, target_locales, locale_folder, git, git_username, git_password, clear_locales)
+        action.config_action(locale, workflow_id, download_option, download_folder, target_locales, locale_folder, git, git_credentials, clear_locales)
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)

@@ -12,9 +12,24 @@ class Git_Auto:
 		self.path = path
 		self.join = os.path.join
 		self.repo_is_defined = False
+		self.repo_directory = ""
 
-	def initialize_repo(self, repo_directory):
-		self.repo = Repo(repo_directory)
+	def repo_exists(self, repo_directory=os.getcwd()):
+		while repo_directory and repo_directory != "" and not (os.path.isdir(repo_directory + "/.git")):
+			repo_directory = repo_directory.split(os.sep)[:-1]
+			repo_directory = (os.sep).join(repo_directory)
+		if not repo_directory or repo_directory == "":
+			error("Git repository is not defined.")
+			return False
+		else:
+			self.repo_directory = repo_directory
+			return True
+
+	def initialize_repo(self, directory=None):
+		if not directory:
+			self.repo = Repo(self.repo_directory)
+		else:
+			self.repo = Repo(directory)
 		self.repo_is_defined = True
 
 	def add_file(self, file_name):
