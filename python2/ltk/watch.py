@@ -2,10 +2,12 @@ import ctypes
 from ltk.actions import Action
 from ltk.logger import logger
 from ltk.utils import map_locale, restart
+from ltk.locales import locale_list
 import time
 import requests
 from requests.exceptions import ConnectionError
 import os
+import re
 import sys
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEvent
@@ -50,6 +52,17 @@ def has_hidden_attribute(file_path):
     except (AttributeError, AssertionError):
         result = False
     return result
+
+def is_translation(file_name):
+    locales = locale_list
+    if any(locale in file_name for locale in locales):
+        locales = {v:k for k,v in enumerate(locales) if v in file_name}.keys()
+        for locale in locales:
+            file_name = file_name.replace(locale, '')
+        file_name = re.sub('\.{2,}', '.', file_name)
+        return file_name.rstrip('.')
+    else:
+        return None
 
 class WatchAction(Action):
     # def __init__(self, path, remote=False):
@@ -124,7 +137,7 @@ class WatchAction(Action):
         try:
             file_path = event.src_path
             # if it's a hidden document, don't do anything 
-            if not is_hidden_file(file_path):
+            if not is_hidden_file(file_path) and not is_translation(file_path):
                 relative_path = file_path.replace(self.path, '')
                 title = os.path.basename(os.path.normpath(file_path))
                 curr_ext = os.path.splitext(file_path)[1]
