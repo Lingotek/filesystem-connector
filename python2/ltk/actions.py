@@ -79,7 +79,7 @@ class Action:
                 self.watch_locales = set(watch_locales.split(','))
             else:
                 self.watch_locales = set()
-                self.update_config_file('watch_locales', json.dumps(self.watch_locales), conf_parser, config_file_name, "")
+                self.update_config_file('watch_locales', json.dumps(list(self.watch_locales)), conf_parser, config_file_name, "")
             if conf_parser.has_option('main', 'locale_folders'):
                 self.locale_folders = json.loads(conf_parser.get('main', 'locale_folders'))
             else:
