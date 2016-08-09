@@ -73,7 +73,7 @@ class Action:
                 self.download_dir = conf_parser.get('main', 'download_folder')
             else:
                 self.download_dir = None
-                self.update_config_file('download_folder', json.dumps(self.download_folder), conf_parser, config_file_name, "")
+                self.update_config_file('download_folder', json.dumps(self.download_dir), conf_parser, config_file_name, "")
             if conf_parser.has_option('main', 'watch_locales'):
                 watch_locales = conf_parser.get('main', 'watch_locales')
                 self.watch_locales = set(watch_locales.split(','))
@@ -535,6 +535,9 @@ class Action:
     def target_action(self, document_name, path, entered_locales, to_delete, due_date, workflow, document_id=None):
         is_successful = False
         locales = get_valid_locales(self.api, entered_locales)
+        print('<<<<Double check the integrity of these data')
+        print (entered_locales)
+        print('Double check the integrity of these data>>>>')
         if path:
             document_id = None
             document_name = None
