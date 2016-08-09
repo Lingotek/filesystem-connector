@@ -865,7 +865,6 @@ class Action:
                 if not locale_code:
                     logger.info("No target locales for "+file_name+". Downloading the source document instead.")
                     locale_code = self.locale
-                print("locale ext: "+str(locale_ext))
                 if locale_ext:
                     name_parts = base_name.split('.')
                     if len(name_parts) > 1:
@@ -905,7 +904,6 @@ class Action:
             locale_ext = False
         else:
             locale_ext = True
-        print("pull locale ext: "+str(locale_ext))
         if not locale_code:
             entries = self.doc_manager.get_all_entries()
             for entry in entries:

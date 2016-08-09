@@ -364,6 +364,24 @@ def clean(force, dis_all, file_paths):
         logger.error(e)
         return
 
+@ltk.command(short_help="Copies added source folders for each locale")
+@click.argument('folders', required=False, nargs=-1)
+def clone(folders):
+    """
+    Copies for the folder structure of added folders or specified folders.
+    Folders are added to the locale folder specified if one has been specified, 
+    or by default a new folder will be created with the name of the locale added 
+    to the folder name. If only one root folder is being cloned, then the locale 
+    folder is used (instead of creating a new folder inside of the locale folder).
+    """
+    try:
+        action = actions.Action(os.getcwd())
+        init_logger(action.path)
+        action.clone_action(file_paths)
+    except (UninitializedError, RequestFailedError) as e:
+        print_log(e)
+        logger.error(e)
+        return
 
 @ltk.command(short_help="Watches local and remote files")
 @click.option('-p', '--path', type=click.Path(exists=True), multiple=True, help='Specify a folder to watch. Use option multiple times to specify multiple folders.')
