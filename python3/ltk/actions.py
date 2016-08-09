@@ -1146,6 +1146,9 @@ class Action:
         except OSError:
             logger.info('Something went wrong trying to delete the local file.')
 
+    def clone_action(self, folders):
+        return
+
 def raise_error(json, error_message, is_warning=False, doc_id=None, file_name=None):
     try:
         error = json['messages'][0]

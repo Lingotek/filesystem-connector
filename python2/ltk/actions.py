@@ -535,9 +535,6 @@ class Action:
     def target_action(self, document_name, path, entered_locales, to_delete, due_date, workflow, document_id=None):
         is_successful = False
         locales = get_valid_locales(self.api, entered_locales)
-        print('<<<<Double check the integrity of these data')
-        print (entered_locales)
-        print('Double check the integrity of these data>>>>')
         if path:
             document_id = None
             document_name = None
@@ -1148,6 +1145,9 @@ class Action:
             logger.info(message)
         except OSError:
             logger.info('Something went wrong trying to delete the local file.')
+
+    def clone_action(self, folders):
+        return
 
 def raise_error(json, error_message, is_warning=False, doc_id=None, file_name=None):
     try:
