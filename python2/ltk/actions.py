@@ -243,13 +243,13 @@ class Action:
                 return locale
         return False
 
-    def config_action(self, locale, workflow_id, download_option, download_folder, target_locales, locale_folders, git_toggle, git_credentials, clear_locales):
+    def config_action(self, **kwargs):
         config_file_name, conf_parser = self.init_config_file()
-        if locale:
+        if 'locale' in kwargs and kwargs['locale']:
             self.locale = locale
             log_info = 'Project default locale has been updated to {0}'.format(locale)
             self.update_config_file('default_locale', locale, conf_parser, config_file_name, log_info)
-        if workflow_id:
+        if 'workflow_id' in kwargs and kwargs['workflow_id']:
             response = self.api.patch_project(self.project_id, workflow_id)
             if response.status_code != 204:
                 raise_error(response.json(), 'Something went wrong trying to update workflow_id of project')
@@ -257,7 +257,7 @@ class Action:
             log_info = 'Project default workflow has been updated to {0}'.format(workflow_id)
             self.update_config_file('workflow_id', workflow_id, conf_parser, config_file_name, log_info)
             conf_parser.set('main', 'workflow_id', workflow_id)
-        if download_folder:
+        if 'download_folder' in kwargs and kwargs['download_folder']:
             if os.path.exists(os.path.abspath(download_folder)):
                 # download_path = os.path.join(self.path, download_folder)
                 download_path = self.norm_path(download_folder)
@@ -267,7 +267,7 @@ class Action:
             else:
                 logger.warning('Error: Invalid value for "-d" / "--download_folder": Path "'+download_folder+'" does not exist.')
                 return
-        if download_option:
+        if 'download_option' in kwargs and kwargs['download_option']:
             if download_option in {'same','folder','clone'}:
                 self.download_option = download_option
                 log_info = 'Set download option to {0}'.format(download_option)
@@ -275,13 +275,13 @@ class Action:
             else:
                 logger.warning('Error: Invalid value for "-o" / "--download_option": Must be one of "same", "folder", or "clone".')
                 return 
-        if target_locales:
+        if 'target_locales' in kwargs and kwargs['target_locales']:
             target_locales = get_valid_locales(self.api, target_locales[0].split(','))
             target_locales_str = ','.join(target for target in target_locales)
             log_info = 'Added target locales: {} for watch folder'.format(target_locales_str)
             self.update_config_file('watch_locales', target_locales_str, conf_parser, config_file_name, log_info)
             self.watch_locales = target_locales
-        if locale_folders:
+        if 'locale_folders' in kwargs and kwargs['locale_folders']:
             mult_folders = False
             folders_count = len(locale_folders)
             folders_string = ""
@@ -325,7 +325,7 @@ class Action:
                     log_info = 'Adding locale folder for {0}'.format(folders_string)
             locale_folders_str = json.dumps(self.locale_folders)
             self.update_config_file('locale_folders', locale_folders_str, conf_parser, config_file_name, log_info)
-        if clear_locales:
+        if 'clear_locales' in kwargs and kwargs['clear_locales']:
             log_info = "Cleared all locale specific download folders."
             self.locale_folders = {}
             locale_folders_str = json.dumps(self.locale_folders)
@@ -336,7 +336,7 @@ class Action:
             self.update_config_file('git_username', '', conf_parser, config_file_name, 'Update: Added \'git username\' option (ltk config --help)')
             self.update_config_file('git_password', '', conf_parser, config_file_name, 'Update: Added \'git password\' option (ltk config --help)')
         self.git_autocommit = conf_parser.get('main', 'git_autocommit')     
-        if git_toggle:
+        if 'git' in kwargs and kwargs['git']:
             if self.git_autocommit == 'True' or self.git_auto.repo_exists(self.path):
                 log_info = 'Git auto-commit status changed from {0}active'.format(      
                     ('active to in' if self.git_autocommit == "True" else 'inactive to '))      
@@ -347,7 +347,7 @@ class Action:
                 else:
                     self.update_config_file('git_autocommit', 'True', conf_parser, config_file_name, log_info)
                     self.git_autocommit = "True"
-        if git_credentials:
+        if 'git_credentials' in kwargs and kwargs['git_credentials']:
             # Python 2
             git_username = raw_input('Username: ')
             # End Python 2

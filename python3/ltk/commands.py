@@ -129,12 +129,12 @@ def init(host, access_token, path, project_name, workflow_id, locale, delete, re
 @click.option('-c', '--clear_locales', flag_value=True, help='Clear all locale folders and use the default download location instead.')
 @click.option('-g', '--git', is_flag=True, help='Toggle Git auto-commit')
 @click.option('-gc', '--git_credentials', is_flag=True, help='Open prompt for Git credentials for auto-fill (\'none\' to unset)')
-def config(locale, workflow_id, download_option, download_folder, target_locales, locale_folder, git, git_credentials, clear_locales):
+def config(**kwargs):
     """ View or change local configuration """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
-        action.config_action(locale, workflow_id, download_option, download_folder, target_locales, locale_folder, git, git_credentials, clear_locales)
+        action.config_action(**kwargs)
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
