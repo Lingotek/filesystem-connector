@@ -643,7 +643,10 @@ class Action:
             return
         print ('%-30s' % 'Filename' + ' %-38s' % 'Lingotek ID' + 'Locales')
         for i in range(len(ids)):
-            info = '%-30s' % titles[i][(len(titles[i])-30):] + ' %-38s' % ids[i] + ', '.join(locale for locale in locales[i])
+            title = titles[i]
+            if len(title) > 30:
+                title = title[(len(titles[i])-30):]
+            info = '%-30s' % title + ' %-38s' % ids[i] + ', '.join(locale for locale in locales[i])
             print (info)
 
     def list_remote_action(self):
