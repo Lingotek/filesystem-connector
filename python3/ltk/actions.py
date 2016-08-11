@@ -175,11 +175,15 @@ class Action:
             norm_path = os.path.abspath(os.path.expanduser(file_location)).replace(self.path, '')
             # print("normalized path: "+norm_path)
             # print("joined path: "+str(os.path.join(self.path,file_location)))
-            if file_location is not "." and os.path.exists(os.path.join(self.path,file_location)):
+            # if file_location == ".." and self.path.rstrip('/') in norm_path:
+            #     return norm_path.replace(self.path.rstrip('/'), '')
+            if file_location is not "." and file_location != ".." and os.path.exists(os.path.join(self.path,file_location)):
                 # print("returning original path: "+str(file_location))
                 return file_location.replace(self.path, '')
             if not os.path.exists(os.path.join(self.path,norm_path)) and os.path.exists(os.path.join(self.path,file_location)):
                 # print("Starting path at project directory: "+file_location.replace(self.path, ''))
+                return os.path.abspath(os.path.expanduser(file_location.replace(self.path, ''))).replace(self.path, '')
+            elif file_location == "..":
                 return os.path.abspath(os.path.expanduser(file_location.replace(self.path, ''))).replace(self.path, '')
             return norm_path
         else:
@@ -917,6 +921,47 @@ class Action:
             document_ids = self.doc_manager.get_doc_ids()
             for document_id in document_ids:
                 self.download_action(document_id, locale_code, auto_format, locale_ext)
+
+    def mv_action(self, source, destination):
+        if not os.path.isdir(destination):
+            logger.error("Error: Destination is not directory")
+            return
+        elif not os.path.isfile(source):
+            logger.error("Error: Source is not a file")
+            return
+        path_sep = os.sep
+        path_to_source = os.path.abspath(source)
+        repo_directory = path_to_source
+        while repo_directory and repo_directory != "" and not (os.path.isdir(repo_directory + "/.ltk")):
+            repo_directory = repo_directory.split(path_sep)[:-1]
+            repo_directory = path_sep.join(repo_directory)
+        path_to_source = (path_to_source.replace(repo_directory, '',1)).lstrip(path_sep)
+        doc = self.doc_manager.get_doc_by_prop("file_name",path_to_source)
+        if not doc:
+            logger.error("Error: File has not been added and so can not be moved.")
+            return
+        destination = self.norm_path(destination.rstrip(path_sep))
+        if repo_directory in destination:
+            long_dest = os.path.abspath(destination)
+        else:
+            long_dest = repo_directory+path_sep+destination
+        dest_dirs = long_dest.split(path_sep)
+        for directory in repo_directory.split(path_sep):
+            if len(dest_dirs) > 0 and directory == dest_dirs[0]:
+                dest_dirs = dest_dirs[1:]
+            else: break
+        destination = path_sep.join(dest_dirs)
+        if destination != "":
+            destination+=path_sep
+        try:
+            base_name = os.path.basename(source)
+            new_path_short = destination+base_name
+            new_path_long = long_dest+path_sep+base_name
+            os.rename(source, new_path_long)
+            self.doc_manager.update_document('file_name', new_path_short, doc['id'])
+            logger.info("{0} has been moved to {1}".format(base_name, destination if destination != "" else long_dest))
+        except:
+            logger.error("An error prevented the document from being moved")
 
     def rm_document(self, file_name, useID, force, doc_name=None, is_directory=False):
         try:

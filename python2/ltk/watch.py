@@ -230,6 +230,7 @@ class WatchAction(Action):
         # Only add target if doc exists on the cloud
         if self.check_remote_doc_exist(title, document_id):
             locales_to_add = self.get_watch_locales(document_id)
+            if locales_to_add == ['[]']: locales_to_add = []
             # if len(locales_to_add) == 1:
             #     printStr = "Adding target "+locales_to_add[0]
             # else:

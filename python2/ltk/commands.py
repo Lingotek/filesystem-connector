@@ -318,6 +318,22 @@ def rm(file_names, **kwargs):
         logger.error(e)
         return
 
+@ltk.command(short_help="Move file at specified location to specified destination folder")
+@click.argument('source_file', type=click.Path(exists=True), required=True, nargs=1)
+@click.argument('destination_path', type=click.Path(exists=True), required=True, nargs=1)
+def mv(source_file, destination_path):
+    """
+    Moves specified local doc to specified destination directory.
+    """
+    try:
+        # action = actions.Action(os.getcwd())
+        action = ImportAction(os.getcwd())
+        init_logger(action.path)
+        action.mv_action(source_file, destination_path)
+    except(UninitializedError, RequestFailedError) as e:
+        print_log(e)
+        logger.error(e)
+        return
 
 @ltk.command(name='import', short_help="Import docs from Lingotek")
 @click.option('-a', '--all', 'import_all', flag_value=True, help='Import all documents from Lingotek Cloud')
