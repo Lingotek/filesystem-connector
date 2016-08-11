@@ -165,6 +165,31 @@ class Action:
         if (len(log_info)):
             logger.info(log_info+"\n")
 
+    def get_current_path(self, path):
+        cwd = os.getcwd()
+        if cwd in path:
+            path = path.replace(cwd,"")
+        else:
+            cwd_relative_path = cwd.replace(self.path,"")
+            return path.replace(cwd_relative_path+os.sep,"")
+
+    def get_current_abs(self, path):
+        # print("orig path: "+str(path))
+        cwd = os.getcwd()
+        if cwd in path:
+            path = path.replace(cwd,"")
+        else:
+            # print("cwd: "+cwd)
+            # print("self.path: "+self.path)
+            cwd_relative_path = cwd.replace(self.path,"")
+            # print("cwd relative path: "+cwd_relative_path)
+            cwd_path = path.replace(cwd_relative_path+os.sep,"")
+            # print("cwd path: "+cwd_path)
+            path = cwd_path
+        # print("current path: "+path)
+        # print("abs path: "+os.path.abspath(path))
+        return os.path.abspath(path)
+
     def norm_path(self, file_location):
         # print("original path: "+str(file_location))
         if file_location:
@@ -241,6 +266,7 @@ class Action:
 
     def config_action(self, locale, workflow_id, download_option, download_folder, target_locales, locale_folders, git_toggle, git_credentials, clear_locales):
         config_file_name, conf_parser = self.init_config_file()
+        print_config = True
         if locale:
             self.locale = locale
             log_info = 'Project default locale has been updated to {0}'.format(locale)
@@ -254,15 +280,14 @@ class Action:
             self.update_config_file('workflow_id', workflow_id, conf_parser, config_file_name, log_info)
             conf_parser.set('main', 'workflow_id', workflow_id)
         if download_folder:
-            if os.path.exists(os.path.abspath(download_folder)):
-                # download_path = os.path.join(self.path, download_folder)
-                download_path = self.norm_path(download_folder)
+            download_path = self.norm_path(download_folder)
+            if os.path.exists(os.path.join(self.path,download_path)):
                 self.download_dir = download_path
                 log_info = 'Set download folder to {0}'.format(download_path)
                 self.update_config_file('download_folder', download_path, conf_parser, config_file_name, log_info)
             else:
                 logger.warning('Error: Invalid value for "-d" / "--download_folder": Path "'+download_folder+'" does not exist.')
-                return
+                print_config = False
         if download_option:
             if download_option in {'same','folder','clone'}:
                 self.download_option = download_option
@@ -270,7 +295,7 @@ class Action:
                 self.update_config_file('download_option', download_option, conf_parser, config_file_name, log_info)
             else:
                 logger.warning('Error: Invalid value for "-o" / "--download_option": Must be one of "same", "folder", or "clone".')
-                return 
+                print_config = False
         if target_locales:
             target_locales = get_valid_locales(self.api, target_locales[0].split(','))
             target_locales_str = ','.join(target for target in target_locales)
@@ -287,29 +312,34 @@ class Action:
                 count += 1
                 if not folder[0] or not folder[1]:
                     logger.warning("Please specify a valid locale and a directory for that locale.")
+                    print_config = False
                     continue
                 locale = folder[0]
-                path = self.norm_path(folder[1])
                 if not is_valid_locale(self.api, locale):
                     logger.warning(str(locale+' is not a valid locale. See "ltk list -l" for the list of valid locales.'))
+                    print_config = False
                     continue
-                if path == '--none':
+                if folder[1] == '--none':
                     folders_count -= 1
                     if locale in self.locale_folders:
                         self.locale_folders.pop(locale, None)
                         logger.info("Removing download folder for locale "+str(locale)+"\n")
                     else:
                         logger.info("The locale "+str(locale)+" already has no download folder.\n")
+                        print_config = False
                     continue
-                if os.path.exists(path):
+                path = self.norm_path(folder[1])
+                if os.path.exists(os.path.join(self.path,path)):
                     taken_locale = self.is_locale_folder_taken(locale, path)
                     if taken_locale:
                         logger.info("The folder "+str(path)+" is already taken by the locale "+str(taken_locale)+".\n")
+                        print_config = False
                         continue
                     else:
                         self.locale_folders[locale] = path
                 else:
-                    logger.warning(str(path)+" is not a valid directory.")
+                    logger.warning('Error: Invalid value for "-p" / "--locale_folder": Path "'+path+'" does not exist.')
+                    print_config = False
                     continue
                 folders_string += str(locale) + ": " + str(path)
                 if count < len(locale_folders):
@@ -364,7 +394,7 @@ class Action:
                 log_info = 'Git password set'
             self.update_config_file('git_password', self.git_auto.encrypt(git_password), conf_parser, config_file_name, log_info)
         download_dir = "None"
-        if self.download_dir and self.download_dir != "--default" and self.download_dir != "--same":
+        if self.download_dir:
             download_dir = self.download_dir
         locale_folders_str = "None"
         if self.locale_folders:
@@ -377,10 +407,11 @@ class Action:
                 git_output += (' (' + current_git_username + ', password:' + ('YES' if current_git_password != '' else 'NO')) + ')'
             else:
                 git_output += (' (password:YES)' if current_git_password != '' else ' (no credentials set, recommend SSH key)')
-        print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity ID: {4}\nWorkflow ID: {5}\n' \
-              'Default Source Locale: {6}\nDownload Option: {7}\nDownload Folder: {8}\nWatch - Target Locales: {9}\nLocale folders: {10}\nGit auto-commit: {11}'.format(
-            self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.download_option,
-            download_dir, ','.join(target for target in self.watch_locales), locale_folders_str, git_output))
+        if print_config:
+            print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity ID: {4}\nWorkflow ID: {5}\n' \
+                  'Default Source Locale: {6}\nDownload Option: {7}\nDownload Folder: {8}\nWatch - Target Locales: {9}\nLocale folders: {10}\nGit auto-commit: {11}'.format(
+                self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.download_option,
+                download_dir, ','.join(target for target in self.watch_locales), locale_folders_str, git_output))
 
     def add_document(self, file_name, title, **kwargs):
         try:
@@ -1146,7 +1177,77 @@ class Action:
         except OSError:
             logger.info('Something went wrong trying to delete the local file.')
 
+    def clone_folders(self, dest_path, folders_map):
+        """ Copies subfolders of added folders to a particular destination folder (for a particular locale).
+            If there is more than one root folder to copy, each root folder is created inside of the destination folder.
+            If there is only one root folder to copy, only the subdirectories are copied."""
+        # print("dest_path: "+str(dest_path))
+        # print("folders to clone: "+str(folders_map))
+        if not folders_map or not len(folders_map):
+            logger.warning("No folders to clone.")
+            return
+        folder_created = False
+        prefix_folder = False
+        if not os.path.exists(dest_path):
+            os.mkdir(dest_path)
+            folder_created = True
+        if len(folders_map) > 1:
+            prefix_folder = True
+        for root_folder in folders_map:
+            # print("root folder: "+root_folder)
+            if prefix_folder:
+                new_root_path = dest_path + os.sep + root_folder
+                if not os.path.exists(new_root_path):
+                    os.mkdir(new_root_path)
+                    folder_created = True
+                for folder in folders_map[root_folder]:
+                    new_sub_root_path = dest_path + os.sep + root_folder + os.sep + folder
+                    if not os.path.exists(new_sub_root_path):
+                        os.mkdir(new_sub_root_path)
+                        folder_created = True
+                        # print("created folder "+new_sub_root_path)
+            else:
+                if folders_map[root_folder]:
+                    for folder in folders_map[root_folder]:
+                        new_path = dest_path + os.sep + folder
+                        if not os.path.exists(new_path):
+                            os.mkdir(new_path)
+                            folder_created = True
+                            # print("created folder "+ new_path)
+        return folder_created
+
     def clone_action(self, folders):
+        if not len(self.watch_locales):
+            info.warning("There are no locales for which to clone. You can add locales using 'ltk config -t'.")
+            return
+        folders_map = {}
+        are_added_folders = False
+        if not folders:
+            folders = self.folder_manager.get_file_names()
+            are_added_folders = True
+        for folder in folders:
+            folder_paths = folder.split(os.sep)
+            # print("current abs: "+str(self.get_current_abs(folder)))
+            if are_added_folders:
+                folder = os.path.join(self.path,folder)
+            folders_map[folder_paths[len(folder_paths)-1]] = get_sub_folders(folder)
+        # print("folders: "+str(folders_map))
+        cloned_folders = False
+        for locale in self.watch_locales:
+            dest_path = ""
+            if locale in self.locale_folders:
+                dest_path = self.locale_folders[locale]
+            else:
+                if self.download_dir:
+                    dest_path = os.path.join(self.get_current_path(self.download_dir),locale)
+                else:
+                    dest_path = os.path.join(self.path,locale)
+            dest_path = os.path.join(self.path,dest_path)
+            if self.clone_folders(dest_path, folders_map):
+                logger.info("Cloned locale " + str(locale) + " at " + dest_path)
+                cloned_folders = True
+        if not cloned_folders:
+            logger.info("All locales have already been cloned.")
         return
 
 def raise_error(json, error_message, is_warning=False, doc_id=None, file_name=None):
@@ -1450,6 +1551,41 @@ def printResponseMessages(response):
     for message in response.json()['messages']:
         logger.info(message)
 
+def get_sub_folders(patterns):
+    """ gets all sub-folders matching pattern from root
+        pattern supports any unix shell-style wildcards (not same as RE) 
+        returns the relative paths starting from each pattern"""
+
+    cwd = os.getcwd()
+    if isinstance(patterns,str):
+        patterns = [patterns]
+    allPatterns = []
+    # print("patterns: "+str(patterns))
+    for pattern in patterns:
+        basename = os.path.basename(pattern)
+        if basename and basename != "":
+            allPatterns.extend(getRegexDirs(pattern,cwd))
+        else:
+            allPatterns.append(pattern)
+    matched_dirs = []
+    # print("all patterns: "+str(allPatterns))
+    for pattern in allPatterns:
+        path = os.path.abspath(pattern)
+        # print("looking at path "+str(path))
+        # check if pattern contains subdirectory
+        if os.path.exists(path):
+            if os.path.isdir(path):
+                for root, subdirs, files in os.walk(path):
+                    split_path = root.split('/')
+                    for subdir in subdirs:
+                        # print(os.path.join(root, subdir))
+                        matched_dirs.append(os.path.join(root,subdir).replace(str(path)+os.sep,""))
+        else:
+            logger.info("Directory not found: "+pattern)
+    if len(matched_dirs) == 0:
+        return None
+    return matched_dirs
+
 def get_files(patterns):
     """ gets all files matching pattern from root
         pattern supports any unix shell-style wildcards (not same as RE) """
@@ -1474,7 +1610,7 @@ def get_files(patterns):
         if os.path.exists(path):
             if os.path.isdir(path):
                 for root, subdirs, files in os.walk(path):
-                    split_path = root.split('/')
+                    split_path = root.split(os.sep)
                     for file in files:
                         # print(os.path.join(root, file))
                         matched_files.append(os.path.join(root, file))
@@ -1500,6 +1636,22 @@ def get_files(patterns):
     if len(matched_files) == 0:
         return None
     return matched_files
+
+def getRegexDirs(pattern,path):
+    dir_name = os.path.dirname(pattern)
+    if dir_name:
+        path = os.path.join(path,dir_name)
+    pattern_name = os.path.basename(pattern)
+    # print("path: "+path)
+    # print("pattern: "+str(pattern))
+    matched_dirs = []
+    if pattern_name and not "*" in pattern:
+        return [pattern]
+    for path, subdirs, files in os.walk(path):
+        for dn in fnmatch.filter(subdirs, pattern):
+            matched_dirs.append(os.path.join(path, dn))
+    # print("matched dirs: "+str(matched_dirs))
+    return matched_dirs
 
 def getRegexFiles(pattern,path):
     dir_name = os.path.dirname(pattern)
