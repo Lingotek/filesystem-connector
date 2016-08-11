@@ -165,10 +165,25 @@ class Action:
         if (len(log_info)):
             logger.info(log_info+"\n")
 
+    def print_relative_path(self, path):
+        # orig_num_dirs = len(path.split(os.sep))
+        # print("orig_num_dirs: "+str(orig_num_dirs))
+        relative_num_dirs = len(os.getcwd().replace(self.path,"").split(os.sep))
+        current_num_dirs = len(self.get_current_path(path).split(os.sep)) - len(os.getcwd().replace(self.path,"").split(os.sep))
+        # print("current_num_dirs: "+str(current_num_dirs))
+        # print("relative_num_dirs: "+str(relative_num_dirs))
+        if relative_num_dirs > 0 and current_num_dirs > 0:
+            for i in range(relative_num_dirs):
+                path = ".." + os.sep + path
+        else:
+            path = self.get_current_path(path)
+        return path
+
     def get_current_path(self, path):
         cwd = os.getcwd()
         if cwd in path:
             path = path.replace(cwd,"")
+            return path
         else:
             cwd_relative_path = cwd.replace(self.path,"")
             return path.replace(cwd_relative_path+os.sep,"")
@@ -422,7 +437,7 @@ class Action:
                 git_output += (' (password:YES)' if current_git_password != '' else ' (no credentials set, recommend SSH key)')
         if print_config:
             print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity ID: {4}\nWorkflow ID: {5}\n' \
-                  'Default Source Locale: {6}\nDownload Option: {7}\nDownload Folder: {8}\nWatch - Target Locales: {9}\nLocale folders: {10}\nGit auto-commit: {11}'.format(
+                  'Default Source Locale: {6}\nDownload Option: {7}\nDownload Folder: {8}\nTarget Locales (for watch and clone): {9}\nLocale folders: {10}\nGit auto-commit: {11}'.format(
                 self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.download_option,
                 download_dir, ','.join(target for target in self.watch_locales), locale_folders_str, git_output))
 
@@ -670,7 +685,8 @@ class Action:
             # if entry['file_name'].startswith(cwd.replace(self.path, '')):
             ids.append(entry['id'])
             if path:
-                name = self.norm_path(entry['file_name'])
+                name = self.print_relative_path(self.norm_path(entry['file_name']))
+                # print("relative path: "+name)
             else:
                 name = entry['name']
             titles.append(name)
@@ -852,6 +868,14 @@ class Action:
             logger.warning("Could not connect to Lingotek")
             exit()
 
+    def added_folder_of_file(self, file_path):
+        folders = self.folder_manager.get_file_names()
+        for folder in folders:
+            if folder in file_path:
+                folder_paths = folder.split(os.sep)
+                folder = folder_paths[len(folder_paths)-1]
+                return folder
+
     def download_by_path(self, file_path, locale_codes, locale_ext, no_ext, auto_format):
         docs = self.get_docs_in_path(file_path)
         if len(docs) == 0:
@@ -873,23 +897,39 @@ class Action:
             self.download_action(document_id, locale_code, auto_format, locale_ext)
 
     def download_action(self, document_id, locale_code, auto_format, locale_ext=True):
-
         response = self.api.document_content(document_id, locale_code, auto_format)
         entry = None
         entry = self.doc_manager.get_doc_by_prop('id', document_id)
         if response.status_code == 200:
+            download_path = self.path
             if 'clone' in self.download_option:
+                if not locale_code:
+                    print("Cannot download "+str(entry['file_name']+" with no target locale."))
+                    return
                 if locale_code in self.locale_folders:
-                    download_path = self.locale_folders[locale_code]
-                elif self.download_dir:
-                    download_path = self.download_dir
+                    download_root = self.locale_folders[locale_code]
+                elif self.download_dir and len(self.download_dir):
+                    download_root = os.path.join(self.path,os.path.join(self.download_dir,locale_code))
+                else:
+                    download_root = os.path.join(self.path,locale_code)
+                source_path = os.path.dirname(entry['file_name'])
+                folder_of_doc = self.added_folder_of_file(source_path)
+                # print("added folder of doc: "+str(folder_of_doc))
+                download_path = os.path.join(download_root,folder_of_doc)
+                target_dirs = self.get_current_path(download_path).split(os.sep)
+                # print("target download path: "+str(download_path))
+                incremental_path = ""
+                for target_dir in target_dirs:
+                    incremental_path += target_dir + os.sep
+                    # print("target_dir: "+str(incremental_path))
+                    if not os.path.exists(incremental_path):
+                        os.mkdir(incremental_path)
+                        # print("Created directory "+str(incremental_path))
             elif 'folder' in self.download_option:
                 if locale_code in self.locale_folders:
                     download_path = self.locale_folders[locale_code]
                 else:
                     download_path = self.download_dir
-            else:
-                download_path = self.path
             if not entry:
                 doc_info = self.api.get_document(document_id)
                 try:
@@ -1234,7 +1274,7 @@ class Action:
         except OSError:
             logger.info('Something went wrong trying to delete the local file.')
 
-    def clone_folders(self, dest_path, folders_map):
+    def clone_folders(self, dest_path, folders_map, copy_root=False):
         """ Copies subfolders of added folders to a particular destination folder (for a particular locale).
             If there is more than one root folder to copy, each root folder is created inside of the destination folder.
             If there is only one root folder to copy, only the subdirectories are copied."""
@@ -1248,7 +1288,7 @@ class Action:
         if not os.path.exists(dest_path):
             os.mkdir(dest_path)
             folder_created = True
-        if len(folders_map) > 1:
+        if len(folders_map) > 1 or copy_root:
             prefix_folder = True
         for root_folder in folders_map:
             # print("root folder: "+root_folder)
@@ -1273,7 +1313,7 @@ class Action:
                             # print("created folder "+ new_path)
         return folder_created
 
-    def clone_action(self, folders):
+    def clone_action(self, folders, copy_root):
         if not len(self.watch_locales):
             info.warning("There are no locales for which to clone. You can add locales using 'ltk config -t'.")
             return
@@ -1300,7 +1340,7 @@ class Action:
                 else:
                     dest_path = os.path.join(self.path,locale)
             dest_path = os.path.join(self.path,dest_path)
-            if self.clone_folders(dest_path, folders_map):
+            if self.clone_folders(dest_path, folders_map, copy_root):
                 logger.info("Cloned locale " + str(locale) + " at " + dest_path)
                 cloned_folders = True
         if not cloned_folders:

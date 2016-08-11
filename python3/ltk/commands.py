@@ -323,7 +323,7 @@ def rm(file_names, **kwargs):
 @click.argument('destination_path', type=click.Path(exists=True), required=True, nargs=1)
 def mv(source_file, destination_path):
     """
-    Moves specified local doc to specified destination directory.
+    Moves specified local doc to a specified destination directory.
     """
     try:
         # action = actions.Action(os.getcwd())
@@ -382,9 +382,11 @@ def clean(force, dis_all, file_paths):
 
 @ltk.command(short_help="Copies added source folders for each locale")
 @click.argument('folders', required=False, nargs=-1)
-def clone(folders):
+@click.option('-c', '--copy_root', flag_value=True, help='Copies the root source folder as a subfolder inside the locale folder, even if there is only one source folder being cloned.')
+def clone(folders, copy_root):
     """
-    Copies for the folder structure of added folders or specified folders.
+    Copies the folder structure of added folders or specified folders
+    for each target locale as specified in config.
     Folders are added to the locale folder specified if one has been specified, 
     or by default a new folder will be created with the name of the locale added 
     to the folder name. If only one root folder is being cloned, then the locale 
@@ -393,7 +395,7 @@ def clone(folders):
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
-        action.clone_action(folders)
+        action.clone_action(folders, copy_root)
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
