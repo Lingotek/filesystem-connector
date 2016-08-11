@@ -393,7 +393,7 @@ def clone(folders):
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
-        action.clone_action(file_paths)
+        action.clone_action(folders)
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
