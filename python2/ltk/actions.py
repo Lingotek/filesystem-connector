@@ -1327,6 +1327,7 @@ class Action:
             # print("current abs: "+str(self.get_current_abs(folder)))
             if are_added_folders:
                 folder = os.path.join(self.path,folder)
+            # print("folder to be cloned: "+str(folder))
             folders_map[folder_paths[len(folder_paths)-1]] = get_sub_folders(folder)
         # print("folders: "+str(folders_map))
         cloned_folders = False
@@ -1657,13 +1658,20 @@ def get_sub_folders(patterns):
     if isinstance(patterns,str):
         patterns = [patterns]
     allPatterns = []
-    # print("patterns: "+str(patterns))
-    for pattern in patterns:
-        basename = os.path.basename(pattern)
+    if isinstance(patterns,list):
+        for pattern in patterns:
+            # print("pattern in loop: "+str(pattern))
+            basename = os.path.basename(pattern)
+            if basename and basename != "":
+                allPatterns.extend(getRegexDirs(pattern,cwd))
+            else:
+                allPatterns.append(pattern)
+    else:
+        basename = os.path.basename(patterns)
         if basename and basename != "":
-            allPatterns.extend(getRegexDirs(pattern,cwd))
+            allPatterns.extend(getRegexDirs(patterns,cwd))
         else:
-            allPatterns.append(pattern)
+            allPatterns.append(patterns)
     matched_dirs = []
     # print("all patterns: "+str(allPatterns))
     for pattern in allPatterns:
@@ -1692,12 +1700,19 @@ def get_files(patterns):
         patterns = [patterns]
     allPatterns = []
     # print("patterns: "+str(patterns))
-    for pattern in patterns:
-        basename = os.path.basename(pattern)
+    if isinstance(patterns,list):
+        for pattern in patterns:
+            basename = os.path.basename(pattern)
+            if basename and basename != "":
+                allPatterns.extend(getRegexFiles(pattern,cwd))
+            else:
+                allPatterns.append(pattern)
+    else:
+        basename = os.path.basename(patterns)
         if basename and basename != "":
-            allPatterns.extend(getRegexFiles(pattern,cwd))
+            allPatterns.extend(getRegexFiles(patterns,cwd))
         else:
-            allPatterns.append(pattern)
+            allPatterns.append(patterns)
     matched_files = []
     # print("all patterns: "+str(allPatterns))
     for pattern in allPatterns:
@@ -1747,7 +1762,7 @@ def getRegexDirs(pattern,path):
     for path, subdirs, files in os.walk(path):
         for dn in fnmatch.filter(subdirs, pattern):
             matched_dirs.append(os.path.join(path, dn))
-    # print("matched dirs: "+str(matched_dirs))
+    print("matched dirs: "+str(matched_dirs))
     return matched_dirs
 
 def getRegexFiles(pattern,path):

@@ -388,13 +388,15 @@ def clone(folders, copy_root):
     Copies the folder structure of added folders or specified folders
     for each target locale as specified in config.
     Folders are added to the locale folder specified if one has been specified, 
-    or by default a new folder will be created with the name of the locale added 
-    to the folder name. If only one root folder is being cloned, then the locale 
-    folder is used (instead of creating a new folder inside of the locale folder).
+    or by default a new folder will be created with the name of the locale. If 
+    only one root folder is being cloned, then the locale folder is used 
+    (instead of creating a new folder inside of the locale folder).
     """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
+        if isinstance(folders,str):
+            folders = [folders]
         action.clone_action(folders, copy_root)
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
