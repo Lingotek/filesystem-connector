@@ -166,6 +166,9 @@ class Action:
             logger.info(log_info+"\n")
 
     def print_relative_path(self, path):
+        print("norm path: "+str(path))
+        print("current path: "+str(self.get_current_path(path)))
+        print("current directory: "+str(os.getcwd()))
         # orig_num_dirs = len(path.split(os.sep))
         # print("orig_num_dirs: "+str(orig_num_dirs))
         relative_num_dirs = len(os.getcwd().replace(self.path,"").split(os.sep))
@@ -909,22 +912,28 @@ class Action:
                 if locale_code in self.locale_folders:
                     download_root = self.locale_folders[locale_code]
                 elif self.download_dir and len(self.download_dir):
-                    download_root = os.path.join(self.path,os.path.join(self.download_dir,locale_code))
+                    download_root = os.path.join(self.download_dir,locale_code)
                 else:
-                    download_root = os.path.join(self.path,locale_code)
+                    download_root = locale_code
+                download_root = os.path.join(self.path,download_root)
                 source_path = os.path.dirname(entry['file_name'])
                 folder_of_doc = self.added_folder_of_file(source_path)
                 # print("added folder of doc: "+str(folder_of_doc))
-                download_path = os.path.join(download_root,folder_of_doc)
-                target_dirs = self.get_current_path(download_path).split(os.sep)
+                download_path = os.path.join(download_root,folder_of_doc).replace(self.path,"")
+                target_dirs = download_path.split(os.sep)
                 # print("target download path: "+str(download_path))
                 incremental_path = ""
+                # print("download root: "+ str(download_root))
+                if not os.path.exists(download_root):
+                    os.mkdir(download_root)
                 for target_dir in target_dirs:
                     incremental_path += target_dir + os.sep
                     # print("target_dir: "+str(incremental_path))
-                    if not os.path.exists(incremental_path):
-                        os.mkdir(incremental_path)
-                        # print("Created directory "+str(incremental_path))
+                    new_path = os.path.join(self.path,incremental_path)
+                    # print("new path: "+str(new_path))
+                    if not os.path.exists(new_path):
+                        os.mkdir(new_path)
+                        # print("Created directory "+str(new_path))
             elif 'folder' in self.download_option:
                 if locale_code in self.locale_folders:
                     download_path = self.locale_folders[locale_code]
@@ -1337,7 +1346,7 @@ class Action:
                 dest_path = self.locale_folders[locale]
             else:
                 if self.download_dir:
-                    dest_path = os.path.join(self.get_current_path(self.download_dir),locale)
+                    dest_path = os.path.join(os.path.join(self.path,self.download_dir),locale)
                 else:
                     dest_path = os.path.join(self.path,locale)
             dest_path = os.path.join(self.path,dest_path)
@@ -1658,7 +1667,7 @@ def get_sub_folders(patterns):
     if isinstance(patterns,str):
         patterns = [patterns]
     allPatterns = []
-    if isinstance(patterns,list):
+    if isinstance(patterns,list) or isinstance(patterns,tuple):
         for pattern in patterns:
             # print("pattern in loop: "+str(pattern))
             basename = os.path.basename(pattern)
@@ -1699,8 +1708,7 @@ def get_files(patterns):
     if isinstance(patterns,str):
         patterns = [patterns]
     allPatterns = []
-    # print("patterns: "+str(patterns))
-    if isinstance(patterns,list):
+    if isinstance(patterns,list) or isinstance(patterns,tuple):
         for pattern in patterns:
             basename = os.path.basename(pattern)
             if basename and basename != "":
