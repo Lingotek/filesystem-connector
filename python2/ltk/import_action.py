@@ -12,7 +12,7 @@ class ImportAction(Action):
         while not len(chosen_ids) > 0:
             prompt_message = 'Documents to import: (Separate indices by comma) '
             # Python 2
-            confirm = raw_input(prompt_message)
+            choice = raw_input(prompt_message)
             # End Python 2
             # Python 3
 #             choice = input(prompt_message)
