@@ -207,13 +207,13 @@ def request(doc_name, path, locales, to_delete, due_date, workflow):
 # todo add a --all option to see all document ids once only show relative to cwd is implemented
 @ltk.command(name='list', short_help='Shows docs, workflows, locales, formats, or filters')
 @click.option('-d', '--documents', 'id_type', flag_value='document', help='List added documents')
-@click.option('-p', '--path', 'path', flag_value=True, help='List file paths of documents instead of titles')
+@click.option('-t', '--title', 'title', flag_value=True, help='List document titles and folder paths from project root instead of relative file paths')
 @click.option('-w', '--workflows', 'id_type', flag_value='workflow', help='List available workflows')
 @click.option('-l', '--locales', 'id_type', flag_value='locale', help='List supported locale codes')
 @click.option('-f', '--formats', 'id_type', flag_value='format', help='List supported formats')
 @click.option('-r', '--remote', 'id_type', flag_value='remote', help='List all project documents on Lingotek Cloud')
 @click.option('--filters', 'id_type', flag_value='filter', help='List default and custom filters')
-def list_ids(id_type, path):
+def list_ids(id_type, title):
     """ Shows docs, workflows, locales, formats, or filters """
     try:
         action = actions.Action(os.getcwd())
@@ -229,7 +229,7 @@ def list_ids(id_type, path):
         elif id_type == 'remote':
             action.list_remote_action()
         else:
-            action.list_ids_action(path)
+            action.list_ids_action(title)
 
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)

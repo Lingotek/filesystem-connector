@@ -165,22 +165,21 @@ class Action:
         if (len(log_info)):
             logger.info(log_info+"\n")
 
-    def print_relative_path(self, path):
-        print("norm path: "+str(path))
-        print("current path: "+str(self.get_current_path(path)))
-        print("current directory: "+str(os.getcwd()))
-        # orig_num_dirs = len(path.split(os.sep))
-        # print("orig_num_dirs: "+str(orig_num_dirs))
-        relative_num_dirs = len(os.getcwd().replace(self.path,"").split(os.sep))
-        current_num_dirs = len(self.get_current_path(path).split(os.sep)) - len(os.getcwd().replace(self.path,"").split(os.sep))
-        # print("current_num_dirs: "+str(current_num_dirs))
-        # print("relative_num_dirs: "+str(relative_num_dirs))
-        if relative_num_dirs > 0 and current_num_dirs > 0:
-            for i in range(relative_num_dirs):
-                path = ".." + os.sep + path
-        else:
-            path = self.get_current_path(path)
-        return path
+    def get_relative_path(self, path):
+        abs_path = os.path.dirname(os.path.join(self.path,path))
+        # print("abs_path: "+abs_path)
+        relative_path = os.path.relpath(abs_path,os.getcwd())
+        # print("relative path: "+relative_path)
+        if relative_path == '..' and os.path.join(self.path,path) == os.getcwd():
+            return '.'
+        relative_file_path = os.path.join(relative_path,os.path.basename(path))
+        split_path = relative_file_path.split(os.sep)
+        # print("cwd: "+os.getcwd())
+        # print("joined path: "+os.path.join(abs_path,os.path.basename(path)))
+
+        if len(split_path) and split_path[0] == '.' or os.path.join(abs_path,os.path.basename(path)) in os.getcwd():
+            relative_file_path = os.path.join(*split_path[1:])
+        return relative_file_path
 
     def get_current_path(self, path):
         cwd = os.getcwd()
@@ -672,26 +671,32 @@ class Action:
                 is_successful = True
         return is_successful
 
-    def list_ids_action(self, path=False):
+    def list_ids_action(self, title=False):
         """ lists ids of list_type specified """
         folders = self.folder_manager.get_file_names()
         if len(folders):
-            print("Folder name")
+            print("Folder path")
             for folder in folders:
-                print(folder)
+                if title:
+                    print(folder)
+                else:
+                    print(self.get_relative_path(folder))
             print("")
         ids = []
         titles = []
         locales = []
+        max_length = 0
         entries = self.doc_manager.get_all_entries()
         for entry in entries:
             # if entry['file_name'].startswith(cwd.replace(self.path, '')):
             ids.append(entry['id'])
-            if path:
-                name = self.print_relative_path(self.norm_path(entry['file_name']))
-                # print("relative path: "+name)
-            else:
+            if title:
                 name = entry['name']
+            else:
+                name = self.get_relative_path(self.norm_path(entry['file_name']))
+                # print("relative path: "+name)
+            if len(name) > max_length:
+                max_length = len(name)
             titles.append(name)
             try:
                 locales.append(entry['locales'])
@@ -700,12 +705,14 @@ class Action:
         if not ids:
             print ('No local documents')
             return
-        print ('%-30s' % 'Filename' + ' %-38s' % 'Lingotek ID' + 'Locales')
+        if max_length > 90:
+            max_length = 90
+        print ('%-*s' % (max_length,'Filename') + ' %-38s' % 'Lingotek ID' + 'Locales')
         for i in range(len(ids)):
             title = titles[i]
-            if len(title) > 30:
+            if len(title) > max_length:
                 title = title[(len(titles[i])-30):]
-            info = '%-30s' % title + ' %-38s' % ids[i] + ', '.join(locale for locale in locales[i])
+            info = '%-*s' % (max_length,title) + ' %-38s' % ids[i] + ', '.join(locale for locale in locales[i])
             print (info)
 
     def list_remote_action(self):
