@@ -691,7 +691,7 @@ class Action:
             # if entry['file_name'].startswith(cwd.replace(self.path, '')):
             ids.append(entry['id'])
             if title:
-                name = entry['name']
+                name = entry['title']
             else:
                 name = self.get_relative_path(self.norm_path(entry['file_name']))
                 # print("relative path: "+name)
