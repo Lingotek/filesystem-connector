@@ -991,9 +991,12 @@ class Action:
                         self.git_auto.initialize_repo()
                 if os.path.isfile(download_path):
                     self.git_auto.add_file(download_path)
-            with open(download_path, 'wb') as fh:
-                for chunk in response.iter_content(1024):
-                    fh.write(chunk)
+            try:
+                with open(download_path, 'wb') as fh:
+                    for chunk in response.iter_content(1024):
+                        fh.write(chunk)
+            except:
+                logger.warning('ERROR: Download failed at '+download_path)
             return download_path
         else:
             printResponseMessages(response)
