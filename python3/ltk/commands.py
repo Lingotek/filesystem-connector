@@ -318,18 +318,18 @@ def rm(file_names, **kwargs):
         logger.error(e)
         return
 
-@ltk.command(short_help="Move file at specified location to specified destination folder")
-@click.argument('source_file', type=click.Path(exists=True), required=True, nargs=1)
+@ltk.command(short_help="Move file or directory at the specified location to a specified destination folder.")
+@click.argument('source_path', type=click.Path(exists=True), required=True, nargs=1)
 @click.argument('destination_path', type=click.Path(exists=True), required=True, nargs=1)
-def mv(source_file, destination_path):
+def mv(source_path, destination_path):
     """
-    Moves specified local doc to a specified destination directory.
+    Moves specified local doc to a specified destination directory, moving both the file itself and file location stores in the local database. If SOURCE_PATH is a directory, all added files in the directory will be moved.
     """
     try:
         # action = actions.Action(os.getcwd())
         action = ImportAction(os.getcwd())
         init_logger(action.path)
-        action.mv_action(source_file, destination_path)
+        action.mv_action(source_path, destination_path)
     except(UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)

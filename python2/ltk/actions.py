@@ -259,7 +259,7 @@ class Action:
         locales = []
         response = self.api.document_translation_status(doc_id)
         if response.status_code != 200:
-            if response.json()['messages'] and 'No translations exist' in response.json()['messages'][0]:
+            if check_response(response) and response.json()['messages'] and 'No translations exist' in response.json()['messages'][0]:
                 return locales
             if doc_name:
                 raise_error(response.json(), 'Failed to check target locales for document '+doc_name, True, doc_id)
@@ -691,18 +691,21 @@ class Action:
         for entry in entries:
             # if entry['file_name'].startswith(cwd.replace(self.path, '')):
             ids.append(entry['id'])
-            if title:
-                name = entry['title']
-            else:
-                name = self.get_relative_path(self.norm_path(entry['file_name']))
-                # print("relative path: "+name)
-            if len(name) > max_length:
-                max_length = len(name)
-            titles.append(name)
+            try:
+                if title:
+                    name = entry['name']
+                else:
+                    name = self.get_relative_path(self.norm_path(entry['file_name']))
+                    # print("relative path: "+name)
+                if len(name) > max_length:
+                    max_length = len(name)
+                titles.append(name)
+            except (IndexError, KeyError):
+                titles.append("        ")
             try:
                 locales.append(entry['locales'])
             except KeyError:
-                locales.append(['none'])
+                locales.append([])
         if not ids:
             print ('No local documents')
             return
@@ -723,7 +726,7 @@ class Action:
             print("No documents to report")
             return
         elif response.status_code != 200:
-            if response.json():
+            if check_response(response):
                 raise_error(response.json(), "Failed to get status of documents", True)
             else:
                 raise_error("", "Failed to get status of documents", True)
@@ -832,7 +835,7 @@ class Action:
                     print("No documents to report")
                     return
                 elif response.status_code != 200:
-                    if response.json():
+                    if check_response():
                         raise_error(response.json(), "Failed to get status of documents", True)
                     else:
                         raise_error("", "Failed to get status of documents", True)
@@ -864,7 +867,7 @@ class Action:
                         error_message = "Failed to get status of document "+entry['name']
                     else:
                         error_message = "Failed to get status of document "+str(doc_id)
-                    if response.json():
+                    if check_response(response):
                         raise_error(response.json(), error_message, True, doc_id)
                     else:
                         raise_error("", str(response.status_code)+": "+error_message, True, doc_id)
@@ -877,13 +880,13 @@ class Action:
         except requests.exceptions.ConnectionError:
             logger.warning("Could not connect to Lingotek")
             exit()
-        # except ValueError:
-        #     logger.warning("Could not connect to Lingotek")
-        #     exit()
-        # # Python 3
-#         # except json.decoder.JSONDecodeError:
-#         #     logger.warning("Could not connect to Lingotek")
-#         #     exit()
+        except ValueError:
+            logger.warning("Could not connect to Lingotek")
+            exit()
+        # Python 3
+#         except json.decoder.JSONDecodeError:
+#             logger.warning("Could not connect to Lingotek")
+#             exit()
         # End Python 3
 
     def added_folder_of_file(self, file_path):
@@ -1032,13 +1035,7 @@ class Action:
             for document_id in document_ids:
                 self.download_action(document_id, locale_code, auto_format, locale_ext)
 
-    def mv_action(self, source, destination):
-        if not os.path.isdir(destination):
-            logger.error("Error: Destination is not directory")
-            return
-        elif not os.path.isfile(source):
-            logger.error("Error: Source is not a file")
-            return
+    def mv_file(self, source, destination):
         path_sep = os.sep
         path_to_source = os.path.abspath(source)
         repo_directory = path_to_source
@@ -1069,9 +1066,40 @@ class Action:
             new_path_long = long_dest+path_sep+base_name
             os.rename(source, new_path_long)
             self.doc_manager.update_document('file_name', new_path_short, doc['id'])
-            logger.info("{0} has been moved to {1}".format(base_name, destination if destination != "" else long_dest))
-        except:
-            logger.error("An error prevented the document from being moved")
+            return True
+        except Exception as e:
+            logger.error("ERROR: "+str(e))
+            logger.error("An error prevented document {0} from being moved".format(source))
+            return False
+
+    def mv_action(self, source, destination):
+        if not os.path.isdir(destination):
+            logger.error("Error: Destination is not a directory")
+            return
+        if os.path.isdir(source):
+            file_count = 0
+            files = self.get_doc_filenames_in_path(source)
+            for file in files:
+                file = os.path.join(self.path,file)
+                if os.path.isfile(file):
+                    if self.mv_file(file, destination):
+                        file_count += 1
+                else:
+                    print("Doc "+file+" is not a file")
+            if file_count == 1:
+                logger.info("Moved {0} file from {1} to {2}".format(file_count, source, destination))
+            elif file_count > 1:
+                logger.info("Moved {0} files from {1} to {2}".format(file_count, source, destination))
+            else:
+                logger.info("No files to move from {0}".format(source))
+        else:
+            if not os.path.isfile(source):
+                logger.error("Error: Source is not a file")
+                return
+            else:
+                if self.mv_file(source, destination):
+                    base_name = os.path.basename(source)
+                    logger.info("{0} has been moved to {1}".format(base_name, destination if destination != "" else long_dest))
 
     def rm_document(self, file_name, useID, force, doc_name=None, is_directory=False):
         try:
@@ -1144,7 +1172,7 @@ class Action:
                     print("No remote documents to remove")
                     return
                 elif response.status_code != 200:
-                    if response.json():
+                    if check_response(response):
                         raise_error(response.json(), "Failed to get status of documents", True)
                     else:
                         raise_error("", "Failed to get status of documents", True)

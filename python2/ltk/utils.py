@@ -151,3 +151,15 @@ def underline(text):
     else:
         # print("Recommended to install blessings module for better formatting")
         print(text)
+
+def check_response(response):
+    try:
+        if response and response.text:
+            if response.json():
+                return True
+    except ValueError:
+        return
+    # Python 3
+#     except json.decoder.JSONDecodeError:
+#         return
+    # End Python 3
