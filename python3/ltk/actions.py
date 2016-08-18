@@ -323,10 +323,12 @@ class Action:
                 print_config = False
         if 'target_locales' in kwargs and kwargs['target_locales']:
             target_locales = kwargs['target_locales']
-            if len(target_locales) == 1:
-                target_locales = get_valid_locales(self.api, target_locales[0].split(','))
+            locales = []
+            for locale in target_locales:
+                locales.extend(locale.split(','))
+            target_locales = get_valid_locales(self.api,locales)
             target_locales_str = ','.join(target for target in target_locales)
-            log_info = 'Added target locales: {} for watch folder'.format(target_locales_str)
+            log_info = 'Set target locales to {}'.format(target_locales_str)
             self.update_config_file('watch_locales', target_locales_str, conf_parser, config_file_name, log_info)
             self.watch_locales = target_locales
         if 'locale_folder' in kwargs and kwargs['locale_folder']:
