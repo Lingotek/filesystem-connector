@@ -2,6 +2,11 @@ import os, sys
 from ltk.locales import default_locales, locale_list
 from ltk.logger import logger
 import time
+try:
+    from blessings import Terminal
+    term = Terminal()
+except ImportError:
+    term = False
 # from constants import APP_ID
 
 class Enum(set):
@@ -138,3 +143,11 @@ def raise_error(json, error_message, is_warning=False, doc_id=None, file_name=No
 
 def error(error_message):
     logger.error(error_message+"\n")
+
+def underline(text):
+    if term:
+        with term.location(0, term.height - 1):
+            print(term.underline(text))
+    else:
+        # print("Recommended to install blessings module for better formatting")
+        print(text)

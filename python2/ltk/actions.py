@@ -12,13 +12,12 @@ import time
 import getpass
 from ltk import exceptions
 from ltk.apicalls import ApiCalls
-from ltk.utils import detect_format, map_locale, get_valid_locales, is_valid_locale
+from ltk.utils import detect_format, map_locale, get_valid_locales, is_valid_locale, underline
 from ltk.managers import DocumentManager, FolderManager
 from ltk.constants import CONF_DIR, CONF_FN, SYSTEM_FILE
 import json
 from ltk.logger import logger
 from ltk.git_auto import Git_Auto
-
 
 class Action:
     def __init__(self, path, watch=False, timeout=60):
@@ -675,7 +674,9 @@ class Action:
         """ lists ids of list_type specified """
         folders = self.folder_manager.get_file_names()
         if len(folders):
-            print("Folder path")
+            underline("Folder path")
+            # else:
+            #     print("Folder path")
             for folder in folders:
                 if title:
                     print(folder)
@@ -707,7 +708,7 @@ class Action:
             return
         if max_length > 90:
             max_length = 90
-        print ('%-*s' % (max_length,'Filename') + ' %-38s' % 'Lingotek ID' + 'Locales')
+        underline('%-*s' % (max_length,'Filename') + ' %-38s' % 'Lingotek ID' + 'Locales')
         for i in range(len(ids)):
             title = titles[i]
             if len(title) > max_length:
@@ -1448,7 +1449,6 @@ def reinit(host, project_path, delete, reset):
                 raise exceptions.ResourceNotFound("Cannot find config file, please re-initialize project")
             return access_token
     return True
-
 
 def choice_mapper(info):
     mapper = {}
