@@ -968,7 +968,7 @@ class Action:
                                 'Something went wrong trying to download document: {0}'.format(document_id), True)
                     return
                 download_path = os.path.join(download_path, title)
-                logger.info("Downloaded: {0}".format(title))
+                logger.info('Downloaded: {0} ({1} - {2})'.format(title, self.get_relative_path(download_path), locale_code))
             else:
                 file_name = entry['file_name']
                 base_name = os.path.basename(self.norm_path(file_name))
@@ -987,7 +987,7 @@ class Action:
                 if 'same' in self.download_option:
                     download_path = os.path.dirname(file_name)
                 download_path = os.path.join(self.path,os.path.join(download_path, downloaded_name))
-                logger.info('Downloaded: {0} ({1} - {2})'.format(downloaded_name, base_name, locale_code))
+                logger.info('Downloaded: {0} ({1} - {2})'.format(downloaded_name, self.get_relative_path(download_path), locale_code))
 
             self.doc_manager.add_element_to_prop(document_id, 'downloaded', locale_code)
             config_file_name, conf_parser = self.init_config_file()     
@@ -1300,14 +1300,14 @@ class Action:
         except OSError:
             logger.info('Something went wrong trying to delete the local file.')
 
-    def clone_folders(self, dest_path, folders_map, copy_root=False):
+    def clone_folders(self, dest_path, folders_map, locale, copy_root=False):
         """ Copies subfolders of added folders to a particular destination folder (for a particular locale).
             If there is more than one root folder to copy, each root folder is created inside of the destination folder.
             If there is only one root folder to copy, only the subdirectories are copied."""
         # print("dest_path: "+str(dest_path))
         # print("folders to clone: "+str(folders_map))
         if not folders_map or not len(folders_map):
-            logger.warning("No folders to clone.")
+            logger.warning("No folders to clone for locale "+str(locale)+".")
             return
         folder_created = False
         prefix_folder = False
@@ -1367,7 +1367,7 @@ class Action:
                 else:
                     dest_path = os.path.join(self.path,locale)
             dest_path = os.path.join(self.path,dest_path)
-            if self.clone_folders(dest_path, folders_map, copy_root):
+            if self.clone_folders(dest_path, folders_map, locale, copy_root):
                 logger.info("Cloned locale " + str(locale) + " at " + dest_path)
                 cloned_folders = True
         if not cloned_folders:
