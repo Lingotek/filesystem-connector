@@ -158,8 +158,10 @@ def check_response(response):
             if response.json():
                 return True
     except ValueError:
+        logger.warning("Could not connect to Lingotek")
         return
     # Python 3
 #     except json.decoder.JSONDecodeError:
+#         logger.warning("Could not connect to Lingotek")
 #         return
     # End Python 3

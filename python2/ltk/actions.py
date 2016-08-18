@@ -323,7 +323,8 @@ class Action:
                 print_config = False
         if 'target_locales' in kwargs and kwargs['target_locales']:
             target_locales = kwargs['target_locales']
-            target_locales = get_valid_locales(self.api, target_locales[0].split(','))
+            if len(target_locales) == 1:
+                target_locales = get_valid_locales(self.api, target_locales[0].split(','))
             target_locales_str = ','.join(target for target in target_locales)
             log_info = 'Added target locales: {} for watch folder'.format(target_locales_str)
             self.update_config_file('watch_locales', target_locales_str, conf_parser, config_file_name, log_info)
@@ -341,7 +342,7 @@ class Action:
                     logger.warning("Please specify a valid locale and a directory for that locale.")
                     print_config = False
                     continue
-                locale = folder[0]
+                locale = folder[0].replace("-","_")
                 if not is_valid_locale(self.api, locale):
                     logger.warning(str(locale+' is not a valid locale. See "ltk list -l" for the list of valid locales.'))
                     print_config = False
@@ -935,9 +936,7 @@ class Action:
                     download_root = locale_code
                 download_root = os.path.join(self.path,download_root)
                 source_path = os.path.dirname(entry['file_name'])
-                folder_of_doc = self.added_folder_of_file(source_path)
-                # print("added folder of doc: "+str(folder_of_doc))
-                download_path = os.path.join(download_root,folder_of_doc if folder_of_doc else '').replace(self.path,"")
+                download_path = os.path.join(download_root,source_path if source_path else '').replace(self.path,"")
                 target_dirs = download_path.split(os.sep)
                 # print("target download path: "+str(download_path))
                 incremental_path = ""
@@ -1072,34 +1071,35 @@ class Action:
             logger.error("An error prevented document {0} from being moved".format(source))
             return False
 
-    def mv_action(self, source, destination):
-        if not os.path.isdir(destination):
-            logger.error("Error: Destination is not a directory")
-            return
-        if os.path.isdir(source):
-            file_count = 0
-            files = self.get_doc_filenames_in_path(source)
-            for file in files:
-                file = os.path.join(self.path,file)
-                if os.path.isfile(file):
-                    if self.mv_file(file, destination):
-                        file_count += 1
-                else:
-                    print("Doc "+file+" is not a file")
-            if file_count == 1:
-                logger.info("Moved {0} file from {1} to {2}".format(file_count, source, destination))
-            elif file_count > 1:
-                logger.info("Moved {0} files from {1} to {2}".format(file_count, source, destination))
-            else:
-                logger.info("No files to move from {0}".format(source))
-        else:
-            if not os.path.isfile(source):
-                logger.error("Error: Source is not a file")
+    def mv_action(self, sources, destination):
+        for source in sources:
+            if not os.path.isdir(destination):
+                logger.error("Error: Destination is not a directory")
                 return
+            if os.path.isdir(source):
+                file_count = 0
+                files = self.get_doc_filenames_in_path(source)
+                for file in files:
+                    file = os.path.join(self.path,file)
+                    if os.path.isfile(file):
+                        if self.mv_file(file, destination):
+                            file_count += 1
+                    else:
+                        print("Doc "+file+" is not a file")
+                if file_count == 1:
+                    logger.info("Moved {0} file from {1} to {2}".format(file_count, source, destination))
+                elif file_count > 1:
+                    logger.info("Moved {0} files from {1} to {2}".format(file_count, source, destination))
+                else:
+                    logger.info("No files to move from {0}".format(source))
             else:
-                if self.mv_file(source, destination):
-                    base_name = os.path.basename(source)
-                    logger.info("{0} has been moved to {1}".format(base_name, destination if destination != "" else long_dest))
+                if not os.path.isfile(source):
+                    logger.error("Error: Source is not a file")
+                    return
+                else:
+                    if self.mv_file(source, destination):
+                        base_name = os.path.basename(source)
+                        logger.info("{0} has been moved to {1}".format(base_name, destination if destination != "" else long_dest))
 
     def rm_document(self, file_name, useID, force, doc_name=None, is_directory=False):
         try:

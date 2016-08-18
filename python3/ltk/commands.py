@@ -319,7 +319,7 @@ def rm(file_names, **kwargs):
         return
 
 @ltk.command(short_help="Move file or directory at the specified location to a specified destination folder.")
-@click.argument('source_path', type=click.Path(exists=True), required=True, nargs=1)
+@click.argument('source_path', type=click.Path(exists=True), required=True, nargs=-1)
 @click.argument('destination_path', type=click.Path(exists=True), required=True, nargs=1)
 def mv(source_path, destination_path):
     """
