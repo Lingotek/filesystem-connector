@@ -863,7 +863,10 @@ class Action:
                         error_message = "Failed to get status of document "+entry['name']
                     else:
                         error_message = "Failed to get status of document "+str(doc_id)
-                    raise_error(response.json(), error_message, True, doc_id)
+                    if response.json():
+                        raise_error(response.json(), error_message, True, doc_id)
+                    else:
+                        raise_error("", str(response.status_code)+": "+error_message, True, doc_id)
                 else:
                     title = response.json()['properties']['title']
                     progress = response.json()['properties']['progress']
@@ -873,10 +876,14 @@ class Action:
         except requests.exceptions.ConnectionError:
             logger.warning("Could not connect to Lingotek")
             exit()
-        except json.decoder.JSONDecodeError:
-            print("JSON error on getting status")
-            logger.warning("Could not connect to Lingotek")
-            exit()
+        # except ValueError:
+        #     logger.warning("Could not connect to Lingotek")
+        #     exit()
+        # # Python 3
+        # except json.decoder.JSONDecodeError:
+        #     logger.warning("Could not connect to Lingotek")
+        #     exit()
+        # End Python 3
 
     def added_folder_of_file(self, file_path):
         folders = self.folder_manager.get_file_names()
