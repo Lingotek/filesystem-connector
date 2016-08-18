@@ -927,14 +927,14 @@ class Action:
                 if locale_code in self.locale_folders:
                     download_root = self.locale_folders[locale_code]
                 elif self.download_dir and len(self.download_dir):
-                    download_root = os.path.join(self.download_dir,locale_code)
+                    download_root = os.path.join((self.download_dir if self.download_dir and self.download_dir != 'null' else ''),locale_code)
                 else:
                     download_root = locale_code
                 download_root = os.path.join(self.path,download_root)
                 source_path = os.path.dirname(entry['file_name'])
                 folder_of_doc = self.added_folder_of_file(source_path)
                 # print("added folder of doc: "+str(folder_of_doc))
-                download_path = os.path.join(download_root,folder_of_doc).replace(self.path,"")
+                download_path = os.path.join(download_root,folder_of_doc if folder_of_doc else '').replace(self.path,"")
                 target_dirs = download_path.split(os.sep)
                 # print("target download path: "+str(download_path))
                 incremental_path = ""
@@ -1363,7 +1363,7 @@ class Action:
             if locale in self.locale_folders:
                 dest_path = self.locale_folders[locale]
             else:
-                if self.download_dir:
+                if self.download_dir and self.download_dir != 'null':
                     dest_path = os.path.join(os.path.join(self.path,self.download_dir),locale)
                 else:
                     dest_path = os.path.join(self.path,locale)
