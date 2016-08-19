@@ -143,7 +143,6 @@ def config(**kwargs):
 
 @ltk.command(short_help="Adds content; could be one or more files specified by the Unix shell pattern")
 @click.argument('file_names', required=True, nargs=-1)
-@click.option('-d', '--directory', flag_value=True, help='Add folders without adding files inside folders.')
 @click.option('-l', '--locale', help='If source locale is different from the default configuration. Use ltk list -l to see possible locales')
 @click.option('-f', '--format',
               help="Format of file; if not specified, will use extension to detect; defaults to plaintext. Use ltk list -f to see possible formats. Files may not be added to Lingotek's system if not formatted correctly according to the specified format")
