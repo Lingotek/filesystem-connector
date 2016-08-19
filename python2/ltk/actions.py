@@ -479,6 +479,8 @@ class Action:
                     added_folder = True
             else:
                 logger.warning("Path "+str(pattern)+" doesn't exist.")
+        if 'directory' in kwargs and kwargs['directory']:
+            return
         matched_files = get_files(file_patterns)
         if not matched_files:
             if added_folder:
@@ -939,13 +941,26 @@ class Action:
                     download_root = os.path.join((self.download_dir if self.download_dir and self.download_dir != 'null' else ''),locale_code)
                 else:
                     download_root = locale_code
+                prefix_folder = False
+                if len(self.folder_manager.get_file_names()) > 1:
+                    prefix_folder = True
+                # print("original download root: "+str(download_root))
+                # print("Download dir being removed from path: "+self.download_dir)
+                # print("download root: "+ str(download_root))
                 download_root = os.path.join(self.path,download_root)
                 source_path = os.path.dirname(entry['file_name'])
+                split_path = source_path.split(os.sep)
+                # print("original source path: "+source_path)
+                if not prefix_folder:
+                    source_path = os.path.join(*split_path[0:len(split_path)-1])
+                # print("source path: "+str(source_path))
+                # if self.download_dir:
+                #     # Remove path to the download directory from path to the locale folder
+                #     source_path = os.path.join(self.path,source_path).replace(os.path.join(self.path,self.download_dir),"").replace(self.path,"")
                 download_path = os.path.join(download_root,source_path if source_path else '').replace(self.path,"")
                 target_dirs = download_path.split(os.sep)
                 # print("target download path: "+str(download_path))
                 incremental_path = ""
-                # print("download root: "+ str(download_root))
                 if not os.path.exists(download_root):
                     os.mkdir(download_root)
                 for target_dir in target_dirs:
