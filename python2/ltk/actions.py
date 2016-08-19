@@ -673,19 +673,22 @@ class Action:
                 is_successful = True
         return is_successful
 
-    def list_ids_action(self, title=False):
+    def list_ids_action(self, hide_docs, title=False):
         """ lists ids of list_type specified """
         folders = self.folder_manager.get_file_names()
         if len(folders):
             underline("Folder path")
-            # else:
-            #     print("Folder path")
             for folder in folders:
                 if title:
                     print(folder)
                 else:
                     print(self.get_relative_path(folder))
+            if hide_docs:
+                return
             print("")
+        elif hide_docs:
+            print("No added folders")
+            return
         ids = []
         titles = []
         locales = []
