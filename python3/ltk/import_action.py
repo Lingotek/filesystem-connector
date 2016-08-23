@@ -24,42 +24,48 @@ class ImportAction(Action):
         return chosen_ids
 
     def import_action(self, import_all, force, path, ids_to_import=None):
-        path = self.norm_path(path)
-        response = self.api.list_documents(self.project_id)
-        tms_doc_info = {}
-        if response.status_code == 200:
-            tms_documents = response.json()['entities']
-            for entity in tms_documents:
-                doc_info = {'title': entity['properties']['title'], 'extension': entity['properties']['extension']}
-                tms_doc_info[entity['properties']['id']] = doc_info
-        elif response.status_code == 204:
-            logger.error('No documents to import!')
-            return
-        else:
-            raise_error(response.json(), 'Error finding current documents in Lingotek Cloud')
-
-        if not ids_to_import:
-            if import_all:
-                # Python 2
-                # ids_to_import = tms_doc_info.iterkeys()
-                # End Python 2
-                # Python 3
-                ids_to_import = iter(tms_doc_info)
-                # End Python 3
+        try:
+            path = self.norm_path(path)
+            response = self.api.list_documents(self.project_id)
+            tms_doc_info = {}
+            if response.status_code == 200:
+                tms_documents = response.json()['entities']
+                for entity in tms_documents:
+                    doc_info = {'title': entity['properties']['title'], 'extension': entity['properties']['extension']}
+                    tms_doc_info[entity['properties']['id']] = doc_info
+            elif response.status_code == 204:
+                logger.error('No documents to import!')
+                return
             else:
-                import_doc_info = {}
-                # Python 2
-                # for k, v in tms_doc_info.iteritems():
-                # End Python 2
-                # Python 3
-                for k, v in tms_doc_info.items():
-                # End Python 3
-                    import_doc_info[k] = v['title']
-                ids_to_import = self.get_import_ids(import_doc_info)
-        else:
-            ids_to_import = [ids_to_import]
-        for curr_id in ids_to_import:
-            self.import_document(curr_id, tms_doc_info[curr_id], force, path)
+                raise_error(response.json(), 'Error finding current documents in Lingotek Cloud')
+
+            if not ids_to_import:
+                if import_all:
+                    # Python 2
+                    # ids_to_import = tms_doc_info.iterkeys()
+                    # End Python 2
+                    # Python 3
+                    ids_to_import = iter(tms_doc_info)
+                    # End Python 3
+                else:
+                    import_doc_info = {}
+                    # Python 2
+                    # for k, v in tms_doc_info.iteritems():
+                    # End Python 2
+                    # Python 3
+                    for k, v in tms_doc_info.items():
+                    # End Python 3
+                        import_doc_info[k] = v['title']
+                    ids_to_import = self.get_import_ids(import_doc_info)
+            else:
+                ids_to_import = [ids_to_import]
+            for curr_id in ids_to_import:
+                self.import_document(curr_id, tms_doc_info[curr_id], force, path)
+        except Exception as e:
+            if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
+                logger.error("Error connecting to Lingotek's TMS")
+            else:
+                logger.error("Error on import: "+str(e))
 
     def import_check(self, document_id, title, force=False, path=False):
         if not path:
