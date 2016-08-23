@@ -165,3 +165,36 @@ def check_response(response):
         logger.warning("Could not connect to Lingotek")
         return
     # End Python 3
+
+def remove_begin_slashes(path):
+    index = 0
+    for letter in path:
+        if letter != os.sep:
+            break
+        index += 1
+    if len(path) > index + 1:
+        return path[index:]
+    else:
+        return ''
+    return path
+
+
+def remove_end_slashes(path):
+    index = len(path) - 1
+    for letter in reversed(path):
+        if letter != os.sep:
+            break
+        index -= 1
+    if index > 0:
+        return path[:index - 1]
+    else:
+        return ''
+    return path
+
+def remove_last_folder_in_path(path):
+    if len(path):
+        split_path = path.split(os.sep)
+        split_path = split_path[:len(split_path) - 1]
+        return os.path.join(*split_path)
+    else:
+        return path

@@ -12,7 +12,7 @@ import time
 import getpass
 from ltk import exceptions
 from ltk.apicalls import ApiCalls
-from ltk.utils import check_response, detect_format, map_locale, get_valid_locales, is_valid_locale, underline
+from ltk.utils import check_response, detect_format, map_locale, get_valid_locales, is_valid_locale, underline, remove_begin_slashes, remove_end_slashes, remove_last_folder_in_path
 from ltk.managers import DocumentManager, FolderManager
 from ltk.constants import CONF_DIR, CONF_FN, SYSTEM_FILE
 import json
@@ -326,11 +326,16 @@ class Action:
             locales = []
             for locale in target_locales:
                 locales.extend(locale.split(','))
-            target_locales = get_valid_locales(self.api,locales)
-            target_locales_str = ','.join(target for target in target_locales)
-            log_info = 'Set target locales to {}'.format(target_locales_str)
-            self.update_config_file('watch_locales', target_locales_str, conf_parser, config_file_name, log_info)
-            self.watch_locales = target_locales
+            if len(locales) > 0 and locales[0].lower() == 'none':
+                log_info = 'Removing all target locales.'
+                self.update_config_file('watch_locales', "", conf_parser, config_file_name, log_info)
+            else:
+                target_locales = get_valid_locales(self.api,locales)
+                target_locales_str = ','.join(target for target in target_locales)
+                if len(target_locales_str) > 0:
+                    log_info = 'Set target locales to {}'.format(target_locales_str)
+                    self.update_config_file('watch_locales', target_locales_str, conf_parser, config_file_name, log_info)
+                    self.watch_locales = target_locales
         if 'locale_folder' in kwargs and kwargs['locale_folder']:
             locale_folders = kwargs['locale_folder']
             mult_folders = False
@@ -358,7 +363,7 @@ class Action:
                         logger.info("The locale "+str(locale)+" already has no download folder.\n")
                         print_config = False
                     continue
-                path = self.norm_path(folder[1])
+                path = self.norm_path(os.path.abspath(folder[1]))
                 if os.path.exists(os.path.join(self.path,path)):
                     taken_locale = self.is_locale_folder_taken(locale, path)
                     if taken_locale:
@@ -441,7 +446,7 @@ class Action:
                 git_output += (' (password:YES)' if current_git_password != '' else ' (no credentials set, recommend SSH key)')
         if print_config:
             print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity ID: {4}\nWorkflow ID: {5}\n' \
-                  'Default Source Locale: {6}\nDownload Option: {7}\nDownload Folder: {8}\nTarget Locales (for watch and clone): {9}\nLocale folders: {10}\nGit auto-commit: {11}'.format(
+                  'Default Source Locale: {6}\nDownload Option: {7}\nDownload Folder: {8}\nTarget Locales (for watch and clone): {9}\nLocale Folders: {10}\nGit Auto-commit: {11}'.format(
                 self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.download_option,
                 download_dir, ','.join(target for target in self.watch_locales), locale_folders_str, git_output))
 
@@ -713,7 +718,7 @@ class Action:
             except KeyError:
                 locales.append([])
         if not ids:
-            print ('No local documents')
+            print ('No local documents.')
             return
         if max_length > 90:
             max_length = 90
@@ -898,9 +903,8 @@ class Action:
     def added_folder_of_file(self, file_path):
         folders = self.folder_manager.get_file_names()
         for folder in folders:
+            folder = os.path.join(self.path, folder)
             if folder in file_path:
-                folder_paths = folder.split(os.sep)
-                folder = folder_paths[len(folder_paths)-1]
                 return folder
 
     def download_by_path(self, file_path, locale_codes, locale_ext, no_ext, auto_format):
@@ -911,7 +915,7 @@ class Action:
             locales = []
             if locale_codes:
                 locales = locale_codes.split(",")
-            else:
+            elif 'locales' in entry:
                 locales = entry['locales']
             if 'clone' in self.download_option and not locale_ext or (no_ext and not locale_ext):
                 self.download_locales(entry['id'], locales, auto_format, False)
@@ -933,6 +937,7 @@ class Action:
                 if not locale_code:
                     print("Cannot download "+str(entry['file_name']+" with no target locale."))
                     return
+                # download_root is the path to the root of the locale folder.
                 if locale_code in self.locale_folders:
                     download_root = self.locale_folders[locale_code]
                 elif self.download_dir and len(self.download_dir):
@@ -940,12 +945,22 @@ class Action:
                 else:
                     download_root = locale_code
                 download_root = os.path.join(self.path,download_root)
-                source_path = os.path.dirname(entry['file_name'])
-                download_path = os.path.join(download_root,source_path if source_path else '').replace(self.path,"")
+                # print("download_root: "+download_root)
+                source_file_name = entry['file_name']
+                source_path = os.path.join(self.path,os.path.dirname(source_file_name))
+                # print("original source_path: "+source_path)
+                # Get the path from the added source folder to the source document.
+                added_folder = self.added_folder_of_file(source_path)
+                if len(self.folder_manager.get_file_names()) > 1:
+                    added_folder = remove_last_folder_in_path(added_folder)
+                # print("added folder of file: "+os.sep+remove_begin_slashes(added_folder))
+                source_path = remove_begin_slashes(source_path.replace(os.sep+remove_begin_slashes(added_folder),""))
+                # print("replaced source_path: "+source_path)
+                # Copy the path into the locale folder (download_root).
+                download_path = os.path.join(download_root,(source_path if source_path else ''))
+                # print("download_path: "+download_path)
                 target_dirs = download_path.split(os.sep)
-                # print("target download path: "+str(download_path))
                 incremental_path = ""
-                # print("download root: "+ str(download_root))
                 if not os.path.exists(download_root):
                     os.mkdir(download_root)
                 for target_dir in target_dirs:
@@ -954,8 +969,11 @@ class Action:
                     new_path = os.path.join(self.path,incremental_path)
                     # print("new path: "+str(new_path))
                     if not os.path.exists(new_path):
-                        os.mkdir(new_path)
-                        # print("Created directory "+str(new_path))
+                        try:
+                            os.mkdir(new_path)
+                            # print("Created directory "+str(new_path))
+                        except Exception as e:
+                            logger.warning("Could not create cloned directory "+new_path)
             elif 'folder' in self.download_option:
                 if locale_code in self.locale_folders:
                     download_path = self.locale_folders[locale_code]
@@ -1171,10 +1189,11 @@ class Action:
             useID = False
         if 'all' in kwargs and kwargs['all']:
             self.folder_manager.clear_all()
+            logger.info("Removed all folders.")
             if 'remote' in kwargs and kwargs['remote']:
                 response = self.api.list_documents(self.project_id)
                 if response.status_code == 204:
-                    print("No remote documents to remove")
+                    print("No remote documents to remove.")
                     return
                 elif response.status_code != 200:
                     if check_response(response):
@@ -1374,8 +1393,11 @@ class Action:
         return folder_created
 
     def clone_action(self, folders, copy_root):
+        if not len(self.folder_manager.get_file_names()):
+            logger.warning("There are no added folders to clone.")
+            return
         if not len(self.watch_locales):
-            info.warning("There are no locales for which to clone. You can add locales using 'ltk config -t'.")
+            logger.warning("There are no locales for which to clone. You can add locales using 'ltk config -t'.")
             return
         folders_map = {}
         are_added_folders = False
