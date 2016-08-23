@@ -12,7 +12,7 @@ import time
 import getpass
 from ltk import exceptions
 from ltk.apicalls import ApiCalls
-from ltk.utils import detect_format, map_locale, get_valid_locales, is_valid_locale, underline
+from ltk.utils import check_response, detect_format, map_locale, get_valid_locales, is_valid_locale, underline
 from ltk.managers import DocumentManager, FolderManager
 from ltk.constants import CONF_DIR, CONF_FN, SYSTEM_FILE
 import json
@@ -841,7 +841,7 @@ class Action:
                     print("No documents to report")
                     return
                 elif response.status_code != 200:
-                    if check_response():
+                    if check_response(response):
                         raise_error(response.json(), "Failed to get status of documents", True)
                     else:
                         raise_error("", "Failed to get status of documents", True)
