@@ -143,6 +143,8 @@ def config(**kwargs):
 
 @ltk.command(short_help="Adds content; could be one or more files specified by the Unix shell pattern")
 @click.argument('file_names', required=True, nargs=-1)
+@click.option('-d', '--directory', flag_value=True, help='Only add directories, not files inside directories')
+@click.option('-s', '--srx', type=click.Path(exists=True), help='srx file')
 @click.option('-l', '--locale', help='If source locale is different from the default configuration. Use ltk list -l to see possible locales')
 @click.option('-f', '--format',
               help="Format of file; if not specified, will use extension to detect; defaults to plaintext. Use ltk list -f to see possible formats. Files may not be added to Lingotek's system if not formatted correctly according to the specified format")
@@ -296,6 +298,7 @@ def pull(auto_format, locale_ext, no_ext, locales):
 
 @ltk.command(short_help="Disassociates local doc(s) from Lingotek Cloud and deletes the remote copy")
 @click.argument('file_names', required=False, nargs=-1)
+@click.option('-d', '--directory', flag_value=True, help='Only remove directories, not files inside directories')
 @click.option('-i', '--id', flag_value=True, help='Delete documents with the specified ids (instead of file names) on Lingotek Cloud')
 @click.option('-n', '--name', flag_value=True, help='Delete documents with the specified names (instead of file names or paths) on Lingotek Cloud')
 @click.option('-a', '--all', flag_value=True, help='Delete all documents from Lingotek Cloud that are found locally')

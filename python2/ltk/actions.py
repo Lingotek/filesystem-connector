@@ -484,6 +484,10 @@ class Action:
                     added_folder = True
             else:
                 logger.warning("Path "+str(pattern)+" doesn't exist.")
+        if 'directory' in kwargs and kwargs['directory']:
+            if not added_folder:
+                logger.info("No folders to add at the given path(s).")
+            return
         matched_files = get_files(file_patterns)
         if not matched_files:
             if added_folder:
@@ -899,6 +903,8 @@ class Action:
 #             logger.warning("Could not connect to Lingotek")
 #             exit()
         # End Python 3
+        except Exception as e:
+            logger.warning("Error on requesting status: "+str(e))
 
     def added_folder_of_file(self, file_path):
         folders = self.folder_manager.get_file_names()
@@ -1168,14 +1174,20 @@ class Action:
             logger.error("Error on removing document "+str(file_name)+": "+str(e))
 
     def rm_action(self, file_patterns, **kwargs):
+        removed_folder = False
         for pattern in file_patterns:
             if os.path.isdir(pattern):
                 # print("checking folder "+self.norm_path(pattern))
                 if self.folder_manager.folder_exists(self.norm_path(pattern)):
                     self.folder_manager.remove_element(self.norm_path(pattern))
                     logger.info("Removed folder "+str(file_patterns[0]))
+                    removed_folder = True
                 else:
                     logger.warning("Folder "+str(pattern)+" has not been added and so can not be removed.")
+        if 'directory' in kwargs and kwargs['directory']:
+            if not removed_folder:
+                logger.info("No folders to remove at the given path(s).")
+            return
         matched_files = None
         if isinstance(file_patterns,str):
             file_patterns = [file_patterns]
@@ -1393,9 +1405,6 @@ class Action:
         return folder_created
 
     def clone_action(self, folders, copy_root):
-        if not len(self.folder_manager.get_file_names()):
-            logger.warning("There are no added folders to clone.")
-            return
         if not len(self.watch_locales):
             logger.warning("There are no locales for which to clone. You can add locales using 'ltk config -t'.")
             return
@@ -1426,6 +1435,9 @@ class Action:
             if self.clone_folders(dest_path, folders_map, locale, copy_root):
                 logger.info("Cloned locale " + str(locale) + " at " + dest_path)
                 cloned_folders = True
+        if not len(self.folder_manager.get_file_names()):
+            logger.warning("There are no added folders to clone.")
+            return
         if not cloned_folders:
             logger.info("All locales have already been cloned.")
         return
