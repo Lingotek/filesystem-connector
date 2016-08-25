@@ -198,3 +198,20 @@ def remove_last_folder_in_path(path):
         return os.path.join(*split_path)
     else:
         return path
+
+# Takes a path normalized relative to the project root (path) and returns the path relative to the current directory.
+def get_relative_path(path_to_project_root, path):
+    abs_path = os.path.dirname(os.path.join(path_to_project_root,path))
+    # print("abs_path: "+abs_path)
+    relative_path = os.path.relpath(abs_path,os.getcwd())
+    # print("relative path: "+relative_path)
+    if relative_path == '..' and os.path.join(path_to_project_root,path) == os.getcwd():
+        return '.'
+    relative_file_path = os.path.join(relative_path,os.path.basename(path))
+    split_path = relative_file_path.split(os.sep)
+    # print("cwd: "+os.getcwd())
+    # print("joined path: "+os.path.join(abs_path,os.path.basename(path)))
+
+    if len(split_path) and split_path[0] == '.' or os.path.join(abs_path,os.path.basename(path)) in os.getcwd():
+        relative_file_path = os.path.join(*split_path[1:])
+    return relative_file_path

@@ -12,7 +12,7 @@ import time
 import getpass
 from ltk import exceptions
 from ltk.apicalls import ApiCalls
-from ltk.utils import check_response, detect_format, map_locale, get_valid_locales, is_valid_locale, underline, remove_begin_slashes, remove_end_slashes, remove_last_folder_in_path
+from ltk.utils import check_response, detect_format, map_locale, get_valid_locales, is_valid_locale, underline, remove_begin_slashes, remove_end_slashes, remove_last_folder_in_path, get_relative_path
 from ltk.managers import DocumentManager, FolderManager
 from ltk.constants import CONF_DIR, CONF_FN, SYSTEM_FILE
 import json
@@ -165,21 +165,7 @@ class Action:
             logger.info(log_info+"\n")
 
     def get_relative_path(self, path):
-        abs_path = os.path.dirname(os.path.join(self.path,path))
-        # print("abs_path: "+abs_path)
-        relative_path = os.path.relpath(abs_path,os.getcwd())
-        # print("relative path: "+relative_path)
-        if relative_path == '..' and os.path.join(self.path,path) == os.getcwd():
-            return '.'
-        relative_file_path = os.path.join(relative_path,os.path.basename(path))
-        split_path = relative_file_path.split(os.sep)
-        # print("cwd: "+os.getcwd())
-        # print("joined path: "+os.path.join(abs_path,os.path.basename(path)))
-
-        if len(split_path) and split_path[0] == '.' or os.path.join(abs_path,os.path.basename(path)) in os.getcwd():
-            relative_file_path = os.path.join(*split_path[1:])
-        return relative_file_path
-
+        return get_relative_path(self.path, path)
     def get_current_path(self, path):
         cwd = os.getcwd()
         if cwd in path:

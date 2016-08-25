@@ -1,7 +1,7 @@
 import ctypes
 from ltk.actions import Action
 from ltk.logger import logger
-from ltk.utils import map_locale, restart
+from ltk.utils import map_locale, restart, get_relative_path
 from ltk.locales import locale_list
 import time
 import requests
@@ -349,6 +349,8 @@ class WatchAction(Action):
         # print self.path
         if not watch_paths:
             watch_paths = self.folder_manager.get_file_names()
+            for i in range(len(watch_paths)):
+                watch_paths[i] = get_relative_path(self.path, watch_paths[i])
         else:
             watch_paths_list = []
             for path in watch_paths:
