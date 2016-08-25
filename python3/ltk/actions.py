@@ -1120,9 +1120,10 @@ class Action:
             else:
                 logger.error("Error on pull: "+str(e))
 
-    def mv_file(self, source, destination):
+    def mv_file(self, source, destination, destination_exists=True):
         try:
             path_sep = os.sep
+            original_destination = destination
             path_to_source = os.path.abspath(source)
             repo_directory = path_to_source
             while repo_directory and repo_directory != "" and not (os.path.isdir(repo_directory + "/.ltk")):
@@ -1134,10 +1135,12 @@ class Action:
                 logger.error("Error: File has not been added and so can not be moved.")
                 return
             destination = self.norm_path(destination.rstrip(path_sep))
+            sub_destination = path_sep.join(destination.split(path_sep)[:-1])
             if repo_directory in destination:
                 long_dest = os.path.abspath(destination)
             else:
                 long_dest = repo_directory+path_sep+destination
+            sub_long_dest = path_sep.join(long_dest.split(path_sep)[:-1])
             dest_dirs = long_dest.split(path_sep)
             for directory in repo_directory.split(path_sep):
                 if len(dest_dirs) > 0 and directory == dest_dirs[0]:
@@ -1148,10 +1151,18 @@ class Action:
                 destination+=path_sep
             try:
                 base_name = os.path.basename(source)
-                new_path_short = destination+base_name
-                new_path_long = long_dest+path_sep+base_name
-                os.rename(source, new_path_long)
-                self.doc_manager.update_document('file_name', new_path_short, doc['id'])
+                if destination_exists:
+                    new_path_short = destination+base_name
+                    new_path_long = long_dest+path_sep+base_name
+                    os.rename(source, new_path_long)
+                    self.doc_manager.update_document('file_name', new_path_short, doc['id'])
+                else:
+                    new_path_short = sub_destination+path_sep+original_destination
+                    new_path_long = sub_long_dest+path_sep+original_destination
+                    if new_path_long.rstrip(path_sep).rstrip(doc['name']) != new_path_long.rstrip(path_sep):
+                        self.doc_manager.update_document('name', original_destination, doc['id'])
+                    os.rename(source, new_path_long)
+                    self.doc_manager.update_document('file_name', new_path_short, doc['id'])
                 return True
             except Exception as e:
                 logger.error("ERROR: "+str(e))
@@ -1167,8 +1178,9 @@ class Action:
         try:
             for source in sources:
                 if not os.path.isdir(destination):
-                    logger.error("Error: Destination is not a directory")
-                    return
+                    if self.mv_file(source, destination, destination_exists=False): logger.info("Renamed "+source+" as "+destination)
+                    else: logger.info("Something went wrong")
+                    continue
                 if os.path.isdir(source):
                     file_count = 0
                     files = self.get_doc_filenames_in_path(source)

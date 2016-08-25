@@ -323,7 +323,7 @@ def rm(file_names, **kwargs):
 
 @ltk.command(short_help="Move file or directory at the specified location to a specified destination folder.")
 @click.argument('source_path', type=click.Path(exists=True), required=True, nargs=-1)
-@click.argument('destination_path', type=click.Path(exists=True), required=True, nargs=1)
+@click.argument('destination_path', required=True, nargs=1)
 def mv(source_path, destination_path):
     """
     Moves specified local doc to a specified destination directory, moving both the file itself and file location stores in the local database. If SOURCE_PATH is a directory, all added files in the directory will be moved.
