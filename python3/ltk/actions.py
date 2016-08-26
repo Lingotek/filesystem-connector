@@ -166,6 +166,7 @@ class Action:
 
     def get_relative_path(self, path):
         return get_relative_path(self.path, path)
+        
     def get_current_path(self, path):
         cwd = os.getcwd()
         if cwd in path:
@@ -436,7 +437,7 @@ class Action:
                 if str(watch_locales) == "[]":
                     watch_locales = ""
                 print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity ID: {4}\nWorkflow ID: {5}\n' \
-                      'Default Source Locale: {6}\nDownload Option: {7}\nDownload Folder: {8}\nTarget Locales (for watch and clone): {9}\nLocale Folders: {10}\nGit Auto-commit: {11}'.format(
+                      'Default Source Locale: {6}\nDownload Option: {7}\nDownload Folder: {8}\nTarget Locales (for watch and clone): {9}\nTarget Locale Folders: {10}\nGit Auto-commit: {11}'.format(
                     self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.download_option,
                     download_dir, watch_locales, locale_folders_str, git_output))
         except Exception as e:
