@@ -12,9 +12,9 @@ import time
 import getpass
 from ltk import exceptions
 from ltk.apicalls import ApiCalls
-from ltk.utils import check_response, detect_format, map_locale, get_valid_locales, is_valid_locale, underline, remove_begin_slashes, remove_end_slashes, remove_last_folder_in_path, get_relative_path
+from ltk.utils import check_response, detect_format, map_locale, get_valid_locales, is_valid_locale, underline, remove_begin_slashes, remove_end_slashes, remove_last_folder_in_path, get_relative_path, log_error
 from ltk.managers import DocumentManager, FolderManager
-from ltk.constants import CONF_DIR, CONF_FN, SYSTEM_FILE
+from ltk.constants import CONF_DIR, CONF_FN, SYSTEM_FILE, ERROR_FN
 import json
 from ltk.logger import logger
 from ltk.git_auto import Git_Auto
@@ -45,6 +45,7 @@ class Action:
         self.timeout = timeout
         self.api = ApiCalls(self.host, self.access_token, self.watch, self.timeout)
         self.git_auto = Git_Auto(self.path)
+        self.error_file_name = os.path.join(self.path, CONF_DIR, ERROR_FN)
 
     def _is_initialized(self):
         actual_path = find_conf(self.path)
@@ -166,7 +167,7 @@ class Action:
 
     def get_relative_path(self, path):
         return get_relative_path(self.path, path)
-        
+
     def get_current_path(self, path):
         cwd = os.getcwd()
         if cwd in path:
@@ -441,6 +442,7 @@ class Action:
                     self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.download_option,
                     download_dir, watch_locales, locale_folders_str, git_output))
         except Exception as e:
+            log_error(self.error_file_name, e)
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
                 logger.error("Error connecting to Lingotek's TMS")
             else:
@@ -463,6 +465,7 @@ class Action:
         except KeyboardInterrupt:
             raise_error("", "Canceled adding document")
         except Exception as e:
+            log_error(self.error_file_name, e)
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
                 logger.error("Error connecting to Lingotek's TMS")
             else:
@@ -537,6 +540,7 @@ class Action:
                 #     logger.info('Added document {0}'.format(title))
                 #     self._add_document(relative_path, title, response.json()['properties']['id'])
         except Exception as e:
+            log_error(self.error_file_name, e)
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
                 logger.error("Error connecting to Lingotek's TMS")
             else:
@@ -558,7 +562,8 @@ class Action:
                                 if self.doc_manager.is_doc_new(relative_path):
                                     self.add_document(file_name, title)
                                     print
-                            except json.decoder.JSONDecodeError:
+                            except json.decoder.JSONDecodeError as e:
+                                log_error(self.error_file_name, e)
                                 logger.error("JSON error on adding document.")
             for entry in entries:
                 if not self.doc_manager.is_doc_modified(entry['file_name'], self.path):
@@ -575,6 +580,7 @@ class Action:
                 logger.info('All documents up-to-date with Lingotek Cloud. ')
                 return False
         except Exception as e:
+            log_error(self.error_file_name, e)
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
                 logger.error("Error connecting to Lingotek's TMS")
             else:
@@ -586,7 +592,8 @@ class Action:
             entry = self.doc_manager.get_doc_by_prop('file_name', relative_path)
             try:
                 document_id = entry['id']
-            except TypeError:
+            except TypeError as e:
+                log_error(self.error_file_name, e)
                 logger.error("Document name specified for update doesn't exist: {0}".format(title))
                 return
             if title:
@@ -598,6 +605,7 @@ class Action:
             self._update_document(relative_path)
             return True
         except Exception as e:
+            log_error(self.error_file_name, e)
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
                 logger.error("Error connecting to Lingotek's TMS")
             else:
@@ -616,7 +624,8 @@ class Action:
         try:
             locale_map = self.import_locale_info(document_id)
             locale_info = list(iter(locale_map))
-        except exceptions.RequestFailedError:
+        except exceptions.RequestFailedError as e:
+            log_error(self.error_file_name, e)
             locale_info = []
         self.doc_manager.update_document('locales', locale_info, document_id)
 
@@ -703,6 +712,7 @@ class Action:
                     is_successful = True
             return is_successful
         except Exception as e:
+            log_error(self.error_file_name, e)
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
                 logger.error("Error connecting to Lingotek's TMS")
             else:
@@ -742,7 +752,8 @@ class Action:
                     if len(name) > max_length:
                         max_length = len(name)
                     titles.append(name)
-                except (IndexError, KeyError):
+                except (IndexError, KeyError) as e:
+                    log_error(self.error_file_name, e)
                     titles.append("        ")
                 try:
                     locales.append(entry['locales'])
@@ -761,6 +772,7 @@ class Action:
                 info = '%-*s' % (max_length,title) + ' %-38s' % ids[i] + ', '.join(locale for locale in locales[i])
                 print (info)
         except Exception as e:
+            log_error(self.error_file_name, e)
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
                 logger.error("Error connecting to Lingotek's TMS")
             else:
@@ -866,6 +878,7 @@ class Action:
                     print ('\tlocale: {0} \t percent complete: {1}%'.format(curr_locale, curr_progress))
                     # detailed_status[doc_id] = (curr_locale, curr_progress)
         except KeyError as e:
+            log_error(self.error_file_name, e)
             print("Error listing translations")
             return
             # return detailed_status
@@ -936,6 +949,7 @@ class Action:
 #             exit()
         # End Python 3
         except Exception as e:
+            log_error(self.error_file_name, e)
             logger.warning("Error on requesting status: "+str(e))
 
     def added_folder_of_file(self, file_path):
@@ -1012,6 +1026,7 @@ class Action:
                                 os.mkdir(new_path)
                                 # print("Created directory "+str(new_path))
                             except Exception as e:
+                                log_error(self.error_file_name, e)
                                 logger.warning("Could not create cloned directory "+new_path)
                 elif 'folder' in self.download_option:
                     if locale_code in self.locale_folders:
@@ -1028,7 +1043,8 @@ class Action:
                             extension = '.' + extension
                         if extension and extension != '.none':
                             title += extension
-                    except KeyError:
+                    except KeyError as e:
+                        log_error(self.error_file_name, e)
                         raise_error(doc_info.json(),
                                     'Something went wrong trying to download document: {0}'.format(document_id), True)
                         return
@@ -1077,6 +1093,7 @@ class Action:
                 else:
                     raise_error(response.json(), 'Failed to download content for id: {0}'.format(document_id), True)
         except Exception as e:
+            log_error(self.error_file_name, e)
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
                 logger.error("Error connecting to Lingotek's TMS")
             else:
@@ -1102,6 +1119,7 @@ class Action:
                 for document_id in document_ids:
                     self.download_action(document_id, locale_code, auto_format, locale_ext)
         except Exception as e:
+            log_error(self.error_file_name, e)
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
                 logger.error("Error connecting to Lingotek's TMS")
             else:
@@ -1152,10 +1170,12 @@ class Action:
                     self.doc_manager.update_document('file_name', new_path_short, doc['id'])
                 return True
             except Exception as e:
+                log_error(self.error_file_name, e)
                 logger.error("ERROR: "+str(e))
                 logger.error("An error prevented document {0} from being moved".format(source))
                 return False
         except Exception as e:
+            log_error(self.error_file_name, e)
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
                 logger.error("Error connecting to Lingotek's TMS")
             else:
@@ -1193,6 +1213,7 @@ class Action:
                             base_name = os.path.basename(source)
                             logger.info("{0} has been moved to {1}".format(base_name, destination if destination != "" else long_dest))
         except Exception as e:
+            log_error(self.error_file_name, e)
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
                 logger.error("Error connecting to Lingotek's TMS")
             else:
@@ -1239,6 +1260,7 @@ class Action:
             raise_error("", "Canceled removing document")
             return
         except Exception as e:
+            log_error(self.error_file_name, e)
             logger.error("Error on removing document "+str(file_name)+": "+str(e))
 
     def rm_action(self, file_patterns, **kwargs):
@@ -1320,6 +1342,7 @@ class Action:
                 # title = os.path.basename(os.path.normpath(file_name)).split('.')[0]
                 self.rm_document(self.norm_path(file_name).replace(self.path,""), useID, force)
         except Exception as e:
+            log_error(self.error_file_name, e)
             if 'string indices must be integers' in str(e):
                 logger.error("Error connecting to Lingotek's TMS")
             else:
@@ -1415,6 +1438,7 @@ class Action:
                 return
             logger.info('Cleaned up associations between local documents and Lingotek Cloud')
         except Exception as e:
+            log_error(self.error_file_name, e)
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
                 logger.error("Error connecting to Lingotek's TMS")
             else:
@@ -1523,6 +1547,7 @@ class Action:
                 logger.info("All locales have already been cloned.")
             return
         except Exception as e:
+            log_error(self.error_file_name, e)
             logger.error("Error on clean: "+str(e))
 
 def raise_error(json, error_message, is_warning=False, doc_id=None, file_name=None):
@@ -1912,8 +1937,8 @@ def get_files(patterns):
                         matched_files.append(os.path.join(root, file))
             else:
                 matched_files.append(path)
-        else:
-            logger.info("File not found: "+pattern)
+        # else:
+        #     logger.info("File not found: "+pattern)
         # subdir_pat, fn_pat = os.path.split(pattern)
         # if not subdir_pat:
         #     for path, subdirs, files in os.walk(root):

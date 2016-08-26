@@ -2,6 +2,9 @@ import os, sys
 from ltk.locales import default_locales, locale_list
 from ltk.logger import logger
 import time
+import logging
+import traceback
+
 try:
     from blessings import Terminal
     term = Terminal()
@@ -215,3 +218,17 @@ def get_relative_path(path_to_project_root, path):
     if len(split_path) and split_path[0] == '.' or os.path.join(abs_path,os.path.basename(path)) in os.getcwd():
         relative_file_path = os.path.join(*split_path[1:])
     return relative_file_path
+
+def log_traceback(ex, ex_traceback=None):
+    if ex_traceback is None:
+        ex_traceback = ex.__traceback__
+    tb_str = ""
+    tb_lines = traceback.format_exception(ex.__class__, ex, ex_traceback)
+    for line in tb_lines:
+        tb_str += line+"\n"
+    return tb_str
+
+def log_error(error_file_name, e):
+    with open(error_file_name, 'a') as error_file:
+            error_file.write(str(time.strftime("%Y-%m-%d %H:%M:%S") + ": "+str(log_traceback(e))))
+    return
