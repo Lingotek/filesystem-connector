@@ -963,21 +963,23 @@ class Action:
         docs = self.get_docs_in_path(file_path)
         if len(docs) == 0:
             logger.warning("No document found with file path "+str(file_path))
-        for entry in docs:
-            locales = []
-            if locale_codes:
-                locales = locale_codes.split(",")
-            elif 'locales' in entry:
-                locales = entry['locales']
-            if 'clone' in self.download_option and not locale_ext or (no_ext and not locale_ext):
-                self.download_locales(entry['id'], locales, auto_format, False)
-            else:
-                self.download_locales(entry['id'], locales, auto_format, True)
+        if docs:
+            for entry in docs:
+                locales = []
+                if locale_codes:
+                    locales = locale_codes.split(",")
+                elif 'locales' in entry:
+                    locales = entry['locales']
+                if 'clone' in self.download_option and not locale_ext or (no_ext and not locale_ext):
+                    self.download_locales(entry['id'], locales, auto_format, False)
+                else:
+                    self.download_locales(entry['id'], locales, auto_format, True)
 
 
     def download_locales(self, document_id, locale_codes, auto_format, locale_ext=True):
-        for locale_code in locale_codes:
-            self.download_action(document_id, locale_code, auto_format, locale_ext)
+        if locale_codes:
+            for locale_code in locale_codes:
+                self.download_action(document_id, locale_code, auto_format, locale_ext)
 
     def download_action(self, document_id, locale_code, auto_format, locale_ext=True):
         try:
@@ -1016,18 +1018,19 @@ class Action:
                     incremental_path = ""
                     if not os.path.exists(download_root):
                         os.mkdir(download_root)
-                    for target_dir in target_dirs:
-                        incremental_path += target_dir + os.sep
-                        # print("target_dir: "+str(incremental_path))
-                        new_path = os.path.join(self.path,incremental_path)
-                        # print("new path: "+str(new_path))
-                        if not os.path.exists(new_path):
-                            try:
-                                os.mkdir(new_path)
-                                # print("Created directory "+str(new_path))
-                            except Exception as e:
-                                log_error(self.error_file_name, e)
-                                logger.warning("Could not create cloned directory "+new_path)
+                    if target_dirs:
+                        for target_dir in target_dirs:
+                            incremental_path += target_dir + os.sep
+                            # print("target_dir: "+str(incremental_path))
+                            new_path = os.path.join(self.path,incremental_path)
+                            # print("new path: "+str(new_path))
+                            if not os.path.exists(new_path):
+                                try:
+                                    os.mkdir(new_path)
+                                    # print("Created directory "+str(new_path))
+                                except Exception as e:
+                                    log_error(self.error_file_name, e)
+                                    logger.warning("Could not create cloned directory "+new_path)
                 elif 'folder' in self.download_option:
                     if locale_code in self.locale_folders:
                         download_path = self.locale_folders[locale_code]
@@ -1107,17 +1110,19 @@ class Action:
                 locale_ext = True
             if not locale_code:
                 entries = self.doc_manager.get_all_entries()
-                for entry in entries:
-                    try:
-                        locales = entry['locales']
-                        for locale in locales:
-                            self.download_action(entry['id'], locale, auto_format, locale_ext)
-                    except KeyError:
-                        self.download_action(entry['id'], None, auto_format, locale_ext)
+                if entries:
+                    for entry in entries:
+                        try:
+                            locales = entry['locales']
+                            for locale in locales:
+                                self.download_action(entry['id'], locale, auto_format, locale_ext)
+                        except KeyError:
+                            self.download_action(entry['id'], None, auto_format, locale_ext)
             else:
                 document_ids = self.doc_manager.get_doc_ids()
-                for document_id in document_ids:
-                    self.download_action(document_id, locale_code, auto_format, locale_ext)
+                if document_ids:
+                    for document_id in document_ids:
+                        self.download_action(document_id, locale_code, auto_format, locale_ext)
         except Exception as e:
             log_error(self.error_file_name, e)
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
