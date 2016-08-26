@@ -1130,22 +1130,31 @@ class Action:
             else:
                 logger.error("Error on pull: "+str(e))
 
-    def mv_file(self, source, destination, destination_exists=True):
+    def mv_file(self, source, destination, rename=False):
         try:
             path_sep = os.sep
+            original_source = source
             original_destination = destination
             path_to_source = os.path.abspath(source)
+            path_to_destination = os.path.abspath(destination)
+            source = path_to_source.split(path_sep)[-1]
+            destination = path_to_destination.split(path_sep)[-1]
+            new_name = destination
             repo_directory = path_to_source
             while repo_directory and repo_directory != "" and not (os.path.isdir(repo_directory + "/.ltk")):
                 repo_directory = repo_directory.split(path_sep)[:-1]
                 repo_directory = path_sep.join(repo_directory)
+            print (path_to_source)
+            print (repo_directory)
             path_to_source = (path_to_source.replace(repo_directory, '',1)).lstrip(path_sep)
+            print (path_to_source)
             doc = self.doc_manager.get_doc_by_prop("file_name",path_to_source)
             if not doc:
                 logger.error("Error: File has not been added and so can not be moved.")
                 return
             destination = self.norm_path(destination.rstrip(path_sep))
             sub_destination = path_sep.join(destination.split(path_sep)[:-1])
+            print(destination+" is the destination")
             if repo_directory in destination:
                 long_dest = os.path.abspath(destination)
             else:
@@ -1161,18 +1170,19 @@ class Action:
                 destination+=path_sep
             try:
                 base_name = os.path.basename(source)
-                if destination_exists:
+                if not rename:
                     new_path_short = destination+base_name
-                    new_path_long = long_dest+path_sep+base_name
-                    os.rename(source, new_path_long)
-                    self.doc_manager.update_document('file_name', new_path_short, doc['id'])
+                    new_path_long = path_to_destination+path_sep+base_name
+                    os.rename(original_source, new_path_long)
+                    self.doc_manager.update_document('file_name', new_path_short.strip(path_sep), doc['id'])
                 else:
                     new_path_short = sub_destination+path_sep+original_destination
                     new_path_long = sub_long_dest+path_sep+original_destination
                     if new_path_long.rstrip(path_sep).rstrip(doc['name']) != new_path_long.rstrip(path_sep):
-                        self.doc_manager.update_document('name', original_destination, doc['id'])
-                    os.rename(source, new_path_long)
-                    self.doc_manager.update_document('file_name', new_path_short, doc['id'])
+                        self.doc_manager.update_document('name', new_name, doc['id'])
+                        self.api.document_update(doc['id'], title=new_name)
+                    os.rename(original_source, new_path_long)
+                    self.doc_manager.update_document('file_name', new_path_short.strip(path_sep), doc['id'])
                 return True
             except Exception as e:
                 log_error(self.error_file_name, e)
@@ -1189,36 +1199,39 @@ class Action:
     def mv_action(self, sources, destination):
         try:
             for source in sources:
-                if not os.path.isdir(destination):
-                    if self.mv_file(source, destination, destination_exists=False): logger.info("Renamed "+source+" as "+destination)
-                    else: logger.info("Something went wrong")
-                    continue
                 if os.path.isdir(source):
-                    file_count = 0
-                    files = self.get_doc_filenames_in_path(source)
-                    for file in files:
-                        file = os.path.join(self.path,file)
-                        if os.path.isfile(file):
-                            if self.mv_file(file, destination):
-                                file_count += 1
+                    if os.path.isdir(destination):
+                        if self.mv_file(source, destination):
+                            print("") 
                         else:
-                            print("Doc "+file+" is not a file")
-                    if file_count == 1:
-                        logger.info("Moved {0} file from {1} to {2}".format(file_count, source, destination))
-                    elif file_count > 1:
-                        logger.info("Moved {0} files from {1} to {2}".format(file_count, source, destination))
-                    else:
-                        logger.info("No files to move from {0}".format(source))
-                else:
-                    if not os.path.isfile(source):
-                        logger.error("Error: Source is not a file")
-                        return
+                            logger.error("Failed to move file "+source)
+                    elif os.path.isfile(destination):
+                        logger.error("mv: cannot overwrite non-directory ‘"+source+"’ with directory ‘"+destination+"’")
                     else:
                         if self.mv_file(source, destination):
-                            base_name = os.path.basename(source)
-                            logger.info("{0} has been moved to {1}".format(base_name, destination if destination != "" else long_dest))
+                            print("") 
+                        else:
+                            logger.error("Failed to move file "+source)
+                elif os.path.isfile(source):
+                    if os.path.isdir(destination):
+                        if self.mv_file(source, destination):
+                            print(source+" has been moved to "+destination) 
+                        else:
+                            logger.error("Failed to move file "+source)
+                    elif os.path.isfile(destination):
+                        if self.mv_file(source, destination, rename=True):
+                            print(source+" has been renamed as "+destination)
+                            print(destination+" has been deleted")
+                        else:
+                            logger.error("Failed to move file "+source)
+                    else:
+                        if self.mv_file(source, destination, rename=True):
+                            print(source+" has been renamed to "+destination) 
+                        else:
+                            logger.error("Failed to move file "+source)
+                else:
+                    logger.error("Error: Source file does not exist")
         except Exception as e:
-            log_error(self.error_file_name, e)
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
                 logger.error("Error connecting to Lingotek's TMS")
             else:
