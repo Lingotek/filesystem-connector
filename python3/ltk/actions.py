@@ -1059,7 +1059,7 @@ class Action:
                     if not locale_code:
                         logger.info("No target locales for "+file_name+". Downloading the source document instead.")
                         locale_code = self.locale
-                    if locale_ext:
+                    if locale_ext and not 'clone' in self.download_option:
                         name_parts = base_name.split('.')
                         if len(name_parts) > 1:
                             name_parts.insert(-1, locale_code)
