@@ -163,5 +163,10 @@ class FolderManager:
             file_names.append(entry['file_name'])
         return file_names
 
+    def get_folder_by_name(self, expected_name):
+        """ get documents by the specified property """
+        entry = self._db.get(where('file_name') == expected_name)
+        return entry
+
     def clear_all(self):
         self._db.purge()

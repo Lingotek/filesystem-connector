@@ -1130,7 +1130,7 @@ class Action:
             else:
                 logger.error("Error on pull: "+str(e))
 
-    def mv_file(self, source, destination, rename=False):
+    def mv_file(self, source, destination, source_type='file', rename=False):
         try:
             path_sep = os.sep
             path_to_source = os.path.abspath(source)
@@ -1145,14 +1145,18 @@ class Action:
                 return False
             directory_to_source = (path_to_source.replace(repo_directory, '',1)).lstrip(path_sep)
             directory_to_destination = (path_to_destination.replace(repo_directory, '',1)).lstrip(path_sep)
-            doc = self.doc_manager.get_doc_by_prop("file_name",directory_to_source)
-            if not doc:
-                logger.error("Error: File has not been added and so can not be moved.")
-                return False
-            if repo_directory in destination: long_dest = os.path.abspath(destination)
-            else: long_dest = repo_directory+path_sep+destination
+            folder = None
+            if source_type == 'file':
+                doc = self.doc_manager.get_doc_by_prop("file_name",directory_to_source)
+                if not doc:
+                    logger.error("Error: File has not been added and so can not be moved.")
+                    return False
+            elif source_type == 'folder':
+                folder = self.folder_manager.get_folder_by_name(directory_to_source)
+                if not folder:
+                    logger.warning("Notice: This folder has not been added, though it may be in a directory that has")
             try:
-                if rename and path_to_source.rstrip(path_sep).rstrip(doc['name']) != path_to_source.rstrip(path_sep):
+                if rename and source_type == 'file' and path_to_source.rstrip(path_sep).rstrip(doc['name']) != path_to_source.rstrip(path_sep):
                     new_name = os.path.basename(path_to_destination)
                     self.doc_manager.update_document('name', new_name, doc['id'])
                     self.api.document_update(doc['id'], title=new_name)
@@ -1161,7 +1165,15 @@ class Action:
                     path_to_destination+=path_sep+file_name
                     directory_to_destination+=path_sep+file_name
                 os.rename(path_to_source, path_to_destination)
-                self.doc_manager.update_document('file_name', directory_to_destination.strip(path_sep), doc['id'])
+                if source_type == 'file': self.doc_manager.update_document('file_name', directory_to_destination.strip(path_sep), doc['id'])
+                elif folder: 
+                    self.folder_manager.remove_element(directory_to_source)
+                    self.folder_manager.add_folder(directory_to_destination)
+                if source_type == 'folder':
+                    for file_name in self.doc_manager.get_file_names():
+                        if file_name.find(directory_to_source) == 0:
+                            doc = self.doc_manager.get_doc_by_prop("file_name",file_name)
+                            self.doc_manager.update_document('file_name', file_name.replace(directory_to_source, directory_to_destination, 1), doc['id'])
                 return True
             except Exception as e:
                 log_error(self.error_file_name, e)
@@ -1180,34 +1192,29 @@ class Action:
             for source in sources:
                 if os.path.isdir(source):
                     if os.path.isdir(destination):
-                        if self.mv_file(source, destination):
-                            print("") 
-                        else:
-                            logger.error("Failed to move file "+source)
+                        if self.mv_file(source, destination, source_type='folder'):
+                            logger.info("Folder "+source+" has been moved to "+destination) 
+                        else: logger.error("Failed to move file "+source)
                     elif os.path.isfile(destination):
                         logger.error("mv: cannot overwrite non-directory ‘"+source+"’ with directory ‘"+destination+"’")
                     else:
-                        if self.mv_file(source, destination):
-                            print("") 
-                        else:
-                            logger.error("Failed to move file "+source)
+                        if self.mv_file(source, destination, source_type='folder', rename=True):
+                            logger.info("Folder "+source+" has been renamed to "+destination) 
+                        else: logger.error("Failed to move file "+source)
                 elif os.path.isfile(source):
                     if os.path.isdir(destination):
                         if self.mv_file(source, destination):
-                            print(source+" has been moved to "+destination) 
-                        else:
-                            logger.error("Failed to move file "+source)
+                            logger.info(source+" has been moved to "+destination) 
+                        else: logger.error("Failed to move file "+source)
                     elif os.path.isfile(destination):
                         if self.mv_file(source, destination, rename=True):
-                            print(source+" has been renamed as "+destination)
-                            print(destination+" has been deleted")
-                        else:
-                            logger.error("Failed to move file "+source)
+                            logger.info(source+" has been renamed as "+destination)
+                            logger.info(destination+" has been deleted")
+                        else: logger.error("Failed to move file "+source)
                     else:
                         if self.mv_file(source, destination, rename=True):
-                            print(source+" has been renamed to "+destination) 
-                        else:
-                            logger.error("Failed to move file "+source)
+                            logger.info(source+" has been renamed to "+destination) 
+                        else: logger.error("Failed to move file "+source)
                 else:
                     logger.error("Error: Source file does not exist")
         except Exception as e:
