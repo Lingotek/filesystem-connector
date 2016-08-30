@@ -194,6 +194,36 @@ class Action:
         # print("abs path: "+os.path.abspath(path))
         return os.path.abspath(path)
 
+    def append_location(self, name, path_to_file, in_directory=False):
+        repo_directory = path_to_file
+        path_sep = os.sep
+        if not in_directory:
+            while repo_directory and repo_directory != "" and not (os.path.isdir(repo_directory + "/.ltk")):
+                repo_directory = repo_directory.split(path_sep)[:-1]
+                repo_directory = path_sep.join(repo_directory)
+            if repo_directory == "":
+                logger.warning('Error: File must be contained within an ltk-initialized directory')
+                return name
+            path_to_file = path_to_file.replace(repo_directory, '', 1).strip(os.sep)
+        config_file_name, conf_parser = self.init_config_file()
+        if not conf_parser.has_option('main', 'append_option'): self.update_config_file('append_option', 'none', conf_parser, config_file_name, 'Update: Added optional file location appending (ltk config --help)')
+        append_option = conf_parser.get('main', 'append_option')
+        if append_option == 'none': return name
+        elif append_option == 'full': return '{0} ({1})'.format(name, path_to_file.rstrip(name).rstrip(os.sep))
+        elif len(append_option) > 5 and append_option[:5] == 'name:':
+            folder_name = append_option[5:]
+            if folder_name in path_to_file:
+                return '{0} ({1})'.format(name, path_to_file[path_to_file.find(folder_name)+len(folder_name):].rstrip(name).strip(os.sep))
+            else: return '{0} ({1})'.format(name, path_to_file.rstrip(name).rstrip(os.sep))
+        elif len(append_option) > 7 and append_option[:7] == 'number:':
+            try: folder_number = int(append_option[7:])
+            except ValueError:
+                logger.warning('Error: Value after "number" must be an integer')
+                return name
+            else: return '{0} ({1})'.format(name, path_sep.join(path_to_file.split(path_sep)[-1*folder_number:]).rstrip(name).rstrip(os.sep))
+        else:
+            logger.warning('Error: Invalid value listed for append option. Please update; see ltk config --help')
+
     def norm_path(self, file_location):
         # print("original path: "+str(file_location))
         if file_location:
@@ -277,6 +307,7 @@ class Action:
 
     def config_action(self, **kwargs):
         try:
+            print (self.append_location(os.path.basename(os.getcwd()), os.path.abspath(os.getcwd())))
             config_file_name, conf_parser = self.init_config_file()
             print_config = True
             if 'locale' in kwargs and kwargs['locale']:
@@ -419,6 +450,26 @@ class Action:
                 else:
                     log_info = 'Git password set'
                 self.update_config_file('git_password', self.git_auto.encrypt(git_password), conf_parser, config_file_name, log_info)
+            if 'append_option' in kwargs and kwargs['append_option']:
+                append_option = kwargs['append_option']
+                if append_option in {'none', 'full'} or append_option[:append_option.find(':')+1] in {'number:', 'name:'}:
+                    set_option = True
+                    if append_option[:3] == 'num':
+                        try: int(append_option[7:])
+                        except ValueError:
+                            logger.warning('Error: Input after "number" must be an integer')
+                            print_config = False
+                    elif append_option[:4] == 'name' and len(append_option) <= 5:
+                        logger.warning('Error: No input given after "name"')
+                        print_config = False
+                    if not conf_parser.has_option('main', 'append_option'):
+                        self.update_config_file('append_option', 'none', conf_parser, config_file_name, 'Update: Added optional file location appending (ltk config --help)')
+                    if print_config:
+                        log_info = 'Append option set to ' + append_option
+                        self.update_config_file('append_option', append_option, conf_parser, config_file_name, log_info)
+                else: 
+                    logger.warning('Error: Invalid value for "-a" / "--append_option": Must be one of "none", "full", "number:", or "name:".')
+                    print_config = False
             download_dir = "None"
             if self.download_dir and str(self.download_dir) != 'null':
                 download_dir = self.download_dir
