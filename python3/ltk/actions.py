@@ -1133,56 +1133,35 @@ class Action:
     def mv_file(self, source, destination, rename=False):
         try:
             path_sep = os.sep
-            original_source = source
-            original_destination = destination
             path_to_source = os.path.abspath(source)
-            path_to_destination = os.path.abspath(destination)
-            source = path_to_source.split(path_sep)[-1]
-            destination = path_to_destination.split(path_sep)[-1]
-            new_name = destination
+            if not rename: path_to_destination = os.path.abspath(destination)
+            else: path_to_destination = path_to_source.rstrip(os.path.basename(path_to_source))+destination
             repo_directory = path_to_source
             while repo_directory and repo_directory != "" and not (os.path.isdir(repo_directory + "/.ltk")):
                 repo_directory = repo_directory.split(path_sep)[:-1]
                 repo_directory = path_sep.join(repo_directory)
-            print (path_to_source)
-            print (repo_directory)
-            path_to_source = (path_to_source.replace(repo_directory, '',1)).lstrip(path_sep)
-            print (path_to_source)
-            doc = self.doc_manager.get_doc_by_prop("file_name",path_to_source)
+            if repo_directory not in path_to_source or repo_directory not in path_to_destination: 
+                logger.error("Error: Operations can only be performed inside ltk directory.")
+                return False
+            directory_to_source = (path_to_source.replace(repo_directory, '',1)).lstrip(path_sep)
+            directory_to_destination = (path_to_destination.replace(repo_directory, '',1)).lstrip(path_sep)
+            doc = self.doc_manager.get_doc_by_prop("file_name",directory_to_source)
             if not doc:
                 logger.error("Error: File has not been added and so can not be moved.")
-                return
-            destination = self.norm_path(destination.rstrip(path_sep))
-            sub_destination = path_sep.join(destination.split(path_sep)[:-1])
-            print(destination+" is the destination")
-            if repo_directory in destination:
-                long_dest = os.path.abspath(destination)
-            else:
-                long_dest = repo_directory+path_sep+destination
-            sub_long_dest = path_sep.join(long_dest.split(path_sep)[:-1])
-            dest_dirs = long_dest.split(path_sep)
-            for directory in repo_directory.split(path_sep):
-                if len(dest_dirs) > 0 and directory == dest_dirs[0]:
-                    dest_dirs = dest_dirs[1:]
-                else: break
-            destination = path_sep.join(dest_dirs)
-            if destination != "":
-                destination+=path_sep
+                return False
+            if repo_directory in destination: long_dest = os.path.abspath(destination)
+            else: long_dest = repo_directory+path_sep+destination
             try:
-                base_name = os.path.basename(source)
-                if not rename:
-                    new_path_short = destination+base_name
-                    new_path_long = path_to_destination+path_sep+base_name
-                    os.rename(original_source, new_path_long)
-                    self.doc_manager.update_document('file_name', new_path_short.strip(path_sep), doc['id'])
-                else:
-                    new_path_short = sub_destination+path_sep+original_destination
-                    new_path_long = sub_long_dest+path_sep+original_destination
-                    if new_path_long.rstrip(path_sep).rstrip(doc['name']) != new_path_long.rstrip(path_sep):
-                        self.doc_manager.update_document('name', new_name, doc['id'])
-                        self.api.document_update(doc['id'], title=new_name)
-                    os.rename(original_source, new_path_long)
-                    self.doc_manager.update_document('file_name', new_path_short.strip(path_sep), doc['id'])
+                if rename and path_to_source.rstrip(path_sep).rstrip(doc['name']) != path_to_source.rstrip(path_sep):
+                    new_name = os.path.basename(path_to_destination)
+                    self.doc_manager.update_document('name', new_name, doc['id'])
+                    self.api.document_update(doc['id'], title=new_name)
+                elif not rename: 
+                    file_name = os.path.basename(path_to_source)
+                    path_to_destination+=path_sep+file_name
+                    directory_to_destination+=path_sep+file_name
+                os.rename(path_to_source, path_to_destination)
+                self.doc_manager.update_document('file_name', directory_to_destination.strip(path_sep), doc['id'])
                 return True
             except Exception as e:
                 log_error(self.error_file_name, e)
@@ -1194,7 +1173,7 @@ class Action:
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
                 logger.error("Error connecting to Lingotek's TMS")
             else:
-                logger.error("Error on moving file"+str(source)+": "+str(e))
+                logger.error("Error on moving file "+str(source)+": "+str(e))
 
     def mv_action(self, sources, destination):
         try:
