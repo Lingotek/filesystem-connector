@@ -501,6 +501,7 @@ class Action:
 
     def add_document(self, file_name, title, **kwargs):
         try:
+            print(os.path.abspath(file_name))
             if not 'locale' in kwargs or not kwargs['locale']:
                 locale = self.locale
             else:
@@ -1057,10 +1058,11 @@ class Action:
                     # print("original source_path: "+source_path)
                     # Get the path from the added source folder to the source document.
                     added_folder = self.added_folder_of_file(source_path)
-                    if len(self.folder_manager.get_file_names()) > 1:
+                    if len(self.folder_manager.get_file_names()) > 1 and added_folder:
                         added_folder = remove_last_folder_in_path(added_folder)
                     # print("added folder of file: "+os.sep+remove_begin_slashes(added_folder))
-                    source_path = remove_begin_slashes(source_path.replace(os.sep+remove_begin_slashes(added_folder),""))
+                    if added_folder:
+                        source_path = remove_begin_slashes(source_path.replace(os.sep+remove_begin_slashes(added_folder),""))
                     # print("replaced source_path: "+source_path)
                     # Copy the path into the locale folder (download_root).
                     download_path = os.path.join(download_root,(source_path if source_path else ''))
