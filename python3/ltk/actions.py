@@ -1,3 +1,4 @@
+# Using the following encoding: utf-8
 # Python 2
 # from ConfigParser import ConfigParser, NoOptionError
 # End Python 2
