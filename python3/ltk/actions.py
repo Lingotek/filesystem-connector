@@ -1063,9 +1063,11 @@ class Action:
                     # print("added folder of file: "+os.sep+remove_begin_slashes(added_folder))
                     if added_folder:
                         source_path = remove_begin_slashes(source_path.replace(os.sep+remove_begin_slashes(added_folder),""))
+                        print("Yes, added folder")
                     # print("replaced source_path: "+source_path)
                     # Copy the path into the locale folder (download_root).
-                    if source_path: 
+                    print(source_path)
+                    if source_path and False: 
                         download_path = os.path.join(download_root,source_path)
                         print("Y")
                     else:
