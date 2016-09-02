@@ -1046,10 +1046,13 @@ class Action:
                     # download_root is the path to the root of the locale folder.
                     if locale_code in self.locale_folders:
                         download_root = self.locale_folders[locale_code]
+                        print("1: "+download_root)
                     elif self.download_dir and len(self.download_dir):
                         download_root = os.path.join((self.download_dir if self.download_dir and self.download_dir != 'null' else ''),locale_code)
+                        print("2: "+download_root)
                     else:
                         download_root = locale_code
+                        print("3: "+download_root)
                     download_root = os.path.join(self.path,download_root)
                     # print("download_root: "+download_root)
                     source_file_name = entry['file_name']
