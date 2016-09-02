@@ -502,7 +502,6 @@ class Action:
 
     def add_document(self, file_name, title, **kwargs):
         try:
-            print(os.path.abspath(file_name))
             if not 'locale' in kwargs or not kwargs['locale']:
                 locale = self.locale
             else:
@@ -1568,7 +1567,7 @@ class Action:
 
     def clone_action(self, folders, copy_root):
         try:
-            if not len(self.watch_locales):
+            if not len(self.watch_locales) or self.watch_locales == set(['[]']):
                 logger.warning("There are no locales for which to clone. You can add locales using 'ltk config -t'.")
                 return
             folders_map = {}

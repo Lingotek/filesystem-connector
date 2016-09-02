@@ -34,7 +34,8 @@ setup(
         'tinydb',
         'watchdog',
         'gitpython',
-        'pexpect'
+        'pexpect',
+        'blessings'
     ],
     extras_require={
         'security': ['pyOpenSSL', 'ndg-httpsclient', 'pyasn1'],
