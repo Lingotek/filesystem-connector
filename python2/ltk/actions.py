@@ -308,7 +308,6 @@ class Action:
 
     def config_action(self, **kwargs):
         try:
-            print (self.append_location(os.path.basename(os.getcwd()), os.path.abspath(os.getcwd())))
             config_file_name, conf_parser = self.init_config_file()
             print_config = True
             if 'locale' in kwargs and kwargs['locale']:
@@ -1399,7 +1398,11 @@ class Action:
                 # title = os.path.basename(os.path.normpath(file_name)).split('.')[0]
                 self.rm_document(self.norm_path(file_name).replace(self.path,""), useID, force)
         except Exception as e:
-            log_error(self.error_file_name, e)
+            # Python 2
+            # End Python 2
+            # Python 3
+#             log_error(self.error_file_name, e)
+            # End Python 3
             if 'string indices must be integers' in str(e):
                 logger.error("Error connecting to Lingotek's TMS")
             else:
