@@ -1066,7 +1066,7 @@ class Action:
                     # print("replaced source_path: "+source_path)
                     # Copy the path into the locale folder (download_root).
                     download_path = os.path.join(download_root,(source_path if source_path else ''))
-                    print("2: "+download_path)
+                    print("2: "+download_path+", "+download_root)
                     # print("download_path: "+download_path)
                     target_dirs = download_path.split(os.sep)
                     incremental_path = ""
