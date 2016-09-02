@@ -1064,7 +1064,10 @@ class Action:
                         source_path = remove_begin_slashes(source_path.replace(os.sep+remove_begin_slashes(added_folder),""))
                     # print("replaced source_path: "+source_path)
                     # Copy the path into the locale folder (download_root).
-                    download_path = os.path.join(download_root,(source_path if source_path else ''))
+                    if source_path and False: 
+                        download_path = os.path.join(download_root,source_path)
+                    else:
+                        download_path = download_root
                     # print("download_path: "+download_path)
                     target_dirs = download_path.split(os.sep)
                     incremental_path = ""

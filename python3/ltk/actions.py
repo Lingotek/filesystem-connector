@@ -1051,7 +1051,6 @@ class Action:
                     else:
                         download_root = locale_code
                     download_root = os.path.join(self.path,download_root)
-                    print("1: "+download_root)
                     # print("download_root: "+download_root)
                     source_file_name = entry['file_name']
                     source_path = os.path.join(self.path,os.path.dirname(source_file_name))
@@ -1063,17 +1062,12 @@ class Action:
                     # print("added folder of file: "+os.sep+remove_begin_slashes(added_folder))
                     if added_folder:
                         source_path = remove_begin_slashes(source_path.replace(os.sep+remove_begin_slashes(added_folder),""))
-                        print("Yes, added folder")
                     # print("replaced source_path: "+source_path)
                     # Copy the path into the locale folder (download_root).
-                    print(source_path)
                     if source_path and False: 
                         download_path = os.path.join(download_root,source_path)
-                        print("Y")
                     else:
                         download_path = download_root
-                        print("N")
-                    print("2: "+download_path+", "+download_root)
                     # print("download_path: "+download_path)
                     target_dirs = download_path.split(os.sep)
                     incremental_path = ""
@@ -1132,7 +1126,6 @@ class Action:
                     if 'same' in self.download_option:
                         download_path = os.path.dirname(file_name)
                     download_path = os.path.join(self.path,os.path.join(download_path, downloaded_name))
-                    print("3: "+download_path)
                     logger.info('Downloaded: {0} ({1} - {2})'.format(downloaded_name, self.get_relative_path(download_path), locale_code))
 
                 self.doc_manager.add_element_to_prop(document_id, 'downloaded', locale_code)
