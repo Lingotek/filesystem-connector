@@ -1089,6 +1089,8 @@ class Action:
                                     logger.warning("Could not create cloned directory "+new_path)
                 elif 'folder' in self.download_option:
                     if locale_code in self.locale_folders:
+                        if self.locale_folders[locale_code] == 'null':
+                            logger.warning("Download failed: folder not specified for "+locale_code)
                         download_path = self.locale_folders[locale_code]
                     else:
                         download_path = self.download_dir
