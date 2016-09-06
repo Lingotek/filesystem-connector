@@ -54,17 +54,6 @@ def has_hidden_attribute(file_path):
         result = False
     return result
 
-def is_translation(file_name):
-    locales = locale_list
-    if any('.'+locale in file_name for locale in locales):
-        locales = {v:k for k,v in enumerate(locales) if v in file_name}.keys()
-        for locale in locales:
-            file_name = file_name.replace(locale, '')
-        file_name = re.sub('\.{2,}', '.', file_name)
-        return file_name.rstrip('.')
-    else:
-        return None
-
 class WatchAction(Action):
     # def __init__(self, path, remote=False):
     def __init__(self, path=None, timeout=60):
@@ -86,6 +75,25 @@ class WatchAction(Action):
         # self.remote_thread = threading.Thread(target=self.poll_remote(), args=())
         # self.remote_thread.daemon = True
         # self.remote_thread.start()
+
+    def is_translation(self, file_name):
+        locales = locale_list
+        if any('.'+locale in file_name for locale in locales):
+            locales = {v:k for k,v in enumerate(locales) if v in file_name}.keys()
+            replace_target = None
+            for locale in locales:
+                original = file_name
+                file_name = file_name.replace('.'+locale, '')
+                if file_name != original: 
+                    replace_target = locale
+                    break
+            file_name = re.sub('\.{2,}', '.', file_name)
+            file_name = file_name.rstrip('.')
+            doc = self.doc_manager.get_doc_by_prop('file_name', file_name.replace(self.path, ''))
+            if doc:
+                if 'locales' in doc and replace_target in doc['locales']:
+                    return True
+        return False
 
     def check_remote_doc_exist(self, fn, document_id=None):
         """ check if a document exists remotely """
@@ -138,7 +146,7 @@ class WatchAction(Action):
         try:
             file_path = event.src_path
             # if it's a hidden document, don't do anything 
-            if not is_hidden_file(file_path) and not is_translation(file_path):
+            if not is_hidden_file(file_path) and not self.is_translation(file_path):
                 relative_path = file_path.replace(self.path, '')
                 title = os.path.basename(os.path.normpath(file_path))
                 curr_ext = os.path.splitext(file_path)[1]
