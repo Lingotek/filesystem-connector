@@ -56,7 +56,7 @@ def has_hidden_attribute(file_path):
 
 def is_translation(file_name):
     locales = locale_list
-    if any(locale in file_name for locale in locales):
+    if any('.'+locale in file_name for locale in locales):
         locales = {v:k for k,v in enumerate(locales) if v in file_name}.keys()
         for locale in locales:
             file_name = file_name.replace(locale, '')
@@ -138,6 +138,8 @@ class WatchAction(Action):
         try:
             file_path = event.src_path
             # if it's a hidden document, don't do anything 
+            print(is_hidden_file(file_path))
+            print(is_translation(file_path))
             if not is_hidden_file(file_path) and not is_translation(file_path):
                 relative_path = file_path.replace(self.path, '')
                 title = os.path.basename(os.path.normpath(file_path))
