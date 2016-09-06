@@ -182,7 +182,7 @@ class WatchAction(Action):
                             logger.warning('This document\'s detected locale: {0} is not supported.'.format(curr_locale))
                     except IndexError:
                         logger.warning('Cannot detect locales from file: {0}, not adding any locales'.format(title))
-                self.watch_add_target(title, document_id)
+                self.watch_add_target(relative_path, document_id)
                 # logger.info('Added new document {0}'.format(title
             # else:
             #     print("Skipping hidden file "+file_path)
