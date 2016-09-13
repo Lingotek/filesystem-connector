@@ -1005,7 +1005,6 @@ class Action:
 
     def added_folder_of_file(self, file_path):
         folders = self.folder_manager.get_file_names()
-        print("Comparing",folders,"to",file_path)
         for folder in folders:
             folder = os.path.join(self.path, folder)
             if folder in file_path:
@@ -1040,7 +1039,6 @@ class Action:
             entry = self.doc_manager.get_doc_by_prop('id', document_id)
             if response.status_code == 200:
                 download_path = self.path
-                print("Download path: step 1 ~ "+download_path)
                 if 'clone' in self.download_option:
                     if not locale_code:
                         print("Cannot download "+str(entry['file_name']+" with no target locale."))
@@ -1052,32 +1050,25 @@ class Action:
                         download_root = os.path.join((self.download_dir if self.download_dir and self.download_dir != 'null' else ''),locale_code)
                     else:
                         download_root = locale_code
-                    print("Download path: step 2 ~ "+download_root)
                     download_root = os.path.join(self.path,download_root)
-                    print("Download path: step 3 ~ "+download_root)
                     # print("download_root: "+download_root)
                     source_file_name = entry['file_name']
                     source_path = os.path.join(self.path,os.path.dirname(source_file_name))
-                    print("Source path: step 1 ~ "+source_path)
                     # print("original source_path: "+source_path)
                     # Get the path from the added source folder to the source document.
                     added_folder = self.added_folder_of_file(source_path)
-                    print("Added folder: step 1 ~",added_folder)
                     if len(self.folder_manager.get_file_names()) > 1 and added_folder:
                         added_folder = remove_last_folder_in_path(added_folder)
                     # print("added folder of file: "+os.sep+remove_begin_slashes(added_folder))
-                    print("Added folder: step 2 ~",added_folder)
                     if added_folder:
                         source_path = remove_begin_slashes(source_path.replace(os.sep+remove_begin_slashes(added_folder),""))
                     # print("replaced source_path: "+source_path)
                     # Copy the path into the locale folder (download_root).
                     # Something about this line has been causing problems
-                    print("Source path: step 2 ~ "+source_path)
                     if source_path: 
                         download_path = os.path.join(download_root,source_path)
                     else:
                         download_path = download_root
-                    print("Download path: step 4 ~ "+download_path)
                     # print("download_path: "+download_path)
                     target_dirs = download_path.split(os.sep)
                     incremental_path = ""
@@ -1149,7 +1140,6 @@ class Action:
                             self.git_auto.initialize_repo()
                     if os.path.isfile(download_path):
                         self.git_auto.add_file(download_path)
-                print("Download path: final ~ "+download_path)
                 try:
                     with open(download_path, 'wb') as fh:
                         for chunk in response.iter_content(1024):
