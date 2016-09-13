@@ -1064,6 +1064,7 @@ class Action:
                     if len(self.folder_manager.get_file_names()) > 1 and added_folder:
                         added_folder = remove_last_folder_in_path(added_folder)
                     # print("added folder of file: "+os.sep+remove_begin_slashes(added_folder))
+                    print("Added folder: "+added_folder)
                     if added_folder:
                         source_path = remove_begin_slashes(source_path.replace(os.sep+remove_begin_slashes(added_folder),""))
                     # print("replaced source_path: "+source_path)
