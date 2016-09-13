@@ -1005,7 +1005,7 @@ class Action:
 
     def added_folder_of_file(self, file_path):
         folders = self.folder_manager.get_file_names()
-        print(folders)
+        print("Comparing",folders,"to",file_path)
         for folder in folders:
             folder = os.path.join(self.path, folder)
             if folder in file_path:
