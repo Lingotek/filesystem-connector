@@ -531,7 +531,7 @@ class Action:
                 if os.path.exists(pattern):
                     if os.path.isdir(pattern):
                         if not self._is_folder_added(pattern):
-                            self.folder_manager.add_folder(self.norm_path(pattern))
+                            self.folder_manager.add_folder(self.norm_path(pattern.rstrip(os.sep)))
                             logger.info("Added folder "+str(pattern))
                         else:
                             logger.warning("Folder "+str(pattern)+" has already been added.")
