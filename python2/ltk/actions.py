@@ -1039,6 +1039,7 @@ class Action:
             entry = self.doc_manager.get_doc_by_prop('id', document_id)
             if response.status_code == 200:
                 download_path = self.path
+                print("Download path: step 1 ~ "+download_path)
                 if 'clone' in self.download_option:
                     if not locale_code:
                         print("Cannot download "+str(entry['file_name']+" with no target locale."))
@@ -1050,10 +1051,13 @@ class Action:
                         download_root = os.path.join((self.download_dir if self.download_dir and self.download_dir != 'null' else ''),locale_code)
                     else:
                         download_root = locale_code
+                    print("Download path: step 2 ~ "+download_root)
                     download_root = os.path.join(self.path,download_root)
+                    print("Download path: step 3 ~ "+download_root)
                     # print("download_root: "+download_root)
                     source_file_name = entry['file_name']
                     source_path = os.path.join(self.path,os.path.dirname(source_file_name))
+                    print("Source path ~ "+source_path)
                     # print("original source_path: "+source_path)
                     # Get the path from the added source folder to the source document.
                     added_folder = self.added_folder_of_file(source_path)
@@ -1069,6 +1073,7 @@ class Action:
                         download_path = os.path.join(download_root,source_path)
                     else:
                         download_path = download_root
+                    print("Download path: step 4 ~ "+download_path)
                     # print("download_path: "+download_path)
                     target_dirs = download_path.split(os.sep)
                     incremental_path = ""
@@ -1140,6 +1145,7 @@ class Action:
                             self.git_auto.initialize_repo()
                     if os.path.isfile(download_path):
                         self.git_auto.add_file(download_path)
+                print("Download path: final ~ "+download_path)
                 try:
                     with open(download_path, 'wb') as fh:
                         for chunk in response.iter_content(1024):
