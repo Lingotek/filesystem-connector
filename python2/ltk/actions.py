@@ -1057,7 +1057,7 @@ class Action:
                     # print("download_root: "+download_root)
                     source_file_name = entry['file_name']
                     source_path = os.path.join(self.path,os.path.dirname(source_file_name))
-                    print("Source path ~ "+source_path)
+                    print("Source path: step 1 ~ "+source_path)
                     # print("original source_path: "+source_path)
                     # Get the path from the added source folder to the source document.
                     added_folder = self.added_folder_of_file(source_path)
@@ -1069,6 +1069,7 @@ class Action:
                     # print("replaced source_path: "+source_path)
                     # Copy the path into the locale folder (download_root).
                     # Something about this line has been causing problems
+                    print("Source path: step 2 ~ "+source_path)
                     if source_path: 
                         download_path = os.path.join(download_root,source_path)
                     else:
