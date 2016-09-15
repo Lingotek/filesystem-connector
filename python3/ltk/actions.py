@@ -510,6 +510,7 @@ class Action:
             if response.status_code != 202:
                 raise_error(response.json(), "Failed to add document {0}".format(title), True)
             else:
+                title = self.append_location(title, file_name)
                 logger.info('Added document {0} with ID {1}'.format(title,response.json()['properties']['id']))
                 relative_path = self.norm_path(file_name)
                 self._add_document(relative_path, title, response.json()['properties']['id'])

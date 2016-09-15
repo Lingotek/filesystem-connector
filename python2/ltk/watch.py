@@ -363,7 +363,7 @@ class WatchAction(Action):
         else:
             watch_paths_list = []
             for path in watch_paths:
-                watch_paths_list.append(path)
+                watch_paths_list.append(path.rstrip(os.sep))
             watch_paths = watch_paths_list
         if len(watch_paths) and not no_folders: # Use watch path specified as an option/parameter
             self.watch_folders = True
