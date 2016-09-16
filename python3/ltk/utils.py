@@ -58,7 +58,7 @@ def detect_format(file_name, get_mapper=False):
     if get_mapper:
         return format_mapper
     name, extension = os.path.splitext(file_name)
-    return format_mapper.get(extension, 'PLAINTEXT_OKAPI')
+    return format_mapper.get(extension.lower(), 'PLAINTEXT_OKAPI')
 
 def map_locale(locale):
     """
