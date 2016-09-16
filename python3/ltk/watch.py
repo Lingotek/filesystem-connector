@@ -352,7 +352,8 @@ class WatchAction(Action):
         # print("abs file_location: "+os.path.abspath(file_location))
         abspath=os.path.abspath(file_location)
         # norm_path = os.path.abspath(file_location).replace(self.path, '')
-        return abspath
+        print
+        return abspath.rstrip(os.sep)
 
     def watch_action(self, watch_paths, ignore, delimiter=None, no_folders=False):
         # print self.path
