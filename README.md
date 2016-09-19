@@ -29,7 +29,7 @@ $ python get-pip.py
 
 Start the tool by using `ltk`
  
-Checkout other helpful installation notes [here](https://github.com/Lingotek/translation-utility/wiki/Other-Installation-Notes)
+Checkout other helpful installation notes [here](https://github.com/Lingotek/translation-utility/wiki/Other-Installation-Notes).
 
 ### Windows Installation ###
 For instructions on installing in Windows, go to the [Wiki](https://github.com/Lingotek/filesystem-connector/wiki/Installing-on-Windows).
