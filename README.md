@@ -26,6 +26,11 @@ If you don't have `pip` installed, then you can [install it](https://pip.pypa.io
 $ curl -O https://raw.github.com/pypa/pip/master/contrib/get-pip.py
 $ python get-pip.py
 ```
+If not already installed, [python setuptools] (https://packaging.python.org/installing/#install-pip-setuptools-and-wheel) is required. You can install/ update using the following:
+
+```bash
+$ pip install -U pip setuptools
+```
 
 Start the tool by using `ltk`
  
