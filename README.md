@@ -28,6 +28,8 @@ $ python get-pip.py
 ```
 
 * Start the tool by using `ltk`
+ 
+* Checkout other helpful installation notes [here](https://github.com/Lingotek/translation-utility/wiki/Other-Installation-Notes)
 
 ### Windows Installation ###
 For instructions on installing in Windows, go to the [Wiki](https://github.com/Lingotek/filesystem-connector/wiki/Installing-on-Windows).
@@ -46,6 +48,3 @@ Next, is a video that demonstrates how a folder can be watched for new files and
 
 [![Lingotek Filesystem Connector2](http://img.youtube.com/vi/CTRm-ythnPI/0.jpg)](https://youtu.be/CTRm-ythnPI)
 
-
-
-Checkout other installation notes [here](https://github.com/Lingotek/translation-utility/wiki/Other-Installation-Notes)
