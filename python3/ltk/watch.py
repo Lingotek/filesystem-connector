@@ -355,8 +355,9 @@ class WatchAction(Action):
         print
         return abspath.rstrip(os.sep)
 
-    def watch_action(self, watch_paths, ignore, delimiter=None, no_folders=False):
+    def watch_action(self, ignore, delimiter=None, no_folders=False): # watch_paths, ignore, delimiter=None, no_folders=False):
         # print self.path
+        watch_paths = None
         if not watch_paths:
             watch_paths = self.folder_manager.get_file_names()
             for i in range(len(watch_paths)):
@@ -387,6 +388,7 @@ class WatchAction(Action):
             observer.schedule(self.handler, path=watch_path, recursive=True)
             observer.start()
             self.observers.append(observer)
+        print (watch_paths)
         queue_timeout = 3
         # start_time = time.clock()
         try:

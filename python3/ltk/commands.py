@@ -408,13 +408,13 @@ def clone(folders, copy_root):
         return
 
 @ltk.command(short_help="Watches local and remote files")
-@click.option('-p', '--path', type=click.Path(exists=True), multiple=True, help='Specify a folder to watch. Use option multiple times to specify multiple folders.')
+# @click.option('-p', '--path', type=click.Path(exists=True), multiple=True, help='Specify a folder to watch. Use option multiple times to specify multiple folders.')
 @click.option('--ignore', multiple=True, help='Specify types of files to ignore')
 @click.option('--auto', 'delimiter', help='Automatically detects locale from the file name; specify locale delimiter')
 @click.option('-t', '--timeout', type=click.INT, default=60,
               help='The amount of time watch will sleep between polls, in seconds. Defaults to 1 minute')
 @click.option('-n','--no_folders', flag_value=True, help='Ignore files added to watch folders and only watch documents that have already been added.')
-def watch(path, ignore, delimiter, timeout, no_folders):
+def watch(ignore, delimiter, timeout, no_folders): # path, ignore, delimiter, timeout, no_folders):
     """
     Watches local files added or imported by ltk, and sends a PATCH when a document is changed.
     Also watches remote files, and automatically downloads finished translations.
@@ -422,7 +422,7 @@ def watch(path, ignore, delimiter, timeout, no_folders):
     try:
         action = WatchAction(os.getcwd(), timeout)
         init_logger(action.path)
-        action.watch_action(path, ignore, delimiter, no_folders)
+        action.watch_action(ignore, delimiter, no_folders) #path, ignore, delimiter, no_folders)
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)

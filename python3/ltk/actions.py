@@ -1052,7 +1052,7 @@ class Action:
                     else:
                         download_root = locale_code
                     download_root = os.path.join(self.path,download_root)
-                    # print("download_root: "+download_root)
+                    # print("download_root: "+download_root) 365 253 222 159
                     source_file_name = entry['file_name']
                     source_path = os.path.join(self.path,os.path.dirname(source_file_name))
                     # print("original source_path: "+source_path)
