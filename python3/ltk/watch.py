@@ -1,3 +1,4 @@
+# Using the following encoding: utf-8
 import ctypes
 from ltk.actions import Action
 from ltk.logger import logger
