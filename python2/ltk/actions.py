@@ -221,7 +221,11 @@ class Action:
             except ValueError:
                 logger.warning('Error: Value after "number" must be an integer')
                 return name
-            else: return '{0} ({1})'.format(name, path_sep.join(path_to_file.split(path_sep)[-1*folder_number:]).rstrip(name).rstrip(os.sep))
+            if(folder_number >=0):
+                return '{0} ({1})'.format(name, path_sep.join(path_to_file.rstrip(name).rstrip(os.sep).split(path_sep)[(-1*folder_number) if folder_number != 0 else len(path_to_file):]))
+            else: 
+                logger.warning('Error: Value after "number" must be a non-negative integer')
+                return name
         else:
             logger.warning('Error: Invalid value listed for append option. Please update; see ltk config --help')
 
