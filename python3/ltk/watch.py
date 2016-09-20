@@ -363,7 +363,6 @@ class WatchAction(Action):
         return abspath.rstrip(os.sep)
 
     def watch_action(self, ignore, delimiter=None, no_folders=False, force_poll=False): # watch_paths, ignore, delimiter=None, no_folders=False):
-        print (force_poll)
         # print self.path
         watch_paths = None
         if not watch_paths:
