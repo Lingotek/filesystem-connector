@@ -505,7 +505,7 @@ class Action:
                 locale = self.locale
             else:
                 locale = kwargs['locale']
-            response = self.api.add_document(locale, file_name, self.project_id, title, **kwargs)
+            response = self.api.add_document(locale, file_name, self.project_id, self.append_location(title, file_name), **kwargs)
             # print("response: "+str(response.json()))
             if response.status_code != 202:
                 raise_error(response.json(), "Failed to add document {0}".format(title), True)
