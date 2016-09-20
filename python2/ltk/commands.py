@@ -414,7 +414,8 @@ def clone(folders, copy_root):
 @click.option('-t', '--timeout', type=click.INT, default=60,
               help='The amount of time watch will sleep between polls, in seconds. Defaults to 1 minute')
 @click.option('-n','--no_folders', flag_value=True, help='Ignore files added to watch folders and only watch documents that have already been added.')
-def watch(ignore, delimiter, timeout, no_folders): # path, ignore, delimiter, timeout, no_folders):
+@click.option('-f','--force_poll', flag_value=True, help='Force API calls to Lingotek system at every poll for every document')
+def watch(ignore, delimiter, timeout, no_folders, force_poll): # path, ignore, delimiter, timeout, no_folders):
     """
     Watches local files added or imported by ltk, and sends a PATCH when a document is changed.
     Also watches remote files, and automatically downloads finished translations.
@@ -422,7 +423,7 @@ def watch(ignore, delimiter, timeout, no_folders): # path, ignore, delimiter, ti
     try:
         action = WatchAction(os.getcwd(), timeout)
         init_logger(action.path)
-        action.watch_action(ignore, delimiter, no_folders) #path, ignore, delimiter, no_folders)
+        action.watch_action(ignore, delimiter, no_folders, force_poll) #path, ignore, delimiter, no_folders)
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)

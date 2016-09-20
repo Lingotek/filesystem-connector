@@ -71,6 +71,8 @@ class WatchAction(Action):
         self.timeout = timeout
         self.updated = {}
         self.git_auto = Git_Auto(path)
+        self.polled_list = set([])
+        self.force_poll = False
         # if remote:  # poll lingotek cloud periodically if this option enabled
         # self.remote_thread = threading.Thread(target=self.poll_remote(), args=())
         # self.remote_thread.daemon = True
@@ -124,6 +126,7 @@ class WatchAction(Action):
                         # logger.info('Detected local content modified: {0}'.format(fn))
                         # self.update_document_action(os.path.join(self.path, fn))
                         # logger.info('Updating remote content: {0}'.format(fn))
+                        self.polled_list.remove(fn)
                         self.update_content(fn)
                 except KeyboardInterrupt:
                     for observer in self.observers:
@@ -296,38 +299,42 @@ class WatchAction(Action):
                 else:
                     self.updated[file_name] += self.timeout
                     continue
-            locale_progress = self.import_locale_info(doc_id, True)
             try:
                 downloaded = doc['downloaded']
             except KeyError:
                 downloaded = []
                 self.doc_manager.update_document('downloaded', downloaded, doc_id)
-            # Python 2
-            for locale, progress in locale_progress.iteritems():
-            # End Python 2
-            # Python 3
-#             for locale in locale_progress:
-#                 progress = locale_progress[locale]
-            # End Python 3
-                if progress == 100 and locale not in downloaded:
-                    document_added = False
-                    if (doc['name']+": ") not in git_commit_message:
-                        if documents_downloaded: git_commit_message += '; '
-                        git_commit_message += doc['name'] + ": "
-                        document_added = True
-                    if document_added:
-                        git_commit_message += locale
-                    else:
-                        git_commit_message += ', ' + locale
-                    documents_downloaded = True
-                    logger.info('Translation completed ({0} - {1})'.format(doc_id, locale))
-                    if self.locale_delimiter:
-                        self.download_action(doc_id, locale, False, False)
-                    else:
-                        self.download_action(doc_id, locale, False)
-                elif progress != 100 and locale in downloaded:
-                    # print("Locale "+str(locale)+" for document "+doc['name']+" is no longer completed.")
-                    self.doc_manager.remove_element_in_prop(doc_id, 'downloaded', locale)
+            if file_name not in self.polled_list or self.force_poll:
+                locale_progress = self.import_locale_info(doc_id, True)
+                # Python 2
+                for locale, progress in locale_progress.iteritems():
+                # End Python 2
+                # Python 3
+#                 for locale in locale_progress:
+#                     progress = locale_progress[locale]
+                # End Python 3
+                    if progress == 100 and locale not in downloaded:
+                        document_added = False
+                        if (doc['name']+": ") not in git_commit_message:
+                            if documents_downloaded: git_commit_message += '; '
+                            git_commit_message += doc['name'] + ": "
+                            document_added = True
+                        if document_added:
+                            git_commit_message += locale
+                        else:
+                            git_commit_message += ', ' + locale
+                        documents_downloaded = True
+                        logger.info('Translation completed ({0} - {1})'.format(doc_id, locale))
+                        if self.locale_delimiter:
+                            self.download_action(doc_id, locale, False, False)
+                        else:
+                            self.download_action(doc_id, locale, False)
+                    elif progress != 100 and locale in downloaded:
+                        # print("Locale "+str(locale)+" for document "+doc['name']+" is no longer completed.")
+                        self.doc_manager.remove_element_in_prop(doc_id, 'downloaded', locale)
+                if set(locale_progress.keys()) == set(downloaded):
+                    if all(value == 100 for value in locale_progress.values()):
+                        self.polled_list.add(file_name)
         config_file_name, conf_parser = self.init_config_file()
         git_autocommit = conf_parser.get('main', 'git_autocommit')
         if git_autocommit == "True" and documents_downloaded == True:
@@ -355,7 +362,8 @@ class WatchAction(Action):
         print
         return abspath.rstrip(os.sep)
 
-    def watch_action(self, ignore, delimiter=None, no_folders=False): # watch_paths, ignore, delimiter=None, no_folders=False):
+    def watch_action(self, ignore, delimiter=None, no_folders=False, force_poll=False): # watch_paths, ignore, delimiter=None, no_folders=False):
+        print (force_poll)
         # print self.path
         watch_paths = None
         if not watch_paths:
@@ -381,6 +389,7 @@ class WatchAction(Action):
             print (watch_message)
         else:
             print ("Watching for updates to added documents")
+        if force_poll: self.force_poll = True
         self.ignore_ext.extend(ignore)
         self.locale_delimiter = delimiter
         for watch_path in watch_paths:
@@ -388,7 +397,6 @@ class WatchAction(Action):
             observer.schedule(self.handler, path=watch_path, recursive=True)
             observer.start()
             self.observers.append(observer)
-        print (watch_paths)
         queue_timeout = 3
         # start_time = time.clock()
         try:
