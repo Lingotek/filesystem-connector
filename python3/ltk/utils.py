@@ -117,12 +117,15 @@ def get_valid_locales(api, entered_locales):
     for entry in locale_json:
         valid_locales.append(locale_json[entry]['locale'])
     locales = []
-    for locale in entered_locales:
-        locale = locale.replace("-","_")
-        if remote_check and locale not in valid_locales or not remote_check and not locale in locale_list:
-            logger.warning('The locale code "'+str(locale)+'" failed to be added since it is invalid (see "ltk list -l" for the list of valid codes).')
-        else:
-            locales.append(locale)
+    if(len(entered_locales) == 0 or (len(entered_locales) == 1 and entered_locales[0] == "[]")):
+        logger.warning('No locales have been assigned to this document.  Please add them using \'ltk request\'.')
+    else:
+        for locale in entered_locales:
+            locale = locale.replace("-","_")
+            if remote_check and locale not in valid_locales or not remote_check and not locale in locale_list:
+                logger.warning('The locale code "'+str(locale)+'" failed to be added since it is invalid (see "ltk list -l" for the list of valid codes).')
+            else:
+                locales.append(locale)
     return locales
 
 def raise_error(json, error_message, is_warning=False, doc_id=None, file_name=None):
