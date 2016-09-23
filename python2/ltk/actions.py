@@ -571,7 +571,7 @@ class Action:
                                     confirm = raw_input(prompt_message)
                                     # End Python 2
                                     # Python 3
-#                                     confirm = input(prompt_message)
+                                    # confirm = input(prompt_message)
                                     # End Python 3
                                 # confirm if would like to overwrite existing document in Lingotek Cloud
                                 if not confirm or confirm in ['n', 'N']:
