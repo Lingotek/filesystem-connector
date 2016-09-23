@@ -779,9 +779,7 @@ class Action:
             """ lists ids of list_type specified """
             folders = self.folder_manager.get_file_names()
             if len(folders):
-                #testing
                 underline("Folder path")
-                #end testing
                 for folder in folders:
                     if title:
                         print(folder)
@@ -822,9 +820,7 @@ class Action:
                 return
             if max_length > 90:
                 max_length = 90
-            #testing
             underline('%-*s' % (max_length,'Filename') + ' %-38s' % 'Lingotek ID' + 'Locales')
-            #end testing
             for i in range(len(ids)):
                 title = titles[i]
                 if len(title) > max_length:

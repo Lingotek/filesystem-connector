@@ -152,7 +152,6 @@ def error(error_message):
 
 def underline(text):
     if term:
-        #with term.location(0, term.height - 1):
         print(term.underline(text))
     else:
         # print("Recommended to install blessings module for better formatting")
