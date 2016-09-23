@@ -223,7 +223,7 @@ class Action:
                 return name
             if(folder_number >=0):
                 return '{0} ({1})'.format(name, path_sep.join(path_to_file.rstrip(name).rstrip(os.sep).split(path_sep)[(-1*folder_number) if folder_number != 0 else len(path_to_file):]))
-            else: 
+            else:
                 logger.warning('Error: Value after "number" must be a non-negative integer')
                 return name
         else:
@@ -422,14 +422,14 @@ class Action:
                 self.update_config_file('git_autocommit', 'False', conf_parser, config_file_name, 'Update: Added \'git auto-commit\' option (ltk config --help)')
                 self.update_config_file('git_username', '', conf_parser, config_file_name, 'Update: Added \'git username\' option (ltk config --help)')
                 self.update_config_file('git_password', '', conf_parser, config_file_name, 'Update: Added \'git password\' option (ltk config --help)')
-            self.git_autocommit = conf_parser.get('main', 'git_autocommit')     
+            self.git_autocommit = conf_parser.get('main', 'git_autocommit')
             if 'git' in kwargs and kwargs['git']:
                 if self.git_autocommit == 'True' or self.git_auto.repo_exists(self.path):
-                    log_info = 'Git auto-commit status changed from {0}active'.format(      
-                        ('active to in' if self.git_autocommit == "True" else 'inactive to '))      
+                    log_info = 'Git auto-commit status changed from {0}active'.format(
+                        ('active to in' if self.git_autocommit == "True" else 'inactive to '))
                     config_file = open(config_file_name, 'w')
-                    if self.git_autocommit == "True":        
-                        self.update_config_file('git_autocommit', 'False', conf_parser, config_file_name, log_info)       
+                    if self.git_autocommit == "True":
+                        self.update_config_file('git_autocommit', 'False', conf_parser, config_file_name, log_info)
                         self.git_autocommit = "False"
                     else:
                         self.update_config_file('git_autocommit', 'True', conf_parser, config_file_name, log_info)
@@ -471,7 +471,7 @@ class Action:
                     if print_config:
                         log_info = 'Append option set to ' + append_option
                         self.update_config_file('append_option', append_option, conf_parser, config_file_name, log_info)
-                else: 
+                else:
                     logger.warning('Error: Invalid value for "-a" / "--append_option": Must be one of "none", "full", "number:", or "name:".')
                     print_config = False
             download_dir = "None"
@@ -779,7 +779,9 @@ class Action:
             """ lists ids of list_type specified """
             folders = self.folder_manager.get_file_names()
             if len(folders):
+                #testing
                 underline("Folder path")
+                #end testing
                 for folder in folders:
                     if title:
                         print(folder)
@@ -820,7 +822,9 @@ class Action:
                 return
             if max_length > 90:
                 max_length = 90
+            #testing
             underline('%-*s' % (max_length,'Filename') + ' %-38s' % 'Lingotek ID' + 'Locales')
+            #end testing
             for i in range(len(ids)):
                 title = titles[i]
                 if len(title) > max_length:
@@ -1070,7 +1074,7 @@ class Action:
                     # print("replaced source_path: "+source_path)
                     # Copy the path into the locale folder (download_root).
                     # Something about this line has been causing problems
-                    if source_path: 
+                    if source_path:
                         download_path = os.path.join(download_root,source_path)
                     else:
                         download_path = download_root
@@ -1137,9 +1141,9 @@ class Action:
                     logger.info('Downloaded: {0} ({1} - {2})'.format(downloaded_name, self.get_relative_path(download_path), locale_code))
 
                 self.doc_manager.add_element_to_prop(document_id, 'downloaded', locale_code)
-                config_file_name, conf_parser = self.init_config_file()     
-                git_autocommit = conf_parser.get('main', 'git_autocommit')      
-                if git_autocommit == "True":        
+                config_file_name, conf_parser = self.init_config_file()
+                git_autocommit = conf_parser.get('main', 'git_autocommit')
+                if git_autocommit == "True":
                     if not self.git_auto.repo_is_defined:
                         if self.git_auto.repo_exists(download_path):
                             self.git_auto.initialize_repo()
@@ -1203,7 +1207,7 @@ class Action:
             while repo_directory and repo_directory != "" and not (os.path.isdir(repo_directory + "/.ltk")):
                 repo_directory = repo_directory.split(path_sep)[:-1]
                 repo_directory = path_sep.join(repo_directory)
-            if repo_directory not in path_to_source or repo_directory not in path_to_destination: 
+            if repo_directory not in path_to_source or repo_directory not in path_to_destination:
                 logger.error("Error: Operations can only be performed inside ltk directory.")
                 return False
             directory_to_source = (path_to_source.replace(repo_directory, '',1)).lstrip(path_sep)
@@ -1223,13 +1227,13 @@ class Action:
                     new_name = os.path.basename(path_to_destination)
                     self.doc_manager.update_document('name', new_name, doc['id'])
                     self.api.document_update(doc['id'], title=new_name)
-                elif not rename: 
+                elif not rename:
                     file_name = os.path.basename(path_to_source)
                     path_to_destination+=path_sep+file_name
                     directory_to_destination+=path_sep+file_name
                 os.rename(path_to_source, path_to_destination)
                 if source_type == 'file': self.doc_manager.update_document('file_name', directory_to_destination.strip(path_sep), doc['id'])
-                elif folder: 
+                elif folder:
                     self.folder_manager.remove_element(directory_to_source)
                     self.folder_manager.add_folder(directory_to_destination)
                 if source_type == 'folder':
@@ -1256,18 +1260,18 @@ class Action:
                 if os.path.isdir(source):
                     if os.path.isdir(destination):
                         if self.mv_file(source, destination, source_type='folder'):
-                            logger.info("Folder "+source+" has been moved to "+destination) 
+                            logger.info("Folder "+source+" has been moved to "+destination)
                         else: logger.error("Failed to move file "+source)
                     elif os.path.isfile(destination):
                         logger.error("mv: cannot overwrite non-directory ‘"+source+"’ with directory ‘"+destination+"’")
                     else:
                         if self.mv_file(source, destination, source_type='folder', rename=True):
-                            logger.info("Folder "+source+" has been renamed to "+destination) 
+                            logger.info("Folder "+source+" has been renamed to "+destination)
                         else: logger.error("Failed to move file "+source)
                 elif os.path.isfile(source):
                     if os.path.isdir(destination):
                         if self.mv_file(source, destination):
-                            logger.info(source+" has been moved to "+destination) 
+                            logger.info(source+" has been moved to "+destination)
                         else: logger.error("Failed to move file "+source)
                     elif os.path.isfile(destination):
                         if self.mv_file(source, destination, rename=True):
@@ -1276,7 +1280,7 @@ class Action:
                         else: logger.error("Failed to move file "+source)
                     else:
                         if self.mv_file(source, destination, rename=True):
-                            logger.info(source+" has been renamed to "+destination) 
+                            logger.info(source+" has been renamed to "+destination)
                         else: logger.error("Failed to move file "+source)
                 else:
                     logger.error("Error: Source file does not exist")
@@ -1932,7 +1936,7 @@ def printResponseMessages(response):
 
 def get_sub_folders(patterns):
     """ gets all sub-folders matching pattern from root
-        pattern supports any unix shell-style wildcards (not same as RE) 
+        pattern supports any unix shell-style wildcards (not same as RE)
         returns the relative paths starting from each pattern"""
 
     cwd = os.getcwd()
