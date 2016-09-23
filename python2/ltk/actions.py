@@ -334,7 +334,7 @@ class Action:
                     log_info = 'Set download folder to {0}'.format(download_path)
                     self.update_config_file('download_folder', download_path, conf_parser, config_file_name, log_info)
                 else:
-                    logger.warning('Invalid value for "-d" / "--download_folder": The folder {0} does not exist'.format(os.path.join(self.path,download_path)))
+                    logger.warning('Error: Invalid value for "-d" / "--download_folder": The folder {0} does not exist'.format(os.path.join(self.path,download_path)))
                     print_config = False
             if 'download_option' in kwargs and kwargs['download_option']:
                 download_option = kwargs['download_option']
@@ -343,7 +343,7 @@ class Action:
                     log_info = 'Set download option to {0}'.format(download_option)
                     self.update_config_file('download_option', download_option, conf_parser, config_file_name, log_info)
                 else:
-                    logger.warning('Invalid value for "-o" / "--download_option": Must be one of "same", "folder", or "clone".')
+                    logger.warning('Error: Invalid value for "-o" / "--download_option": Must be one of "same", "folder", or "clone".')
                     print_config = False
             if 'target_locales' in kwargs and kwargs['target_locales']:
                 target_locales = kwargs['target_locales']
