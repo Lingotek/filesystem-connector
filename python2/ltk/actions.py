@@ -334,7 +334,7 @@ class Action:
                     log_info = 'Set download folder to {0}'.format(download_path)
                     self.update_config_file('download_folder', download_path, conf_parser, config_file_name, log_info)
                 else:
-                    logger.warning('Error: Invalid value for "-d" / "--download_folder": Path "'+download_folder+'" does not exist.')
+                    logger.warning('Error: Invalid value for "-d" / "--download_folder": The folder {0} does not exist'.format(os.path.join(self.path,download_path)))
                     print_config = False
             if 'download_option' in kwargs and kwargs['download_option']:
                 download_option = kwargs['download_option']
@@ -571,7 +571,7 @@ class Action:
                                     confirm = raw_input(prompt_message)
                                     # End Python 2
                                     # Python 3
-#                                     confirm = input(prompt_message)
+                                    # confirm = input(prompt_message)
                                     # End Python 3
                                 # confirm if would like to overwrite existing document in Lingotek Cloud
                                 if not confirm or confirm in ['n', 'N']:

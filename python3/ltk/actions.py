@@ -334,7 +334,7 @@ class Action:
                     log_info = 'Set download folder to {0}'.format(download_path)
                     self.update_config_file('download_folder', download_path, conf_parser, config_file_name, log_info)
                 else:
-                    logger.warning('Error: Invalid value for "-d" / "--download_folder": Path "'+download_folder+'" does not exist.')
+                    logger.warning('Error: Invalid value for "-d" / "--download_folder": The folder {0} does not exist'.format(os.path.join(self.path,download_path)))
                     print_config = False
             if 'download_option' in kwargs and kwargs['download_option']:
                 download_option = kwargs['download_option']
@@ -542,7 +542,7 @@ class Action:
                             logger.warning("Folder "+str(pattern)+" has already been added.")
                         added_folder = True
                 else:
-                    logger.warning("Path "+str(pattern)+" doesn't exist.")
+                    logger.warning("Path \""+str(pattern)+"\" doesn't exist.")
             if 'directory' in kwargs and kwargs['directory']:
                 if not added_folder:
                     logger.info("No folders to add at the given path(s).")
