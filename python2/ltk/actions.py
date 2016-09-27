@@ -542,7 +542,7 @@ class Action:
                             logger.warning("Folder "+str(pattern)+" has already been added.")
                         added_folder = True
                 else:
-                    logger.warning("Path "+str(pattern)+" doesn't exist.")
+                    logger.warning("Path \""+str(pattern)+"\" doesn't exist.")
             if 'directory' in kwargs and kwargs['directory']:
                 if not added_folder:
                     logger.info("No folders to add at the given path(s).")
@@ -571,7 +571,7 @@ class Action:
                                     confirm = raw_input(prompt_message)
                                     # End Python 2
                                     # Python 3
-                                    # confirm = input(prompt_message)
+#                                     confirm = input(prompt_message)
                                     # End Python 3
                                 # confirm if would like to overwrite existing document in Lingotek Cloud
                                 if not confirm or confirm in ['n', 'N']:
@@ -1622,6 +1622,7 @@ class Action:
             logger.error("Error on clean: "+str(e))
 
 def raise_error(json, error_message, is_warning=False, doc_id=None, file_name=None):
+    print("Are we even in here?")
     try:
         error = json['messages'][0]
         file_name = file_name.replace("Status of ", "")
@@ -1857,10 +1858,13 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
                 community_id = id
             #community_id = community_info.iterkeys().next()  --- iterkeys() is not in python 3
         config_parser.set('main', 'community_id', community_id)
-
         response = api.list_projects(community_id)
         if response.status_code != 200:
-            raise_error(response.json(), 'Something went wrong trying to find projects in your community')
+            try:
+                raise_error(response.json(), 'Something went wrong trying to find projects in your community')
+            except:
+                logger.error('Something went wrong trying to find projects in your community.')
+                return
         project_info = api.get_project_info(community_id)
         if len(project_info) > 0:
             confirm = 'none'
@@ -1898,7 +1902,11 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
             project_name = folder_name
         response = api.add_project(project_name, community_id, workflow_id)
         if response.status_code != 201:
-            raise_error(response.json(), 'Failed to add current project to Lingotek Cloud')
+            try:
+                raise_error(response.json(), 'Failed to add current project to Lingotek Cloud')
+            except:
+                logger.error('Failed to add current project to Lingotek Cloud')
+                return
         project_id = response.json()['properties']['id']
         config_parser.set('main', 'project_id', project_id)
         config_parser.set('main', 'project_name', project_name)
