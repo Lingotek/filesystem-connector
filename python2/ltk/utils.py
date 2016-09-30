@@ -221,22 +221,31 @@ def get_relative_path(path_to_project_root, path):
         relative_file_path = os.path.join(*split_path[1:])
     return relative_file_path
 
-def log_traceback(ex):
+def log_traceback(ex, ex_traceback=None):
     # Python 2
     try:
-         exc_type, exc_value, exc_traceback = sys.exc_info()
-         tb_str = ""
-         tb_lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
-         for line in tb_lines:
-             tb_str += line+"\n"
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        tb_str = ""
+        tb_lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
+        for line in tb_lines:
+            tb_str += line+"\n"
     finally:
-        """Assigning the traceback return value to a local variable in a function that is handling an exception will cause a circular reference.
-           This will prevent anything referenced by a local variable in the same function or by the traceback from being garbage collected.
-           Must explicitly delete. """
-        del exc_traceback
-        return tb_str
+       """Assigning the traceback return value to a local variable in a function that is handling an exception will cause a circular reference,
+          preventing anything referenced by a local variable in the same function or by the traceback from being garbage collected.
+          Must explicitly delete. """
+       del exc_traceback
+       return tb_str
     # End Python 2
-    
+    # Python 3
+#     if ex_traceback is None:
+#         ex_traceback = ex.__traceback__
+#     tb_str = ""
+#     tb_lines = traceback.format_exception(ex.__class__, ex, ex_traceback)
+#     for line in tb_lines:
+#         tb_str += line+"\n"
+#     return tb_str
+    # End Python 3
+
 def log_error(error_file_name, e):
     with open(error_file_name, 'a') as error_file:
             error_file.write(str(time.strftime("%Y-%m-%d %H:%M:%S") + ": "+str(log_traceback(e))))

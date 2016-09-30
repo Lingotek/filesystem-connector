@@ -542,7 +542,7 @@ class Action:
                             logger.warning("Folder "+str(pattern)+" has already been added.")
                         added_folder = True
                 else:
-                    logger.warning("Path "+str(pattern)+" doesn't exist.")
+                    logger.warning("Path \""+str(pattern)+"\" doesn't exist.")
             if 'directory' in kwargs and kwargs['directory']:
                 if not added_folder:
                     logger.info("No folders to add at the given path(s).")
@@ -571,7 +571,7 @@ class Action:
                                     confirm = raw_input(prompt_message)
                                     # End Python 2
                                     # Python 3
-                                    # confirm = input(prompt_message)
+#                                     confirm = input(prompt_message)
                                     # End Python 3
                                 # confirm if would like to overwrite existing document in Lingotek Cloud
                                 if not confirm or confirm in ['n', 'N']:
