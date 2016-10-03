@@ -1120,8 +1120,9 @@ class Action:
                     file_name = entry['file_name']
                     base_name = os.path.basename(self.norm_path(file_name))
                     if not locale_code:
-                        logger.info("No target locales for "+file_name+". Downloading the source document instead.")
-                        locale_code = self.locale
+                        #Don't download source document(s), only download translations
+                        logger.info("No target locales for "+file_name+".")
+                        return;
                     if locale_ext and not 'clone' in self.download_option:
                         name_parts = base_name.split('.')
                         if len(name_parts) > 1:
@@ -1177,6 +1178,9 @@ class Action:
                     for entry in entries:
                         try:
                             locales = entry['locales']
+                            #debugging
+                            #print("Locales: " + locales)
+                            #end debugging
                             for locale in locales:
                                 self.download_action(entry['id'], locale, auto_format, locale_ext)
                         except KeyError:
