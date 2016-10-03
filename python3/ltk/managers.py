@@ -1,6 +1,8 @@
 from tinydb import TinyDB, where
 import os
+import requests
 from ltk.constants import CONF_DIR, DB_FN, FOLDER_DB_FN
+from ltk.apicalls import ApiCalls
 
 class DocumentManager:
     def __init__(self, path):
@@ -25,6 +27,19 @@ class DocumentManager:
         if not file_name_exists:
             return True
         return False
+
+    def is_translation(self, file_name):
+        #testing
+        locales = self.get_doc_locales()
+        get_doc_by_prop
+
+        """
+        Get the locales for the passed in file name
+        Make a file name string with that locale appended to it (i.e. test.ja_JP.txt, test.zh_CN.txt)
+        Check if that file exists
+        If it exists, mark it as a translation, return true
+        """
+        #end testing
 
     def is_doc_modified(self, file_name, path):
         entry = self._db.get(where('file_name') == file_name)
@@ -76,6 +91,13 @@ class DocumentManager:
         for entry in self._db.all():
             file_names.append(entry['name'])
         return file_names
+
+    def get_doc_locales(self):
+        """ returns all the target locales of documents that the user has added """
+        locales = []
+        for entry in self._db.all():
+            locales.append(entry['locales'])
+        return locales
 
     def remove_element(self, doc_id):
         self._db.remove(where('id') == doc_id)
