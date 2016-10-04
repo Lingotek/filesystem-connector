@@ -1622,7 +1622,6 @@ class Action:
             logger.error("Error on clean: "+str(e))
 
 def raise_error(json, error_message, is_warning=False, doc_id=None, file_name=None):
-    print("Are we even in here?")
     try:
         error = json['messages'][0]
         file_name = file_name.replace("Status of ", "")
