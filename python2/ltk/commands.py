@@ -129,7 +129,7 @@ def init(host, access_token, path, project_name, workflow_id, locale, delete, re
 @click.option('-c', '--clear_locales', flag_value=True, help='Clear all locale folders and use the default download location instead.')
 @click.option('-g', '--git', is_flag=True, help='Toggle Git auto-commit')
 @click.option('-gu', '--git_credentials', is_flag=True, help='Open prompt for Git credentials for auto-fill (\'none\' to unset)')
-@click.option('-a', '--append_option', help='Change the format of the default name given to documents on the Lingotek system.  Define file information to append to document names as none, full, number:+a number of folders down to include (e.g. number:2), or --name:+a name of a directory to start after if found in file path (e.g. name:dir). Default option is none.')
+@click.option('-a', '--append_option', help='Change the format of the default name given to documents on the Lingotek system.  Define file information to append to document names as none, full, number:+a number of folders down to include (e.g. number:2), or name:+a name of a directory to start after if found in file path (e.g. name:dir). Default option is none.')
 def config(**kwargs):
     """ View or change local configuration """
     try:
@@ -142,7 +142,7 @@ def config(**kwargs):
         return
 
 
-@ltk.command(short_help="Adds content; could be one or more files specified by the Unix shell pattern")
+@ltk.command(short_help="Add files and folders")
 @click.argument('file_names', required=True, nargs=-1)
 @click.option('-d', '--directory', flag_value=True, help='Only add directories, not files inside directories')
 @click.option('-s', '--srx', type=click.Path(exists=True), help='srx file')
@@ -162,7 +162,7 @@ def config(**kwargs):
 @click.option('-e', '--external_url', help='Source url')
 @click.option('-o', '--overwrite', flag_value=True, help='Overwrite previously added file if the file has been modified')
 def add(file_names, **kwargs):
-    """ Adds content. Could be one or more files specified by a Unix shell pattern """
+    """ Add files and folders for upload to Lingotek.  Fileglobs (e.g. *.txt) can be used to add all matching files and/or folders. Added folders will automatically add the new files added or created inside of them.  """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
@@ -391,9 +391,9 @@ def clone(folders, copy_root):
     """
     Copies the folder structure of added folders or specified folders
     for each target locale as specified in config.
-    Folders are added to the locale folder specified if one has been specified, 
-    or by default a new folder will be created with the name of the locale. If 
-    only one root folder is being cloned, then the locale folder is used 
+    Folders are added to the locale folder specified if one has been specified,
+    or by default a new folder will be created with the name of the locale. If
+    only one root folder is being cloned, then the locale folder is used
     (instead of creating a new folder inside of the locale folder).
     """
     try:
@@ -408,13 +408,14 @@ def clone(folders, copy_root):
         return
 
 @ltk.command(short_help="Watches local and remote files")
-@click.option('-p', '--path', type=click.Path(exists=True), multiple=True, help='Specify a folder to watch. Use option multiple times to specify multiple folders.')
+# @click.option('-p', '--path', type=click.Path(exists=True), multiple=True, help='Specify a folder to watch. Use option multiple times to specify multiple folders.')
 @click.option('--ignore', multiple=True, help='Specify types of files to ignore')
 @click.option('--auto', 'delimiter', help='Automatically detects locale from the file name; specify locale delimiter')
 @click.option('-t', '--timeout', type=click.INT, default=60,
               help='The amount of time watch will sleep between polls, in seconds. Defaults to 1 minute')
 @click.option('-n','--no_folders', flag_value=True, help='Ignore files added to watch folders and only watch documents that have already been added.')
-def watch(path, ignore, delimiter, timeout, no_folders):
+@click.option('-f','--force_poll', flag_value=True, help='Force API calls to Lingotek system at every poll for every document')
+def watch(ignore, delimiter, timeout, no_folders, force_poll): # path, ignore, delimiter, timeout, no_folders):
     """
     Watches local files added or imported by ltk, and sends a PATCH when a document is changed.
     Also watches remote files, and automatically downloads finished translations.
@@ -422,7 +423,7 @@ def watch(path, ignore, delimiter, timeout, no_folders):
     try:
         action = WatchAction(os.getcwd(), timeout)
         init_logger(action.path)
-        action.watch_action(path, ignore, delimiter, no_folders)
+        action.watch_action(ignore, delimiter, no_folders, force_poll) #path, ignore, delimiter, no_folders)
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)

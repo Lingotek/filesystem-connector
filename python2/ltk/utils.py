@@ -58,7 +58,7 @@ def detect_format(file_name, get_mapper=False):
     if get_mapper:
         return format_mapper
     name, extension = os.path.splitext(file_name)
-    return format_mapper.get(extension, 'PLAINTEXT_OKAPI')
+    return format_mapper.get(extension.lower(), 'PLAINTEXT_OKAPI')
 
 def map_locale(locale):
     """
@@ -117,12 +117,15 @@ def get_valid_locales(api, entered_locales):
     for entry in locale_json:
         valid_locales.append(locale_json[entry]['locale'])
     locales = []
-    for locale in entered_locales:
-        locale = locale.replace("-","_")
-        if remote_check and locale not in valid_locales or not remote_check and not locale in locale_list:
-            logger.warning('The locale code "'+str(locale)+'" failed to be added since it is invalid (see "ltk list -l" for the list of valid codes).')
-        else:
-            locales.append(locale)
+    if(len(entered_locales) == 0 or (len(entered_locales) == 1 and entered_locales[0] == "[]")):
+        logger.warning('No locales have been assigned to this document.  Please add them using \'ltk request\'.')
+    else:
+        for locale in entered_locales:
+            locale = locale.replace("-","_")
+            if remote_check and locale not in valid_locales or not remote_check and not locale in locale_list:
+                logger.warning('The locale code "'+str(locale)+'" failed to be added since it is invalid (see "ltk list -l" for the list of valid codes).')
+            else:
+                locales.append(locale)
     return locales
 
 def raise_error(json, error_message, is_warning=False, doc_id=None, file_name=None):
@@ -149,8 +152,7 @@ def error(error_message):
 
 def underline(text):
     if term:
-        with term.location(0, term.height - 1):
-            print(term.underline(text))
+        print(term.underline(text))
     else:
         # print("Recommended to install blessings module for better formatting")
         print(text)
@@ -220,13 +222,29 @@ def get_relative_path(path_to_project_root, path):
     return relative_file_path
 
 def log_traceback(ex, ex_traceback=None):
-    if ex_traceback is None:
-        ex_traceback = ex.__traceback__
-    tb_str = ""
-    tb_lines = traceback.format_exception(ex.__class__, ex, ex_traceback)
-    for line in tb_lines:
-        tb_str += line+"\n"
-    return tb_str
+    # Python 2
+    try:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        tb_str = ""
+        tb_lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
+        for line in tb_lines:
+            tb_str += line+"\n"
+    finally:
+       """Assigning the traceback return value to a local variable in a function that is handling an exception will cause a circular reference,
+          preventing anything referenced by a local variable in the same function or by the traceback from being garbage collected.
+          Must explicitly delete. """
+       del exc_traceback
+       return tb_str
+    # End Python 2
+    # Python 3
+#     if ex_traceback is None:
+#         ex_traceback = ex.__traceback__
+#     tb_str = ""
+#     tb_lines = traceback.format_exception(ex.__class__, ex, ex_traceback)
+#     for line in tb_lines:
+#         tb_str += line+"\n"
+#     return tb_str
+    # End Python 3
 
 def log_error(error_file_name, e):
     with open(error_file_name, 'a') as error_file:

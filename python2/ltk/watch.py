@@ -1,3 +1,4 @@
+# Using the following encoding: utf-8
 import ctypes
 from ltk.actions import Action
 from ltk.logger import logger
@@ -54,17 +55,6 @@ def has_hidden_attribute(file_path):
         result = False
     return result
 
-def is_translation(file_name):
-    locales = locale_list
-    if any(locale in file_name for locale in locales):
-        locales = {v:k for k,v in enumerate(locales) if v in file_name}.keys()
-        for locale in locales:
-            file_name = file_name.replace(locale, '')
-        file_name = re.sub('\.{2,}', '.', file_name)
-        return file_name.rstrip('.')
-    else:
-        return None
-
 class WatchAction(Action):
     # def __init__(self, path, remote=False):
     def __init__(self, path=None, timeout=60):
@@ -82,10 +72,31 @@ class WatchAction(Action):
         self.timeout = timeout
         self.updated = {}
         self.git_auto = Git_Auto(path)
+        self.polled_list = set([])
+        self.force_poll = False
         # if remote:  # poll lingotek cloud periodically if this option enabled
         # self.remote_thread = threading.Thread(target=self.poll_remote(), args=())
         # self.remote_thread.daemon = True
         # self.remote_thread.start()
+
+    def is_translation(self, file_name):
+        locales = locale_list
+        if any('.'+locale in file_name for locale in locales):
+            locales = {v:k for k,v in enumerate(locales) if v in file_name}.keys()
+            replace_target = None
+            for locale in locales:
+                original = file_name
+                file_name = file_name.replace('.'+locale, '')
+                if file_name != original: 
+                    replace_target = locale
+                    break
+            file_name = re.sub('\.{2,}', '.', file_name)
+            file_name = file_name.rstrip('.')
+            doc = self.doc_manager.get_doc_by_prop('file_name', file_name.replace(self.path, ''))
+            if doc:
+                if 'locales' in doc and replace_target in doc['locales']:
+                    return True
+        return False
 
     def check_remote_doc_exist(self, fn, document_id=None):
         """ check if a document exists remotely """
@@ -116,6 +127,7 @@ class WatchAction(Action):
                         # logger.info('Detected local content modified: {0}'.format(fn))
                         # self.update_document_action(os.path.join(self.path, fn))
                         # logger.info('Updating remote content: {0}'.format(fn))
+                        self.polled_list.remove(fn)
                         self.update_content(fn)
                 except KeyboardInterrupt:
                     for observer in self.observers:
@@ -138,7 +150,7 @@ class WatchAction(Action):
         try:
             file_path = event.src_path
             # if it's a hidden document, don't do anything 
-            if not is_hidden_file(file_path) and not is_translation(file_path):
+            if not is_hidden_file(file_path) and not self.is_translation(file_path):
                 relative_path = file_path.replace(self.path, '')
                 title = os.path.basename(os.path.normpath(file_path))
                 curr_ext = os.path.splitext(file_path)[1]
@@ -182,7 +194,7 @@ class WatchAction(Action):
                             logger.warning('This document\'s detected locale: {0} is not supported.'.format(curr_locale))
                     except IndexError:
                         logger.warning('Cannot detect locales from file: {0}, not adding any locales'.format(title))
-                self.watch_add_target(title, document_id)
+                self.watch_add_target(relative_path, document_id)
                 # logger.info('Added new document {0}'.format(title
             # else:
             #     print("Skipping hidden file "+file_path)
@@ -288,38 +300,42 @@ class WatchAction(Action):
                 else:
                     self.updated[file_name] += self.timeout
                     continue
-            locale_progress = self.import_locale_info(doc_id, True)
             try:
                 downloaded = doc['downloaded']
             except KeyError:
                 downloaded = []
                 self.doc_manager.update_document('downloaded', downloaded, doc_id)
-            # Python 2
-            for locale, progress in locale_progress.iteritems():
-            # End Python 2
-            # Python 3
-#             for locale in locale_progress:
-#                 progress = locale_progress[locale]
-            # End Python 3
-                if progress == 100 and locale not in downloaded:
-                    document_added = False
-                    if (doc['name']+": ") not in git_commit_message:
-                        if documents_downloaded: git_commit_message += '; '
-                        git_commit_message += doc['name'] + ": "
-                        document_added = True
-                    if document_added:
-                        git_commit_message += locale
-                    else:
-                        git_commit_message += ', ' + locale
-                    documents_downloaded = True
-                    logger.info('Translation completed ({0} - {1})'.format(doc_id, locale))
-                    if self.locale_delimiter:
-                        self.download_action(doc_id, locale, False, False)
-                    else:
-                        self.download_action(doc_id, locale, False)
-                elif progress != 100 and locale in downloaded:
-                    # print("Locale "+str(locale)+" for document "+doc['name']+" is no longer completed.")
-                    self.doc_manager.remove_element_in_prop(doc_id, 'downloaded', locale)
+            if file_name not in self.polled_list or self.force_poll:
+                locale_progress = self.import_locale_info(doc_id, True)
+                # Python 2
+                for locale, progress in locale_progress.iteritems():
+                # End Python 2
+                # Python 3
+#                 for locale in locale_progress:
+#                     progress = locale_progress[locale]
+                # End Python 3
+                    if progress == 100 and locale not in downloaded:
+                        document_added = False
+                        if (doc['name']+": ") not in git_commit_message:
+                            if documents_downloaded: git_commit_message += '; '
+                            git_commit_message += doc['name'] + ": "
+                            document_added = True
+                        if document_added:
+                            git_commit_message += locale
+                        else:
+                            git_commit_message += ', ' + locale
+                        documents_downloaded = True
+                        logger.info('Translation completed ({0} - {1})'.format(doc_id, locale))
+                        if self.locale_delimiter:
+                            self.download_action(doc_id, locale, False, False)
+                        else:
+                            self.download_action(doc_id, locale, False)
+                    elif progress != 100 and locale in downloaded:
+                        # print("Locale "+str(locale)+" for document "+doc['name']+" is no longer completed.")
+                        self.doc_manager.remove_element_in_prop(doc_id, 'downloaded', locale)
+                if set(locale_progress.keys()) == set(downloaded):
+                    if all(value == 100 for value in locale_progress.values()):
+                        self.polled_list.add(file_name)
         config_file_name, conf_parser = self.init_config_file()
         git_autocommit = conf_parser.get('main', 'git_autocommit')
         if git_autocommit == "True" and documents_downloaded == True:
@@ -344,10 +360,12 @@ class WatchAction(Action):
         # print("abs file_location: "+os.path.abspath(file_location))
         abspath=os.path.abspath(file_location)
         # norm_path = os.path.abspath(file_location).replace(self.path, '')
-        return abspath
+        print
+        return abspath.rstrip(os.sep)
 
-    def watch_action(self, watch_paths, ignore, delimiter=None, no_folders=False):
+    def watch_action(self, ignore, delimiter=None, no_folders=False, force_poll=False): # watch_paths, ignore, delimiter=None, no_folders=False):
         # print self.path
+        watch_paths = None
         if not watch_paths:
             watch_paths = self.folder_manager.get_file_names()
             for i in range(len(watch_paths)):
@@ -355,7 +373,7 @@ class WatchAction(Action):
         else:
             watch_paths_list = []
             for path in watch_paths:
-                watch_paths_list.append(path)
+                watch_paths_list.append(path.rstrip(os.sep))
             watch_paths = watch_paths_list
         if len(watch_paths) and not no_folders: # Use watch path specified as an option/parameter
             self.watch_folders = True
@@ -371,6 +389,7 @@ class WatchAction(Action):
             print (watch_message)
         else:
             print ("Watching for updates to added documents")
+        if force_poll: self.force_poll = True
         self.ignore_ext.extend(ignore)
         self.locale_delimiter = delimiter
         for watch_path in watch_paths:
