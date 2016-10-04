@@ -142,7 +142,7 @@ def config(**kwargs):
         return
 
 
-@ltk.command(short_help="Adds content; could be one or more files specified by the Unix shell pattern")
+@ltk.command(short_help="Add files and folders")
 @click.argument('file_names', required=True, nargs=-1)
 @click.option('-d', '--directory', flag_value=True, help='Only add directories, not files inside directories')
 @click.option('-s', '--srx', type=click.Path(exists=True), help='srx file')
@@ -162,7 +162,7 @@ def config(**kwargs):
 @click.option('-e', '--external_url', help='Source url')
 @click.option('-o', '--overwrite', flag_value=True, help='Overwrite previously added file if the file has been modified')
 def add(file_names, **kwargs):
-    """ Adds content. Could be one or more files specified by a Unix shell pattern """
+    """ Add files and folders for upload to Lingotek.  Fileglobs (e.g. *.txt) can be used to add all matching files and/or folders. Added folders will automatically add the new files added or created inside of them.  """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
@@ -391,9 +391,9 @@ def clone(folders, copy_root):
     """
     Copies the folder structure of added folders or specified folders
     for each target locale as specified in config.
-    Folders are added to the locale folder specified if one has been specified, 
-    or by default a new folder will be created with the name of the locale. If 
-    only one root folder is being cloned, then the locale folder is used 
+    Folders are added to the locale folder specified if one has been specified,
+    or by default a new folder will be created with the name of the locale. If
+    only one root folder is being cloned, then the locale folder is used
     (instead of creating a new folder inside of the locale folder).
     """
     try:
