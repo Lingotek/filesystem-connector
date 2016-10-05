@@ -1,6 +1,8 @@
 from tinydb import TinyDB, where
 import os
+import requests
 from ltk.constants import CONF_DIR, DB_FN, FOLDER_DB_FN
+from ltk.apicalls import ApiCalls
 
 class DocumentManager:
     def __init__(self, path):
@@ -24,6 +26,28 @@ class DocumentManager:
         file_name_exists = self._db.search(where('file_name') == file_name)
         if not file_name_exists:
             return True
+        return False
+
+    def is_translation(self, file_name, title, files_in_the_folder, actions):
+        ''' check if the file is a translation file'''
+
+        for myFile in files_in_the_folder:
+            relative_path = actions.norm_path(myFile)
+            myFileTitle = os.path.basename(relative_path)
+
+            ''' only compare the file being checked against source files that have already been added '''
+            entry = self._db.get(where("file_name") == relative_path)
+            if entry:
+                ''' check the source file's download codes to see if the file being checked is a translation file '''
+                downloads = self.get_doc_downloads(relative_path)
+                if downloads:
+                    for d in downloads:
+                        ''' append the download code to the source file for comparison '''
+                        temp = myFileTitle.split(".")
+                        newString = temp[0]+"."+d+"."+temp[1]
+                        if newString == title:
+                            return True
+
         return False
 
     def is_doc_modified(self, file_name, path):
@@ -76,6 +100,29 @@ class DocumentManager:
         for entry in self._db.all():
             file_names.append(entry['name'])
         return file_names
+
+    def get_doc_name(self, file_name):
+        """ returns the file name of a document for a given file path """
+        entry = self._db.get(where("file_name") == file_name)
+        if entry:
+            return entry['name']
+        else:
+            return None
+
+    def get_doc_locales(self, file_name):
+        """ returns the target locales of a document for a given file name """
+        locales = []
+        entry = self._db.get(where("file_name") == file_name)
+        locales.append(entry['locales'])
+
+        return locales
+
+    def get_doc_downloads(self, file_name):
+        """ returns all the downloaded translations for a given file name """
+        entry = self._db.get(where("file_name") == file_name)
+        if entry:
+            downloads = entry['downloaded']
+            return downloads
 
     def remove_element(self, doc_id):
         self._db.remove(where('id') == doc_id)

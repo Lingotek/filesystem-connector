@@ -615,9 +615,8 @@ class Action:
                             try:
                                 relative_path = self.norm_path(file_name)
                                 title = os.path.basename(relative_path)
-                                if self.doc_manager.is_doc_new(relative_path):
+                                if self.doc_manager.is_doc_new(relative_path) and not self.doc_manager.is_translation(relative_path, title, matched_files, self):
                                     self.add_document(file_name, title)
-                                    print
                             except json.decoder.JSONDecodeError as e:
                                 log_error(self.error_file_name, e)
                                 logger.error("JSON error on adding document.")
@@ -680,6 +679,11 @@ class Action:
         try:
             locale_map = self.import_locale_info(document_id)
             locale_info = list(iter(locale_map))
+            #debugging
+            print("here")
+            print(locale_map)
+            print(locale_info)
+            #end debugging
         except exceptions.RequestFailedError as e:
             log_error(self.error_file_name, e)
             locale_info = []
@@ -1622,7 +1626,6 @@ class Action:
             logger.error("Error on clean: "+str(e))
 
 def raise_error(json, error_message, is_warning=False, doc_id=None, file_name=None):
-    print("Are we even in here?")
     try:
         error = json['messages'][0]
         file_name = file_name.replace("Status of ", "")
