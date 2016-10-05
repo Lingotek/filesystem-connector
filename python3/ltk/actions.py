@@ -615,9 +615,8 @@ class Action:
                             try:
                                 relative_path = self.norm_path(file_name)
                                 title = os.path.basename(relative_path)
-                                if self.doc_manager.is_doc_new(relative_path) and not self.doc_manager.is_translation(relative_path):
+                                if self.doc_manager.is_doc_new(relative_path) and not self.doc_manager.is_translation(relative_path, title, matched_files, self):
                                     self.add_document(file_name, title)
-                                    print
                             except json.decoder.JSONDecodeError as e:
                                 log_error(self.error_file_name, e)
                                 logger.error("JSON error on adding document.")

@@ -28,17 +28,29 @@ class DocumentManager:
             return True
         return False
 
-    def is_translation(self, file_name):
+    def is_translation(self, file_name, title, matched_files, actions):
         #testing
-        locales = self.get_doc_locales()
-        get_doc_by_prop
+        ''' check if the file has a translation in folder'''
 
-        """
-        Get the locales for the passed in file name
-        Make a file name string with that locale appended to it (i.e. test.ja_JP.txt, test.zh_CN.txt)
-        Check if that file exists
-        If it exists, mark it as a translation, return true
-        """
+        ''' explain what you're doing  '''
+        for myFile in matched_files:
+            relative_path = actions.norm_path(myFile)
+            myFileTitle = os.path.basename(relative_path)
+            entry = self._db.get(where("file_name") == relative_path)
+            if entry:
+                downloads = self.get_doc_downloads(relative_path)
+
+                if downloads:
+                    for d in downloads:
+                        temp = myFileTitle.split(".")
+                        newString = temp[0]+"."+d+"."+temp[1]
+                        if newString == title:
+                            #print("found a match!")
+                            #print(title)
+                            #print(newString)
+                            return True
+
+        return False
         #end testing
 
     def is_doc_modified(self, file_name, path):
@@ -92,12 +104,28 @@ class DocumentManager:
             file_names.append(entry['name'])
         return file_names
 
-    def get_doc_locales(self):
-        """ returns all the target locales of documents that the user has added """
+    def get_doc_name(self, file_name):
+        """ returns the file name of a document for a given file path """
+        entry = self._db.get(where("file_name") == file_name)
+        if entry:
+            return entry['name']
+        else:
+            return None
+
+    def get_doc_locales(self, file_name):
+        """ returns the target locales of a document for a given file name """
         locales = []
-        for entry in self._db.all():
-            locales.append(entry['locales'])
+        entry = self._db.get(where("file_name") == file_name)
+        locales.append(entry['locales'])
+
         return locales
+
+    def get_doc_downloads(self, file_name):
+        """ returns all the downloaded translations for a given file name """
+        entry = self._db.get(where("file_name") == file_name)
+        if entry:
+            downloads = entry['downloaded']
+            return downloads
 
     def remove_element(self, doc_id):
         self._db.remove(where('id') == doc_id)
