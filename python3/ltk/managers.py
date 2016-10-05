@@ -28,30 +28,27 @@ class DocumentManager:
             return True
         return False
 
-    def is_translation(self, file_name, title, matched_files, actions):
-        #testing
-        ''' check if the file has a translation in folder'''
+    def is_translation(self, file_name, title, files_in_the_folder, actions):
+        ''' check if the file is a translation file'''
 
-        ''' explain what you're doing  '''
-        for myFile in matched_files:
+        for myFile in files_in_the_folder:
             relative_path = actions.norm_path(myFile)
             myFileTitle = os.path.basename(relative_path)
+
+            ''' only compare the file being checked against source files that have already been added '''
             entry = self._db.get(where("file_name") == relative_path)
             if entry:
+                ''' check the source file's download codes to see if the file being checked is a translation file '''
                 downloads = self.get_doc_downloads(relative_path)
-
                 if downloads:
                     for d in downloads:
+                        ''' append the download code to the source file for comparison '''
                         temp = myFileTitle.split(".")
                         newString = temp[0]+"."+d+"."+temp[1]
                         if newString == title:
-                            #print("found a match!")
-                            #print(title)
-                            #print(newString)
                             return True
 
         return False
-        #end testing
 
     def is_doc_modified(self, file_name, path):
         entry = self._db.get(where('file_name') == file_name)
