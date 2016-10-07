@@ -113,7 +113,7 @@ class DocumentManager:
         """ returns the target locales of a document for a given file """
         locales = []
         entry = self._db.get(where("file_name") == file_name)
-        if entry
+        if entry:
             locales.append(entry['locales'])
 
         return locales
