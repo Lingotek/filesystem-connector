@@ -28,10 +28,10 @@ class DocumentManager:
             return True
         return False
 
-    def is_translation(self, file_name, title, files_in_the_folder, actions):
+    def is_translation(self, file_name, title, matched_files, actions):
         ''' check if the file is a translation file'''
 
-        for myFile in files_in_the_folder:
+        for myFile in matched_files:
             relative_path = actions.norm_path(myFile)
             myFileTitle = os.path.basename(relative_path)
 
@@ -44,7 +44,7 @@ class DocumentManager:
                     for d in downloads:
                         ''' append the download code to the source file for comparison '''
                         temp = myFileTitle.split(".")
-                        newString = temp[0]+"."+d+"."+temp[1]
+                        newString = temp[0]+"."+ d +"."+temp[1]
                         if newString == title:
                             return True
 
@@ -110,15 +110,16 @@ class DocumentManager:
             return None
 
     def get_doc_locales(self, file_name):
-        """ returns the target locales of a document for a given file name """
+        """ returns the target locales of a document for a given file """
         locales = []
         entry = self._db.get(where("file_name") == file_name)
-        locales.append(entry['locales'])
+        if entry
+            locales.append(entry['locales'])
 
         return locales
 
     def get_doc_downloads(self, file_name):
-        """ returns all the downloaded translations for a given file name """
+        """ returns all the downloaded translations for a given file """
         entry = self._db.get(where("file_name") == file_name)
         if entry:
             downloads = entry['downloaded']
