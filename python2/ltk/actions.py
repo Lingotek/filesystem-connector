@@ -1346,7 +1346,7 @@ class Action:
                     # print("checking folder "+self.norm_path(pattern))
                     if self.folder_manager.folder_exists(self.norm_path(pattern)):
                         self.folder_manager.remove_element(self.norm_path(pattern))
-                        logger.info("Removed folder "+str(file_patterns[0]))
+                        logger.info("Removed folder "+pattern)
                         removed_folder = True
                     else:
                         logger.warning("Folder "+str(pattern)+" has not been added and so can not be removed.")
@@ -1631,7 +1631,8 @@ class Action:
 
 def raise_error(json, error_message, is_warning=False, doc_id=None, file_name=None):
     try:
-        error = json['messages'][0]
+        if json:
+            error = json['messages'][0]
         file_name = file_name.replace("Status of ", "")
         if file_name is not None and doc_id is not None:
             error = error.replace(doc_id, file_name+" ("+doc_id+")")
