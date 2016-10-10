@@ -1627,7 +1627,8 @@ class Action:
 
 def raise_error(json, error_message, is_warning=False, doc_id=None, file_name=None):
     try:
-        error = json['messages'][0]
+        if json:
+            error = json['messages'][0]
         file_name = file_name.replace("Status of ", "")
         if file_name is not None and doc_id is not None:
             error = error.replace(doc_id, file_name+" ("+doc_id+")")
