@@ -1342,7 +1342,7 @@ class Action:
                     # print("checking folder "+self.norm_path(pattern))
                     if self.folder_manager.folder_exists(self.norm_path(pattern)):
                         self.folder_manager.remove_element(self.norm_path(pattern))
-                        logger.info("Removed folder "+str(file_patterns[0]))
+                        logger.info("Removed folder "+pattern)
                         removed_folder = True
                     else:
                         logger.warning("Folder "+str(pattern)+" has not been added and so can not be removed.")
