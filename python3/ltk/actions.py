@@ -1070,7 +1070,7 @@ class Action:
                         added_folder = remove_last_folder_in_path(added_folder)
                     # print("added folder of file: "+os.sep+remove_begin_slashes(added_folder))
                     if added_folder:
-                        source_path = remove_begin_slashes(source_path.replace(os.sep+remove_begin_slashes(added_folder),""))
+                        source_path = remove_begin_slashes(source_path.replace(('' if ':' in source_path else os.sep)+remove_begin_slashes(added_folder),""))
                     # print("replaced source_path: "+source_path)
                     # Copy the path into the locale folder (download_root).
                     # Something about this line has been causing problems
