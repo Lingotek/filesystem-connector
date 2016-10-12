@@ -996,10 +996,10 @@ class Action:
                         entry = self.doc_manager.get_doc_by_prop('id', doc_id);
                         diff = time.time() - entry['added']
                         if diff < self.uploadWaitTime:
-                            error_message = entry['file_name'] + " is still being processed"
+                            error_message = "\'" +entry['file_name']+ "\' is still being processed"
                             raise_error("", str(response.status_code)+" Not Found: "+error_message, True, doc_id)
                         else:
-                            error_message = "Check Lingotek TMS to see if " +entry['file_name']+ "has been deleted or was not properly imported"
+                            error_message = "Check Lingotek TMS to see if \'" +entry['file_name']+ "\' has been deleted or was not properly imported"
                             raise_error("", str(response.status_code)+" Not Found: "+error_message, True, doc_id)
 
                 else:
