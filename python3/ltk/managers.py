@@ -28,6 +28,7 @@ class DocumentManager:
             return True
         return False
 
+    ''' receives a translation file and checks if there are corresponding source files'''
     def is_translation(self, file_name, title, matched_files, actions):
         ''' check if the file is a translation file'''
 
@@ -49,6 +50,10 @@ class DocumentManager:
                             return True
 
         return False
+
+    ''' receives a source file and finds the source files associated with it '''
+    #def find_translations(self, file_name, path, actions):
+
 
     def is_doc_modified(self, file_name, path):
         entry = self._db.get(where('file_name') == file_name)

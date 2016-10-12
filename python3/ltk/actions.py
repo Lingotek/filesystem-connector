@@ -679,11 +679,6 @@ class Action:
         try:
             locale_map = self.import_locale_info(document_id)
             locale_info = list(iter(locale_map))
-            #debugging
-            print("here")
-            print(locale_map)
-            print(locale_info)
-            #end debugging
         except exceptions.RequestFailedError as e:
             log_error(self.error_file_name, e)
             locale_info = []
@@ -1388,6 +1383,10 @@ class Action:
                 else:
                     useID = False
                     matched_files = self.doc_manager.get_file_names()
+                    #testing
+                    ''' find translations for the document to be removed '''
+
+                    #end testing
             elif not useID:
                 # use current working directory as root for files instead of project root
                 if 'name' in kwargs and kwargs['name']:
