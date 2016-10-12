@@ -47,6 +47,7 @@ class Action:
         self.api = ApiCalls(self.host, self.access_token, self.watch, self.timeout)
         self.git_auto = Git_Auto(self.path)
         self.error_file_name = os.path.join(self.path, CONF_DIR, ERROR_FN)
+        self.uploadWaitTime = 300
 
     def _is_initialized(self):
         actual_path = find_conf(self.path)
@@ -984,13 +985,23 @@ class Action:
                 if response.status_code != 200:
                     entry = self.doc_manager.get_doc_by_prop('id', doc_id)
                     if entry:
-                        error_message = "Failed to get status of document "+entry['name']
+                        error_message = "Failed to get status of document "+entry['file_name']
                     else:
                         error_message = "Failed to get status of document "+str(doc_id)
                     if check_response(response):
                         raise_error(response.json(), error_message, True, doc_id)
                     else:
-                        raise_error("", str(response.status_code)+": "+error_message, True, doc_id)
+                        #if document has recently been added, determined by uploadWaitTime, let user know that document is still being processed
+                        #otherwise, suggest that user checks TMS for deletion or potential upload problems
+                        entry = self.doc_manager.get_doc_by_prop('id', doc_id);
+                        diff = time.time() - entry['added']
+                        if diff < self.uploadWaitTime:
+                            error_message = "\'" +entry['file_name']+ "\' is still being processed"
+                            raise_error("", str(response.status_code)+" Not Found: "+error_message, True, doc_id)
+                        else:
+                            error_message = "Check Lingotek TMS to see if \'" +entry['file_name']+ "\' has been deleted or was not properly imported"
+                            raise_error("", str(response.status_code)+" Not Found: "+error_message, True, doc_id)
+
                 else:
                     title = response.json()['properties']['title']
                     progress = response.json()['properties']['progress']
