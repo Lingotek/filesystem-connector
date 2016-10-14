@@ -52,7 +52,7 @@ class DocumentManager:
         return False
 
     ''' receives a source file and finds the source files associated with it '''
-    #def find_translations(self, file_name, path, actions):
+    #def delete_local_translations(self, file_name, path, actions):
 
 
     def is_doc_modified(self, file_name, path):

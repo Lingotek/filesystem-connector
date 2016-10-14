@@ -128,6 +128,27 @@ def get_valid_locales(api, entered_locales):
                 locales.append(locale)
     return locales
 
+def get_local_translation_files(matched_files, path, doc_manager):
+    translation_files = []
+    for myFile in matched_files:
+        downloads = doc_manager.get_doc_downloads(myFile)
+        for d in downloads:
+            temp = myFile.split(".")
+            trans_file_name = ""
+            for idx, val in enumerate(temp):
+                if idx == len(temp)-2:
+                    trans_file_name = trans_file_name +val+"."
+                    trans_file_name = trans_file_name+d+"."
+                else:
+                    trans_file_name += val
+                    if idx != len(temp)-1:
+                        trans_file_name += "."
+
+        if os.path.isfile(os.path.join(path, trans_file_name)):
+            translation_files.append(trans_file_name)
+
+    return translation_files
+
 def raise_error(json, error_message, is_warning=False, doc_id=None, file_name=None):
     try:
         error = json['messages'][0]

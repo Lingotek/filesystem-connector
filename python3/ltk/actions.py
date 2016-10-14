@@ -13,7 +13,7 @@ import time
 import getpass
 from ltk import exceptions
 from ltk.apicalls import ApiCalls
-from ltk.utils import check_response, detect_format, map_locale, get_valid_locales, is_valid_locale, underline, remove_begin_slashes, remove_end_slashes, remove_last_folder_in_path, get_relative_path, log_error
+from ltk.utils import *
 from ltk.managers import DocumentManager, FolderManager
 from ltk.constants import CONF_DIR, CONF_FN, SYSTEM_FILE, ERROR_FN
 import json
@@ -344,7 +344,7 @@ class Action:
                     log_info = 'Set download option to {0}'.format(download_option)
                     self.update_config_file('download_option', download_option, conf_parser, config_file_name, log_info)
                 else:
-                    logger.warning('Error: Invalid value for "-o" / "--download_option": Must be one of "same", "folder", or "clone".')
+                    logger.warning('Error: Invalid value for "-o" / "--download_option": Must be one of "same", "folder", or "clone"')
                     print_config = False
             if 'target_locales' in kwargs and kwargs['target_locales']:
                 target_locales = kwargs['target_locales']
@@ -352,7 +352,7 @@ class Action:
                 for locale in target_locales:
                     locales.extend(locale.split(','))
                 if len(locales) > 0 and locales[0].lower() == 'none':
-                    log_info = 'Removing all target locales.'
+                    log_info = 'Removing all target locales'
                     self.update_config_file('watch_locales', "", conf_parser, config_file_name, log_info)
                 else:
                     target_locales = get_valid_locales(self.api,locales)
@@ -376,7 +376,7 @@ class Action:
                         continue
                     locale = folder[0].replace("-","_")
                     if not is_valid_locale(self.api, locale):
-                        logger.warning(str(locale+' is not a valid locale. See "ltk list -l" for the list of valid locales.'))
+                        logger.warning(str(locale+' is not a valid locale. See "ltk list -l" for the list of valid locales'))
                         print_config = False
                         continue
                     if folder[1] == '--none':
@@ -399,7 +399,7 @@ class Action:
                             # print("path of new locale folder: "+path)
                             self.locale_folders[locale] = path
                     else:
-                        logger.warning('Error: Invalid value for "-p" / "--locale_folder": Path "'+path+'" does not exist.')
+                        logger.warning('Error: Invalid value for "-p" / "--locale_folder": Path "'+path+'" does not exist')
                         print_config = False
                         continue
                     folders_string += str(locale) + ": " + str(path)
@@ -473,7 +473,7 @@ class Action:
                         log_info = 'Append option set to ' + append_option
                         self.update_config_file('append_option', append_option, conf_parser, config_file_name, log_info)
                 else:
-                    logger.warning('Error: Invalid value for "-a" / "--append_option": Must be one of "none", "full", "number:", or "name:".')
+                    logger.warning('Error: Invalid value for "-a" / "--append_option": Must be one of "none", "full", "number:", or "name:"')
                     print_config = False
             download_dir = "None"
             if self.download_dir and str(self.download_dir) != 'null':
@@ -731,9 +731,9 @@ class Action:
                 docs.append(entry)
             if len(docs) == 0:
                 if path and len(path) > 0:
-                    logger.info("File "+str(path)+" not found.")
+                    logger.info("File "+str(path)+" not found")
                 else:
-                    logger.info("No documents to request target locale.")
+                    logger.info("No documents to request target locale")
             for entry in docs:
                 document_id = entry['id']
                 document_name = entry['file_name']
@@ -816,7 +816,7 @@ class Action:
                 except KeyError:
                     locales.append([])
             if not ids:
-                print ('No local documents.')
+                print ('No local documents')
                 return
             if max_length > 90:
                 max_length = 90
@@ -988,7 +988,7 @@ class Action:
                     else:
                         #if document has recently been added, determined by uploadWaitTime, let user know that document is still being processed
                         #otherwise, suggest that user checks TMS for deletion or potential upload problems
-                        entry = self.doc_manager.get_doc_by_prop('id', doc_id);
+                        entry = self.doc_manager.get_doc_by_prop('id', doc_id)
                         diff = time.time() - entry['added']
                         if diff < self.uploadWaitTime:
                             error_message = "\'" +entry['file_name']+ "\' is still being processed"
@@ -1132,7 +1132,7 @@ class Action:
                     if not locale_code:
                         #Don't download source document(s), only download translations
                         logger.info("No target locales for "+file_name+".")
-                        return;
+                        return
                     if locale_ext and not 'clone' in self.download_option:
                         name_parts = base_name.split('.')
                         if len(name_parts) > 1:
@@ -1300,43 +1300,46 @@ class Action:
             else:
                 logger.error("Error on mv: "+str(e))
 
-    def rm_document(self, file_name, useID, force, doc_name=None, is_directory=False):
+    def rm_document(self, file_name, useID, force, is_translation, doc_name=None, is_directory=False):
         try:
-            doc = None
-            if not useID:
-                relative_path = self.norm_path(file_name)
-                doc = self.doc_manager.get_doc_by_prop('file_name', relative_path)
-                title = os.path.basename(self.norm_path(file_name))
-                # print("relative_path: "+relative_path)
-                try:
-                    document_id = doc['id']
-                except TypeError: # Documents specified by name must be found in the local database to be removed.
-                    if not is_directory:
-                        logger.warning("Document name specified for remove isn't in the local database: {0}".format(relative_path))
-                    return
-                    # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
-            else:
-                document_id = file_name
-                doc = self.doc_manager.get_doc_by_prop('id', document_id)
-                # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
-                if doc:
-                    file_name = doc['file_name']
-            response = self.api.document_delete(document_id)
-            #print (response)
-            if response.status_code != 204 and response.status_code != 202:
-                # raise_error(response.json(), "Failed to delete document {0}".format(document_name), True)
-                logger.error("Failed to delete document {0} remotely".format(file_name))
-            else:
-                if doc_name:
-                    logger.info("{0} ({1}) has been deleted remotely.".format(doc_name, file_name))
+            if not is_translation:
+                doc = None
+                if not useID:
+                    relative_path = self.norm_path(file_name)
+                    doc = self.doc_manager.get_doc_by_prop('file_name', relative_path)
+                    title = os.path.basename(self.norm_path(file_name))
+                    # print("relative_path: "+relative_path)
+                    try:
+                        document_id = doc['id']
+                    except TypeError: # Documents specified by name must be found in the local database to be removed.
+                        if not is_directory:
+                            logger.warning("Document name specified for remove isn't in the local database: {0}".format(relative_path))
+                        return
+                        # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
                 else:
-                    logger.info("{0} has been deleted remotely.".format(file_name))
-                if doc:
-                    if force:
-                        self.delete_local(file_name, document_id)
-                    self.doc_manager.remove_element(document_id)
+                    document_id = file_name
+                    doc = self.doc_manager.get_doc_by_prop('id', document_id)
+                    # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
+                    if doc:
+                        file_name = doc['file_name']
+                response = self.api.document_delete(document_id)
+                #print (response)
+                if response.status_code != 204 and response.status_code != 202:
+                    # raise_error(response.json(), "Failed to delete document {0}".format(document_name), True)
+                    logger.error("Failed to delete document {0} remotely".format(file_name))
+                else:
+                    if doc_name:
+                        logger.info("{0} ({1}) has been deleted remotely".format(doc_name, file_name))
+                    else:
+                        logger.info("{0} has been deleted remotely".format(file_name))
+                    if doc:
+                        if force:
+                            self.delete_local(file_name, document_id)
+                        self.doc_manager.remove_element(document_id)
+            else: #document is a translation file
+                self.delete_local_translation(file_name)
         except json.decoder.JSONDecodeError:
-            logger.error("JSON error on removing document.")
+            logger.error("JSON error on removing document")
         except KeyboardInterrupt:
             raise_error("", "Canceled removing document")
             return
@@ -1355,10 +1358,10 @@ class Action:
                         logger.info("Removed folder "+pattern)
                         removed_folder = True
                     else:
-                        logger.warning("Folder "+str(pattern)+" has not been added and so can not be removed.")
+                        logger.warning("Folder "+str(pattern)+" has not been added and so can not be removed")
             if 'directory' in kwargs and kwargs['directory']:
                 if not removed_folder:
-                    logger.info("No folders to remove at the given path(s).")
+                    logger.info("No folders to remove at the given path(s)")
                 return
             matched_files = None
             if isinstance(file_patterns,str):
@@ -1389,15 +1392,14 @@ class Action:
                         for entry in response.json()['entities']:
                             id = entry['entities'][1]['properties']['id']
                             doc_name = entry['properties']['name']
-                            self.rm_document(id, True, force, doc_name)
+                            self.rm_document(id, True, force, False, doc_name)
                         return
                 else:
                     useID = False
                     matched_files = self.doc_manager.get_file_names()
-                    #testing
-                    ''' find translations for the document to be removed '''
 
-                    #end testing
+                    ''' find translation files for the document being removed '''
+                    translation_files = get_local_translation_files(matched_files, self.path, self.doc_manager)
             elif not useID:
                 # use current working directory as root for files instead of project root
                 if 'name' in kwargs and kwargs['name']:
@@ -1425,7 +1427,9 @@ class Action:
                     is_directory = True
             for file_name in matched_files:
                 # title = os.path.basename(os.path.normpath(file_name)).split('.')[0]
-                self.rm_document(self.norm_path(file_name).replace(self.path,""), useID, force)
+                self.rm_document(self.norm_path(file_name).replace(self.path,""), useID, force, False)
+            #for trans_file in translation_files:
+                #self.delete_local_translation(trans_file)
         except Exception as e:
             # Python 2
             # End Python 2
@@ -1537,7 +1541,7 @@ class Action:
         # print('local delete:', title, document_id)
         if not title:
             title = document_id
-        message = '{0} has been deleted locally.'.format(title) if not message else message
+        message = '{0} has been deleted locally'.format(title) if not message else message
         try:
             file_name = self.doc_manager.get_doc_by_prop('id', document_id)['file_name']
         except TypeError:
@@ -1547,7 +1551,17 @@ class Action:
             os.remove(os.path.join(self.path, file_name))
             logger.info(message)
         except OSError:
-            logger.info('Something went wrong trying to delete the local file.')
+            logger.info('Something went wrong trying to delete the local file')
+
+    def delete_local_translation(self, file_name):
+        try:
+            if not file_name:
+                logger.info('Please provide a valid file name')
+
+            os.remove(os.path.join(self.path, file_name))
+            logger.info('{0} (local translation) has been deleted'.format(file_name))
+        except OSError:
+            logger.info('Something went wrong trying to download the local translation')
 
     def delete_local_path(self, path, message=None):
         path = self.norm_path(path)
@@ -1556,7 +1570,7 @@ class Action:
             os.remove(path)
             logger.info(message)
         except OSError:
-            logger.info('Something went wrong trying to delete the local file.')
+            logger.info('Something went wrong trying to delete the local file')
 
     def clone_folders(self, dest_path, folders_map, locale, copy_root=False):
         """ Copies subfolders of added folders to a particular destination folder (for a particular locale).
@@ -1881,7 +1895,7 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
             try:
                 raise_error(response.json(), 'Something went wrong trying to find projects in your community')
             except:
-                logger.error('Something went wrong trying to find projects in your community.')
+                logger.error('Something went wrong trying to find projects in your community')
                 return
         project_info = api.get_project_info(community_id)
         if len(project_info) > 0:
