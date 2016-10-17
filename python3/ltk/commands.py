@@ -17,6 +17,7 @@ from ltk import __version__
 from ltk.watch import WatchAction
 from ltk.import_action import ImportAction
 
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 def abort_if_false(ctx, param, value):
     if not value:
@@ -65,7 +66,7 @@ def print_log(error):
     return
 
 
-@click.group()
+@click.group(context_settings=CONTEXT_SETTINGS)
 # Python 2
 # @click.version_option(version=__version__, message='%(prog)s version %(version)s (Lingotek Filesystem Connector - Python 2)')
 # End Python 2
