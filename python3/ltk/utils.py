@@ -128,24 +128,24 @@ def get_valid_locales(api, entered_locales):
                 locales.append(locale)
     return locales
 
-def get_local_translation_files(matched_files, path, doc_manager):
+def get_translation_files(file_name, path, doc_manager):
     translation_files = []
-    for myFile in matched_files:
-        downloads = doc_manager.get_doc_downloads(myFile)
-        for d in downloads:
-            temp = myFile.split(".")
-            trans_file_name = ""
-            for idx, val in enumerate(temp):
-                if idx == len(temp)-2:
-                    trans_file_name = trans_file_name +val+"."
-                    trans_file_name = trans_file_name+d+"."
-                else:
-                    trans_file_name += val
-                    if idx != len(temp)-1:
-                        trans_file_name += "."
+    downloads = doc_manager.get_doc_downloads(file_name)
+    trans_file_name = ""
+    for d in downloads:
+        temp = file_name.split(".")
+        trans_file_name = ""
+        for idx, val in enumerate(temp):
+            if idx == len(temp)-2:
+                trans_file_name = trans_file_name +val+"."
+                trans_file_name = trans_file_name+d+"."
+            else:
+                trans_file_name += val
+                if idx != len(temp)-1:
+                    trans_file_name += "."
 
-        if os.path.isfile(os.path.join(path, trans_file_name)):
-            translation_files.append(trans_file_name)
+            if os.path.isfile(os.path.join(path, trans_file_name)):
+                translation_files.append(trans_file_name)
 
     return translation_files
 

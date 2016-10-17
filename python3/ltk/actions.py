@@ -11,6 +11,7 @@ import shutil
 import fnmatch
 import time
 import getpass
+import itertools
 from ltk import exceptions
 from ltk.apicalls import ApiCalls
 from ltk.utils import *
@@ -1300,44 +1301,47 @@ class Action:
             else:
                 logger.error("Error on mv: "+str(e))
 
-    def rm_document(self, file_name, useID, force, is_translation, doc_name=None, is_directory=False):
+    def rm_document(self, file_name, useID, force, doc_name=None, is_directory=False):
         try:
-            if not is_translation:
-                doc = None
-                if not useID:
-                    relative_path = self.norm_path(file_name)
-                    doc = self.doc_manager.get_doc_by_prop('file_name', relative_path)
-                    title = os.path.basename(self.norm_path(file_name))
-                    # print("relative_path: "+relative_path)
-                    try:
-                        document_id = doc['id']
-                    except TypeError: # Documents specified by name must be found in the local database to be removed.
-                        if not is_directory:
-                            logger.warning("Document name specified for remove isn't in the local database: {0}".format(relative_path))
-                        return
-                        # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
-                else:
-                    document_id = file_name
-                    doc = self.doc_manager.get_doc_by_prop('id', document_id)
+            doc = None
+            if not useID:
+                relative_path = self.norm_path(file_name)
+                doc = self.doc_manager.get_doc_by_prop('file_name', relative_path)
+                title = os.path.basename(self.norm_path(file_name))
+                # print("relative_path: "+relative_path)
+                try:
+                    document_id = doc['id']
+                except TypeError: # Documents specified by name must be found in the local database to be removed.
+                    if not is_directory:
+                        logger.warning("Document name specified for remove isn't in the local database: {0}".format(relative_path))
+                    return
                     # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
-                    if doc:
-                        file_name = doc['file_name']
-                response = self.api.document_delete(document_id)
-                #print (response)
-                if response.status_code != 204 and response.status_code != 202:
-                    # raise_error(response.json(), "Failed to delete document {0}".format(document_name), True)
-                    logger.error("Failed to delete document {0} remotely".format(file_name))
+            else:
+                document_id = file_name
+                doc = self.doc_manager.get_doc_by_prop('id', document_id)
+                # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
+                if doc:
+                    file_name = doc['file_name']
+            response = self.api.document_delete(document_id)
+            #print (response)
+            if response.status_code != 204 and response.status_code != 202:
+                # raise_error(response.json(), "Failed to delete document {0}".format(document_name), True)
+                logger.error("Failed to delete document {0} remotely".format(file_name))
+            else:
+                if doc_name:
+                    logger.info("{0} ({1}) has been deleted remotely".format(doc_name, file_name))
                 else:
-                    if doc_name:
-                        logger.info("{0} ({1}) has been deleted remotely".format(doc_name, file_name))
-                    else:
-                        logger.info("{0} has been deleted remotely".format(file_name))
-                    if doc:
-                        if force:
-                            self.delete_local(file_name, document_id)
-                        self.doc_manager.remove_element(document_id)
-            else: #document is a translation file
-                self.delete_local_translation(file_name)
+                    logger.info("{0} has been deleted remotely".format(file_name))
+                if doc:
+                    if force:
+                        self.delete_local(file_name, document_id)
+
+                        #delete local translation file(s) for the document being deleted
+                        trans_files = get_translation_files(file_name, self.path, self.doc_manager)
+                        for trans_file_name in trans_files:
+                            self.delete_local_translation(trans_file_name)
+
+                    self.doc_manager.remove_element(document_id)
         except json.decoder.JSONDecodeError:
             logger.error("JSON error on removing document")
         except KeyboardInterrupt:
@@ -1397,9 +1401,7 @@ class Action:
                 else:
                     useID = False
                     matched_files = self.doc_manager.get_file_names()
-
-                    ''' find translation files for the document being removed '''
-                    translation_files = get_local_translation_files(matched_files, self.path, self.doc_manager)
+                    
             elif not useID:
                 # use current working directory as root for files instead of project root
                 if 'name' in kwargs and kwargs['name']:
@@ -1427,9 +1429,8 @@ class Action:
                     is_directory = True
             for file_name in matched_files:
                 # title = os.path.basename(os.path.normpath(file_name)).split('.')[0]
-                self.rm_document(self.norm_path(file_name).replace(self.path,""), useID, force, False)
-            #for trans_file in translation_files:
-                #self.delete_local_translation(trans_file)
+                self.rm_document(self.norm_path(file_name).replace(self.path,""), useID, force)
+
         except Exception as e:
             # Python 2
             # End Python 2
