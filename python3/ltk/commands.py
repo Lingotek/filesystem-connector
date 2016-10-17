@@ -304,7 +304,7 @@ def pull(auto_format, locale_ext, no_ext, locales):
 @click.option('-n', '--name', flag_value=True, help='Delete documents with the specified names (instead of file names or paths) on Lingotek Cloud')
 @click.option('-a', '--all', flag_value=True, help='Delete all documents from Lingotek Cloud that are found locally')
 @click.option('-r', '--remote', flag_value=True, help='When used with -a, deletes all documents from Lingotek Cloud for the current project')
-@click.option('-f', '--force', flag_value=True, help='Delete both local and remote files')
+@click.option('-f', '--force', flag_value=True, help='Delete both local and remote files, as well as any local translation files')
 def rm(file_names, **kwargs):
     """
     Disassociates local doc(s) from Lingotek Cloud and deletes the remote copy.
