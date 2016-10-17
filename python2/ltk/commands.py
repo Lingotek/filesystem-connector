@@ -327,7 +327,8 @@ def rm(file_names, **kwargs):
 @click.argument('destination_path', required=True, nargs=1)
 def mv(source_path, destination_path):
     """
-    Moves specified local doc to a specified destination directory, moving both the file itself and file location stores in the local database. If SOURCE_PATH is a directory, all added files in the directory will be moved.
+    Moves specified local doc to a specified destination directory, moving both the file itself and file location stores in the local database.
+    If SOURCE_PATH is a directory, all added files in the directory will be moved.
     """
     try:
         # action = actions.Action(os.getcwd())
