@@ -1337,6 +1337,28 @@ class Action:
                         self.delete_local(file_name, document_id)
 
                         #delete local translation file(s) for the document being deleted
+
+                        #testing
+                        print("here")
+                        if 'clone' in self.download_option:
+                            if locale_code in self.locale_folders:
+                                download_root = self.locale_folders[locale_code]
+                            elif self.download_dir and len(self.download_dir):
+                                download_root = os.path.join((self.download_dir if self.download_dir and self.download_dir != 'null' else ''),locale_code)
+                            else:
+                                download_root = locale_code
+                            download_root = os.path.join(self.path,download_root)
+                            print("Download root "+download_root)
+                        elif 'folder' in self.download_option:
+                            if locale_code in self.locale_folders:
+                                if self.locale_folders[locale_code] == 'null':
+                                    logger.warning("Download failed: folder not specified for "+locale_code)
+                                else: download_path = self.locale_folders[locale_code]
+                            else:
+                                download_path = self.download_dir
+                            print("Download path: "+download_path)
+                        #end testing
+
                         trans_files = get_translation_files(file_name, self.path, self.doc_manager)
                         for trans_file_name in trans_files:
                             self.delete_local_translation(trans_file_name)
@@ -1401,7 +1423,7 @@ class Action:
                 else:
                     useID = False
                     matched_files = self.doc_manager.get_file_names()
-                    
+
             elif not useID:
                 # use current working directory as root for files instead of project root
                 if 'name' in kwargs and kwargs['name']:
