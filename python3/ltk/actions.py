@@ -1334,32 +1334,45 @@ class Action:
                     logger.info("{0} has been deleted remotely".format(file_name))
                 if doc:
                     if force:
-                        self.delete_local(file_name, document_id)
-
                         #delete local translation file(s) for the document being deleted
 
-                        #testing
-                        print("here")
+                        trans_files = []
                         if 'clone' in self.download_option:
-                            if locale_code in self.locale_folders:
-                                download_root = self.locale_folders[locale_code]
-                            elif self.download_dir and len(self.download_dir):
-                                download_root = os.path.join((self.download_dir if self.download_dir and self.download_dir != 'null' else ''),locale_code)
-                            else:
-                                download_root = locale_code
-                            download_root = os.path.join(self.path,download_root)
-                            print("Download root "+download_root)
-                        elif 'folder' in self.download_option:
-                            if locale_code in self.locale_folders:
-                                if self.locale_folders[locale_code] == 'null':
-                                    logger.warning("Download failed: folder not specified for "+locale_code)
-                                else: download_path = self.locale_folders[locale_code]
-                            else:
-                                download_path = self.download_dir
-                            print("Download path: "+download_path)
-                        #end testing
+                            entry = self.doc_manager.get_doc_by_prop("file_name", file_name)
+                            if entry:
+                                locales = entry['locales']
+                                for locale_code in locales:
+                                    if locale_code in self.locale_folders:
+                                        dir_path = self.locale_folders[locale_code]
+                                    elif self.download_dir and len(self.download_dir):
+                                        dir_path = os.path.join((self.download_dir if self.download_dir and self.download_dir != 'null' else ''),locale_code)
 
-                        trans_files = get_translation_files(file_name, self.path, self.doc_manager)
+                                    trans_files.extend(get_translation_files(file_name, dir_path, self.download_option, self.doc_manager))
+
+
+                        elif 'folder' in self.download_option:
+                            #get any translation files that aren't in a specific locale folder
+                            download_path = self.download_dir
+                            dir_path = download_path
+                            trans_files = get_translation_files(file_name, dir_path, self.download_option, self.doc_manager)
+
+                            #get translations in the locale folders
+                            if self.locale_folders:
+                                entry = self.doc_manager.get_doc_by_prop("file_name", file_name)
+                                if entry:
+                                    locales = entry['locales']
+                                    for locale_code in locales:
+                                        if locale_code in self.locale_folders:
+                                            dir_path = self.locale_folders[locale_code]
+                                        elif self.download_dir and len(self.download_dir):
+                                            dir_path = os.path.join((self.download_dir if self.download_dir and self.download_dir != 'null' else ''),locale_code)
+
+                                        trans_files.extend(get_translation_files(file_name, dir_path, self.download_option, self.doc_manager))
+                        elif 'same' in self.download_option:
+                            dir_path = self.path
+                            trans_files = get_translation_files(file_name, dir_path, self.download_option, self.doc_manager)
+
+                        self.delete_local(file_name, document_id)
                         for trans_file_name in trans_files:
                             self.delete_local_translation(trans_file_name)
 
