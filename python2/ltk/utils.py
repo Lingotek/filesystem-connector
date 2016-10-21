@@ -128,9 +128,34 @@ def get_valid_locales(api, entered_locales):
                 locales.append(locale)
     return locales
 
-def get_translation_files(file_name, path, doc_manager):
+def get_translation_files(file_name, path, download_option, doc_manager):
     translation_files = []
-    downloads = doc_manager.get_doc_downloads(file_name)
+
+    if download_option == "same":
+        downloads = doc_manager.get_doc_downloads(file_name)
+        translation_files = find_translations(file_name, path, downloads)
+
+    elif download_option == "folder" :
+        downloads = doc_manager.get_doc_downloads(file_name)
+
+        entry = doc_manager.get_doc_by_prop("file_name", file_name)
+        if entry:
+            file_name = entry['name']
+
+        translation_files = find_translations(file_name, path, downloads)
+
+    elif download_option == "clone":
+        entry = doc_manager.get_doc_by_prop("file_name", file_name)
+        if entry:
+            file_name = entry['name']
+
+        if os.path.isfile(os.path.join(path, file_name)):
+            translation_files.append(os.path.join(path, file_name))
+
+    return translation_files
+
+def find_translations(file_name, path, downloads):
+    translation_files = []
     trans_file_name = ""
     for d in downloads:
         temp = file_name.split(".")
@@ -145,9 +170,10 @@ def get_translation_files(file_name, path, doc_manager):
                     trans_file_name += "."
 
             if os.path.isfile(os.path.join(path, trans_file_name)):
-                translation_files.append(trans_file_name)
+                translation_files.append(os.path.join(path, trans_file_name))
 
     return translation_files
+
 
 def raise_error(json, error_message, is_warning=False, doc_id=None, file_name=None):
     try:

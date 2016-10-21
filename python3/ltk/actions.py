@@ -1301,6 +1301,50 @@ class Action:
             else:
                 logger.error("Error on mv: "+str(e))
 
+    def rm_local_translations(file_name):
+        trans_files = []
+        print("here 1")
+
+        if 'clone' in self.download_option:
+            print("in clone")
+            entry = self.doc_manager.get_doc_by_prop("file_name", file_name)
+            if entry:
+                locales = entry['locales']
+                for locale_code in locales:
+                    if locale_code in self.locale_folders:
+                        dir_path = self.locale_folders[locale_code]
+                    elif self.download_dir and len(self.download_dir):
+                        dir_path = os.path.join((self.download_dir if self.download_dir and self.download_dir != 'null' else ''),locale_code)
+
+                    trans_files.extend(get_translation_files(file_name, dir_path, self.download_option, self.doc_manager))
+
+        elif 'folder' in self.download_option:
+            print("in folder")
+            #get any translation files that aren't in a specific locale folder
+            download_path = self.download_dir
+            dir_path = download_path
+            trans_files = get_translation_files(file_name, dir_path, self.download_option, self.doc_manager)
+
+            #get translations in the locale folders
+            if self.locale_folders:
+                entry = self.doc_manager.get_doc_by_prop("file_name", file_name)
+                if entry:
+                    locales = entry['locales']
+                    for locale_code in locales:
+                        if locale_code in self.locale_folders:
+                            dir_path = self.locale_folders[locale_code]
+                        elif self.download_dir and len(self.download_dir):
+                            dir_path = os.path.join((self.download_dir if self.download_dir and self.download_dir != 'null' else ''),locale_code)
+
+                        trans_files.extend(get_translation_files(file_name, dir_path, self.download_option, self.doc_manager))
+
+        elif 'same' in self.download_option:
+            print("in same")
+            dir_path = self.path
+            trans_files = get_translation_files(file_name, dir_path, self.download_option, self.doc_manager)
+
+        return trans_files
+
     def rm_document(self, file_name, useID, force, doc_name=None, is_directory=False):
         try:
             doc = None
@@ -1336,6 +1380,7 @@ class Action:
                     if force:
                         #delete local translation file(s) for the document being deleted
 
+                        #testing
                         trans_files = []
                         if 'clone' in self.download_option:
                             entry = self.doc_manager.get_doc_by_prop("file_name", file_name)
@@ -1375,6 +1420,7 @@ class Action:
                         self.delete_local(file_name, document_id)
                         for trans_file_name in trans_files:
                             self.delete_local_translation(trans_file_name)
+                        #end testing
 
                     self.doc_manager.remove_element(document_id)
         except json.decoder.JSONDecodeError:
