@@ -142,9 +142,6 @@ def config(**kwargs):
             if kwargs[f]:
                 temp = remove_powershell_formatting(kwargs[f])
                 kwargs[f] = temp
-
-        if 'locale_folder' in kwargs and kwargs['locale_folder']:
-            print("HERE "+str(kwargs['locale_folder']))
         #end testing
         action.config_action(**kwargs)
     except (UninitializedError, RequestFailedError) as e:

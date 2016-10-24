@@ -254,7 +254,6 @@ def log_error(error_file_name, e):
 def remove_powershell_formatting(file_names):
     if file_names != None:
         if isinstance(file_names, tuple):
-            print("HERE IN TUPLE")
             myTuple = ()
             for k, v in file_names:
                 k = (remove_formatting(k),)
