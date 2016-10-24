@@ -17,6 +17,8 @@ from ltk import __version__
 from ltk.watch import WatchAction
 from ltk.import_action import ImportAction
 
+from ltk.utils import remove_powershell_formatting
+
 
 def abort_if_false(ctx, param, value):
     if not value:
@@ -135,6 +137,11 @@ def config(**kwargs):
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
+        #testing
+        kwargs = remove_powershell_formatting(**kwargs)
+        for f in kwargs:
+            print(str(kwargs[f]))
+        #end testing
         action.config_action(**kwargs)
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
@@ -166,6 +173,9 @@ def add(file_names, **kwargs):
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
+        #testing
+        remove_powershell_formatting(file_names)
+        #end testing
         action.add_action(file_names, **kwargs)
     except (UninitializedError, RequestFailedError, ResourceNotFound, AlreadyExistsError) as e:
         print_log(e)
@@ -200,6 +210,9 @@ def request(doc_name, path, locales, to_delete, due_date, workflow):
         init_logger(action.path)
         if isinstance(locales,str):
             locales = [locales]
+        #testing
+        remove_powershell_formatting(doc_name)
+        #end testing
         action.target_action(doc_name, path, locales, to_delete, due_date, workflow)
     except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
         print_log(e)

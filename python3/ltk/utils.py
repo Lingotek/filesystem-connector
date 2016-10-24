@@ -250,3 +250,23 @@ def log_error(error_file_name, e):
     with open(error_file_name, 'a') as error_file:
             error_file.write(str(time.strftime("%Y-%m-%d %H:%M:%S") + ": "+str(log_traceback(e))))
     return
+
+def remove_powershell_formatting(file_names):
+    print("here 1")
+    for f in file_names:
+        if f.startswith(".\\"):
+            print("here "+f[2:])
+
+def remove_powershell_formatting(doc_name):
+    print("here 2")
+    if doc_name.startswith(".\\"):
+        print("here "+f[2:])
+
+def remove_powershell_formatting(**kwargs):
+    for f in kwargs:
+        if kwargs[f]:
+            if kwargs[f].startswith(".\\"):
+                #print("here "+str(kwargs[f][2:]))
+                kwargs[f] = kwargs[f][2:]
+
+    return kwargs
