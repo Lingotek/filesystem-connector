@@ -251,18 +251,42 @@ def log_error(error_file_name, e):
             error_file.write(str(time.strftime("%Y-%m-%d %H:%M:%S") + ": "+str(log_traceback(e))))
     return
 
-def remove_powershell_formatting(file_names):
-    print("here 1")
-    for f in file_names:
-        if f.startswith(".\\"):
-            print("here "+f[2:])
+def remove_powershell_formatting_fn(file_names):
+    if file_names != None:
+        if isinstance(file_names, tuple):
+            temp = []
+            print("here 1")
+            for f in file_names:
+                print("f "+f)
+                f = remove_powershell_formatting(f)
+                temp.append(f)
+                print(f)
 
-def remove_powershell_formatting(doc_name):
+            return tuple(temp)
+
+        elif isinstance(file_names, str):
+            print("here 2")
+            file_names = remove_powershell_formatting(file_names)
+            return file_names
+
+        else:
+            for f in file_names:
+                if file_names[f]:
+                    if file_names[f].startswith(".\\"):
+                        #print("here "+str(kwargs[f][2:]))
+                        file_names[f] = file_names[f][2:]
+
+            return kwargs
+def remove_powershell_formatting_dn(doc_name):
     print("here 2")
-    if doc_name.startswith(".\\"):
-        print("here "+f[2:])
 
-def remove_powershell_formatting(**kwargs):
+    if doc_name.startswith(".\\"):
+        #print("here "+doc_name[2:])
+        doc_name = doc_name[2:]
+
+    return doc_name
+
+def remove_powershell_formatting_kw(**kwargs):
     for f in kwargs:
         if kwargs[f]:
             if kwargs[f].startswith(".\\"):
@@ -270,3 +294,17 @@ def remove_powershell_formatting(**kwargs):
                 kwargs[f] = kwargs[f][2:]
 
     return kwargs
+
+def remove_powershell_formatting(file_name):
+    if file_name.startswith(".\\"):
+        file_name = file_name[2:]
+        print("1 " + file_name)
+
+        if file_name.endswith("\\"):
+            print("hereee")
+            file_name = file_name[:-1]
+            print(file_name)
+
+        return file_name
+    else:
+        return file_name
