@@ -255,13 +255,13 @@ def remove_powershell_formatting(file_names):
     if file_names != None:
         if isinstance(file_names, tuple):
             print("HERE IN TUPLE")
-            temp = []
+            myTuple = ()
             for k, v in file_names:
-                k = remove_formatting(k)
+                k = (remove_formatting(k),)
                 v = remove_formatting(v)
-                tup1 = (k,v)
+                tup1 = k+(v,)
 
-            return tup1
+            return myTuple+(tup1,)
 
         if isinstance(file_names, list):
             temp = []
