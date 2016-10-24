@@ -251,60 +251,39 @@ def log_error(error_file_name, e):
             error_file.write(str(time.strftime("%Y-%m-%d %H:%M:%S") + ": "+str(log_traceback(e))))
     return
 
-def remove_powershell_formatting_fn(file_names):
+def remove_powershell_formatting(file_names):
     if file_names != None:
         if isinstance(file_names, tuple):
+            print("HERE IN TUPLE")
             temp = []
-            print("here 1")
+            for k, v in file_names:
+                k = remove_formatting(k)
+                v = remove_formatting(v)
+                tup1 = (k,v)
+
+            return tup1
+
+        if isinstance(file_names, list):
+            temp = []
             for f in file_names:
-                print("f "+f)
-                f = remove_powershell_formatting(f)
+                f = remove_formatting(f)
                 temp.append(f)
                 print(f)
 
             return tuple(temp)
 
         elif isinstance(file_names, str):
-            print("here 2")
-            file_names = remove_powershell_formatting(file_names)
-            return file_names
+            temp = remove_formatting(file_names)
+            return temp
 
-        else:
-            for f in file_names:
-                if file_names[f]:
-                    if file_names[f].startswith(".\\"):
-                        #print("here "+str(kwargs[f][2:]))
-                        file_names[f] = file_names[f][2:]
+def remove_formatting(f):
+    if f.startswith(".\\"):
+        f = f[2:]
 
-            return kwargs
-def remove_powershell_formatting_dn(doc_name):
-    print("here 2")
+        if f.endswith("\\"):
+            f = f[:-1]
 
-    if doc_name.startswith(".\\"):
-        #print("here "+doc_name[2:])
-        doc_name = doc_name[2:]
+        return f
 
-    return doc_name
-
-def remove_powershell_formatting_kw(**kwargs):
-    for f in kwargs:
-        if kwargs[f]:
-            if kwargs[f].startswith(".\\"):
-                #print("here "+str(kwargs[f][2:]))
-                kwargs[f] = kwargs[f][2:]
-
-    return kwargs
-
-def remove_powershell_formatting(file_name):
-    if file_name.startswith(".\\"):
-        file_name = file_name[2:]
-        print("1 " + file_name)
-
-        if file_name.endswith("\\"):
-            print("hereee")
-            file_name = file_name[:-1]
-            print(file_name)
-
-        return file_name
     else:
-        return file_name
+        return f
