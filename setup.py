@@ -35,6 +35,7 @@ setup(
         'watchdog',
         'gitpython',
         'pexpect',
+        'winpexpect',
         'blessings'
     ],
     extras_require={

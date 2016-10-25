@@ -4,6 +4,12 @@ import codecs
 from git import Repo
 from git import RemoteProgress
 import pexpect
+import os
+try:
+	import winpexpect
+except:
+	if 'nt' in os.name:
+		print("Please install the winpexpect package before using Git auto-commit functionality on Windows.")
 import binascii
 from ltk.utils import error
 
@@ -60,7 +66,14 @@ class Git_Auto:
 		if not self.repo_is_defined:
 			error("No Git repository found for the current directory.")
 			return
-		g = pexpect.spawnu('git push')
+		if 'nt' not in os.name:
+			g = pexpect.spawnu('git push')
+		else:
+			try:
+				g = winpexpect.winspawn('git push')
+			except:
+				error("Push failed! Please confirm that the winpexpect module is up to date.")
+				return
 		g.logfile_read = sys.stdout
 		if not username: username = ''
 		if not password: password = ''
