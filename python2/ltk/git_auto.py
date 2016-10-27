@@ -3,7 +3,13 @@ import os.path
 import codecs
 from git import Repo
 from git import RemoteProgress
-import pexpect
+import os
+try:
+	import pexpect
+	import winpexpect
+except:
+	if 'nt' in os.name:
+		print("Git credentials auto-input disabled: module not supported.")
 import binascii
 from ltk.utils import error
 
@@ -60,20 +66,60 @@ class Git_Auto:
 		if not self.repo_is_defined:
 			error("No Git repository found for the current directory.")
 			return
-		g = pexpect.spawnu('git push')
-		g.logfile_read = sys.stdout
-		if not username: username = ''
-		if not password: password = ''
-		while True:
-			i = g.expect([u'Username for .*', u'Password for .*', pexpect.EOF])
-			if(i == 0):
-				g.send(username+'\n')
-			elif(i == 1):
-				# Python 2
+		print("Push was successful!")
+		try:
+			pexpect.spawnu('git push')
+		except:
+			try:
+				g = winpexpect.winspawn('git push')
+			except:
+				error("Initial push failed! Retrying...")
+				try:
+					self.repo.git.push()
+					print("Push was successful")
+				except:
+					error("Failed again!")
+				return
+		try:
+			g.logfile_read = sys.stdout
+			if not username: username = ''
+			if not password: password = ''
+			while True:
+				i = g.expect([u'Username for .*', u'Password for .*', pexpect.EOF])
+				if(i == 0):
+					g.send(username+'\n')
+				elif(i == 1):
+					# Python 2
+					g.send(codecs.decode(password, 'base64')+'\n')
+					# End Python 2
+	       			# Python 3
+# 					g.send(str(codecs.decode(password.encode(), 'base64'), 'utf-8')+'\n')
+					# End Python 3
+				else:
+					break
+		except:
+			print("Notice: Auto-credentials currently not operational")
+		# if 'nt' not in os.name:
+		# 	g = pexpect.spawnu('git push')
+		# else:
+		# 	try:
+		# 		g = winpexpect.winspawn('git push')
+		# 	except:
+		# 		error("Push failed! Please confirm that the winpexpect module is up to date.")
+		# 		return
+		# g.logfile_read = sys.stdout
+		# if not username: username = ''
+		# if not password: password = ''
+		# while True:
+		# 	i = g.expect([u'Username for .*', u'Password for .*', pexpect.EOF])
+		# 	if(i == 0):
+		# 		g.send(username+'\n')
+		# 	elif(i == 1):
+		# 		# Python 2
 				g.send(codecs.decode(password, 'base64')+'\n')
-				# End Python 2
-       			# Python 3
-# 				g.send(str(codecs.decode(password.encode(), 'base64'), 'utf-8')+'\n')
-				# End Python 3
-			else:
-				break
+		# 		# End Python 2
+  #      			# Python 3
+# 		# 		g.send(str(codecs.decode(password.encode(), 'base64'), 'utf-8')+'\n')
+		# 		# End Python 3
+		# 	else:
+		# 		break
