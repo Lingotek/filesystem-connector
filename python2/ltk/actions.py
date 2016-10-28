@@ -1305,45 +1305,43 @@ class Action:
 
     def rm_local_translations(file_name):
         trans_files = []
-        print("here 1")
 
         if 'clone' in self.download_option:
-            print("in clone")
             entry = self.doc_manager.get_doc_by_prop("file_name", file_name)
             if entry:
                 locales = entry['locales']
                 for locale_code in locales:
                     if locale_code in self.locale_folders:
-                        dir_path = self.locale_folders[locale_code]
+                        download_root = self.locale_folders[locale_code]
                     elif self.download_dir and len(self.download_dir):
-                        dir_path = os.path.join((self.download_dir if self.download_dir and self.download_dir != 'null' else ''),locale_code)
+                        download_root = os.path.join((self.download_dir if self.download_dir and self.download_dir != 'null' else ''),locale_code)
+                    else:
+                        download_root = locale_code
+                    download_root = os.path.join(self.path,download_root)
+                    source_file_name = entry['file_name']
+                    source_path = os.path.join(self.path,os.path.dirname(source_file_name))
 
-                    trans_files.extend(get_translation_files(file_name, dir_path, self.download_option, self.doc_manager))
+                    trans_files.extend(get_translation_files(file_name, download_root, self.download_option, self.doc_manager))
+
 
         elif 'folder' in self.download_option:
-            print("in folder")
-            #get any translation files that aren't in a specific locale folder
-            download_path = self.download_dir
-            dir_path = download_path
-            trans_files = get_translation_files(file_name, dir_path, self.download_option, self.doc_manager)
+            entry = self.doc_manager.get_doc_by_prop("file_name", file_name)
+            locales = entry['locales']
+            for locale_code in locales:
+                if locale_code in self.locale_folders:
+                    if self.locale_folders[locale_code] == 'null':
+                        logger.warning("Download failed: folder not specified for "+locale_code)
+                    else:
+                        download_path = self.locale_folders[locale_code]
+                else:
+                    download_path = self.download_dir
 
-            #get translations in the locale folders
-            if self.locale_folders:
-                entry = self.doc_manager.get_doc_by_prop("file_name", file_name)
-                if entry:
-                    locales = entry['locales']
-                    for locale_code in locales:
-                        if locale_code in self.locale_folders:
-                            dir_path = self.locale_folders[locale_code]
-                        elif self.download_dir and len(self.download_dir):
-                            dir_path = os.path.join((self.download_dir if self.download_dir and self.download_dir != 'null' else ''),locale_code)
-
-                        trans_files.extend(get_translation_files(file_name, dir_path, self.download_option, self.doc_manager))
+                download_path = os.path.join(self.path,download_path)
+                trans_files.extend(get_translation_files(file_name, download_path, self.download_option, self.doc_manager))
 
         elif 'same' in self.download_option:
-            print("in same")
-            dir_path = self.path
-            trans_files = get_translation_files(file_name, dir_path, self.download_option, self.doc_manager)
+            download_path = self.path
+            trans_files = get_translation_files(file_name, download_path, self.download_option, self.doc_manager)
 
         return trans_files
 
@@ -1397,7 +1395,7 @@ class Action:
                                     download_root = os.path.join(self.path,download_root)
                                     source_file_name = entry['file_name']
                                     source_path = os.path.join(self.path,os.path.dirname(source_file_name))
-                                    
+
                                     trans_files.extend(get_translation_files(file_name, download_root, self.download_option, self.doc_manager))
 
 
@@ -1643,8 +1641,11 @@ class Action:
             if not file_name:
                 logger.info('Please provide a valid file name')
 
-            os.remove(os.path.join(self.path, file_name))
+            #testing
             logger.info('{0} (local translation) has been deleted'.format(file_name))
+            #end testing
+            os.remove(os.path.join(self.path, file_name))
+
         except OSError:
             logger.info('Something went wrong trying to download the local translation')
 
