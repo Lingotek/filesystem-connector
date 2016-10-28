@@ -211,7 +211,7 @@ def request(doc_name, path, locales, to_delete, due_date, workflow):
 # todo add a --all option to see all document ids once only show relative to cwd is implemented
 @ltk.command(name='list', short_help='Shows docs (default), workflows, locales, formats, or filters')
 @click.option('-t', '--title', 'title', flag_value=True, help='List document titles and folder paths from project root instead of relative file paths')
-@click.option('-h', '--hide_docs', 'hide_docs', flag_value=True, help='List only added folders instead of both folders and documents.')
+@click.option('-d', '--hide_docs', 'hide_docs', flag_value=True, help='List only added folders instead of both folders and documents.')
 @click.option('-w', '--workflows', 'id_type', flag_value='workflow', help='List available workflows')
 @click.option('-l', '--locales', 'id_type', flag_value='locale', help='List supported locale codes')
 @click.option('-f', '--formats', 'id_type', flag_value='format', help='List supported formats')
