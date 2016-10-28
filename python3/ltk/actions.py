@@ -1395,10 +1395,8 @@ class Action:
                                     else:
                                         download_root = locale_code
                                     download_root = os.path.join(self.path,download_root)
-                                    print("download_root: "+download_root) #365 253 222 159
                                     source_file_name = entry['file_name']
                                     source_path = os.path.join(self.path,os.path.dirname(source_file_name))
-                                    print("original source_path: "+source_path)
 
                                     trans_files.extend(get_translation_files(file_name, download_root, self.download_option, self.doc_manager))
 
@@ -1419,10 +1417,7 @@ class Action:
                                 trans_files.extend(get_translation_files(file_name, download_path, self.download_option, self.doc_manager))
 
                         elif 'same' in self.download_option:
-                            entry = self.doc_manager.get_doc_by_prop("file_name", file_name)
-                            file_name = entry['file_name']
-                            download_path = os.path.dirname(file_name)
-
+                            download_path = self.path
                             trans_files = get_translation_files(file_name, download_path, self.download_option, self.doc_manager)
 
                         self.delete_local(file_name, document_id)
@@ -1648,8 +1643,12 @@ class Action:
             if not file_name:
                 logger.info('Please provide a valid file name')
 
+            #testing
+            drive, path = os.path.splitdrive(file_name)
+            logger.info('{0} (local translation) has been deleted'.format(os.path.basename(file_name)))
+            #end testing
             os.remove(os.path.join(self.path, file_name))
-            logger.info('{0} (local translation) has been deleted'.format(file_name))
+
         except OSError:
             logger.info('Something went wrong trying to download the local translation')
 
