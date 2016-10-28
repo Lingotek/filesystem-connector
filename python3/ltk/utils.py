@@ -255,12 +255,20 @@ def remove_powershell_formatting(file_names):
     if file_names != None:
         if isinstance(file_names, tuple):
             myTuple = ()
-            for k, v in file_names:
-                k = (remove_formatting(k),)
-                v = remove_formatting(v)
-                tup1 = k+(v,)
+            if len(file_names) > 1:
+                for k,v  in file_names:
+                    k = (remove_formatting(k),)
+                    v = remove_formatting(v)
+                    tup1 = k+(v,)
 
-            return myTuple+(tup1,)
+                return myTuple+(tup1,)
+            else:
+                for f in file_names:
+                    f = remove_formatting(f)
+                    myTuple = (f,)
+
+                #print("Tuple "+str(myTuple))
+                return(myTuple)
 
         if isinstance(file_names, list):
             temp = []
@@ -280,6 +288,9 @@ def remove_formatting(f):
         f = f[2:]
 
         if f.endswith("\\"):
+            f = f[:-1]
+
+        if f.endswith("\""):
             f = f[:-1]
 
         return f
