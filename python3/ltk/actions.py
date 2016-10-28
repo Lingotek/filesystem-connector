@@ -1381,7 +1381,6 @@ class Action:
                 if doc:
                     if force:
                         #delete local translation file(s) for the document being deleted
-
                         #testing
                         trans_files = []
                         if 'clone' in self.download_option:
@@ -1400,57 +1399,31 @@ class Action:
                                     source_file_name = entry['file_name']
                                     source_path = os.path.join(self.path,os.path.dirname(source_file_name))
                                     print("original source_path: "+source_path)
-                                    # Get the path from the added source folder to the source document.
-                                    #added_folder = self.added_folder_of_file(source_path)
-                                    #if len(self.folder_manager.get_file_names()) > 1 and added_folder:
-                                        #added_folder = remove_last_folder_in_path(added_folder)
-                                    #print("added folder of file: "+os.sep+remove_begin_slashes(added_folder))
-                                    #if added_folder:
-                                        #source_path = remove_begin_slashes(source_path.replace(('' if ':' in source_path else os.sep)+remove_begin_slashes(added_folder),""))
-                                    #print("replaced source_path: "+source_path)
-                                    # Copy the path into the locale folder (download_root).
-                                    # Something about this line has been causing problems
-                                    '''if source_path:
-                                        print("here 1")
-                                        download_path = os.path.join(download_root,source_path)
-                                    else:
-                                        download_path = download_root
-                                    print("download_path: "+download_path)
-                                    target_dirs = download_path.split(os.sep)
-                                    incremental_path = ""
-                                    if not os.path.exists(download_root):
-                                        os.mkdir(download_root)
-                                    if target_dirs:
-                                        for target_dir in target_dirs:
-                                            incremental_path += target_dir + os.sep
-                                            # print("target_dir: "+str(incremental_path))
-                                            new_path = os.path.join(self.path,incremental_path)
-                                            # print("new path: "+str(new_path))'''
 
                                     trans_files.extend(get_translation_files(file_name, download_root, self.download_option, self.doc_manager))
 
 
                         elif 'folder' in self.download_option:
-                            #get any translation files that aren't in a specific locale folder
-                            download_path = self.download_dir
-                            dir_path = download_path
-                            trans_files = get_translation_files(file_name, dir_path, self.download_option, self.doc_manager)
+                            entry = self.doc_manager.get_doc_by_prop("file_name", file_name)
+                            locales = entry['locales']
+                            for locale_code in locales:
+                                if locale_code in self.locale_folders:
+                                    if self.locale_folders[locale_code] == 'null':
+                                        logger.warning("Download failed: folder not specified for "+locale_code)
+                                    else:
+                                        download_path = self.locale_folders[locale_code]
+                                else:
+                                    download_path = self.download_dir
 
-                            #get translations in the locale folders
-                            if self.locale_folders:
-                                entry = self.doc_manager.get_doc_by_prop("file_name", file_name)
-                                if entry:
-                                    locales = entry['locales']
-                                    for locale_code in locales:
-                                        if locale_code in self.locale_folders:
-                                            dir_path = self.locale_folders[locale_code]
-                                        elif self.download_dir and len(self.download_dir):
-                                            dir_path = os.path.join((self.download_dir if self.download_dir and self.download_dir != 'null' else ''),locale_code)
+                                download_path = os.path.join(self.path,download_path)
+                                trans_files.extend(get_translation_files(file_name, download_path, self.download_option, self.doc_manager))
 
-                                        trans_files.extend(get_translation_files(file_name, dir_path, self.download_option, self.doc_manager))
                         elif 'same' in self.download_option:
-                            dir_path = self.path
-                            trans_files = get_translation_files(file_name, dir_path, self.download_option, self.doc_manager)
+                            entry = self.doc_manager.get_doc_by_prop("file_name", file_name)
+                            file_name = entry['file_name']
+                            download_path = os.path.dirname(file_name)
+
+                            trans_files = get_translation_files(file_name, download_path, self.download_option, self.doc_manager)
 
                         self.delete_local(file_name, document_id)
                         for trans_file_name in trans_files:

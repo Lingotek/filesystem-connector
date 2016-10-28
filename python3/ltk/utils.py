@@ -169,6 +169,7 @@ def find_translations(file_name, path, downloads):
                 if idx != len(temp)-1:
                     trans_file_name += "."
 
+            print(os.path.join(path, trans_file_name))
             if os.path.isfile(os.path.join(path, trans_file_name)):
                 translation_files.append(os.path.join(path, trans_file_name))
 
