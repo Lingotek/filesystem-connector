@@ -1599,7 +1599,7 @@ class Action:
             if not file_name:
                 logger.info('Please provide a valid file name')
 
-            logger.info('{0} (local translation) has been deleted'.format(os.path.basename(file_name)))
+            logger.info('{0} (local translation) has been deleted'.format(self.get_relative_path(file_name)))
 
             os.remove(os.path.join(self.path, file_name))
 
