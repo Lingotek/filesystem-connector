@@ -1303,48 +1303,6 @@ class Action:
             else:
                 logger.error("Error on mv: "+str(e))
 
-    def rm_local_translations(file_name):
-        trans_files = []
-
-        if 'clone' in self.download_option:
-            entry = self.doc_manager.get_doc_by_prop("file_name", file_name)
-            if entry:
-                locales = entry['locales']
-                for locale_code in locales:
-                    if locale_code in self.locale_folders:
-                        download_root = self.locale_folders[locale_code]
-                    elif self.download_dir and len(self.download_dir):
-                        download_root = os.path.join((self.download_dir if self.download_dir and self.download_dir != 'null' else ''),locale_code)
-                    else:
-                        download_root = locale_code
-                    download_root = os.path.join(self.path,download_root)
-                    source_file_name = entry['file_name']
-                    source_path = os.path.join(self.path,os.path.dirname(source_file_name))
-
-                    trans_files.extend(get_translation_files(file_name, download_root, self.download_option, self.doc_manager))
-
-
-        elif 'folder' in self.download_option:
-            entry = self.doc_manager.get_doc_by_prop("file_name", file_name)
-            locales = entry['locales']
-            for locale_code in locales:
-                if locale_code in self.locale_folders:
-                    if self.locale_folders[locale_code] == 'null':
-                        logger.warning("Download failed: folder not specified for "+locale_code)
-                    else:
-                        download_path = self.locale_folders[locale_code]
-                else:
-                    download_path = self.download_dir
-
-                download_path = os.path.join(self.path,download_path)
-                trans_files.extend(get_translation_files(file_name, download_path, self.download_option, self.doc_manager))
-
-        elif 'same' in self.download_option:
-            download_path = self.path
-            trans_files = get_translation_files(file_name, download_path, self.download_option, self.doc_manager)
-
-        return trans_files
-
     def rm_document(self, file_name, useID, force, doc_name=None, is_directory=False):
         try:
             doc = None
@@ -1379,8 +1337,8 @@ class Action:
                 if doc:
                     if force:
                         #delete local translation file(s) for the document being deleted
-                        #testing
                         trans_files = []
+
                         if 'clone' in self.download_option:
                             entry = self.doc_manager.get_doc_by_prop("file_name", file_name)
                             if entry:
@@ -1418,10 +1376,10 @@ class Action:
                             download_path = self.path
                             trans_files = get_translation_files(file_name, download_path, self.download_option, self.doc_manager)
 
+
                         self.delete_local(file_name, document_id)
                         for trans_file_name in trans_files:
                             self.delete_local_translation(trans_file_name)
-                        #end testing
 
                     self.doc_manager.remove_element(document_id)
         except json.decoder.JSONDecodeError:
@@ -1641,9 +1599,8 @@ class Action:
             if not file_name:
                 logger.info('Please provide a valid file name')
 
-            #testing
-            logger.info('{0} (local translation) has been deleted'.format(file_name))
-            #end testing
+            logger.info('{0} (local translation) has been deleted'.format(os.path.basename(file_name)))
+
             os.remove(os.path.join(self.path, file_name))
 
         except OSError:
