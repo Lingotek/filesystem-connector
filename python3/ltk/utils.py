@@ -128,6 +128,53 @@ def get_valid_locales(api, entered_locales):
                 locales.append(locale)
     return locales
 
+def get_translation_files(file_name, path, download_option, doc_manager):
+    translation_files = []
+
+    if download_option == "same":
+        downloads = doc_manager.get_doc_downloads(file_name)
+        translation_files = find_translations(file_name, path, downloads)
+
+    elif download_option == "folder" :
+        downloads = doc_manager.get_doc_downloads(file_name)
+
+        entry = doc_manager.get_doc_by_prop("file_name", file_name)
+        if entry:
+            file_name = entry['name']
+
+        translation_files = find_translations(file_name, path, downloads)
+
+    elif download_option == "clone":
+        entry = doc_manager.get_doc_by_prop("file_name", file_name)
+        if entry:
+            file_name = entry['name']
+
+        if os.path.isfile(os.path.join(path, file_name)):
+            translation_files.append(os.path.join(path, file_name))
+
+    return translation_files
+
+def find_translations(file_name, path, downloads):
+    translation_files = []
+    trans_file_name = ""
+    for d in downloads:
+        temp = file_name.split(".")
+        trans_file_name = ""
+        for idx, val in enumerate(temp):
+            if idx == len(temp)-2:
+                trans_file_name = trans_file_name +val+"."
+                trans_file_name = trans_file_name+d+"."
+            else:
+                trans_file_name += val
+                if idx != len(temp)-1:
+                    trans_file_name += "."
+
+            if os.path.isfile(os.path.join(path, trans_file_name)):
+                translation_files.append(os.path.join(path, trans_file_name))
+
+    return translation_files
+
+
 def raise_error(json, error_message, is_warning=False, doc_id=None, file_name=None):
     try:
         error = json['messages'][0]
