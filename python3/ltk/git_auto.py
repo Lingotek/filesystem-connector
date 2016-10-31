@@ -99,6 +99,7 @@ class Git_Auto:
 					break
 		except:
 			print("Notice: Auto-credentials currently not operational")
+		'''
 		# if 'nt' not in os.name:
 		# 	g = pexpect.spawnu('git push')
 		# else:
@@ -118,8 +119,9 @@ class Git_Auto:
 		# 		# Python 2
 		# 		# g.send(codecs.decode(password, 'base64')+'\n')
 		# 		# End Python 2
-  #      			# Python 3
+  		#		# Python 3
 		# 		g.send(str(codecs.decode(password.encode(), 'base64'), 'utf-8')+'\n')
 		# 		# End Python 3
 		# 	else:
 		# 		break
+		'''
