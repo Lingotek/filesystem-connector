@@ -352,13 +352,38 @@ class Action:
                         print_config = False
             if 'download_option' in kwargs and kwargs['download_option']:
                 download_option = kwargs['download_option']
-                if download_option in {'same','folder','clone'}:
+                #testing
+                if download_option == 'on':
+                    download_option = 'clone'
                     self.download_option = download_option
-                    log_info = 'Set download option to {0}'.format(download_option)
+
+                    log_info = 'Turned clone on'
                     self.update_config_file('download_option', download_option, conf_parser, config_file_name, log_info)
+                elif download_option == 'off':
+                    log_info = 'Turned clone off'
+                    if self.download_dir == None:
+                        new_download_option = 'same'
+                        self.download_option = new_download_option
+
+                        self.update_config_file('download_option', new_download_option, conf_parser, config_file_name, log_info)
+                        self.update_config_file('download_folder',"", conf_parser, config_file_name, "")
+                    else:
+                        new_download_option = 'folder'
+                        self.download_option = new_download_option
+                        self.update_config_file('download_option', new_download_option, conf_parser, config_file_name, log_info)
                 else:
-                    logger.warning('Error: Invalid value for "-o" / "--download_option": Must be one of "same", "folder", or "clone"')
+                    logger.warning('Error: Invalid value for "-c" / "--clone_option": Must be one of "on",or "off"')
                     print_config = False
+
+                #end testing
+
+                #if download_option in {'same','folder','clone'}:
+                    #self.download_option = download_option
+                    #log_info = 'Set download option to {0}'.format(download_option)
+                    #self.update_config_file('download_option', download_option, conf_parser, config_file_name, log_info)
+                #else:
+                    #logger.warning('Error: Invalid value for "-o" / "--download_option": Must be one of "same", "folder", or "clone"')
+                    #print_config = Falsee
             if 'target_locales' in kwargs and kwargs['target_locales']:
                 target_locales = kwargs['target_locales']
                 locales = []
