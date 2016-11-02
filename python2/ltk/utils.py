@@ -279,7 +279,7 @@ def remove_powershell_formatting(file_names):
 
             return tuple(temp)
 
-        elif isinstance(file_names, str):
+        else: #elif isinstance(file_names, str):
             temp = remove_formatting(file_names)
             return temp
 
