@@ -122,7 +122,7 @@ def init(host, access_token, path, project_name, workflow_id, locale, delete, re
 #TO-DO: @click.option('-a', '--all', help='List all configuration settings (including access token)')
 @click.option('-l', '--locale', help='Change the default source locale for the project')
 @click.option('-w', '--workflow_id', help='Change the default workflow id for the project')
-@click.option('-o', '--download_option', help='Select the option for downloaded files, as one of same, folder, or clone. Same (default): Target translations are downloaded to the same folder as their corresponding source files. Folder: Translations will be downloaded to the locale folders specified or to the default download folder listed in config (where no locale folder is specified). Clone: Translations will be downloaded to a cloned folder structure, where the root folder for each locale is the locale folder specified in config or a locale folder inside of the default download folder.')
+@click.option('-c', '--download_option', help='Select the option for downloaded files, as one of same, folder, or clone. Same (default): Target translations are downloaded to the same folder as their corresponding source files. Folder: Translations will be downloaded to the locale folders specified or to the default download folder listed in config (where no locale folder is specified). Clone: Translations will be downloaded to a cloned folder structure, where the root folder for each locale is the locale folder specified in config or a locale folder inside of the default download folder.')
 @click.option('-d', '--download_folder',
               help='Specify a default folder for where downloaded translations should go.')
 @click.option('-t', '--target_locales', multiple=True,
@@ -130,7 +130,7 @@ def init(host, access_token, path, project_name, workflow_id, locale, delete, re
                    'with multiple -t flags (ex: -t locale -t locale) or give a list separated by commas and no spaces '
                    '(ex: -t locale,locale)')
 @click.option('-p', '--locale_folder', nargs=2, type=str, multiple=True, help='For a specific locale, specify the root folder where downloaded translations should appear. Use --none for the path to clear the download folder for a specific locale. Example: -p fr_FR translations/fr_FR')
-@click.option('-c', '--clear_locales', flag_value=True, help='Clear all locale folders and use the default download location instead.')
+@click.option('-r', '--remove_locales', flag_value=True, help='Remove all locale folders and use the default download location instead.')
 @click.option('-g', '--git', is_flag=True, help='Toggle Git auto-commit')
 @click.option('-gu', '--git_credentials', is_flag=True, help='Open prompt for Git credentials for auto-fill (\'none\' to unset)')
 @click.option('-a', '--append_option', help='Change the format of the default name given to documents on the Lingotek system.  Define file information to append to document names as none, full, number:+a number of folders down to include (e.g. number:2), or name:+a name of a directory to start after if found in file path (e.g. name:dir). Default option is none.')

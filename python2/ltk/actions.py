@@ -330,14 +330,26 @@ class Action:
                 self.update_config_file('workflow_id', workflow_id, conf_parser, config_file_name, log_info)
                 conf_parser.set('main', 'workflow_id', workflow_id)
             if 'download_folder' in kwargs and kwargs['download_folder']:
-                download_path = self.norm_path(kwargs['download_folder'])
-                if os.path.exists(os.path.join(self.path,download_path)):
-                    self.download_dir = download_path
-                    log_info = 'Set download folder to {0}'.format(download_path)
-                    self.update_config_file('download_folder', download_path, conf_parser, config_file_name, log_info)
+                if kwargs['download_folder'] == '--none':
+                    new_download_option = 'same'
+                    self.download_option = new_download_option
+                    log_info = 'Removed download folder'
+
+                    self.update_config_file('download_option', new_download_option, conf_parser, config_file_name, log_info)
+                    self.update_config_file('download_folder',"", conf_parser, config_file_name, "")
                 else:
-                    logger.warning('Error: Invalid value for "-d" / "--download_folder": The folder {0} does not exist'.format(os.path.join(self.path,download_path)))
-                    print_config = False
+                    download_path = self.norm_path(kwargs['download_folder'])
+                    new_download_option = 'folder'
+                    if os.path.exists(os.path.join(self.path,download_path)):
+                        self.download_option = new_download_option
+                        self.download_dir = download_path
+                        log_info = 'Set download folder to {0}'.format(download_path)
+
+                        self.update_config_file('download_folder', download_path, conf_parser, config_file_name, log_info)
+                        self.update_config_file('download_option', new_download_option, conf_parser, config_file_name, "")
+                    else:
+                        logger.warning('Error: Invalid value for "-d" / "--download_folder": The folder {0} does not exist'.format(os.path.join(self.path,download_path)))
+                        print_config = False
             if 'download_option' in kwargs and kwargs['download_option']:
                 download_option = kwargs['download_option']
                 if download_option in {'same','folder','clone'}:
