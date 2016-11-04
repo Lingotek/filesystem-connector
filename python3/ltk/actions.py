@@ -365,8 +365,7 @@ class Action:
                     else:
                         logger.warning('Error: Invalid value for "-d" / "--download_folder": The folder {0} does not exist'.format(os.path.join(self.path,download_path)))
                         print_config = False
-            if 'download_option' in kwargs and kwargs['download_option']:
-                print("here")
+            '''if 'download_option' in kwargs and kwargs['download_option']:
                 download_option = kwargs['download_option']
 
                 if download_option == 'on':
@@ -389,7 +388,7 @@ class Action:
                         self.update_config_file('download_option', new_download_option, conf_parser, config_file_name, log_info)
                 else:
                     logger.warning('Error: Invalid value for "-c" / "--clone_option": Must be either "on" or "off"')
-                    print_config = False
+                    print_config = False'''
             if 'clone_option' in kwargs and kwargs['clone_option']:
                 clone_option = kwargs['clone_option']
                 self.clone_action = clone_option
@@ -399,9 +398,7 @@ class Action:
                     self.download_option = download_option
 
                     self.update_config_file('clone_option', clone_option, conf_parser, config_file_name, log_info)
-                    print("clone option: "+str(self.clone_option))
                     self.update_config_file('download_option', download_option, conf_parser, config_file_name, '')
-                    print("download option: "+str(self.download_option))
                 elif clone_option == 'off':
                     if self.download_dir == '':
                         new_download_option = 'same'
@@ -410,14 +407,11 @@ class Action:
                         self.update_config_file('clone_option', clone_option, conf_parser, config_file_name, log_info)
                         self.update_config_file('download_option', new_download_option, conf_parser, config_file_name, '')
                         self.update_config_file('download_folder', self.download_dir, conf_parser, config_file_name, '')
-                        print("download option: "+self.download_option)
-                        print("clone option: "+self.clone_option)
-                        print("download folder: "+self.download_dir)
                     else:
                         new_download_option = 'folder'
                         self.download_option = new_download_option
+                        self.update_config_file('clone_option', clone_option, conf_parser, config_file_name, log_info)
                         self.update_config_file('download_option', new_download_option, conf_parser, config_file_name, '')
-                        print("download option: "+str(self.download_option))
                 else:
                     logger.warning('Error: Invalid value for "-c" / "--clone_option": Must be either "on" or "off"')
                     print_config = False
