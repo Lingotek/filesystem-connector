@@ -122,7 +122,7 @@ def init(host, access_token, path, project_name, workflow_id, locale, delete, re
 #TO-DO: @click.option('-a', '--all', help='List all configuration settings (including access token)')
 @click.option('-l', '--locale', help='Change the default source locale for the project')
 @click.option('-w', '--workflow_id', help='Change the default workflow id for the project')
-@click.option('-c', '--download_option', help='Toggle clone download option on and off. (i.e. ltk clone on/off) Turning clone ON: Translations will be downloaded to a cloned folder structure, where the root folder for each locale is the locale folder specified in config or a locale folder inside of the default download folder. ' +
+@click.option('-c', '--clone_option', help='Toggle clone download option on and off. (i.e. ltk clone on/off) Turning clone ON: Translations will be downloaded to a cloned folder structure, where the root folder for each locale is the locale folder specified in config or a locale folder inside of the default download folder. If no default download folder set, translations will be downloaded to the directory where the project was initialized.' +
                                                 'Turning clone OFF: If a download folder is specified, downloaded tranlsations will download to that folder, but not in a cloned folder structure. If no download folder is specified, downloaded translations will go to the same folder as their corresponding source files.')
 @click.option('-d', '--download_folder',
               help='Specify a default folder for where downloaded translations should go. Use --none to remove the download folder. Using --none will cause downloaded translations to download to the same folder as their corresponding source files.')

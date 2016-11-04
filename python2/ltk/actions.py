@@ -31,6 +31,7 @@ class Action:
         self.community_id = ''
         self.workflow_id = ''  # default workflow id; MT phase only
         self.locale = ''
+        self.clone_option = 'off'
         self.download_option = 'same'
         self.download_dir = None  # directory where downloaded translation will be stored
         self.watch_locales = set()  # if specified, add these target locales to any files in the watch folder
@@ -93,6 +94,11 @@ class Action:
             else:
                 self.download_option = 'same'
                 self.update_config_file('download_option', self.download_option, conf_parser, config_file_name, "")
+            if conf_parser.has_option('main', 'clone_option'):
+                self.clone_option = conf_parser.get('main', 'clone_option')
+            else:
+                self.clone_option = 'off'
+                self.update_config_file('clone_option', self.clone_option, conf_parser, config_file_name, "")
             if conf_parser.has_option('main', 'git_autocommit'):
                 self.git_autocommit = conf_parser.get('main', 'git_autocommit')
             else:
@@ -334,12 +340,15 @@ class Action:
                     new_download_option = 'same'
                     self.download_option = new_download_option
                     self.update_config_file('download_folder',"", conf_parser, config_file_name, "")
+                    print("download option: "+self.download_option)
+                    print("clone option: "+self.clone_option)
 
                     if self.download_option != 'clone':
                         new_download_option = 'same'
                         self.download_option = new_download_option
                         log_info = 'Removed download folder'
                         self.update_config_file('download_option', new_download_option, conf_parser, config_file_name, log_info)
+                        print("download option: "+self.download_option)
 
                 else:
                     download_path = self.norm_path(kwargs['download_folder'])
@@ -352,12 +361,13 @@ class Action:
                             new_download_option = 'folder'
                             self.download_option = new_download_option
                             self.update_config_file('download_option', new_download_option, conf_parser, config_file_name, "")
+                            print("download option: "+str(self.download_option))
                     else:
                         logger.warning('Error: Invalid value for "-d" / "--download_folder": The folder {0} does not exist'.format(os.path.join(self.path,download_path)))
                         print_config = False
-            if 'download_option' in kwargs and kwargs['download_option']:
+            '''if 'download_option' in kwargs and kwargs['download_option']:
                 download_option = kwargs['download_option']
-                
+
                 if download_option == 'on':
                     download_option = 'clone'
                     self.download_option = download_option
@@ -376,6 +386,32 @@ class Action:
                         new_download_option = 'folder'
                         self.download_option = new_download_option
                         self.update_config_file('download_option', new_download_option, conf_parser, config_file_name, log_info)
+                else:
+                    logger.warning('Error: Invalid value for "-c" / "--clone_option": Must be either "on" or "off"')
+                    print_config = False'''
+            if 'clone_option' in kwargs and kwargs['clone_option']:
+                clone_option = kwargs['clone_option']
+                self.clone_action = clone_option
+                log_info = 'Turned clone '+clone_option
+                if clone_option == 'on':
+                    download_option = 'clone'
+                    self.download_option = download_option
+
+                    self.update_config_file('clone_option', clone_option, conf_parser, config_file_name, log_info)
+                    self.update_config_file('download_option', download_option, conf_parser, config_file_name, '')
+                elif clone_option == 'off':
+                    if self.download_dir == '':
+                        new_download_option = 'same'
+                        self.download_option = new_download_option
+
+                        self.update_config_file('clone_option', clone_option, conf_parser, config_file_name, log_info)
+                        self.update_config_file('download_option', new_download_option, conf_parser, config_file_name, '')
+                        self.update_config_file('download_folder', self.download_dir, conf_parser, config_file_name, '')
+                    else:
+                        new_download_option = 'folder'
+                        self.download_option = new_download_option
+                        self.update_config_file('clone_option', clone_option, conf_parser, config_file_name, log_info)
+                        self.update_config_file('download_option', new_download_option, conf_parser, config_file_name, '')
                 else:
                     logger.warning('Error: Invalid value for "-c" / "--clone_option": Must be either "on" or "off"')
                     print_config = False
@@ -528,8 +564,8 @@ class Action:
                 if str(watch_locales) == "[]":
                     watch_locales = ""
                 print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity ID: {4}\nWorkflow ID: {5}\n' \
-                      'Default Source Locale: {6}\nDownload Option: {7}\nDownload Folder: {8}\nTarget Locales (for watch and clone): {9}\nTarget Locale Folders: {10}\nGit Auto-commit: {11}'.format(
-                    self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.download_option,
+                      'Default Source Locale: {6}\nClone Option: {7}\nDownload Folder: {8}\nTarget Locales (for watch and clone): {9}\nTarget Locale Folders: {10}\nGit Auto-commit: {11}'.format(
+                    self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.clone_option,
                     download_dir, watch_locales, locale_folders_str, git_output))
         except Exception as e:
             log_error(self.error_file_name, e)
