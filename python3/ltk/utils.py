@@ -264,13 +264,21 @@ def remove_powershell_formatting(file_names):
                 return myTuple+(tup1,)
             else:
                 for f in file_names:
-                    f = remove_formatting(f)
-                    myTuple = (f,)
+                    if isinstance(f, tuple):
+                        print(f)
+                        for k in f:
+                            k = remove_powershell_formatting(k)
+                            print(k)
 
-                #print("Tuple "+str(myTuple))
-                return(myTuple)
+                        return myTuple+(k,)
+                    else:
+                        f = remove_powershell_formatting
+
+
+                        return myTuple+(tup1,)
 
         if isinstance(file_names, list):
+            print("it's a list")
             temp = []
             for f in file_names:
                 f = remove_formatting(f)
