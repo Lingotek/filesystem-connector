@@ -266,7 +266,7 @@ def remove_powershell_formatting(args):
                 for tup in args:
                     if isinstance(tup, tuple):
                         for k in tup:
-                            k = remove_powershell_formatting(k)
+                            k = remove_formatting(k)
                             myTuple = myTuple+(k,)
 
                         myTuple = (myTuple),
@@ -283,14 +283,20 @@ def remove_powershell_formatting(args):
             for k in args:
                 k = remove_formatting(k)
                 temp.append(k)
-                
+
             return tuple(temp)
 
         elif isinstance(args, str):
             temp = remove_formatting(args)
             return temp
         else:
+            # Python 2
+#           temp = remove_formatting(args)
+#           return temp
+            # End Python 2
+            # Python 3
             return args
+            # End Python 3
 
 def remove_formatting(f):
     if f.startswith(".\\"):
