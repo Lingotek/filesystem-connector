@@ -418,7 +418,8 @@ def clean(force, dis_all, file_paths):
         action = actions.Action(os.getcwd())
         init_logger(action.path)
 
-        file_paths = remove_powershell_formatting(file_paths)
+        if len(file_paths) > 0:
+            file_paths = remove_powershell_formatting(file_paths)
 
         action.clean_action(force, dis_all, file_paths)
     except (UninitializedError, RequestFailedError) as e:
