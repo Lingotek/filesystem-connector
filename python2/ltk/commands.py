@@ -140,12 +140,10 @@ def config(**kwargs):
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
-        #testing
         for f in kwargs:
             if kwargs[f]:
                 temp = remove_powershell_formatting(kwargs[f])
                 kwargs[f] = temp
-        #end testing
         action.config_action(**kwargs)
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
@@ -398,7 +396,8 @@ def import_command(import_all, force, path):
         action = ImportAction(os.getcwd())
         init_logger(action.path)
 
-        path = remove_powershell_formatting(path)
+        if path != None:
+            path = remove_powershell_formatting(path)
 
         action.import_action(import_all, force, path)
     except(UninitializedError, RequestFailedError) as e:
@@ -422,7 +421,8 @@ def clean(force, dis_all, file_paths):
         action = actions.Action(os.getcwd())
         init_logger(action.path)
 
-        file_paths = remove_powershell_formatting(file_paths)
+        if len(file_paths) > 0:
+            file_paths = remove_powershell_formatting(file_paths)
 
         action.clean_action(force, dis_all, file_paths)
     except (UninitializedError, RequestFailedError) as e:
@@ -448,7 +448,8 @@ def clone(folders, copy_root):
         if isinstance(folders,str):
             folders = [folders]
 
-        folders = remove_powershell_formatting(folders)
+        if len(folders) > 0:
+            folders = remove_powershell_formatting(folders)
 
         action.clone_action(folders, copy_root)
     except (UninitializedError, RequestFailedError) as e:
