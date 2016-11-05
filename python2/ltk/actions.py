@@ -1342,40 +1342,41 @@ class Action:
                         if 'clone' in self.download_option:
                             entry = self.doc_manager.get_doc_by_prop("file_name", file_name)
                             if entry:
-                                locales = entry['locales']
-                                for locale_code in locales:
-                                    if locale_code in self.locale_folders:
-                                        download_root = self.locale_folders[locale_code]
-                                    elif self.download_dir and len(self.download_dir):
-                                        download_root = os.path.join((self.download_dir if self.download_dir and self.download_dir != 'null' else ''),locale_code)
-                                    else:
-                                        download_root = locale_code
-                                    download_root = os.path.join(self.path,download_root)
-                                    source_file_name = entry['file_name']
-                                    source_path = os.path.join(self.path,os.path.dirname(source_file_name))
+                                if 'locales' in entry and entry['locales']:
+                                    locales = entry['locales']
+                                    for locale_code in locales:
+                                        if locale_code in self.locale_folders:
+                                            download_root = self.locale_folders[locale_code]
+                                        elif self.download_dir and len(self.download_dir):
+                                            download_root = os.path.join((self.download_dir if self.download_dir and self.download_dir != 'null' else ''),locale_code)
+                                        else:
+                                            download_root = locale_code
+                                        download_root = os.path.join(self.path,download_root)
+                                        source_file_name = entry['file_name']
+                                        source_path = os.path.join(self.path,os.path.dirname(source_file_name))
 
-                                    trans_files.extend(get_translation_files(file_name, download_root, self.download_option, self.doc_manager))
-
+                                        trans_files.extend(get_translation_files(file_name, download_root, self.download_option, self.doc_manager))
 
                         elif 'folder' in self.download_option:
                             entry = self.doc_manager.get_doc_by_prop("file_name", file_name)
-                            locales = entry['locales']
-                            for locale_code in locales:
-                                if locale_code in self.locale_folders:
-                                    if self.locale_folders[locale_code] == 'null':
-                                        logger.warning("Download failed: folder not specified for "+locale_code)
-                                    else:
-                                        download_path = self.locale_folders[locale_code]
-                                else:
-                                    download_path = self.download_dir
+                            if entry:
+                                if 'locales' in entry and entry['locales']:
+                                    locales = entry['locales']
+                                    for locale_code in locales:
+                                        if locale_code in self.locale_folders:
+                                            if self.locale_folders[locale_code] == 'null':
+                                                logger.warning("Download failed: folder not specified for "+locale_code)
+                                            else:
+                                                download_path = self.locale_folders[locale_code]
+                                        else:
+                                            download_path = self.download_dir
 
-                                download_path = os.path.join(self.path,download_path)
-                                trans_files.extend(get_translation_files(file_name, download_path, self.download_option, self.doc_manager))
+                                        download_path = os.path.join(self.path,download_path)
+                                        trans_files.extend(get_translation_files(file_name, download_path, self.download_option, self.doc_manager))
 
                         elif 'same' in self.download_option:
                             download_path = self.path
                             trans_files = get_translation_files(file_name, download_path, self.download_option, self.doc_manager)
-
 
                         self.delete_local(file_name, document_id)
                         for trans_file_name in trans_files:
