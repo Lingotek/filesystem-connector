@@ -342,7 +342,8 @@ def rm(file_names, **kwargs):
             logger.info("Usage: ltk rm [OPTIONS] FILE_NAMES...")
             return
 
-        file_names = remove_powershell_formatting(file_names)
+        if len(file_names) > 0:
+            file_names = remove_powershell_formatting(file_names)
 
         action.rm_action(file_names, **kwargs)
     except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
