@@ -344,7 +344,7 @@ def rm(file_names, **kwargs):
         if not file_names and not ('all' in kwargs and kwargs['all']):
             logger.info("Usage: ltk rm [OPTIONS] FILE_NAMES...")
             return
-
+        
         file_names = remove_powershell_formatting(file_names)
 
         action.rm_action(file_names, **kwargs)
