@@ -149,6 +149,7 @@ def get_translation_files(file_name, path, download_option, doc_manager):
         if entry:
             file_name = entry['name']
 
+        print(os.path.join(path, trans_file_name))
         if os.path.isfile(os.path.join(path, file_name)):
             translation_files.append(os.path.join(path, file_name))
 
@@ -169,6 +170,7 @@ def find_translations(file_name, path, downloads):
                 if idx != len(temp)-1:
                     trans_file_name += "."
 
+            print(os.path.join(path, trans_file_name))
             if os.path.isfile(os.path.join(path, trans_file_name)):
                 translation_files.append(os.path.join(path, trans_file_name))
 
@@ -324,7 +326,7 @@ def remove_powershell_formatting(args):
                             myTuple = (k,)
 
                         return myTuple
-                        
+
                 return args
 
         elif isinstance(args, list):

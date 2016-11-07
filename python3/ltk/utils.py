@@ -324,7 +324,7 @@ def remove_powershell_formatting(args):
                             myTuple = (k,)
 
                         return myTuple
-                        
+
                 return args
 
         elif isinstance(args, list):
