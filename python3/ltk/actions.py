@@ -568,7 +568,7 @@ class Action:
                                 confirm = 'not confirmed'
                             try:
                                 while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-                                    prompt_message = "This document already exists. Would you like to overwrite it? [Y/n]: "
+                                    prompt_message = "This document already exists. Would you like to overwrite it? [y/n]: "
                                     # Python 2
                                     # confirm = raw_input(prompt_message)
                                     # End Python 2
@@ -1946,7 +1946,7 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
             confirm = 'none'
             try:
                 while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-                    prompt_message = 'Would you like to use an existing Lingotek project? [Y/n]:'
+                    prompt_message = 'Would you like to use an existing Lingotek project? [y/n]:'
                     # Python 2
                     # confirm = raw_input(prompt_message)
                     # End Python 2
