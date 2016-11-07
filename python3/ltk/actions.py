@@ -340,15 +340,12 @@ class Action:
                     new_download_option = 'same'
                     self.download_option = new_download_option
                     self.update_config_file('download_folder',"", conf_parser, config_file_name, "")
-                    print("download option: "+self.download_option)
-                    print("clone option: "+self.clone_option)
 
                     if self.download_option != 'clone':
                         new_download_option = 'same'
                         self.download_option = new_download_option
                         log_info = 'Removed download folder'
                         self.update_config_file('download_option', new_download_option, conf_parser, config_file_name, log_info)
-                        print("download option: "+self.download_option)
 
                 else:
                     download_path = self.norm_path(kwargs['download_folder'])
@@ -361,7 +358,6 @@ class Action:
                             new_download_option = 'folder'
                             self.download_option = new_download_option
                             self.update_config_file('download_option', new_download_option, conf_parser, config_file_name, "")
-                            print("download option: "+str(self.download_option))
                     else:
                         logger.warning('Error: Invalid value for "-d" / "--download_folder": The folder {0} does not exist'.format(os.path.join(self.path,download_path)))
                         print_config = False
