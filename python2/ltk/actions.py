@@ -1427,9 +1427,6 @@ class Action:
                                         source_file_name = entry['file_name']
                                         source_path = os.path.join(self.path,os.path.dirname(source_file_name))
 
-                                        #testing
-                                        
-                                        #end testing
                                         trans_files.extend(get_translation_files(file_name, download_root, self.download_option, self.doc_manager))
 
                         elif 'folder' in self.download_option:

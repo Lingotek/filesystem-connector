@@ -338,6 +338,10 @@ def remove_powershell_formatting(args):
         elif isinstance(args, str):
             temp = remove_formatting(args)
             return temp
+        # Python 2
+        # elif isinstance(args, bool):
+        #    return args
+        # End Python 2
         else:
             # Python 2
 #           temp = remove_formatting(args)
