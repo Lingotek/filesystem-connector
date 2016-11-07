@@ -408,15 +408,14 @@ def import_command(import_all, force, path):
 
 
 @ltk.command(short_help="Cleans up the associations between local documents and documents in Lingotek")
-@click.option('-a', '--all', 'dis_all', flag_value=True, help='Removes all associations between local and remote')
+@click.option('-a', '--all', 'dis_all', flag_value=True, help='Removes all associations between local and remote documents')
 @click.argument('file_paths', required=False, nargs=-1)
-@click.option('-f', '--force', flag_value=True, help='Deletes local documents that no longer exists in Lingotek')
+@click.option('-f', '--force', flag_value=True, help='Deletes local documents that no longer exist in Lingotek')
 def clean(force, dis_all, file_paths):
     """
     Cleans up the associations between local documents and documents in Lingotek.
-    By default, checks that local documents and remote documents line up.
-    Use different options for different use cases. Enter file or directory names
-    to remove local associations of specific files or directories.
+    By default, checks that local documents and remote documents match up.
+    Enter file or directory names to remove local associations of specific files or directories.
     """
     try:
         action = actions.Action(os.getcwd())
