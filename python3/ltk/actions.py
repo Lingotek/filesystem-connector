@@ -37,6 +37,7 @@ class Action:
         self.git_autocommit = None
         self.git_username = ''
         self.git_password = ''
+        self.append_option = 'none'
         self.locale_folders = {}
         if not self._is_initialized():
             raise exceptions.UninitializedError("This project is not initialized. Please run init command.")
@@ -108,6 +109,11 @@ class Action:
             else:
                 self.git_password = ''
                 self.update_config_file('git_password', self.git_password, conf_parser, config_file_name, "")
+            if conf_parser.has_option('main', 'append_option'):
+                self.append_option = conf_parser.get('main', 'append_option')
+            else:
+                self.append_option = 'none'
+                self.update_config_file('append_option', self.append_option, conf_parser, config_file_name, "")
         except NoOptionError as e:
             if not self.project_name:
                 self.api = ApiCalls(self.host, self.access_token)
@@ -458,6 +464,7 @@ class Action:
                 self.update_config_file('git_password', self.git_auto.encrypt(git_password), conf_parser, config_file_name, log_info)
             if 'append_option' in kwargs and kwargs['append_option']:
                 append_option = kwargs['append_option']
+                self.append_option = append_option
                 if append_option in {'none', 'full'} or append_option[:append_option.find(':')+1] in {'number:', 'name:'}:
                     set_option = True
                     if append_option[:3] == 'num':
@@ -495,9 +502,9 @@ class Action:
                 if str(watch_locales) == "[]":
                     watch_locales = ""
                 print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity ID: {4}\nWorkflow ID: {5}\n' \
-                      'Default Source Locale: {6}\nDownload Option: {7}\nDownload Folder: {8}\nTarget Locales (for watch and clone): {9}\nTarget Locale Folders: {10}\nGit Auto-commit: {11}'.format(
+                      'Default Source Locale: {6}\nDownload Option: {7}\nDownload Folder: {8}\nTarget Locales (for watch and clone): {9}\nTarget Locale Folders: {10}\nGit Auto-commit: {11}\nAppend Option: {12}'.format(
                     self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.download_option,
-                    download_dir, watch_locales, locale_folders_str, git_output))
+                    download_dir, watch_locales, locale_folders_str, git_output, self.append_option))
         except Exception as e:
             log_error(self.error_file_name, e)
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):

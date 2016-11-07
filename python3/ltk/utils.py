@@ -298,37 +298,52 @@ def log_error(error_file_name, e):
             error_file.write(str(time.strftime("%Y-%m-%d %H:%M:%S") + ": "+str(log_traceback(e))))
     return
 
-def remove_powershell_formatting(file_names):
-    if file_names != None:
-        if isinstance(file_names, tuple):
+def remove_powershell_formatting(args):
+    if args != None:
+        if isinstance(args, tuple):
             myTuple = ()
-            if len(file_names) > 1:
-                for k,v  in file_names:
+            if len(args) > 1:
+                for k,v  in args:
                     k = (remove_formatting(k),)
                     v = remove_formatting(v)
                     tup1 = k+(v,)
 
                 return myTuple+(tup1,)
             else:
-                for f in file_names:
-                    f = remove_formatting(f)
-                    myTuple = (f,)
+                for tup in args:
+                    if isinstance(tup, tuple):
+                        for k in tup:
+                            k = remove_formatting(k)
+                            myTuple = myTuple+(k,)
 
-                #print("Tuple "+str(myTuple))
-                return(myTuple)
+                        myTuple = (myTuple),
+                        return myTuple
+                    else:
+                        for k in args:
+                            k = remove_formatting(k)
+                            myTuple = (k,)
 
-        if isinstance(file_names, list):
+                        return myTuple
+
+        if isinstance(args, list):
             temp = []
-            for f in file_names:
-                f = remove_formatting(f)
-                temp.append(f)
-                print(f)
+            for k in args:
+                k = remove_formatting(k)
+                temp.append(k)
 
             return tuple(temp)
 
-        elif isinstance(file_names, str):
-            temp = remove_formatting(file_names)
+        elif isinstance(args, str):
+            temp = remove_formatting(args)
             return temp
+        else:
+            # Python 2
+#           temp = remove_formatting(args)
+#           return temp
+            # End Python 2
+            # Python 3
+            return args
+            # End Python 3
 
 def remove_formatting(f):
     if f.startswith(".\\"):
