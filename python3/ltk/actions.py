@@ -508,25 +508,30 @@ class Action:
                         self.update_config_file('git_autocommit', 'True', conf_parser, config_file_name, log_info)
                         self.git_autocommit = "True"
             if 'git_credentials' in kwargs and kwargs['git_credentials']:
-                # Python 2
-                # git_username = raw_input('Username: ')
-                # End Python 2
-                # Python 3
-                git_username = input('Username: ')
-                # End Python 3
-                git_password = getpass.getpass()
-                if git_username in ['None', 'none', 'N', 'n']:
+                if "nt" not in os.name:
+                    # Python 2
+                    # git_username = raw_input('Username: ')
+                    # End Python 2
+                    # Python 3
+                    git_username = input('Username: ')
+                    # End Python 3
+                    git_password = getpass.getpass()
+                    if git_username in ['None', 'none', 'N', 'n']:
+                        git_username = ""
+                        log_info = "Git username disabled"
+                    else:
+                        log_info = 'Git username set to ' + git_username
+                    self.update_config_file('git_username', git_username, conf_parser, config_file_name, log_info)
+                    if git_password in ['None', 'none', 'N', 'n']:
+                        git_password = ""
+                        log_info = "Git password disabled"
+                    else:
+                        log_info = 'Git password set'
+                    self.update_config_file('git_password', self.git_auto.encrypt(git_password), conf_parser, config_file_name, log_info)
+                else:
+                    error("Only SSH Key access is enabled on Windows")
                     git_username = ""
-                    log_info = "Git username disabled"
-                else:
-                    log_info = 'Git username set to ' + git_username
-                self.update_config_file('git_username', git_username, conf_parser, config_file_name, log_info)
-                if git_password in ['None', 'none', 'N', 'n']:
                     git_password = ""
-                    log_info = "Git password disabled"
-                else:
-                    log_info = 'Git password set'
-                self.update_config_file('git_password', self.git_auto.encrypt(git_password), conf_parser, config_file_name, log_info)
             if 'append_option' in kwargs and kwargs['append_option']:
                 append_option = kwargs['append_option']
                 self.append_option = append_option

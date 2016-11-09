@@ -508,25 +508,30 @@ class Action:
                         self.update_config_file('git_autocommit', 'True', conf_parser, config_file_name, log_info)
                         self.git_autocommit = "True"
             if 'git_credentials' in kwargs and kwargs['git_credentials']:
-                # Python 2
-                git_username = raw_input('Username: ')
-                # End Python 2
-                # Python 3
-#                 git_username = input('Username: ')
-                # End Python 3
-                git_password = getpass.getpass()
-                if git_username in ['None', 'none', 'N', 'n']:
+                if "nt" not in os.name:
+                    # Python 2
+                    git_username = raw_input('Username: ')
+                    # End Python 2
+                    # Python 3
+#                     git_username = input('Username: ')
+                    # End Python 3
+                    git_password = getpass.getpass()
+                    if git_username in ['None', 'none', 'N', 'n']:
+                        git_username = ""
+                        log_info = "Git username disabled"
+                    else:
+                        log_info = 'Git username set to ' + git_username
+                    self.update_config_file('git_username', git_username, conf_parser, config_file_name, log_info)
+                    if git_password in ['None', 'none', 'N', 'n']:
+                        git_password = ""
+                        log_info = "Git password disabled"
+                    else:
+                        log_info = 'Git password set'
+                    self.update_config_file('git_password', self.git_auto.encrypt(git_password), conf_parser, config_file_name, log_info)
+                else: 
+                    error("Only SSH Key access is enabled on Windows")
                     git_username = ""
-                    log_info = "Git username disabled"
-                else:
-                    log_info = 'Git username set to ' + git_username
-                self.update_config_file('git_username', git_username, conf_parser, config_file_name, log_info)
-                if git_password in ['None', 'none', 'N', 'n']:
                     git_password = ""
-                    log_info = "Git password disabled"
-                else:
-                    log_info = 'Git password set'
-                self.update_config_file('git_password', self.git_auto.encrypt(git_password), conf_parser, config_file_name, log_info)
             if 'append_option' in kwargs and kwargs['append_option']:
                 append_option = kwargs['append_option']
                 self.append_option = append_option
@@ -566,10 +571,23 @@ class Action:
                 watch_locales = ','.join(target for target in self.watch_locales)
                 if str(watch_locales) == "[]":
                     watch_locales = ""
+<<<<<<< HEAD
                 print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity ID: {4}\nWorkflow ID: {5}\n'
                     'Default Source Locale: {6}\nDownload Option: {7}\nDownload Folder: {8}\nTarget Locales (for watch and clone): {9}\nTarget Locale Folders: {10}\nGit Auto-commit: {11}\nAppend Option: {12}'.format(
                     self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.download_option,
                     download_dir, watch_locales, locale_folders_str, git_output, self.append_option))
+=======
+                print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity ID: {4}\nWorkflow ID: {5}\n' \
+<<<<<<< HEAD
+                      'Default Source Locale: {6}\nClone Option: {7}\nDownload Folder: {8}\nTarget Locales (for watch and clone): {9}\nTarget Locale Folders: {10}\nGit Auto-commit: {11}'.format(
+                    self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.clone_option,
+                    download_dir, watch_locales, locale_folders_str, git_output))
+=======
+                      'Default Source Locale: {6}\nDownload Option: {7}\nDownload Folder: {8}\nTarget Locales (for watch and clone): {9}\nTarget Locale Folders: {10}\nGit Auto-commit: {11}\nAppend Option: {12}'.format(
+                    self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.download_option,
+                    download_dir, watch_locales, locale_folders_str, git_output, self.append_option))
+>>>>>>> dev
+>>>>>>> dev
         except Exception as e:
             log_error(self.error_file_name, e)
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
