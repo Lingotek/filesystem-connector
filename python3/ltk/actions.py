@@ -964,12 +964,14 @@ class Action:
         if response.status_code != 200:
             raise_error(response.json(), 'Failed to get filters')
         filter_entities = response.json()['entities']
-        print ('Filters: id, title')
-        for entry in filter_entities:
+        print ('Filters: id, created, title')
+        for entry in sorted(filter_entities, key=lambda entry: entry['properties']['upload_date'], reverse=True):
             properties = entry['properties']
             title = properties['title']
             filter_id = properties['id']
-            print ('{0}\t{1}\t'.format(filter_id, title))
+            upload_date = time.strftime("%Y-%m-%d", time.localtime(int(properties['upload_date']/1000)))
+            is_public = " (public)" if properties['is_public'] else ""
+            print ('{0}  {1}  {2}{3}'.format(filter_id, upload_date, title, is_public))
 
     def print_status(self, title, progress):
         print ('{0}: {1}%'.format(title, progress))
@@ -2002,7 +2004,7 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
             confirm = 'none'
             try:
                 while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-                    prompt_message = 'Would you like to use an existing Lingotek project? [y/n]:'
+                    prompt_message = 'Would you like to use an existing Lingotek project? [Y/n]: '
                     # Python 2
                     # confirm = raw_input(prompt_message)
                     # End Python 2

@@ -25,7 +25,7 @@ class ApiCalls:
         """ gets the communities that a user is in """
         try:
             uri = API_URI['community']
-            payload = {'limit': 100}
+            payload = {'limit': 1000}
             r = requests.get(self.host + uri, headers=self.headers, params=payload)
             log_api('GET', uri, r)
         except requests.exceptions.ConnectionError:
@@ -47,7 +47,7 @@ class ApiCalls:
         """ gets the projects a user has """
         try:
             uri = API_URI['project']
-            payload = {'community_id': community_id, 'limit': 100}
+            payload = {'community_id': community_id, 'limit': 10000}
             r = requests.get(self.host + uri, headers=self.headers, params=payload)
             log_api('GET', uri, r)
         except requests.exceptions.ConnectionError:
@@ -178,7 +178,7 @@ class ApiCalls:
             uri = API_URI['document']
             payload = {}
             if project_id:
-                payload = {'project_id': project_id, 'limit': 1000}
+                payload = {'project_id': project_id, 'limit': 10000}
             r = requests.get(self.host + uri, headers=self.headers, params=payload)
             log_api('GET', uri, r)
         except requests.exceptions.ConnectionError:
@@ -268,7 +268,7 @@ class ApiCalls:
     def list_workflows(self, community_id):
         try:
             uri = API_URI['workflow']
-            payload = {'community_id': community_id}
+            payload = {'community_id': community_id, 'limit': 1000}
             r = requests.get(self.host + uri, headers=self.headers, params=payload)
             log_api('GET', uri, r)
         except requests.exceptions.ConnectionError:
@@ -286,7 +286,7 @@ class ApiCalls:
     def list_filters(self):
         try:
             uri = API_URI['filter']
-            r = requests.get(self.host + uri, headers=self.headers)
+            r = requests.get(self.host + uri, headers=self.headers, params={'limit': 1000})
             log_api('GET', uri, r)
         except requests.exceptions.ConnectionError:
             self.handleError()
