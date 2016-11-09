@@ -548,8 +548,8 @@ class Action:
                 if str(watch_locales) == "[]":
                     watch_locales = ""
                 print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity ID: {4}\nWorkflow ID: {5}\n'
-                    'Default Source Locale: {6}\nDownload Option: {7}\nDownload Folder: {8}\nTarget Locales (for watch and clone): {9}\nTarget Locale Folders: {10}\nGit Auto-commit: {11}\nAppend Option: {12}'.format(
-                    self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.download_option,
+                    'Default Source Locale: {6}\nClone Option: {7}\nDownload Folder: {8}\nTarget Locales (for watch and clone): {9}\nTarget Locale Folders: {10}\nGit Auto-commit: {11}\nAppend Option: {12}'.format(
+                    self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.clone_option,
                     download_dir, watch_locales, locale_folders_str, git_output, self.append_option))
         except Exception as e:
             log_error(self.error_file_name, e)
@@ -1141,13 +1141,13 @@ class Action:
                         download_path = os.path.join(download_root,source_path)
                     else:
                         download_path = download_root
-                    #print("download_path: "+download_path)
-                    #if download_path == self.path:
-                        #print("paths are same")
+                    if download_path == self.path:
+                        download_path = download_root
                     target_dirs = download_path.split(os.sep)
                     incremental_path = ""
                     if not os.path.exists(download_root):
                         os.mkdir(download_root)
+                        #print("Created directory: "+ download_root)
                     if target_dirs:
                         for target_dir in target_dirs:
                             incremental_path += target_dir + os.sep
