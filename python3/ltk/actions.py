@@ -1141,9 +1141,9 @@ class Action:
                         download_path = os.path.join(download_root,source_path)
                     else:
                         download_path = download_root
-                    print("download_path: "+download_path)
-                    if download_path == self.path:
-                        print("paths are same")
+                    #print("download_path: "+download_path)
+                    #if download_path == self.path:
+                        #print("paths are same")
                     target_dirs = download_path.split(os.sep)
                     incremental_path = ""
                     if not os.path.exists(download_root):
