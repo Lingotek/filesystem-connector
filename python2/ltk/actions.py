@@ -367,30 +367,6 @@ class Action:
                     else:
                         logger.warning('Error: Invalid value for "-d" / "--download_folder": The folder {0} does not exist'.format(os.path.join(self.path,download_path)))
                         print_config = False
-            '''if 'download_option' in kwargs and kwargs['download_option']:
-                download_option = kwargs['download_option']
-
-                if download_option == 'on':
-                    download_option = 'clone'
-                    self.download_option = download_option
-
-                    log_info = 'Turned clone on'
-                    self.update_config_file('download_option', download_option, conf_parser, config_file_name, log_info)
-                elif download_option == 'off':
-                    log_info = 'Turned clone off'
-                    if self.download_dir == '':
-                        new_download_option = 'same'
-                        self.download_option = new_download_option
-
-                        self.update_config_file('download_option', new_download_option, conf_parser, config_file_name, log_info)
-                        self.update_config_file('download_folder',"", conf_parser, config_file_name, "")
-                    else:
-                        new_download_option = 'folder'
-                        self.download_option = new_download_option
-                        self.update_config_file('download_option', new_download_option, conf_parser, config_file_name, log_info)
-                else:
-                    logger.warning('Error: Invalid value for "-c" / "--clone_option": Must be either "on" or "off"')
-                    print_config = False'''
             if 'clone_option' in kwargs and kwargs['clone_option']:
                 clone_option = kwargs['clone_option']
                 self.clone_action = clone_option
@@ -528,7 +504,7 @@ class Action:
                     else:
                         log_info = 'Git password set'
                     self.update_config_file('git_password', self.git_auto.encrypt(git_password), conf_parser, config_file_name, log_info)
-                else: 
+                else:
                     error("Only SSH Key access is enabled on Windows")
                     git_username = ""
                     git_password = ""
@@ -571,23 +547,10 @@ class Action:
                 watch_locales = ','.join(target for target in self.watch_locales)
                 if str(watch_locales) == "[]":
                     watch_locales = ""
-<<<<<<< HEAD
                 print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity ID: {4}\nWorkflow ID: {5}\n'
                     'Default Source Locale: {6}\nDownload Option: {7}\nDownload Folder: {8}\nTarget Locales (for watch and clone): {9}\nTarget Locale Folders: {10}\nGit Auto-commit: {11}\nAppend Option: {12}'.format(
                     self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.download_option,
                     download_dir, watch_locales, locale_folders_str, git_output, self.append_option))
-=======
-                print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity ID: {4}\nWorkflow ID: {5}\n' \
-<<<<<<< HEAD
-                      'Default Source Locale: {6}\nClone Option: {7}\nDownload Folder: {8}\nTarget Locales (for watch and clone): {9}\nTarget Locale Folders: {10}\nGit Auto-commit: {11}'.format(
-                    self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.clone_option,
-                    download_dir, watch_locales, locale_folders_str, git_output))
-=======
-                      'Default Source Locale: {6}\nDownload Option: {7}\nDownload Folder: {8}\nTarget Locales (for watch and clone): {9}\nTarget Locale Folders: {10}\nGit Auto-commit: {11}\nAppend Option: {12}'.format(
-                    self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.download_option,
-                    download_dir, watch_locales, locale_folders_str, git_output, self.append_option))
->>>>>>> dev
->>>>>>> dev
         except Exception as e:
             log_error(self.error_file_name, e)
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
@@ -1112,7 +1075,8 @@ class Action:
     def added_folder_of_file(self, file_path):
         folders = self.folder_manager.get_file_names()
         if not folders:
-            print("not folders")
+            #print("not folders")
+            return
         for folder in folders:
             folder = os.path.join(self.path, folder)
             if folder in file_path:
@@ -1177,7 +1141,9 @@ class Action:
                         download_path = os.path.join(download_root,source_path)
                     else:
                         download_path = download_root
-                    # print("download_path: "+download_path)
+                    print("download_path: "+download_path)
+                    if download_path == self.path:
+                        print("paths are same")
                     target_dirs = download_path.split(os.sep)
                     incremental_path = ""
                     if not os.path.exists(download_root):
@@ -1185,7 +1151,7 @@ class Action:
                     if target_dirs:
                         for target_dir in target_dirs:
                             incremental_path += target_dir + os.sep
-                            # print("target_dir: "+str(incremental_path))
+                            #print("target_dir: "+str(incremental_path))
                             new_path = os.path.join(self.path,incremental_path)
                             # print("new path: "+str(new_path))
                             if not os.path.exists(new_path):
