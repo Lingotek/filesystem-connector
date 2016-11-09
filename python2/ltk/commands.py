@@ -133,7 +133,7 @@ def init(host, access_token, path, project_name, workflow_id, locale, delete, re
 @click.option('-p', '--locale_folder', nargs=2, type=str, multiple=True, help='For a specific locale, specify the root folder where downloaded translations should appear. Use --none for the path to clear the download folder for a specific locale. Example: -p fr_FR translations/fr_FR')
 @click.option('-r', '--remove_locales', flag_value=True, help='Remove all locale folders and use the default download location instead.')
 @click.option('-g', '--git', is_flag=True, help='Toggle Git auto-commit')
-@click.option('-gu', '--git_credentials', is_flag=True, help='Open prompt for Git credentials for auto-fill (\'none\' to unset)')
+@click.option('-gu', '--git_credentials', is_flag=True, help='Open prompt for Git credentials for auto-fill (\'none\' to unset); only enabled for Mac and Linux')
 @click.option('-a', '--append_option', help='Change the format of the default name given to documents on the Lingotek system.  Define file information to append to document names as none, full, number:+a number of folders down to include (e.g. number:2), or name:+a name of a directory to start after if found in file path (e.g. name:dir). Default option is none.')
 def config(**kwargs):
     """ View or change local configuration """
@@ -408,15 +408,14 @@ def import_command(import_all, force, path):
 
 
 @ltk.command(short_help="Cleans up the associations between local documents and documents in Lingotek")
-@click.option('-a', '--all', 'dis_all', flag_value=True, help='Removes all associations between local and remote')
+@click.option('-a', '--all', 'dis_all', flag_value=True, help='Removes all associations between local and remote documents')
 @click.argument('file_paths', required=False, nargs=-1)
-@click.option('-f', '--force', flag_value=True, help='Deletes local documents that no longer exists in Lingotek')
+@click.option('-f', '--force', flag_value=True, help='Deletes local documents that no longer exist in Lingotek')
 def clean(force, dis_all, file_paths):
     """
     Cleans up the associations between local documents and documents in Lingotek.
-    By default, checks that local documents and remote documents line up.
-    Use different options for different use cases. Enter file or directory names
-    to remove local associations of specific files or directories.
+    By default, checks that local documents and remote documents match up.
+    Enter file or directory names to remove local associations of specific files or directories.
     """
     try:
         action = actions.Action(os.getcwd())

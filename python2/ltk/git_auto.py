@@ -7,9 +7,7 @@ import os
 try:
 	import pexpect
 	import winpexpect
-except:
-	if 'nt' in os.name:
-		print("Git credentials auto-input disabled: module not supported.")
+except: pass
 import binascii
 from ltk.utils import error
 
@@ -65,20 +63,20 @@ class Git_Auto:
 	def push(self, username=None, password=None):
 		if not self.repo_is_defined:
 			error("No Git repository found for the current directory.")
+			self.repo.git.push()
 			return
-		print("Push was successful!")
 		try:
 			pexpect.spawnu('git push')
 		except:
 			try:
 				g = winpexpect.winspawn('git push')
 			except:
-				error("Initial push failed! Retrying...")
 				try:
 					self.repo.git.push()
 					print("Push was successful")
-				except:
-					error("Failed again!")
+				except Exception as e:
+					error("Git push failed!")
+					print(type(e))
 				return
 		try:
 			g.logfile_read = sys.stdout

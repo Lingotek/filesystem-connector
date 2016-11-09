@@ -38,6 +38,7 @@ class Action:
         self.git_autocommit = None
         self.git_username = ''
         self.git_password = ''
+        self.append_option = 'none'
         self.locale_folders = {}
         if not self._is_initialized():
             raise exceptions.UninitializedError("This project is not initialized. Please run init command.")
@@ -114,6 +115,11 @@ class Action:
             else:
                 self.git_password = ''
                 self.update_config_file('git_password', self.git_password, conf_parser, config_file_name, "")
+            if conf_parser.has_option('main', 'append_option'):
+                self.append_option = conf_parser.get('main', 'append_option')
+            else:
+                self.append_option = 'none'
+                self.update_config_file('append_option', self.append_option, conf_parser, config_file_name, "")
         except NoOptionError as e:
             if not self.project_name:
                 self.api = ApiCalls(self.host, self.access_token)
@@ -502,27 +508,33 @@ class Action:
                         self.update_config_file('git_autocommit', 'True', conf_parser, config_file_name, log_info)
                         self.git_autocommit = "True"
             if 'git_credentials' in kwargs and kwargs['git_credentials']:
-                # Python 2
-                # git_username = raw_input('Username: ')
-                # End Python 2
-                # Python 3
-                git_username = input('Username: ')
-                # End Python 3
-                git_password = getpass.getpass()
-                if git_username in ['None', 'none', 'N', 'n']:
+                if "nt" not in os.name:
+                    # Python 2
+                    # git_username = raw_input('Username: ')
+                    # End Python 2
+                    # Python 3
+                    git_username = input('Username: ')
+                    # End Python 3
+                    git_password = getpass.getpass()
+                    if git_username in ['None', 'none', 'N', 'n']:
+                        git_username = ""
+                        log_info = "Git username disabled"
+                    else:
+                        log_info = 'Git username set to ' + git_username
+                    self.update_config_file('git_username', git_username, conf_parser, config_file_name, log_info)
+                    if git_password in ['None', 'none', 'N', 'n']:
+                        git_password = ""
+                        log_info = "Git password disabled"
+                    else:
+                        log_info = 'Git password set'
+                    self.update_config_file('git_password', self.git_auto.encrypt(git_password), conf_parser, config_file_name, log_info)
+                else:
+                    error("Only SSH Key access is enabled on Windows")
                     git_username = ""
-                    log_info = "Git username disabled"
-                else:
-                    log_info = 'Git username set to ' + git_username
-                self.update_config_file('git_username', git_username, conf_parser, config_file_name, log_info)
-                if git_password in ['None', 'none', 'N', 'n']:
                     git_password = ""
-                    log_info = "Git password disabled"
-                else:
-                    log_info = 'Git password set'
-                self.update_config_file('git_password', self.git_auto.encrypt(git_password), conf_parser, config_file_name, log_info)
             if 'append_option' in kwargs and kwargs['append_option']:
                 append_option = kwargs['append_option']
+                self.append_option = append_option
                 if append_option in {'none', 'full'} or append_option[:append_option.find(':')+1] in {'number:', 'name:'}:
                     set_option = True
                     if append_option[:3] == 'num':
@@ -560,9 +572,9 @@ class Action:
                 if str(watch_locales) == "[]":
                     watch_locales = ""
                 print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity ID: {4}\nWorkflow ID: {5}\n' \
-                      'Default Source Locale: {6}\nClone Option: {7}\nDownload Folder: {8}\nTarget Locales (for watch and clone): {9}\nTarget Locale Folders: {10}\nGit Auto-commit: {11}'.format(
-                    self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.clone_option,
-                    download_dir, watch_locales, locale_folders_str, git_output))
+                      'Default Source Locale: {6}\nDownload Option: {7}\nDownload Folder: {8}\nTarget Locales (for watch and clone): {9}\nTarget Locale Folders: {10}\nGit Auto-commit: {11}\nAppend Option: {12}'.format(
+                    self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.download_option,
+                    download_dir, watch_locales, locale_folders_str, git_output, self.append_option))
         except Exception as e:
             log_error(self.error_file_name, e)
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
@@ -633,7 +645,7 @@ class Action:
                                 confirm = 'not confirmed'
                             try:
                                 while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-                                    prompt_message = "This document already exists. Would you like to overwrite it? [Y/n]: "
+                                    prompt_message = "This document already exists. Would you like to overwrite it? [y/n]: "
                                     # Python 2
                                     # confirm = raw_input(prompt_message)
                                     # End Python 2
@@ -2011,7 +2023,7 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
             confirm = 'none'
             try:
                 while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-                    prompt_message = 'Would you like to use an existing Lingotek project? [Y/n]:'
+                    prompt_message = 'Would you like to use an existing Lingotek project? [y/n]:'
                     # Python 2
                     # confirm = raw_input(prompt_message)
                     # End Python 2
