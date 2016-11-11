@@ -1576,6 +1576,7 @@ class Action:
             if dis_all:
                 # disassociate everything
                 self.doc_manager.clear_all()
+                logger.info("Removed all associations between local and remote documents.")
                 return
             locals_to_delete = []
             if path:
