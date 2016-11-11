@@ -31,8 +31,8 @@ class Action:
         self.community_id = ''
         self.workflow_id = ''  # default workflow id; MT phase only
         self.locale = ''
-        self.clone_option = 'off'
-        self.download_option = 'same'
+        self.clone_option = 'on'
+        self.download_option = 'clone'
         self.download_dir = None  # directory where downloaded translation will be stored
         self.watch_locales = set()  # if specified, add these target locales to any files in the watch folder
         self.git_autocommit = None
@@ -93,12 +93,12 @@ class Action:
             if conf_parser.has_option('main', 'download_option'):
                 self.download_option = conf_parser.get('main', 'download_option')
             else:
-                self.download_option = 'same'
+                self.download_option = 'clone'
                 self.update_config_file('download_option', self.download_option, conf_parser, config_file_name, "")
             if conf_parser.has_option('main', 'clone_option'):
                 self.clone_option = conf_parser.get('main', 'clone_option')
             else:
-                self.clone_option = 'off'
+                self.clone_option = 'on'
                 self.update_config_file('clone_option', self.clone_option, conf_parser, config_file_name, "")
             if conf_parser.has_option('main', 'git_autocommit'):
                 self.git_autocommit = conf_parser.get('main', 'git_autocommit')
@@ -548,8 +548,8 @@ class Action:
                 if str(watch_locales) == "[]":
                     watch_locales = ""
                 print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity ID: {4}\nWorkflow ID: {5}\n'
-                    'Default Source Locale: {6}\nDownload Option: {7}\nDownload Folder: {8}\nTarget Locales (for watch and clone): {9}\nTarget Locale Folders: {10}\nGit Auto-commit: {11}\nAppend Option: {12}'.format(
-                    self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.download_option,
+                    'Default Source Locale: {6}\nClone Option: {7}\nDownload Folder: {8}\nTarget Locales (for watch and clone): {9}\nTarget Locale Folders: {10}\nGit Auto-commit: {11}\nAppend Option: {12}'.format(
+                    self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.clone_option,
                     download_dir, watch_locales, locale_folders_str, git_output, self.append_option))
         except Exception as e:
             log_error(self.error_file_name, e)
