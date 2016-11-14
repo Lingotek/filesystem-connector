@@ -1479,6 +1479,7 @@ class Action:
                 useID = False
             if 'all' in kwargs and kwargs['all']:
                 self.folder_manager.clear_all()
+                removed_folder = True
                 logger.info("Removed all folders.")
                 if 'remote' in kwargs and kwargs['remote']:
                     response = self.api.list_documents(self.project_id)
