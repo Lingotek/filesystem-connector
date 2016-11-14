@@ -1479,6 +1479,7 @@ class Action:
                 useID = False
             if 'all' in kwargs and kwargs['all']:
                 self.folder_manager.clear_all()
+                removed_folder = True
                 logger.info("Removed all folders.")
                 if 'remote' in kwargs and kwargs['remote']:
                     response = self.api.list_documents(self.project_id)
@@ -1517,6 +1518,8 @@ class Action:
             if not matched_files or len(matched_files) == 0:
                 if useID:
                     raise exceptions.ResourceNotFound("No documents to remove with the specified id")
+                elif removed_folder:
+                    logger.info("No documents to remove")
                 elif not 'all' in kwargs or not kwargs['all']:
                     raise exceptions.ResourceNotFound("No documents to remove with the specified file path")
                 else:
