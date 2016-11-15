@@ -1438,8 +1438,8 @@ class Action:
                             trans_files = get_translation_files(file_name, download_path, self.download_option, self.doc_manager)
 
                         self.delete_local(file_name, document_id)
-                        for trans_file_name in trans_files:
-                            self.delete_local_translation(trans_file_name)
+                        #for trans_file_name in trans_files:
+                            #self.delete_local_translation(trans_file_name)
 
                     self.doc_manager.remove_element(document_id)
         except json.decoder.JSONDecodeError:
