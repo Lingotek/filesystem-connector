@@ -1126,7 +1126,7 @@ class Action:
                         download_root = locale_code
                     download_root = os.path.join(self.path,download_root)
                     # print("download_root: "+download_root) 365 253 222 159
-                    source_file_name = entry['file_name']
+                    '''source_file_name = entry['file_name']
                     source_path = os.path.join(self.path,os.path.dirname(source_file_name))
                     # print("original source_path: "+source_path)
                     # Get the path from the added source folder to the source document.
@@ -1143,13 +1143,14 @@ class Action:
                         download_path = os.path.join(download_root,source_path)
                     else:
                         download_path = download_root
-                    #print("download_path: "+download_path)
-                    #if download_path == self.path:
-                        #print("paths are same")
+                    if download_path == self.path:
+                        download_path = download_root'''
+                    download_path = download_root
                     target_dirs = download_path.split(os.sep)
                     incremental_path = ""
                     if not os.path.exists(download_root):
                         os.mkdir(download_root)
+                        #print("Created directory: "+ download_root)
                     if target_dirs:
                         for target_dir in target_dirs:
                             incremental_path += target_dir + os.sep
