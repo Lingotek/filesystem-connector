@@ -18,6 +18,10 @@ from ltk.watch import WatchAction
 from ltk.import_action import ImportAction
 
 
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
+
+from ltk.utils import remove_powershell_formatting
+
 def abort_if_false(ctx, param, value):
     if not value:
         ctx.abort()
@@ -65,7 +69,7 @@ def print_log(error):
     return
 
 
-@click.group()
+@click.group(context_settings=CONTEXT_SETTINGS)
 # Python 2
 # @click.version_option(version=__version__, message='%(prog)s version %(version)s (Lingotek Filesystem Connector - Python 2)')
 # End Python 2
@@ -118,23 +122,28 @@ def init(host, access_token, path, project_name, workflow_id, locale, delete, re
 #TO-DO: @click.option('-a', '--all', help='List all configuration settings (including access token)')
 @click.option('-l', '--locale', help='Change the default source locale for the project')
 @click.option('-w', '--workflow_id', help='Change the default workflow id for the project')
-@click.option('-o', '--download_option', help='Select the option for downloaded files, as one of same, folder, or clone. Same (default): Target translations are downloaded to the same folder as their corresponding source files. Folder: Translations will be downloaded to the locale folders specified or to the default download folder listed in config (where no locale folder is specified). Clone: Translations will be downloaded to a cloned folder structure, where the root folder for each locale is the locale folder specified in config or a locale folder inside of the default download folder.')
+@click.option('-c', '--clone_option', help='Toggle clone download option on and off. (i.e. ltk clone on/off) Turning clone ON: Translations will be downloaded to a cloned folder structure, where the root folder for each locale is the locale folder specified in config or a locale folder inside of the default download folder. If no default download folder set, translations will be downloaded to the directory where the project was initialized.' +
+                                                'Turning clone OFF: If a download folder is specified, downloaded tranlsations will download to that folder, but not in a cloned folder structure. If no download folder is specified, downloaded translations will go to the same folder as their corresponding source files.')
 @click.option('-d', '--download_folder',
-              help='Specify a default folder for where downloaded translations should go.')
+              help='Specify a default folder for where downloaded translations should go. Use --none to remove the download folder. Using --none will cause downloaded translations to download to the same folder as their corresponding source files.')
 @click.option('-t', '--target_locales', multiple=True,
               help='Specify target locales that documents in watch_folder should be assigned; may either specify '
                    'with multiple -t flags (ex: -t locale -t locale) or give a list separated by commas and no spaces '
                    '(ex: -t locale,locale)')
 @click.option('-p', '--locale_folder', nargs=2, type=str, multiple=True, help='For a specific locale, specify the root folder where downloaded translations should appear. Use --none for the path to clear the download folder for a specific locale. Example: -p fr_FR translations/fr_FR')
-@click.option('-c', '--clear_locales', flag_value=True, help='Clear all locale folders and use the default download location instead.')
+@click.option('-r', '--remove_locales', flag_value=True, help='Remove all locale folders and use the default download location instead.')
 @click.option('-g', '--git', is_flag=True, help='Toggle Git auto-commit')
-@click.option('-gu', '--git_credentials', is_flag=True, help='Open prompt for Git credentials for auto-fill (\'none\' to unset)')
+@click.option('-gu', '--git_credentials', is_flag=True, help='Open prompt for Git credentials for auto-fill (\'none\' to unset); only enabled for Mac and Linux')
 @click.option('-a', '--append_option', help='Change the format of the default name given to documents on the Lingotek system.  Define file information to append to document names as none, full, number:+a number of folders down to include (e.g. number:2), or name:+a name of a directory to start after if found in file path (e.g. name:dir). Default option is none.')
 def config(**kwargs):
     """ View or change local configuration """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
+        for f in kwargs:
+            if kwargs[f]:
+                temp = remove_powershell_formatting(kwargs[f])
+                kwargs[f] = temp
         action.config_action(**kwargs)
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
@@ -166,6 +175,14 @@ def add(file_names, **kwargs):
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
+
+        file_names = remove_powershell_formatting(file_names)
+
+        for f in kwargs:
+            if kwargs[f]:
+                temp = remove_powershell_formatting(kwargs[f])
+                kwargs[f] = temp
+
         action.add_action(file_names, **kwargs)
     except (UninitializedError, RequestFailedError, ResourceNotFound, AlreadyExistsError) as e:
         print_log(e)
@@ -200,6 +217,10 @@ def request(doc_name, path, locales, to_delete, due_date, workflow):
         init_logger(action.path)
         if isinstance(locales,str):
             locales = [locales]
+
+        doc_name = remove_powershell_formatting(doc_name)
+        path = remove_powershell_formatting(path)
+
         action.target_action(doc_name, path, locales, to_delete, due_date, workflow)
     except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
         print_log(e)
@@ -210,7 +231,7 @@ def request(doc_name, path, locales, to_delete, due_date, workflow):
 # todo add a --all option to see all document ids once only show relative to cwd is implemented
 @ltk.command(name='list', short_help='Shows docs (default), workflows, locales, formats, or filters')
 @click.option('-t', '--title', 'title', flag_value=True, help='List document titles and folder paths from project root instead of relative file paths')
-@click.option('-h', '--hide_docs', 'hide_docs', flag_value=True, help='List only added folders instead of both folders and documents.')
+@click.option('-c', '--hide_docs', 'hide_docs', flag_value=True, help='Collapse down to list only added directories instead of both directories and documents.')
 @click.option('-w', '--workflows', 'id_type', flag_value='workflow', help='List available workflows')
 @click.option('-l', '--locales', 'id_type', flag_value='locale', help='List supported locale codes')
 @click.option('-f', '--formats', 'id_type', flag_value='format', help='List supported formats')
@@ -249,6 +270,13 @@ def status(**kwargs):
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
+
+        for f in kwargs:
+            if kwargs[f]:
+                temp = remove_powershell_formatting(kwargs[f])
+                kwargs[f] = temp
+
+
         action.status_action(**kwargs)
     except (UninitializedError, ResourceNotFound) as e:
         print_log(e)
@@ -304,7 +332,7 @@ def pull(auto_format, locale_ext, no_ext, locales):
 @click.option('-n', '--name', flag_value=True, help='Delete documents with the specified names (instead of file names or paths) on Lingotek Cloud')
 @click.option('-a', '--all', flag_value=True, help='Delete all documents from Lingotek Cloud that are found locally')
 @click.option('-r', '--remote', flag_value=True, help='When used with -a, deletes all documents from Lingotek Cloud for the current project')
-@click.option('-f', '--force', flag_value=True, help='Delete both local and remote files')
+@click.option('-f', '--force', flag_value=True, help='Delete both local and remote files, as well as any local translation files')
 def rm(file_names, **kwargs):
     """
     Disassociates local doc(s) from Lingotek Cloud and deletes the remote copy.
@@ -316,6 +344,10 @@ def rm(file_names, **kwargs):
         if not file_names and not ('all' in kwargs and kwargs['all']):
             logger.info("Usage: ltk rm [OPTIONS] FILE_NAMES...")
             return
+
+        if len(file_names) > 0:
+            file_names = remove_powershell_formatting(file_names)
+
         action.rm_action(file_names, **kwargs)
     except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
         print_log(e)
@@ -327,12 +359,19 @@ def rm(file_names, **kwargs):
 @click.argument('destination_path', required=True, nargs=1)
 def mv(source_path, destination_path):
     """
-    Moves specified local doc to a specified destination directory, moving both the file itself and file location stores in the local database. If SOURCE_PATH is a directory, all added files in the directory will be moved.
+    Moves specified local doc to a specified destination directory, moving both the file itself and file location stores in the local database.
+    If SOURCE_PATH is a directory, all added files in the directory will be moved.
     """
     try:
         # action = actions.Action(os.getcwd())
         action = ImportAction(os.getcwd())
         init_logger(action.path)
+
+        source_path = remove_powershell_formatting(source_path)
+        print("Source path " + str(source_path))
+        destination_path = remove_powershell_formatting(destination_path)
+        print("Destination path "+str(destination_path))
+
         action.mv_action(source_path, destination_path)
     except(UninitializedError, RequestFailedError) as e:
         print_log(e)
@@ -357,6 +396,10 @@ def import_command(import_all, force, path):
         # action = actions.Action(os.getcwd())
         action = ImportAction(os.getcwd())
         init_logger(action.path)
+
+        if path != None:
+            path = remove_powershell_formatting(path)
+
         action.import_action(import_all, force, path)
     except(UninitializedError, RequestFailedError) as e:
         print_log(e)
@@ -365,19 +408,22 @@ def import_command(import_all, force, path):
 
 
 @ltk.command(short_help="Cleans up the associations between local documents and documents in Lingotek")
-@click.option('-a', '--all', 'dis_all', flag_value=True, help='Removes all associations between local and remote')
+@click.option('-a', '--all', 'dis_all', flag_value=True, help='Removes all associations between local and remote documents')
 @click.argument('file_paths', required=False, nargs=-1)
-@click.option('-f', '--force', flag_value=True, help='Deletes local documents that no longer exists in Lingotek')
+@click.option('-f', '--force', flag_value=True, help='Deletes local documents that no longer exist in Lingotek')
 def clean(force, dis_all, file_paths):
     """
     Cleans up the associations between local documents and documents in Lingotek.
-    By default, checks that local documents and remote documents line up.
-    Use different options for different use cases. Enter file or directory names
-    to remove local associations of specific files or directories.
+    By default, checks that local documents and remote documents match up.
+    Enter file or directory names to remove local associations of specific files or directories.
     """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
+
+        if len(file_paths) > 0:
+            file_paths = remove_powershell_formatting(file_paths)
+
         action.clean_action(force, dis_all, file_paths)
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
@@ -401,6 +447,10 @@ def clone(folders, copy_root):
         init_logger(action.path)
         if isinstance(folders,str):
             folders = [folders]
+
+        if len(folders) > 0:
+            folders = remove_powershell_formatting(folders)
+
         action.clone_action(folders, copy_root)
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)

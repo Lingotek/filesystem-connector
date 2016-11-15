@@ -11,9 +11,10 @@ import shutil
 import fnmatch
 import time
 import getpass
+import itertools
 from ltk import exceptions
 from ltk.apicalls import ApiCalls
-from ltk.utils import check_response, detect_format, map_locale, get_valid_locales, is_valid_locale, underline, remove_begin_slashes, remove_end_slashes, remove_last_folder_in_path, get_relative_path, log_error
+from ltk.utils import *
 from ltk.managers import DocumentManager, FolderManager
 from ltk.constants import CONF_DIR, CONF_FN, SYSTEM_FILE, ERROR_FN
 import json
@@ -30,12 +31,14 @@ class Action:
         self.community_id = ''
         self.workflow_id = ''  # default workflow id; MT phase only
         self.locale = ''
-        self.download_option = 'same'
+        self.clone_option = 'on'
+        self.download_option = 'clone'
         self.download_dir = None  # directory where downloaded translation will be stored
         self.watch_locales = set()  # if specified, add these target locales to any files in the watch folder
         self.git_autocommit = None
         self.git_username = ''
         self.git_password = ''
+        self.append_option = 'none'
         self.locale_folders = {}
         if not self._is_initialized():
             raise exceptions.UninitializedError("This project is not initialized. Please run init command.")
@@ -47,6 +50,7 @@ class Action:
         self.api = ApiCalls(self.host, self.access_token, self.watch, self.timeout)
         self.git_auto = Git_Auto(self.path)
         self.error_file_name = os.path.join(self.path, CONF_DIR, ERROR_FN)
+        self.uploadWaitTime = 300
 
     def _is_initialized(self):
         actual_path = find_conf(self.path)
@@ -89,8 +93,13 @@ class Action:
             if conf_parser.has_option('main', 'download_option'):
                 self.download_option = conf_parser.get('main', 'download_option')
             else:
-                self.download_option = 'same'
+                self.download_option = 'clone'
                 self.update_config_file('download_option', self.download_option, conf_parser, config_file_name, "")
+            if conf_parser.has_option('main', 'clone_option'):
+                self.clone_option = conf_parser.get('main', 'clone_option')
+            else:
+                self.clone_option = 'on'
+                self.update_config_file('clone_option', self.clone_option, conf_parser, config_file_name, "")
             if conf_parser.has_option('main', 'git_autocommit'):
                 self.git_autocommit = conf_parser.get('main', 'git_autocommit')
             else:
@@ -106,6 +115,11 @@ class Action:
             else:
                 self.git_password = ''
                 self.update_config_file('git_password', self.git_password, conf_parser, config_file_name, "")
+            if conf_parser.has_option('main', 'append_option'):
+                self.append_option = conf_parser.get('main', 'append_option')
+            else:
+                self.append_option = 'none'
+                self.update_config_file('append_option', self.append_option, conf_parser, config_file_name, "")
         except NoOptionError as e:
             if not self.project_name:
                 self.api = ApiCalls(self.host, self.access_token)
@@ -328,30 +342,65 @@ class Action:
                 self.update_config_file('workflow_id', workflow_id, conf_parser, config_file_name, log_info)
                 conf_parser.set('main', 'workflow_id', workflow_id)
             if 'download_folder' in kwargs and kwargs['download_folder']:
-                download_path = self.norm_path(kwargs['download_folder'])
-                if os.path.exists(os.path.join(self.path,download_path)):
-                    self.download_dir = download_path
-                    log_info = 'Set download folder to {0}'.format(download_path)
-                    self.update_config_file('download_folder', download_path, conf_parser, config_file_name, log_info)
+                if kwargs['download_folder'] == '--none':
+                    new_download_option = 'same'
+                    self.download_option = new_download_option
+                    self.update_config_file('download_folder',"", conf_parser, config_file_name, "")
+
+                    if self.download_option != 'clone':
+                        new_download_option = 'same'
+                        self.download_option = new_download_option
+                        log_info = 'Removed download folder'
+                        self.update_config_file('download_option', new_download_option, conf_parser, config_file_name, log_info)
+
                 else:
-                    logger.warning('Error: Invalid value for "-d" / "--download_folder": The folder {0} does not exist'.format(os.path.join(self.path,download_path)))
-                    print_config = False
-            if 'download_option' in kwargs and kwargs['download_option']:
-                download_option = kwargs['download_option']
-                if download_option in {'same','folder','clone'}:
+                    download_path = self.norm_path(kwargs['download_folder'])
+                    if os.path.exists(os.path.join(self.path,download_path)):
+                        self.download_dir = download_path
+                        log_info = 'Set download folder to {0}'.format(download_path)
+                        self.update_config_file('download_folder', download_path, conf_parser, config_file_name, log_info)
+
+                        if self.download_option != 'clone':
+                            new_download_option = 'folder'
+                            self.download_option = new_download_option
+                            self.update_config_file('download_option', new_download_option, conf_parser, config_file_name, "")
+                    else:
+                        logger.warning('Error: Invalid value for "-d" / "--download_folder": The folder {0} does not exist'.format(os.path.join(self.path,download_path)))
+                        print_config = False
+            if 'clone_option' in kwargs and kwargs['clone_option']:
+                clone_option = kwargs['clone_option']
+                self.clone_action = clone_option
+                log_info = 'Turned clone '+clone_option
+                if clone_option == 'on':
+                    download_option = 'clone'
                     self.download_option = download_option
-                    log_info = 'Set download option to {0}'.format(download_option)
-                    self.update_config_file('download_option', download_option, conf_parser, config_file_name, log_info)
+
+                    self.update_config_file('clone_option', clone_option, conf_parser, config_file_name, log_info)
+                    self.update_config_file('download_option', download_option, conf_parser, config_file_name, '')
+                elif clone_option == 'off':
+                    if self.download_dir == '':
+                        new_download_option = 'same'
+                        self.download_option = new_download_option
+
+                        self.update_config_file('clone_option', clone_option, conf_parser, config_file_name, log_info)
+                        self.update_config_file('download_option', new_download_option, conf_parser, config_file_name, '')
+                        self.update_config_file('download_folder', self.download_dir, conf_parser, config_file_name, '')
+                    else:
+                        new_download_option = 'folder'
+                        self.download_option = new_download_option
+                        self.update_config_file('clone_option', clone_option, conf_parser, config_file_name, log_info)
+                        self.update_config_file('download_option', new_download_option, conf_parser, config_file_name, '')
                 else:
-                    logger.warning('Error: Invalid value for "-o" / "--download_option": Must be one of "same", "folder", or "clone".')
+                    logger.warning('Error: Invalid value for "-c" / "--clone_option": Must be either "on" or "off"')
                     print_config = False
+
             if 'target_locales' in kwargs and kwargs['target_locales']:
                 target_locales = kwargs['target_locales']
                 locales = []
                 for locale in target_locales:
                     locales.extend(locale.split(','))
                 if len(locales) > 0 and locales[0].lower() == 'none':
-                    log_info = 'Removing all target locales.'
+                    log_info = 'Removing all target locales'
                     self.update_config_file('watch_locales', "", conf_parser, config_file_name, log_info)
                 else:
                     target_locales = get_valid_locales(self.api,locales)
@@ -375,7 +424,7 @@ class Action:
                         continue
                     locale = folder[0].replace("-","_")
                     if not is_valid_locale(self.api, locale):
-                        logger.warning(str(locale+' is not a valid locale. See "ltk list -l" for the list of valid locales.'))
+                        logger.warning(str(locale+' is not a valid locale. See "ltk list -l" for the list of valid locales'))
                         print_config = False
                         continue
                     if folder[1] == '--none':
@@ -398,7 +447,7 @@ class Action:
                             # print("path of new locale folder: "+path)
                             self.locale_folders[locale] = path
                     else:
-                        logger.warning('Error: Invalid value for "-p" / "--locale_folder": Path "'+path+'" does not exist.')
+                        logger.warning('Error: Invalid value for "-p" / "--locale_folder": Path "'+path+'" does not exist')
                         print_config = False
                         continue
                     folders_string += str(locale) + ": " + str(path)
@@ -435,27 +484,33 @@ class Action:
                         self.update_config_file('git_autocommit', 'True', conf_parser, config_file_name, log_info)
                         self.git_autocommit = "True"
             if 'git_credentials' in kwargs and kwargs['git_credentials']:
-                # Python 2
-                # git_username = raw_input('Username: ')
-                # End Python 2
-                # Python 3
-                git_username = input('Username: ')
-                # End Python 3
-                git_password = getpass.getpass()
-                if git_username in ['None', 'none', 'N', 'n']:
+                if "nt" not in os.name:
+                    # Python 2
+                    # git_username = raw_input('Username: ')
+                    # End Python 2
+                    # Python 3
+                    git_username = input('Username: ')
+                    # End Python 3
+                    git_password = getpass.getpass()
+                    if git_username in ['None', 'none', 'N', 'n']:
+                        git_username = ""
+                        log_info = "Git username disabled"
+                    else:
+                        log_info = 'Git username set to ' + git_username
+                    self.update_config_file('git_username', git_username, conf_parser, config_file_name, log_info)
+                    if git_password in ['None', 'none', 'N', 'n']:
+                        git_password = ""
+                        log_info = "Git password disabled"
+                    else:
+                        log_info = 'Git password set'
+                    self.update_config_file('git_password', self.git_auto.encrypt(git_password), conf_parser, config_file_name, log_info)
+                else:
+                    error("Only SSH Key access is enabled on Windows")
                     git_username = ""
-                    log_info = "Git username disabled"
-                else:
-                    log_info = 'Git username set to ' + git_username
-                self.update_config_file('git_username', git_username, conf_parser, config_file_name, log_info)
-                if git_password in ['None', 'none', 'N', 'n']:
                     git_password = ""
-                    log_info = "Git password disabled"
-                else:
-                    log_info = 'Git password set'
-                self.update_config_file('git_password', self.git_auto.encrypt(git_password), conf_parser, config_file_name, log_info)
             if 'append_option' in kwargs and kwargs['append_option']:
                 append_option = kwargs['append_option']
+                self.append_option = append_option
                 if append_option in {'none', 'full'} or append_option[:append_option.find(':')+1] in {'number:', 'name:'}:
                     set_option = True
                     if append_option[:3] == 'num':
@@ -472,7 +527,7 @@ class Action:
                         log_info = 'Append option set to ' + append_option
                         self.update_config_file('append_option', append_option, conf_parser, config_file_name, log_info)
                 else:
-                    logger.warning('Error: Invalid value for "-a" / "--append_option": Must be one of "none", "full", "number:", or "name:".')
+                    logger.warning('Error: Invalid value for "-a" / "--append_option": Must be one of "none", "full", "number:", or "name:"')
                     print_config = False
             download_dir = "None"
             if self.download_dir and str(self.download_dir) != 'null':
@@ -492,10 +547,10 @@ class Action:
                 watch_locales = ','.join(target for target in self.watch_locales)
                 if str(watch_locales) == "[]":
                     watch_locales = ""
-                print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity ID: {4}\nWorkflow ID: {5}\n' \
-                      'Default Source Locale: {6}\nDownload Option: {7}\nDownload Folder: {8}\nTarget Locales (for watch and clone): {9}\nTarget Locale Folders: {10}\nGit Auto-commit: {11}'.format(
-                    self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.download_option,
-                    download_dir, watch_locales, locale_folders_str, git_output))
+                print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity ID: {4}\nWorkflow ID: {5}\n'
+                    'Default Source Locale: {6}\nClone Option: {7}\nDownload Folder: {8}\nTarget Locales (for watch and clone): {9}\nTarget Locale Folders: {10}\nGit Auto-commit: {11}\nAppend Option: {12}'.format(
+                    self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.clone_option,
+                    download_dir, watch_locales, locale_folders_str, git_output, self.append_option))
         except Exception as e:
             log_error(self.error_file_name, e)
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
@@ -566,7 +621,7 @@ class Action:
                                 confirm = 'not confirmed'
                             try:
                                 while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-                                    prompt_message = "This document already exists. Would you like to overwrite it? [Y/n]: "
+                                    prompt_message = "This document already exists. Would you like to overwrite it? [y/n]: "
                                     # Python 2
                                     # confirm = raw_input(prompt_message)
                                     # End Python 2
@@ -615,9 +670,8 @@ class Action:
                             try:
                                 relative_path = self.norm_path(file_name)
                                 title = os.path.basename(relative_path)
-                                if self.doc_manager.is_doc_new(relative_path):
+                                if self.doc_manager.is_doc_new(relative_path) and not self.doc_manager.is_translation(relative_path, title, matched_files, self):
                                     self.add_document(file_name, title)
-                                    print
                             except json.decoder.JSONDecodeError as e:
                                 log_error(self.error_file_name, e)
                                 logger.error("JSON error on adding document.")
@@ -731,9 +785,9 @@ class Action:
                 docs.append(entry)
             if len(docs) == 0:
                 if path and len(path) > 0:
-                    logger.info("File "+str(path)+" not found.")
+                    logger.info("File "+str(path)+" not found")
                 else:
-                    logger.info("No documents to request target locale.")
+                    logger.info("No documents to request target locale")
             for entry in docs:
                 document_id = entry['id']
                 document_name = entry['file_name']
@@ -816,7 +870,7 @@ class Action:
                 except KeyError:
                     locales.append([])
             if not ids:
-                print ('No local documents.')
+                print ('No local documents')
                 return
             if max_length > 90:
                 max_length = 90
@@ -910,12 +964,14 @@ class Action:
         if response.status_code != 200:
             raise_error(response.json(), 'Failed to get filters')
         filter_entities = response.json()['entities']
-        print ('Filters: id, title')
-        for entry in filter_entities:
+        print ('Filters: id, created, title')
+        for entry in sorted(filter_entities, key=lambda entry: entry['properties']['upload_date'], reverse=True):
             properties = entry['properties']
             title = properties['title']
             filter_id = properties['id']
-            print ('{0}\t{1}\t'.format(filter_id, title))
+            upload_date = time.strftime("%Y-%m-%d", time.localtime(int(properties['upload_date']/1000)))
+            is_public = " (public)" if properties['is_public'] else ""
+            print ('{0}  {1}  {2}{3}'.format(filter_id, upload_date, title, is_public))
 
     def print_status(self, title, progress):
         print ('{0}: {1}%'.format(title, progress))
@@ -980,13 +1036,23 @@ class Action:
                 if response.status_code != 200:
                     entry = self.doc_manager.get_doc_by_prop('id', doc_id)
                     if entry:
-                        error_message = "Failed to get status of document "+entry['name']
+                        error_message = "Failed to get status of document "+entry['file_name']
                     else:
                         error_message = "Failed to get status of document "+str(doc_id)
                     if check_response(response):
                         raise_error(response.json(), error_message, True, doc_id)
                     else:
-                        raise_error("", str(response.status_code)+": "+error_message, True, doc_id)
+                        #if document has recently been added, determined by uploadWaitTime, let user know that document is still being processed
+                        #otherwise, suggest that user checks TMS for deletion or potential upload problems
+                        entry = self.doc_manager.get_doc_by_prop('id', doc_id)
+                        diff = time.time() - entry['added']
+                        if diff < self.uploadWaitTime:
+                            error_message = "\'" +entry['file_name']+ "\' is still being processed"
+                            raise_error("", str(response.status_code)+" Not Found: "+error_message, True, doc_id)
+                        else:
+                            error_message = "Check Lingotek TMS to see if \'" +entry['file_name']+ "\' has been deleted or was not properly imported"
+                            raise_error("", str(response.status_code)+" Not Found: "+error_message, True, doc_id)
+
                 else:
                     title = response.json()['properties']['title']
                     progress = response.json()['properties']['progress']
@@ -1010,6 +1076,9 @@ class Action:
 
     def added_folder_of_file(self, file_path):
         folders = self.folder_manager.get_file_names()
+        if not folders:
+            #print("not folders")
+            return
         for folder in folders:
             folder = os.path.join(self.path, folder)
             if folder in file_path:
@@ -1057,7 +1126,7 @@ class Action:
                         download_root = locale_code
                     download_root = os.path.join(self.path,download_root)
                     # print("download_root: "+download_root) 365 253 222 159
-                    source_file_name = entry['file_name']
+                    '''source_file_name = entry['file_name']
                     source_path = os.path.join(self.path,os.path.dirname(source_file_name))
                     # print("original source_path: "+source_path)
                     # Get the path from the added source folder to the source document.
@@ -1066,7 +1135,7 @@ class Action:
                         added_folder = remove_last_folder_in_path(added_folder)
                     # print("added folder of file: "+os.sep+remove_begin_slashes(added_folder))
                     if added_folder:
-                        source_path = remove_begin_slashes(source_path.replace(os.sep+remove_begin_slashes(added_folder),""))
+                        source_path = remove_begin_slashes(source_path.replace(('' if ':' in source_path else os.sep)+remove_begin_slashes(added_folder),""))
                     # print("replaced source_path: "+source_path)
                     # Copy the path into the locale folder (download_root).
                     # Something about this line has been causing problems
@@ -1074,15 +1143,18 @@ class Action:
                         download_path = os.path.join(download_root,source_path)
                     else:
                         download_path = download_root
-                    # print("download_path: "+download_path)
+                    if download_path == self.path:
+                        download_path = download_root'''
+                    download_path = download_root
                     target_dirs = download_path.split(os.sep)
                     incremental_path = ""
                     if not os.path.exists(download_root):
                         os.mkdir(download_root)
+                        #print("Created directory: "+ download_root)
                     if target_dirs:
                         for target_dir in target_dirs:
                             incremental_path += target_dir + os.sep
-                            # print("target_dir: "+str(incremental_path))
+                            #print("target_dir: "+str(incremental_path))
                             new_path = os.path.join(self.path,incremental_path)
                             # print("new path: "+str(new_path))
                             if not os.path.exists(new_path):
@@ -1120,8 +1192,9 @@ class Action:
                     file_name = entry['file_name']
                     base_name = os.path.basename(self.norm_path(file_name))
                     if not locale_code:
-                        logger.info("No target locales for "+file_name+". Downloading the source document instead.")
-                        locale_code = self.locale
+                        #Don't download source document(s), only download translations
+                        logger.info("No target locales for "+file_name+".")
+                        return
                     if locale_ext and not 'clone' in self.download_option:
                         name_parts = base_name.split('.')
                         if len(name_parts) > 1:
@@ -1177,6 +1250,9 @@ class Action:
                     for entry in entries:
                         try:
                             locales = entry['locales']
+                            #debugging
+                            #print("Locales: " + locales)
+                            #end debugging
                             for locale in locales:
                                 self.download_action(entry['id'], locale, auto_format, locale_ext)
                         except KeyError:
@@ -1314,15 +1390,60 @@ class Action:
                 logger.error("Failed to delete document {0} remotely".format(file_name))
             else:
                 if doc_name:
-                    logger.info("{0} ({1}) has been deleted remotely.".format(doc_name, file_name))
+                    logger.info("{0} ({1}) has been deleted remotely".format(doc_name, file_name))
                 else:
-                    logger.info("{0} has been deleted remotely.".format(file_name))
+                    logger.info("{0} has been deleted remotely".format(file_name))
                 if doc:
                     if force:
+                        #delete local translation file(s) for the document being deleted
+                        trans_files = []
+
+                        if 'clone' in self.download_option:
+                            entry = self.doc_manager.get_doc_by_prop("file_name", file_name)
+                            if entry:
+                                if 'locales' in entry and entry['locales']:
+                                    locales = entry['locales']
+                                    for locale_code in locales:
+                                        if locale_code in self.locale_folders:
+                                            download_root = self.locale_folders[locale_code]
+                                        elif self.download_dir and len(self.download_dir):
+                                            download_root = os.path.join((self.download_dir if self.download_dir and self.download_dir != 'null' else ''),locale_code)
+                                        else:
+                                            download_root = locale_code
+                                        download_root = os.path.join(self.path,download_root)
+                                        source_file_name = entry['file_name']
+                                        source_path = os.path.join(self.path,os.path.dirname(source_file_name))
+
+                                        trans_files.extend(get_translation_files(file_name, download_root, self.download_option, self.doc_manager))
+
+                        elif 'folder' in self.download_option:
+                            entry = self.doc_manager.get_doc_by_prop("file_name", file_name)
+                            if entry:
+                                if 'locales' in entry and entry['locales']:
+                                    locales = entry['locales']
+                                    for locale_code in locales:
+                                        if locale_code in self.locale_folders:
+                                            if self.locale_folders[locale_code] == 'null':
+                                                logger.warning("Download failed: folder not specified for "+locale_code)
+                                            else:
+                                                download_path = self.locale_folders[locale_code]
+                                        else:
+                                            download_path = self.download_dir
+
+                                        download_path = os.path.join(self.path,download_path)
+                                        trans_files.extend(get_translation_files(file_name, download_path, self.download_option, self.doc_manager))
+
+                        elif 'same' in self.download_option:
+                            download_path = self.path
+                            trans_files = get_translation_files(file_name, download_path, self.download_option, self.doc_manager)
+
                         self.delete_local(file_name, document_id)
+                        #for trans_file_name in trans_files:
+                            #self.delete_local_translation(trans_file_name)
+
                     self.doc_manager.remove_element(document_id)
         except json.decoder.JSONDecodeError:
-            logger.error("JSON error on removing document.")
+            logger.error("JSON error on removing document")
         except KeyboardInterrupt:
             raise_error("", "Canceled removing document")
             return
@@ -1338,13 +1459,13 @@ class Action:
                     # print("checking folder "+self.norm_path(pattern))
                     if self.folder_manager.folder_exists(self.norm_path(pattern)):
                         self.folder_manager.remove_element(self.norm_path(pattern))
-                        logger.info("Removed folder "+str(file_patterns[0]))
+                        logger.info("Removed folder "+pattern)
                         removed_folder = True
                     else:
-                        logger.warning("Folder "+str(pattern)+" has not been added and so can not be removed.")
+                        logger.warning("Folder "+str(pattern)+" has not been added and so can not be removed")
             if 'directory' in kwargs and kwargs['directory']:
                 if not removed_folder:
-                    logger.info("No folders to remove at the given path(s).")
+                    logger.info("No folders to remove at the given path(s)")
                 return
             matched_files = None
             if isinstance(file_patterns,str):
@@ -1359,6 +1480,7 @@ class Action:
                 useID = False
             if 'all' in kwargs and kwargs['all']:
                 self.folder_manager.clear_all()
+                removed_folder = True
                 logger.info("Removed all folders.")
                 if 'remote' in kwargs and kwargs['remote']:
                     response = self.api.list_documents(self.project_id)
@@ -1375,11 +1497,12 @@ class Action:
                         for entry in response.json()['entities']:
                             id = entry['entities'][1]['properties']['id']
                             doc_name = entry['properties']['name']
-                            self.rm_document(id, True, force, doc_name)
+                            self.rm_document(id, True, force, False, doc_name)
                         return
                 else:
                     useID = False
                     matched_files = self.doc_manager.get_file_names()
+
             elif not useID:
                 # use current working directory as root for files instead of project root
                 if 'name' in kwargs and kwargs['name']:
@@ -1396,6 +1519,8 @@ class Action:
             if not matched_files or len(matched_files) == 0:
                 if useID:
                     raise exceptions.ResourceNotFound("No documents to remove with the specified id")
+                elif removed_folder:
+                    logger.info("No documents to remove")
                 elif not 'all' in kwargs or not kwargs['all']:
                     raise exceptions.ResourceNotFound("No documents to remove with the specified file path")
                 else:
@@ -1408,6 +1533,7 @@ class Action:
             for file_name in matched_files:
                 # title = os.path.basename(os.path.normpath(file_name)).split('.')[0]
                 self.rm_document(self.norm_path(file_name).replace(self.path,""), useID, force)
+
         except Exception as e:
             # Python 2
             # End Python 2
@@ -1454,6 +1580,7 @@ class Action:
             if dis_all:
                 # disassociate everything
                 self.doc_manager.clear_all()
+                logger.info("Removed all associations between local and remote documents.")
                 return
             locals_to_delete = []
             if path:
@@ -1519,7 +1646,7 @@ class Action:
         # print('local delete:', title, document_id)
         if not title:
             title = document_id
-        message = '{0} has been deleted locally.'.format(title) if not message else message
+        message = '{0} has been deleted locally'.format(title) if not message else message
         try:
             file_name = self.doc_manager.get_doc_by_prop('id', document_id)['file_name']
         except TypeError:
@@ -1529,7 +1656,19 @@ class Action:
             os.remove(os.path.join(self.path, file_name))
             logger.info(message)
         except OSError:
-            logger.info('Something went wrong trying to delete the local file.')
+            logger.info('Something went wrong trying to delete the local file')
+
+    def delete_local_translation(self, file_name):
+        try:
+            if not file_name:
+                logger.info('Please provide a valid file name')
+
+            logger.info('{0} (local translation) has been deleted'.format(self.get_relative_path(file_name)))
+
+            os.remove(os.path.join(self.path, file_name))
+
+        except OSError:
+            logger.info('Something went wrong trying to download the local translation')
 
     def delete_local_path(self, path, message=None):
         path = self.norm_path(path)
@@ -1538,7 +1677,7 @@ class Action:
             os.remove(path)
             logger.info(message)
         except OSError:
-            logger.info('Something went wrong trying to delete the local file.')
+            logger.info('Something went wrong trying to delete the local file')
 
     def clone_folders(self, dest_path, folders_map, locale, copy_root=False):
         """ Copies subfolders of added folders to a particular destination folder (for a particular locale).
@@ -1623,7 +1762,8 @@ class Action:
 
 def raise_error(json, error_message, is_warning=False, doc_id=None, file_name=None):
     try:
-        error = json['messages'][0]
+        if json:
+            error = json['messages'][0]
         file_name = file_name.replace("Status of ", "")
         if file_name is not None and doc_id is not None:
             error = error.replace(doc_id, file_name+" ("+doc_id+")")
@@ -1862,14 +2002,14 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
             try:
                 raise_error(response.json(), 'Something went wrong trying to find projects in your community')
             except:
-                logger.error('Something went wrong trying to find projects in your community.')
+                logger.error('Something went wrong trying to find projects in your community')
                 return
         project_info = api.get_project_info(community_id)
         if len(project_info) > 0:
             confirm = 'none'
             try:
                 while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-                    prompt_message = 'Would you like to use an existing Lingotek project? [Y/n]:'
+                    prompt_message = 'Would you like to use an existing Lingotek project? [Y/n]: '
                     # Python 2
                     # confirm = raw_input(prompt_message)
                     # End Python 2
