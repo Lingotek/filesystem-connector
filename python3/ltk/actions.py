@@ -1223,7 +1223,7 @@ class Action:
                         for chunk in response.iter_content(1024):
                             fh.write(chunk)
                 except:
-                    logger.warning('ERROR: Download failed at '+download_path)
+                    logger.warning('Error: Download failed at '+download_path)
                 return download_path
             else:
                 printResponseMessages(response)
@@ -1316,7 +1316,7 @@ class Action:
                 return True
             except Exception as e:
                 log_error(self.error_file_name, e)
-                logger.error("ERROR: "+str(e))
+                logger.error("Error: "+str(e))
                 logger.error("An error prevented document {0} from being moved".format(source))
                 return False
         except Exception as e:
@@ -1806,7 +1806,12 @@ def reinit(host, project_path, delete, reset):
                 confirm = input(prompt_message)
                 # End Python 3
         except KeyboardInterrupt:
-            logger.error("Reinit canceled")
+            # Python 2
+            # logger.info("\nRenit canceled")
+            # End Python 2
+            # Python 3
+            logger.error("\nReinit canceled")
+            # End Python 3
             return
         # confirm if deleting existing folder
         if not confirm or confirm in ['n', 'N']:
@@ -1875,8 +1880,15 @@ def display_choice(display_type, info):
             choice = input(prompt_message)
             # End Python 3
         except KeyboardInterrupt:
-            logger.error("Init canceled")
-            return
+            # Python 2
+            # logger.info("\nInit canceled")
+            # End Python 2
+            # Python 3
+            logger.error("\nInit canceled")
+            # End Python 3
+            #testing
+            return None, None
+            #end testing
         try:
             choice = int(choice)
         except ValueError:
@@ -1996,64 +2008,82 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
             for id in community_info:
                 community_id = id
             #community_id = community_info.iterkeys().next()  --- iterkeys() is not in python 3
-        config_parser.set('main', 'community_id', community_id)
-        response = api.list_projects(community_id)
-        if response.status_code != 200:
-            try:
-                raise_error(response.json(), 'Something went wrong trying to find projects in your community')
-            except:
-                logger.error('Something went wrong trying to find projects in your community')
-                return
-        project_info = api.get_project_info(community_id)
-        if len(project_info) > 0:
-            confirm = 'none'
-            try:
-                while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-                    prompt_message = 'Would you like to use an existing Lingotek project? [Y/n]: '
+        if community_id != None:
+            config_parser.set('main', 'community_id', community_id)
+            response = api.list_projects(community_id)
+            if response.status_code != 200:
+                try:
+                    raise_error(response.json(), 'Something went wrong trying to find projects in your community')
+                except:
+                    logger.error('Something went wrong trying to find projects in your community')
+                    return
+            project_info = api.get_project_info(community_id)
+            if len(project_info) > 0:
+                confirm = 'none'
+                try:
+                    while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
+                        prompt_message = 'Would you like to use an existing Lingotek project? [Y/n]: '
+                        # Python 2
+                        # confirm = raw_input(prompt_message)
+                        # End Python 2
+                        # Python 3
+                        confirm = input(prompt_message)
+                        # End Python 3
+                    if not confirm or not confirm in ['n', 'N', 'no', 'No']:
+                        project_id, project_name = display_choice('project', project_info)
+                        if project_id != None:
+                            config_parser.set('main', 'project_id', project_id)
+                            if project_name != None:
+                                config_parser.set('main', 'project_name', project_name)
+                            config_parser.write(config_file)
+                            config_file.close()
+                        return
+                except KeyboardInterrupt:
                     # Python 2
-                    # confirm = raw_input(prompt_message)
+                    # logger.info("\nInit canceled")
                     # End Python 2
                     # Python 3
-                    confirm = input(prompt_message)
+                    logger.error("\nInit canceled")
                     # End Python 3
-                if not confirm or not confirm in ['n', 'N', 'no', 'No']:
-                    project_id, project_name = display_choice('project', project_info)
-                    config_parser.set('main', 'project_id', project_id)
-                    config_parser.set('main', 'project_name', project_name)
-                    config_parser.write(config_file)
-                    config_file.close()
                     return
-            except KeyboardInterrupt:
-                logger.error("Init canceled")
-                return
-        prompt_message = "Please enter a new Lingotek project name: %s" % folder_name + chr(8) * len(folder_name)
-        try:
-            # Python 2
-            # project_name = raw_input(prompt_message)
-            # End Python 2
-            # Python 3
-            project_name = input(prompt_message)
-            # End Python 3
-        except KeyboardInterrupt:
-            logger.error("Init canceled")
-            return
-        if not project_name:
-            project_name = folder_name
-        response = api.add_project(project_name, community_id, workflow_id)
-        if response.status_code != 201:
+            prompt_message = "Please enter a new Lingotek project name: %s" % folder_name + chr(8) * len(folder_name)
             try:
-                raise_error(response.json(), 'Failed to add current project to Lingotek Cloud')
-            except:
-                logger.error('Failed to add current project to Lingotek Cloud')
+                # Python 2
+                # project_name = raw_input(prompt_message)
+                # End Python 2
+                # Python 3
+                project_name = input(prompt_message)
+                # End Python 3
+            except KeyboardInterrupt:
+                # Python 2
+                # logger.info("\nInit canceled")
+                # End Python 2
+                # Python 3
+                logger.error("\nInit canceled")
+                # End Python 3
                 return
-        project_id = response.json()['properties']['id']
-        config_parser.set('main', 'project_id', project_id)
-        config_parser.set('main', 'project_name', project_name)
+            if not project_name:
+                project_name = folder_name
+            response = api.add_project(project_name, community_id, workflow_id)
+            if response.status_code != 201:
+                try:
+                    raise_error(response.json(), 'Failed to add current project to Lingotek Cloud')
+                except:
+                    logger.error('Failed to add current project to Lingotek Cloud')
+                    return
+            project_id = response.json()['properties']['id']
+            config_parser.set('main', 'project_id', project_id)
+            config_parser.set('main', 'project_name', project_name)
 
-        config_parser.write(config_file)
-        config_file.close()
+            config_parser.write(config_file)
+            config_file.close()
     except KeyboardInterrupt:
-        logger.error("Init canceled")
+        # Python 2
+        # logger.info("\nInit canceled")
+        # End Python 2
+        # Python 3
+        logger.error("\nInit canceled")
+        # End Python 3
         return
     except Exception as e:
         if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
