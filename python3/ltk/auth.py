@@ -124,6 +124,8 @@ def run_oauth(host):
     payload_url = urllib.parse.urlencode(payload)
     # End Python 3
     authorize_url = host + '/auth/authorize.html?' + payload_url
+    print(authorize_url)
+    input("Wait just a moment...")
     import webbrowser
     webbrowser.open_new(authorize_url)
     print ('Your browser has been opened to visit: \n{0}\n'.format(authorize_url))

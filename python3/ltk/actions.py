@@ -1890,6 +1890,8 @@ def check_global(host):
     # check for a global config file and return the access token
     home_path = os.path.expanduser('~')
     sys_file = os.path.join(home_path, SYSTEM_FILE)
+    print(sys_file)
+    input("Pause")
     if os.path.isfile(sys_file):
         # get the access token
         print("Using configuration in file "+str(sys_file))
@@ -1938,12 +1940,15 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
     try:
         # check if Lingotek directory already exists
         to_init = reinit(host, project_path, delete, reset)
+        print(to_init)
+        input("Pause")
         # print("to_init: "+str(to_init))
         if not to_init:
             return
         elif to_init is not True:
             access_token = to_init
-
+        print(access_token)
+        input("Pause")
         ran_oauth = False
         if not access_token:
             access_token = check_global(host)
@@ -1952,6 +1957,8 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
                 access_token = run_oauth(host)
                 ran_oauth = True
         # print("access_token: "+str(access_token))
+        print(ran_oauth)
+        input("Pause")
         if ran_oauth:
             # create or overwrite global file
             create_global(access_token, host)
