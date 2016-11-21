@@ -548,7 +548,7 @@ class Action:
                 if str(watch_locales) == "[]":
                     watch_locales = ""
                 print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity ID: {4}\nWorkflow ID: {5}\n'
-                    'Default Source Locale: {6}\nClone Option: {7}\nDownload Folder: {8}\nTarget Locales (for watch and clone): {9}\nTarget Locale Folders: {10}\nGit Auto-commit: {11}\nAppend Option: {12}'.format(
+                    'Default Source Locale: {6}\nClone Option: {7}\nDownload Folder: {8}\nTarget Locales: {9}\nTarget Locale Folders: {10}\nGit Auto-commit: {11}\nAppend Option: {12}'.format(
                     self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.clone_option,
                     download_dir, watch_locales, locale_folders_str, git_output, self.append_option))
         except Exception as e:
@@ -744,14 +744,23 @@ class Action:
         try:
             is_successful = False
             locales = []
-            for locale in entered_locales:
-                locales.extend(locale.split(','))
-            locales = get_valid_locales(self.api, locales)
+            if entered_locales:
+                for locale in entered_locales:
+                    locales.extend(locale.split(','))
+                locales = get_valid_locales(self.api, locales)
+            elif len(self.watch_locales) > 0 and self.watch_locales != {''}:
+                locales = self.watch_locales
+            else:
+                logger.error('No locales have been specified. Locales can be passed in as arguments or set as target locales in ltk config.')
+                return
             if path:
                 document_id = None
                 document_name = None
             change_db_entry = True
             if to_delete:
+                if not entered_locales:
+                    logger.error("Please enter a target locale to delete")
+                    return
                 expected_code = 204
                 failure_message = 'Failed to delete target'
                 info_message = 'Deleted locale'
@@ -766,14 +775,8 @@ class Action:
             elif path:
                 docs = self.get_docs_in_path(path)
             else:
-                # todo: document name or file name? since file name will be relative to root
                 # todo: clean this code up some
-                if document_id:
-                    entry = self.doc_manager.get_doc_by_prop('id', document_id)
-                    if not entry:
-                        logger.error('Document specified for target doesn\'t exist: {0}'.format(document_id))
-                        return
-                elif document_name:
+                if document_name:
                     entry = self.doc_manager.get_doc_by_prop('name', document_name)
                     if not entry:
                         logger.error('Document name specified for target doesn\'t exist: {0}'.format(document_name))
@@ -811,7 +814,7 @@ class Action:
                 locales_to_add = []
                 if change_db_entry:
                     # Make sure that the locales that were just added are added to the database as well as the previous remote locales (since they were only just recently added to Lingotek's system)
-                    if to_delete:
+                    if to_delete and entered_locales:
                         locales_to_add = locales
                     else:
                         if remote_locales:
@@ -1223,7 +1226,7 @@ class Action:
                         for chunk in response.iter_content(1024):
                             fh.write(chunk)
                 except:
-                    logger.warning('ERROR: Download failed at '+download_path)
+                    logger.warning('Error: Download failed at '+download_path)
                 return download_path
             else:
                 printResponseMessages(response)
@@ -1316,7 +1319,7 @@ class Action:
                 return True
             except Exception as e:
                 log_error(self.error_file_name, e)
-                logger.error("ERROR: "+str(e))
+                logger.error("Error: "+str(e))
                 logger.error("An error prevented document {0} from being moved".format(source))
                 return False
         except Exception as e:
@@ -1806,7 +1809,12 @@ def reinit(host, project_path, delete, reset):
                 confirm = input(prompt_message)
                 # End Python 3
         except KeyboardInterrupt:
-            logger.error("Reinit canceled")
+            # Python 2
+            # logger.info("\nRenit canceled")
+            # End Python 2
+            # Python 3
+            logger.error("\nReinit canceled")
+            # End Python 3
             return
         # confirm if deleting existing folder
         if not confirm or confirm in ['n', 'N']:
@@ -1875,8 +1883,15 @@ def display_choice(display_type, info):
             choice = input(prompt_message)
             # End Python 3
         except KeyboardInterrupt:
-            logger.error("Init canceled")
-            return
+            # Python 2
+            # logger.info("\nInit canceled")
+            # End Python 2
+            # Python 3
+            logger.error("\nInit canceled")
+            # End Python 3
+            #testing
+            return None, None
+            #end testing
         try:
             choice = int(choice)
         except ValueError:
@@ -1996,64 +2011,82 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
             for id in community_info:
                 community_id = id
             #community_id = community_info.iterkeys().next()  --- iterkeys() is not in python 3
-        config_parser.set('main', 'community_id', community_id)
-        response = api.list_projects(community_id)
-        if response.status_code != 200:
-            try:
-                raise_error(response.json(), 'Something went wrong trying to find projects in your community')
-            except:
-                logger.error('Something went wrong trying to find projects in your community')
-                return
-        project_info = api.get_project_info(community_id)
-        if len(project_info) > 0:
-            confirm = 'none'
-            try:
-                while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-                    prompt_message = 'Would you like to use an existing Lingotek project? [Y/n]: '
+        if community_id != None:
+            config_parser.set('main', 'community_id', community_id)
+            response = api.list_projects(community_id)
+            if response.status_code != 200:
+                try:
+                    raise_error(response.json(), 'Something went wrong trying to find projects in your community')
+                except:
+                    logger.error('Something went wrong trying to find projects in your community')
+                    return
+            project_info = api.get_project_info(community_id)
+            if len(project_info) > 0:
+                confirm = 'none'
+                try:
+                    while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
+                        prompt_message = 'Would you like to use an existing Lingotek project? [Y/n]: '
+                        # Python 2
+                        # confirm = raw_input(prompt_message)
+                        # End Python 2
+                        # Python 3
+                        confirm = input(prompt_message)
+                        # End Python 3
+                    if not confirm or not confirm in ['n', 'N', 'no', 'No']:
+                        project_id, project_name = display_choice('project', project_info)
+                        if project_id != None:
+                            config_parser.set('main', 'project_id', project_id)
+                            if project_name != None:
+                                config_parser.set('main', 'project_name', project_name)
+                            config_parser.write(config_file)
+                            config_file.close()
+                        return
+                except KeyboardInterrupt:
                     # Python 2
-                    # confirm = raw_input(prompt_message)
+                    # logger.info("\nInit canceled")
                     # End Python 2
                     # Python 3
-                    confirm = input(prompt_message)
+                    logger.error("\nInit canceled")
                     # End Python 3
-                if not confirm or not confirm in ['n', 'N', 'no', 'No']:
-                    project_id, project_name = display_choice('project', project_info)
-                    config_parser.set('main', 'project_id', project_id)
-                    config_parser.set('main', 'project_name', project_name)
-                    config_parser.write(config_file)
-                    config_file.close()
                     return
-            except KeyboardInterrupt:
-                logger.error("Init canceled")
-                return
-        prompt_message = "Please enter a new Lingotek project name: %s" % folder_name + chr(8) * len(folder_name)
-        try:
-            # Python 2
-            # project_name = raw_input(prompt_message)
-            # End Python 2
-            # Python 3
-            project_name = input(prompt_message)
-            # End Python 3
-        except KeyboardInterrupt:
-            logger.error("Init canceled")
-            return
-        if not project_name:
-            project_name = folder_name
-        response = api.add_project(project_name, community_id, workflow_id)
-        if response.status_code != 201:
+            prompt_message = "Please enter a new Lingotek project name: %s" % folder_name + chr(8) * len(folder_name)
             try:
-                raise_error(response.json(), 'Failed to add current project to Lingotek Cloud')
-            except:
-                logger.error('Failed to add current project to Lingotek Cloud')
+                # Python 2
+                # project_name = raw_input(prompt_message)
+                # End Python 2
+                # Python 3
+                project_name = input(prompt_message)
+                # End Python 3
+            except KeyboardInterrupt:
+                # Python 2
+                # logger.info("\nInit canceled")
+                # End Python 2
+                # Python 3
+                logger.error("\nInit canceled")
+                # End Python 3
                 return
-        project_id = response.json()['properties']['id']
-        config_parser.set('main', 'project_id', project_id)
-        config_parser.set('main', 'project_name', project_name)
+            if not project_name:
+                project_name = folder_name
+            response = api.add_project(project_name, community_id, workflow_id)
+            if response.status_code != 201:
+                try:
+                    raise_error(response.json(), 'Failed to add current project to Lingotek Cloud')
+                except:
+                    logger.error('Failed to add current project to Lingotek Cloud')
+                    return
+            project_id = response.json()['properties']['id']
+            config_parser.set('main', 'project_id', project_id)
+            config_parser.set('main', 'project_name', project_name)
 
-        config_parser.write(config_file)
-        config_file.close()
+            config_parser.write(config_file)
+            config_file.close()
     except KeyboardInterrupt:
-        logger.error("Init canceled")
+        # Python 2
+        # logger.info("\nInit canceled")
+        # End Python 2
+        # Python 3
+        logger.error("\nInit canceled")
+        # End Python 3
         return
     except Exception as e:
         if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
