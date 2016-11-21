@@ -13,8 +13,9 @@ def create_config():
     except OSError:
         pass
     new_config_file_path = os.path.join(conf_path, CONF_FN)
-    config_file_path = os.path.join(os.getcwd(), 'config')
-    shutil.copyfile(config_file_path, new_config_file_path)
+    # find way to always get correct path to config file, regardless of current working directory
+    path = os.path.join(os.getcwd(),'config')
+    shutil.copyfile(path, new_config_file_path)
 
 def create_txt_file(file_name):
     print("create_txt_file")
@@ -30,7 +31,7 @@ def delete_file(file_name):
     os.remove(file_name)
 
 def append_file(file_name):
-    file_path = os.path.join(os.getcwd(), file_name)    
+    file_path = os.path.join(os.getcwd(), file_name)
     with open(file_path, 'a') as txt_file:
         txt_file.write('Appended text. ')
         txt_file.close()
