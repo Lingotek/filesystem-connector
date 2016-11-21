@@ -548,7 +548,7 @@ class Action:
                 if str(watch_locales) == "[]":
                     watch_locales = ""
                 print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity ID: {4}\nWorkflow ID: {5}\n'
-                    'Default Source Locale: {6}\nClone Option: {7}\nDownload Folder: {8}\nTarget Locales (for watch and clone): {9}\nTarget Locale Folders: {10}\nGit Auto-commit: {11}\nAppend Option: {12}'.format(
+                    'Default Source Locale: {6}\nClone Option: {7}\nDownload Folder: {8}\nTarget Locales: {9}\nTarget Locale Folders: {10}\nGit Auto-commit: {11}\nAppend Option: {12}'.format(
                     self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.clone_option,
                     download_dir, watch_locales, locale_folders_str, git_output, self.append_option))
         except Exception as e:
@@ -744,14 +744,23 @@ class Action:
         try:
             is_successful = False
             locales = []
-            for locale in entered_locales:
-                locales.extend(locale.split(','))
-            locales = get_valid_locales(self.api, locales)
+            if entered_locales:
+                for locale in entered_locales:
+                    locales.extend(locale.split(','))
+                locales = get_valid_locales(self.api, locales)
+            elif len(self.watch_locales) > 0 and self.watch_locales != {''}:
+                locales = self.watch_locales
+            else:
+                logger.error('No locales have been specified. Locales can be passed in as arguments or set as target locales in ltk config.')
+                return
             if path:
                 document_id = None
                 document_name = None
             change_db_entry = True
             if to_delete:
+                if not entered_locales:
+                    logger.error("Please enter a target locale to delete")
+                    return
                 expected_code = 204
                 failure_message = 'Failed to delete target'
                 info_message = 'Deleted locale'
@@ -766,14 +775,8 @@ class Action:
             elif path:
                 docs = self.get_docs_in_path(path)
             else:
-                # todo: document name or file name? since file name will be relative to root
                 # todo: clean this code up some
-                if document_id:
-                    entry = self.doc_manager.get_doc_by_prop('id', document_id)
-                    if not entry:
-                        logger.error('Document specified for target doesn\'t exist: {0}'.format(document_id))
-                        return
-                elif document_name:
+                if document_name:
                     entry = self.doc_manager.get_doc_by_prop('name', document_name)
                     if not entry:
                         logger.error('Document name specified for target doesn\'t exist: {0}'.format(document_name))
@@ -811,7 +814,7 @@ class Action:
                 locales_to_add = []
                 if change_db_entry:
                     # Make sure that the locales that were just added are added to the database as well as the previous remote locales (since they were only just recently added to Lingotek's system)
-                    if to_delete:
+                    if to_delete and entered_locales:
                         locales_to_add = locales
                     else:
                         if remote_locales:

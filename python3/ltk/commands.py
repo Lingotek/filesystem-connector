@@ -204,18 +204,19 @@ def push():
 
 
 @ltk.command(short_help="Add targets to document(s) to start translation; defaults to the entire project. Use ltk list -l to see possible locales")
-@click.option('-n', '--doc_name', help='The name of the document; specify for one document')
-@click.option('-p', '--path', type=click.Path(exists=True), help='A file name or directory for which to request targets')
+@click.option('-n', '--doc_name', help='The name of the document for which to request target locale(s)')
+@click.option('-p', '--path', type=click.Path(exists=True), help='The file name or directory for which to request target locale(s)')
 @click.option('-d', '--delete', 'to_delete', flag_value=True, help='Deletes a specified target locale')
 @click.option('--due_date', help='The due date of the translation')
-@click.option('-w', '--workflow', help='The workflow of the translation (do "ltk list -w" to see available workflows)')
-@click.argument('locales', required=True, nargs=-1)  # can have unlimited number of locales
+@click.option('-w', '--workflow', help='The workflow of the translation (Use "ltk list -w" to see available workflows)')
+@click.argument('locales', required=False, nargs=-1)  # can have unlimited number of locales
 def request(doc_name, path, locales, to_delete, due_date, workflow):
-    """ Add targets to document(s) to start translation; defaults to the entire project. Use ltk list -l to see possible locales """
+    """ Add targets to document(s) to start translation; defaults to the entire project. If no locales are specified, Filesystem Connector
+        will look use target watch locales set in ltk config. Use ltk list -l to see possible locales. """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
-        if isinstance(locales,str):
+        if locales and isinstance(locales,str):
             locales = [locales]
 
         doc_name = remove_powershell_formatting(doc_name)
@@ -226,7 +227,6 @@ def request(doc_name, path, locales, to_delete, due_date, workflow):
         print_log(e)
         logger.error(e)
         return
-
 
 # todo add a --all option to see all document ids once only show relative to cwd is implemented
 @ltk.command(name='list', short_help='Shows docs (default), workflows, locales, formats, or filters')
