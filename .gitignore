@@ -13,3 +13,5 @@ uploads/
 */TypicalTranslationJob/*
 tests/test_actions/*.txt
 tests/test_actions/*.json
+.cache/
+tests/test_actions/.cache/

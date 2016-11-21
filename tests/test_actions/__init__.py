@@ -30,6 +30,17 @@ def delete_file(file_name):
     file_path = os.path.join(os.getcwd(), file_name)
     os.remove(file_name)
 
+def create_directory(dir_path):
+    print("create directory")
+    try:
+        os.mkdir(dir_path)
+    except OSError:
+        pass
+
+def delete_directory(dir_path):
+    print("delete directory")
+    os.rmdir(dir_path)
+
 def append_file(file_name):
     file_path = os.path.join(os.getcwd(), file_name)
     with open(file_path, 'a') as txt_file:

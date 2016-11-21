@@ -16,10 +16,15 @@ class TestAdd(unittest.TestCase):
         self.action = Action(os.getcwd())
         self.action.clean_action(False, False, None)
         self.added_files = []
+        self.added_directories = []
 
     def tearDown(self):
         for fn in self.added_files:
             self.action.rm_action(fn, force=True)
+
+        #for d in self.added_directories:
+            #delete_directory(d)
+
         self.action.clean_action(False, False, None)
         self.action.close()
 
@@ -67,5 +72,19 @@ class TestAdd(unittest.TestCase):
         doc_ids = self.action.doc_manager.get_doc_ids()
         for doc_id in doc_ids:
             assert poll_doc(self.action, doc_id)
+
+    def test_add_directory(self):
+
+        #add an empty directory
+        directory = 'test_add_directory'
+        dir_path = os.path.join(os.getcwd(), directory)
+        self.added_directories.append(dir_path)
+
+        create_directory(dir_path)
+        #os.system('ltk add d1') # Let the command line handle parsing the file pattern
+        self.action.add_action([dir_path], force=True)
+        assert self.action.folder_manager.folder_exists(dir_path)
+
+        #add a directory with documents inside
 
     # todo test all those other args
