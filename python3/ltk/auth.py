@@ -124,6 +124,20 @@ def run_oauth(host):
     payload_url = urllib.parse.urlencode(payload)
     # End Python 3
     authorize_url = host + '/auth/authorize.html?' + payload_url
+    '&username=aahlstrom@lingotek.com&password=$Sy66sy0k6$'
+    import urllib.request as urllib2
+    request = urllib2.Request("https://cmssso.lingotek.com/login", headers={"Username" : "aahlstrom@lingotek.com", "Password" : "$Sy66sy0k6"})
+    contents = urllib2.urlopen(request).read()
+    print(contents)
+# import sys
+# if sys.version_info < (3,0):
+#   import urllib2 as urllib
+# else:
+#   import urllib.request as urllib
+# request = urllib.Request("http://www.google.com", headers={"Accept" : "text/html"})
+# contents = urllib.urlopen(request).read()
+# print(contents[:100])
+
     print(authorize_url)
     input("Wait just a moment...")
     import webbrowser

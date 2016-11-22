@@ -325,6 +325,8 @@ class Action:
         return False
 
     def config_action(self, **kwargs):
+        self.api.login()
+        self.api.authenticate()
         try:
             config_file_name, conf_parser = self.init_config_file()
             print_config = True
