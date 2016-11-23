@@ -790,11 +790,12 @@ class Action:
                 if path and len(path) > 0:
                     logger.info("File "+str(path)+" not found")
                 else:
-                    logger.info("No documents to request target locale")
+                    logger.info("No documents to request a target locale")
             for entry in docs:
                 document_id = entry['id']
                 document_name = entry['file_name']
                 for locale in locales:
+                    locale = locale.replace('_','-')
                     response = self.api.document_add_target(document_id, locale, workflow, due_date) if not to_delete \
                         else self.api.document_delete_target(document_id, locale)
                     if response.status_code != expected_code:
@@ -882,7 +883,7 @@ class Action:
                 title = titles[i]
                 if len(title) > max_length:
                     title = title[(len(titles[i])-30):]
-                info = '%-*s' % (max_length,title) + ' %-38s' % ids[i] + ', '.join(locale for locale in locales[i])
+                info = '%-*s' % (max_length,title) + ' %-38s' % ids[i] + ', '.join(locale.replace('_','-') for locale in locales[i])
                 print (info)
         except Exception as e:
             log_error(self.error_file_name, e)
@@ -931,7 +932,7 @@ class Action:
             raise exceptions.RequestFailedError("Failed to get locale codes")
         locale_json = response.json()
         for entry in locale_json:
-            locale_code = locale_json[entry]['locale']
+            locale_code = locale_json[entry]['locale'].replace('_','-')
             language = locale_json[entry]['language_name']
             country = locale_json[entry]['country_name']
             locale_info.append((locale_code, language, country))
@@ -1128,7 +1129,7 @@ class Action:
                     else:
                         download_root = locale_code
                     download_root = os.path.join(self.path,download_root)
-                    # print("download_root: "+download_root) 365 253 222 159
+                    #print("download_root: "+download_root) #365 253 222 159
                     '''source_file_name = entry['file_name']
                     source_path = os.path.join(self.path,os.path.dirname(source_file_name))
                     # print("original source_path: "+source_path)
@@ -1254,9 +1255,10 @@ class Action:
                         try:
                             locales = entry['locales']
                             #debugging
-                            #print("Locales: " + locales)
+                            #print("Locales: " + str(locales))
                             #end debugging
                             for locale in locales:
+                                locale = locale.replace('_','-')
                                 self.download_action(entry['id'], locale, auto_format, locale_ext)
                         except KeyError:
                             self.download_action(entry['id'], None, auto_format, locale_ext)
