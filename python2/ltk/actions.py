@@ -1260,11 +1260,15 @@ class Action:
                                 self.download_action(entry['id'], locale, auto_format, locale_ext)
                         except KeyError:
                             self.download_action(entry['id'], None, auto_format, locale_ext)
+                else:
+                    logger.info("No documents have been added")
             else:
                 document_ids = self.doc_manager.get_doc_ids()
                 if document_ids:
                     for document_id in document_ids:
                         self.download_action(document_id, locale_code, auto_format, locale_ext)
+                else:
+                    logger.info("No documents have been added")
         except Exception as e:
             log_error(self.error_file_name, e)
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
