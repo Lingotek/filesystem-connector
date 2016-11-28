@@ -748,10 +748,10 @@ class Action:
                 for locale in entered_locales:
                     locales.extend(locale.split(','))
                 locales = get_valid_locales(self.api, locales)
-            elif len(self.watch_locales) > 0 and self.watch_locales != {''}:
+            elif len(self.watch_locales) > 0 and self.watch_locales != {'[]'} and self.watch_locales != {''}:
                 locales = self.watch_locales
             else:
-                logger.error('No locales have been specified. Locales can be passed in as arguments or set as target locales in ltk config.')
+                logger.info('No locales have been specified. Locales can be passed in as arguments or set as target locales in ltk config.')
                 return
             if path:
                 document_id = None
