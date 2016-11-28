@@ -303,11 +303,19 @@ def remove_powershell_formatting(args):
         if isinstance(args, tuple):
             myTuple = ()
             if len(args) > 1:
-                for k,v  in args:
-                    k = (remove_formatting(k),)
-                    v = remove_formatting(v)
-                    tup1 = k+(v,)
+                if isinstance(args, tuple):
+                    for k in args:
+                        k = remove_formatting(k)
+                        myTuple = myTuple+(k,)
 
+                    return myTuple
+                else:
+                    for k,v  in args:
+                        k = (remove_formatting(k),)
+                        v = remove_formatting(v)
+                        tup1 = k+(v,)
+
+                        return myTuple+(tup1,)
                 return myTuple+(tup1,)
             else:
                 for tup in args:
@@ -325,7 +333,9 @@ def remove_powershell_formatting(args):
 
                         return myTuple
 
-        if isinstance(args, list):
+                return args
+
+        elif isinstance(args, list):
             temp = []
             for k in args:
                 k = remove_formatting(k)
@@ -336,6 +346,10 @@ def remove_powershell_formatting(args):
         elif isinstance(args, str):
             temp = remove_formatting(args)
             return temp
+        # Python 2
+        # elif isinstance(args, bool):
+        #    return args
+        # End Python 2
         else:
             # Python 2
 #           temp = remove_formatting(args)

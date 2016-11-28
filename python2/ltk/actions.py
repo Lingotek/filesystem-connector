@@ -597,6 +597,8 @@ class Action:
                 if not added_folder:
                     logger.info("No folders to add at the given path(s).")
                 return
+
+            # get files to add and check if they exist
             matched_files = get_files(file_patterns)
             if not matched_files:
                 if added_folder:
@@ -605,6 +607,7 @@ class Action:
                 else:
                     raise exceptions.ResourceNotFound("Could not find the specified file/pattern.")
 
+            # add the documents to the db and lingotek cloud
             self.add_documents(matched_files, **kwargs)
 
         except Exception as e:
