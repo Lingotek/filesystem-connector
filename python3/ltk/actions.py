@@ -325,8 +325,10 @@ class Action:
         return False
 
     def config_action(self, **kwargs):
-        self.api.login()
-        self.api.authenticate()
+        # self.api.login({'Cookie': '__ctmid=58220c510010e8c8dc704410; _ga=GA1.2.831256021.1467748163; connect.sid=s%3Aq4dTUpbJVb8uIgbM7s2T0txtHR6qpkhE.5dFEBdjsPtlcDGgG9MO9yNQMhyrkMpJVjhLH84J2nKj', 'Referer': 'https://cmssso.lingotek.com/login', 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.100 Safari/537.36'})
+        self.api.login({'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8','Accept-Encoding':'gzip, deflate, br','Accept-Language':'en-US,en;q=0.8','Cache-Control':'max-age=0','Connection':'keep-alive','Content-Length':'58','Content-Type':'application/x-www-form-urlencoded','Cookie':'__ctmid=58220c510010e8c8dc704410; _ga=GA1.2.831256021.1467748163; connect.sid=s%3Aq4dTUpbJVb8uIgbM7s2T0txtHR6qpkhE.5dFEBdjsPtlcDGgG9MO9yNQMhyrkMpJVjhLH84J2nKj','Host':'cmssso.lingotek.com','Origin':'https://cmssso.lingotek.com','Referer':'https://cmssso.lingotek.com/login','Upgrade-Insecure-Requests':'1','User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.100 Safari/537.36'})
+        self.api.login({})
+        self.api.authenticate({'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8','Accept-Encoding':'gzip, deflate, sdch, br','Accept-Language':'en-US,en;q=0.8','Cache-Control':'max-age=0','Connection':'keep-alive','Cookie':'__ctmid=58220c510010e8c8dc704410; _ga=GA1.2.831256021.1467748163; connect.sid=s%3Aq4dTUpbJVb8uIgbM7s2T0txtHR6qpkhE.5dFEBdjsPtlcDGgG9MO9yNQMhyrkMpJVjhLH84J2nKj','Host':'cmssso.lingotek.com','Referer':'https://cmssso.lingotek.com/login','Upgrade-Insecure-Requests':'1','User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.100 Safari/537.36}'})
         try:
             config_file_name, conf_parser = self.init_config_file()
             print_config = True

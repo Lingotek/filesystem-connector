@@ -1,4 +1,5 @@
 import requests
+import http.cookies as cookie
 from ltk.api_uri import API_URI
 from ltk.utils import restart
 import ltk.utils
@@ -23,12 +24,12 @@ class ApiCalls:
         else:
             raise ConnectionFailed("Could not connect to Lingotek")
 
-    def login(self):
+    def login(self, header):
         try:
             host = 'https://cmssso.lingotek.com'
             uri = '/login'
             payload = {'username': 'aahlstrom@lingotek.com', 'password': '$Sy66sy0k6$'}
-            r = requests.post(host + uri, headers={"Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'","Accept-Encoding":"gzip, deflate, br","Accept-Language":"en-US,en;q=0.8","Authorization":"","Cache-Control":"max-age=0","Connection":"keep-alive","Content-Length":"58","Content-Type":"application/x-www-form-urlencoded","Cookie":"","Origin":"https://cmssso.lingotek.com","Referer":"https://cmssso.lingotek.com/login","Upgrade-Insecure-Requests":"1","User-Agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.100 Safari/537.36"}, data=payload)
+            r = requests.post(host + uri, headers=header, data=payload)
             print(r.text)
             print(r.headers)
             log_api('POST', uri, r)
@@ -36,16 +37,20 @@ class ApiCalls:
             self.handleError()
         return r
 
-    def authenticate(self):
+    def authenticate(self, header):
         try:
             host = 'https://cmssso.lingotek.com'
             uri = '/dialog/authorize'
             payload = {'redirect_uri':'https://cms.lingotek.com/tms-ui/html/portal/sso_redirect.html','response_type':'token','client_id':'653cf7eb-b352-4fb8-a29c-1b129c31f0a1'}
+            c = cookie.BaseCookie()
+            print(c)
             # r = requests.get(host + uri, headers={'Host': 'cmssso.lingotek.com', 'Referer': 'https://cmssso.lingotek.com/login', 'Cache-Control':'max-age=0', 'Upgrade-Insecure-Requests':'1', 'Cookie':'__ctmid=58220c510010e8c8dc704410; _gat=1; _ga=GA1.2.831256021.1467748163; connect.sid=s%3AxU6QRRV9jDVSX3SeYAOElBOI1Y5HdMRK.yU%2FTgKno2PqlKGljl50dJ8HarhRUT71zT0rF6aniDvw'}, data=payload)
-            r = requests.get(host + uri, headers={'Cookie':'connect.sid=s%3AxU6QRRV9jDVSX3SeYAOElBOI1Y5HdMRK.yU%2FTgKno2PqlKGljl50dJ8HarhRUT71zT0rF6aniDvw'}, params=payload)
+            # r = requests.get(host + uri, headers={'Cookie':'connect.sid=s%3Aq4dTUpbJVb8uIgbM7s2T0txtHR6qpkhE.5dFEBdjsPtlcDGgG9MO9yNQMhyrkMpJVjhLH84J2mKI'}, params=payload)
+            r = requests.get(host + uri, headers=header, params=payload)
             # r = requests.get(host + uri, headers=self.headers, params=payload)
             print(r.text)
             print(r.headers)
+            print(r.url)
             log_api('GET', uri, r)
         except:
             self.handleError()
