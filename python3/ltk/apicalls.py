@@ -1,11 +1,11 @@
 import requests
-import http.cookies as cookie
 from ltk.api_uri import API_URI
 from ltk.utils import restart
 import ltk.utils
 from ltk.exceptions import RequestFailedError,ConnectionFailed
 from ltk.logger import logger
 import sys, os
+import urllib.parse as parse
 
 class ApiCalls:
     def __init__(self, host, access_token, watch=False, timeout=5):
@@ -13,6 +13,7 @@ class ApiCalls:
         self.headers = {'Authorization': 'bearer ' + access_token}
         self.watch = watch
         self.timeout = timeout
+        self.cookie = ''
         # v To be removed v
         self.access_token = access_token
         # self.cert = ('lingotek.crt', 'lingotek.key')
@@ -24,45 +25,63 @@ class ApiCalls:
         else:
             raise ConnectionFailed("Could not connect to Lingotek")
 
-    def login(self, header):
+# Returns true if successful in retrieving cookie, false if otherwise
+    def access_login(self, host):
         try:
-            host = 'https://cmssso.lingotek.com'
             uri = '/login'
-            payload = {'username': 'aahlstrom@lingotek.com', 'password': '$Sy66sy0k6$'}
-            r = requests.post(host + uri, headers=header, data=payload)
-            print(r.text)
-            print(r.headers)
+            r = requests.get(host + uri)
+            # print(r.text)
+            cookie = r.headers['set-cookie']
+            log_api('GET', uri, r)
+            if cookie and len(cookie) > 0:
+                self.cookie = cookie
+                return True
+            else: return False
+        except:
+            self.handleError()
+            return False
+
+# Returns true if access_login is successful, false if otherwise
+    def login(self, host, username, password):
+        output = self.access_login(host)
+        try:
+            uri = '/login'
+            payload = {'username': username, 'password': password}
+            r = requests.post(host + uri, headers={'Cookie': self.cookie}, data=payload)
             log_api('POST', uri, r)
         except:
             self.handleError()
-        return r
+        return output
 
-    def authenticate(self, header):
+
+# Returns access token if successful in retrieving it, None if otherwise
+    def authenticate(self, host):
+        output = None
         try:
-            host = 'https://cmssso.lingotek.com'
+            start = self.startup(host)
+            if not start.url: return None
+            query = parse.parse_qs(parse.urlparse(start.url).query)
+            if 'client_id' in query.keys(): cid = query['client_id']
+            else: return None
             uri = '/dialog/authorize'
-            payload = {'redirect_uri':'https://cms.lingotek.com/tms-ui/html/portal/sso_redirect.html','response_type':'token','client_id':'653cf7eb-b352-4fb8-a29c-1b129c31f0a1'}
-            c = cookie.BaseCookie()
-            print(c)
+            payload = {'redirect_uri':'https://cms.lingotek.com/tms-ui/html/portal/sso_redirect.html','response_type':'token','client_id':cid}
             # r = requests.get(host + uri, headers={'Host': 'cmssso.lingotek.com', 'Referer': 'https://cmssso.lingotek.com/login', 'Cache-Control':'max-age=0', 'Upgrade-Insecure-Requests':'1', 'Cookie':'__ctmid=58220c510010e8c8dc704410; _gat=1; _ga=GA1.2.831256021.1467748163; connect.sid=s%3AxU6QRRV9jDVSX3SeYAOElBOI1Y5HdMRK.yU%2FTgKno2PqlKGljl50dJ8HarhRUT71zT0rF6aniDvw'}, data=payload)
             # r = requests.get(host + uri, headers={'Cookie':'connect.sid=s%3Aq4dTUpbJVb8uIgbM7s2T0txtHR6qpkhE.5dFEBdjsPtlcDGgG9MO9yNQMhyrkMpJVjhLH84J2mKI'}, params=payload)
-            r = requests.get(host + uri, headers=header, params=payload)
-            # r = requests.get(host + uri, headers=self.headers, params=payload)
-            print(r.text)
-            print(r.headers)
-            print(r.url)
+            r = requests.get(host + uri, headers={'Cookie': self.cookie}, params=payload)
             log_api('GET', uri, r)
+            # r = requests.get(host + uri, headers=self.headers, params=payload)
+            fragment = parse.parse_qs(parse.urlparse(r.url).fragment)
+            if 'access_token' in fragment.keys() and len(fragment['access_token']) > 0: return fragment['access_token'][0]
+            else: return None
         except:
             self.handleError()
-        return r
+            return None
 
-    def startup(self):
+# Returns a request object used in the authenticate function
+    def startup(self, host):
         try:
-            host = 'https://cms.lingotek.com'
             uri = '/lingopoint/portal/startup.action'
-            r = requests.get(host + uri, headers={'Cookie':'__ctmid=58220c510010e8c8dc704410; _gat=1; _ga=GA1.2.831256021.1467748163; connect.sid=s%3AxU6QRRV9jDVSX3SeYAOElBOI1Y5HdMRK.yU%2FTgKno2PqlKGljl50dJ8HarhRUT71zT0rF6aniDvw', 'Referer':'https://cmssso.lingotek.com/login', 'Upgrade-Insecure-Requests':'1'})
-            print(r.text)
-            print(r.headers)
+            r = requests.get(host + uri, headers={'Host':'cms.lingotek.com'})
             log_api('GET', uri, r)
         except:
             self.handleError()
