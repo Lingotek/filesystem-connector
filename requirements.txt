@@ -4,5 +4,4 @@ requests >= 2.6.0
 watchdog >= 0.8
 gitpython >= 2.0.7
 pexpect >= 4.2.0
-winpexpect >= 1.4
 blessings >= 1.3

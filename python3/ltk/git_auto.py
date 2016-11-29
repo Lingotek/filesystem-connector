@@ -6,7 +6,6 @@ from git import RemoteProgress
 import os
 try:
 	import pexpect
-	import winpexpect
 except: pass
 import binascii
 from ltk.utils import error
@@ -69,15 +68,12 @@ class Git_Auto:
 			pexpect.spawnu('git push')
 		except:
 			try:
-				g = winpexpect.winspawn('git push')
-			except:
-				try:
-					self.repo.git.push()
-					print("Push was successful")
-				except Exception as e:
-					error("Git push failed!")
-					print(type(e))
-				return
+				self.repo.git.push()
+				print("Push was successful")
+			except Exception as e:
+				error("Git push failed!")
+				print(type(e))
+			return
 		try:
 			g.logfile_read = sys.stdout
 			if not username: username = ''
