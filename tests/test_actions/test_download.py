@@ -24,7 +24,7 @@ class TestDownload(unittest.TestCase):
         self.first_doc = 'sample.txt'
         for fn in self.files:
             create_txt_file(fn)
-        self.action.add_action(['sample*.txt'], overwrite=True)
+        os.system('ltk add sample*.txt -o') # Let the command line handle parsing the file pattern
         self.doc_ids = self.action.doc_manager.get_doc_ids()
         for doc_id in self.doc_ids:
             assert poll_doc(self.action, doc_id)
@@ -49,10 +49,16 @@ class TestDownload(unittest.TestCase):
         return dl_path
 
     def test_download_name(self):
-        self.action.download_by_path(self.first_doc, self.locales[0], False)
+        self.action.config_action(clone_option='off')
+        self.action.config_action(download_folder='--none')
+
+        self.action.download_by_path(self.first_doc, self.locales[0], False, False, False)
         dl_file = self.get_dl_path(self.locales[0], self.first_doc)
+
         assert self.locales[0] in dl_file
+
         assert os.path.isfile(dl_file)
+
         self.downloaded_files.append(dl_file)
 
     def test_pull_all(self):
