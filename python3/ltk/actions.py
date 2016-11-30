@@ -460,8 +460,8 @@ class Action:
                         log_info = 'Adding locale folder for {0}'.format(folders_string)
                 locale_folders_str = json.dumps(self.locale_folders)
                 self.update_config_file('locale_folders', locale_folders_str, conf_parser, config_file_name, log_info)
-            if 'clear_locales' in kwargs and kwargs['clear_locales']:
-                clear_locales = kwargs['clear_locales']
+            if 'remove_locales' in kwargs and kwargs['remove_locales']:
+                clear_locales = kwargs['remove_locales']
                 log_info = "Cleared all locale specific download folders."
                 self.locale_folders = {}
                 locale_folders_str = json.dumps(self.locale_folders)
