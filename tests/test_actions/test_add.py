@@ -91,17 +91,24 @@ class TestAdd(unittest.TestCase):
         #test add a directory with documents inside
         directory = 'test_add_full_directory'
         dir_path = os.path.join(os.getcwd(), directory)
-        file_name = 'file_inside_directory.txt'
         self.added_directories.append(dir_path)
         create_directory(dir_path)
-        self.added_files.append(file_name)
-        create_file_in_directory(dir_path, file_name)
+
+        files = ['sample.txt', 'sample1.txt', 'sample2.txt']
+        self.added_files = files
+        for fn in files:
+            create_txt_file(fn, dir_path)
+
         self.action.add_action([dir_path], force=True)
 
         assert self.action._is_folder_added(dir_path)
-        assert self.action.doc_manager.get_doc_by_prop('name', file_name)
+        for fn in files:
+            assert self.action.doc_manager.get_doc_by_prop('name', fn)
 
-        delete_file(file_name, dir_path)
+        #delete the files and directories created
+        for fn in files:
+            delete_file(fn, dir_path)
+
         delete_directory(dir_path)
 
     ''' Test adding a directory with a document inside gets added to Lingotek '''
