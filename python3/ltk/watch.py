@@ -87,7 +87,7 @@ class WatchAction(Action):
             for locale in locales:
                 original = file_name
                 file_name = file_name.replace('.'+locale, '')
-                if file_name != original: 
+                if file_name != original:
                     replace_target = locale
                     break
             file_name = re.sub('\.{2,}', '.', file_name)
@@ -149,7 +149,7 @@ class WatchAction(Action):
         # add action
         try:
             file_path = event.src_path
-            # if it's a hidden document, don't do anything 
+            # if it's a hidden document, don't do anything
             if not is_hidden_file(file_path) and not self.is_translation(file_path):
                 relative_path = file_path.replace(self.path, '')
                 title = os.path.basename(os.path.normpath(file_path))
@@ -252,7 +252,7 @@ class WatchAction(Action):
             #         printStr += target+","
             # print(printStr)
             if self.api.get_document(document_id):
-                if self.target_action(title, file_name, locales_to_add, None, None, None, document_id) and document_id in self.watch_queue:
+                if self.target_action(title, file_name, locales_to_add, None, None, None, document_id, True) and document_id in self.watch_queue:
                     self.watch_queue.remove(document_id)
 
     def process_queue(self):
@@ -389,7 +389,8 @@ class WatchAction(Action):
             print (watch_message)
         else:
             print ("Watching for updates to added documents")
-        if force_poll: self.force_poll = True
+        if force_poll:
+            self.force_poll = True
         self.ignore_ext.extend(ignore)
         self.locale_delimiter = delimiter
         for watch_path in watch_paths:

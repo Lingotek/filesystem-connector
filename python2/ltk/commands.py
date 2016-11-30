@@ -212,7 +212,7 @@ def push():
 @click.argument('locales', required=False, nargs=-1)  # can have unlimited number of locales
 def request(doc_name, path, locales, to_delete, due_date, workflow):
     """ Add targets to document(s) to start translation; defaults to the entire project. If no locales are specified, Filesystem Connector
-        will look use target watch locales set in ltk config. Use ltk list -l to see possible locales. """
+        will look for target watch locales set in ltk config. Use ltk list -l to see possible locales. """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)

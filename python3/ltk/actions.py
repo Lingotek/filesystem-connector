@@ -740,18 +740,21 @@ class Action:
         self.doc_manager.update_document('locales', locale_info, document_id)
 
     # def request_action
-    def target_action(self, document_name, path, entered_locales, to_delete, due_date, workflow, document_id=None):
+    def target_action(self, document_name, path, entered_locales, to_delete, due_date, workflow, document_id=None, watching=False):
         try:
             is_successful = False
             locales = []
-            if entered_locales:
+            if entered_locales and len(entered_locales) > 0 and entered_locales != {''}:
                 for locale in entered_locales:
                     locales.extend(locale.split(','))
                 locales = get_valid_locales(self.api, locales)
             elif len(self.watch_locales) > 0 and self.watch_locales != {'[]'} and self.watch_locales != {''}:
                 locales = self.watch_locales
+            elif watching:
+                # don't print out anything when on watch
+                return
             else:
-                logger.info('No locales have been specified. Locales can be passed in as arguments or set as target locales in ltk config.')
+                logger.info('No locales have been set. Locales can be passed in as arguments or set as target locales in ltk config.')
                 return
             if path:
                 document_id = None
@@ -1254,9 +1257,6 @@ class Action:
                     for entry in entries:
                         try:
                             locales = entry['locales']
-                            #debugging
-                            #print("Locales: " + str(locales))
-                            #end debugging
                             for locale in locales:
                                 locale = locale.replace('_','-')
                                 self.download_action(entry['id'], locale, auto_format, locale_ext)
