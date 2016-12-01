@@ -325,7 +325,6 @@ class Action:
         return False
 
     def config_action(self, **kwargs):
-        if self.api.login('https://cmssso.lingotek.com','aahlstrom@lingotek.com', '$Sy66sy0k6$'): print(self.api.authenticate('https://cmssso.lingotek.com'))
         try:
             config_file_name, conf_parser = self.init_config_file()
             print_config = True
@@ -1935,11 +1934,10 @@ def create_global(access_token, host):
     sys_file.close()
 
 
-def init_action(host, access_token, project_path, folder_name, workflow_id, locale, delete, reset):
+def init_action(host, access_token, project_path, folder_name, workflow_id, locale, browserless, delete, reset):
     try:
         # check if Lingotek directory already exists
         to_init = reinit(host, project_path, delete, reset)
-        print(to_init)
         # print("to_init: "+str(to_init))
         if not to_init:
             return
@@ -1949,11 +1947,30 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
         if not access_token:
             access_token = check_global(host)
             if not access_token or reset:
-                from ltk.auth import run_oauth
-                access_token = run_oauth(host)
-                ran_oauth = True
+                if not browserless:
+                    from ltk.auth import run_oauth
+                    access_token = run_oauth(host)
+                    ran_oauth = True
+                else:
+                    api = ApiCalls(host, '')
+                    # Python 2
+                    # username = raw_input('Username: ')
+                    # End Python 2
+                    # Python 3
+                    username = input('Username: ')
+                    # End Python 3
+                    password = getpass.getpass()
+                    login_host = 'https://sso.lingotek.com' if 'myaccount' in host else 'https://cmssso.lingotek.com'
+                    if api.login(login_host, username, password):
+                        retrieved_token = api.authenticate(login_host)
+                        if retrieved_token:
+                            print('Authentication successful')
+                            access_token = retrieved_token
+                            ran_oauth = True
+                    if not ran_oauth: 
+                        print('Authentication failed.  Initialization canceled.')
+                        return
         # print("access_token: "+str(access_token))
-        print(ran_oauth)
         if ran_oauth:
             # create or overwrite global file
             create_global(access_token, host)

@@ -31,25 +31,30 @@ class ApiCalls:
             uri = '/login'
             r = requests.get(host + uri)
             # print(r.text)
+            input()
             cookie = r.headers['set-cookie']
             log_api('GET', uri, r)
             if cookie and len(cookie) > 0:
                 self.cookie = cookie
                 return True
             else: return False
-        except:
+        except Exception as e:
+            print("access_login", e)
             self.handleError()
             return False
 
 # Returns true if access_login is successful, false if otherwise
     def login(self, host, username, password):
-        output = self.access_login(host)
+        # output = self.access_login(host)
+        output = True
+        self.cookie = 'connect.sid=s%3Ag2E787FSKEiNs4rlOVeKk3VDuZQpqUge.oR7gdtAi6GtRofk4qosqxUZb8%2BTesInzsuKhYrMM5pQ'
         try:
             uri = '/login'
             payload = {'username': username, 'password': password}
             r = requests.post(host + uri, headers={'Cookie': self.cookie}, data=payload)
             log_api('POST', uri, r)
-        except:
+        except Exception as e:
+            print("login", e)
             self.handleError()
         return output
 
@@ -73,7 +78,8 @@ class ApiCalls:
             fragment = parse.parse_qs(parse.urlparse(r.url).fragment)
             if 'access_token' in fragment.keys() and len(fragment['access_token']) > 0: return fragment['access_token'][0]
             else: return None
-        except:
+        except Exception as e:
+            print("authenticate", e)
             self.handleError()
             return None
 
@@ -83,7 +89,8 @@ class ApiCalls:
             uri = '/lingopoint/portal/startup.action'
             r = requests.get(host + uri, headers={'Host':'cms.lingotek.com'})
             log_api('GET', uri, r)
-        except:
+        except Exception as e:
+            print("startup", e)
             self.handleError()
         return r
 
