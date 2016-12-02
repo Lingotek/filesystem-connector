@@ -81,7 +81,11 @@ class Action:
                 self.update_config_file('download_folder', json.dumps(self.download_dir), conf_parser, config_file_name, "")
             if conf_parser.has_option('main', 'watch_locales'):
                 watch_locales = conf_parser.get('main', 'watch_locales')
-                self.watch_locales = set(watch_locales.split(','))
+                if watch_locales:
+                    self.watch_locales = set(watch_locales.split(','))
+                else:
+                    # there are no watch locales, so set it to an empty set
+                    self.watch_locales = set()
             else:
                 self.watch_locales = set()
                 self.update_config_file('watch_locales', json.dumps(list(self.watch_locales)), conf_parser, config_file_name, "")
@@ -401,7 +405,7 @@ class Action:
                     locales.extend(locale.split(','))
                 if len(locales) > 0 and locales[0].lower() == 'none':
                     log_info = 'Removing all target locales'
-                    self.update_config_file('watch_locales', "", conf_parser, config_file_name, log_info)
+                    self.update_config_file('watch_locales', '', conf_parser, config_file_name, log_info)
                 else:
                     target_locales = get_valid_locales(self.api,locales)
                     target_locales_str = ','.join(target for target in target_locales)
@@ -409,6 +413,7 @@ class Action:
                         log_info = 'Set target locales to {}'.format(target_locales_str)
                         self.update_config_file('watch_locales', target_locales_str, conf_parser, config_file_name, log_info)
                         self.watch_locales = target_locales
+
             if 'locale_folder' in kwargs and kwargs['locale_folder']:
                 locale_folders = kwargs['locale_folder']
                 mult_folders = False
@@ -545,8 +550,8 @@ class Action:
                     git_output += (' (password:YES)' if current_git_password != '' else ' (no credentials set, recommend SSH key)')
             if print_config:
                 watch_locales = ','.join(target for target in self.watch_locales)
-                if str(watch_locales) == "[]":
-                    watch_locales = ""
+                if str(watch_locales) == "[]" or not watch_locales:
+                    watch_locales = "None"
                 print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity ID: {4}\nWorkflow ID: {5}\n'
                     'Default Source Locale: {6}\nClone Option: {7}\nDownload Folder: {8}\nTarget Locales: {9}\nTarget Locale Folders: {10}\nGit Auto-commit: {11}\nAppend Option: {12}'.format(
                     self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.clone_option,
@@ -744,18 +749,18 @@ class Action:
         try:
             is_successful = False
             locales = []
-            if entered_locales and len(entered_locales) > 0 and entered_locales != {''} and entered_locales != {'[]'}:
+            if entered_locales:
                 for locale in entered_locales:
                     locales.extend(locale.split(','))
                 locales = get_valid_locales(self.api, locales)
-            elif len(self.watch_locales) > 0 and self.watch_locales != {'[]'} and self.watch_locales != {''}:
+            elif self.watch_locales:
                 locales = self.watch_locales
             elif surpressMessage:
                 # don't print out anything when on watch
-                return
+                return False
             else:
                 logger.info('No locales have been set. Locales can be passed in as arguments or set as target locales in ltk config.')
-                return
+                return False
             if path:
                 document_id = None
                 document_name = None
@@ -778,8 +783,14 @@ class Action:
             elif path:
                 docs = self.get_docs_in_path(path)
             else:
+                # todo: document name or file name? since file name will be relative to root
                 # todo: clean this code up some
-                if document_name:
+                if document_id:
+                    entry = self.doc_manager.get_doc_by_prop('id', document_id)
+                    if not entry:
+                        logger.error('Document specified for target doesn\'t exist: {0}'.format(document_id))
+                        return
+                elif document_name:
                     entry = self.doc_manager.get_doc_by_prop('name', document_name)
                     if not entry:
                         logger.error('Document name specified for target doesn\'t exist: {0}'.format(document_name))
@@ -827,10 +838,6 @@ class Action:
                                     locales_to_add.append(locale)
                     self._target_action_db(to_delete, locales_to_add, document_id)
                     is_successful = True
-            #debugging
-            print("is_successful")
-            print(is_successful)
-            #end debugging
             return is_successful
         except Exception as e:
             log_error(self.error_file_name, e)
