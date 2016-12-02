@@ -740,17 +740,17 @@ class Action:
         self.doc_manager.update_document('locales', locale_info, document_id)
 
     # def request_action
-    def target_action(self, document_name, path, entered_locales, to_delete, due_date, workflow, document_id=None, watching=False):
+    def target_action(self, document_name, path, entered_locales, to_delete, due_date, workflow, document_id=None, surpressMessage=False):
         try:
             is_successful = False
             locales = []
-            if entered_locales and len(entered_locales) > 0 and entered_locales != {''}:
+            if entered_locales and len(entered_locales) > 0 and entered_locales != {''} and entered_locales != {'[]'}:
                 for locale in entered_locales:
                     locales.extend(locale.split(','))
                 locales = get_valid_locales(self.api, locales)
             elif len(self.watch_locales) > 0 and self.watch_locales != {'[]'} and self.watch_locales != {''}:
                 locales = self.watch_locales
-            elif watching:
+            elif surpressMessage:
                 # don't print out anything when on watch
                 return
             else:
@@ -827,6 +827,10 @@ class Action:
                                     locales_to_add.append(locale)
                     self._target_action_db(to_delete, locales_to_add, document_id)
                     is_successful = True
+            #debugging
+            print("is_successful")
+            print(is_successful)
+            #end debugging
             return is_successful
         except Exception as e:
             log_error(self.error_file_name, e)
