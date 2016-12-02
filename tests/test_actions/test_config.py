@@ -70,6 +70,11 @@ class TestConfig(unittest.TestCase):
         self.action.config_action(target_locales = locales)
         assert self.action.watch_locales == locales
 
+    def test_clear_locales(self):
+        self.action.config_action(target_locales = ('none'),)
+
+        assert self.action.watch_locales == {'[]'}
+
     def test_single_target_locale_folder(self):
         locale_code = 'ja_JP'
         dirName = 'japanese'
