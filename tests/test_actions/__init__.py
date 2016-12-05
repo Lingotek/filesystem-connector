@@ -49,12 +49,16 @@ def delete_directory(dir_path):
     if os.path.exists(dir_path) and os.path.isdir(dir_path):
         os.rmdir(dir_path)
 
-def append_file(file_name):
-    file_path = os.path.join(os.getcwd(), file_name)
+def append_file(file_name, path=None):
+    if path:
+        file_path = os.path.join(path, file_name)
+    else:
+        file_path = os.path.join(os.getcwd(), file_name)
     with open(file_path, 'a') as txt_file:
         txt_file.write('Appended text. ')
         print("appended text to file "+file_name)
         txt_file.close()
+
     return file_path
 
 def poll_doc(action, doc_id):
