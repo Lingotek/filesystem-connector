@@ -87,7 +87,7 @@ class WatchAction(Action):
             for locale in locales:
                 original = file_name
                 file_name = file_name.replace('.'+locale, '')
-                if file_name != original: 
+                if file_name != original:
                     replace_target = locale
                     break
             file_name = re.sub('\.{2,}', '.', file_name)
@@ -149,7 +149,7 @@ class WatchAction(Action):
         # add action
         try:
             file_path = event.src_path
-            # if it's a hidden document, don't do anything 
+            # if it's a hidden document, don't do anything
             if not is_hidden_file(file_path) and not self.is_translation(file_path):
                 relative_path = file_path.replace(self.path, '')
                 title = os.path.basename(os.path.normpath(file_path))
@@ -368,6 +368,7 @@ class WatchAction(Action):
         watch_paths = None
         if not watch_paths:
             watch_paths = self.folder_manager.get_file_names()
+            print("Watch paths: "+str(watch_paths))
             for i in range(len(watch_paths)):
                 watch_paths[i] = get_relative_path(self.path, watch_paths[i])
         else:

@@ -35,7 +35,7 @@ class TestWatch(unittest.TestCase):
             os.remove(fn)
 
     def test_watch_new_file(self):
-        file_name = "new_file.txt"
+        file_name = "sample.txt"
         self.files.append(file_name)
         if os.path.exists(file_name):
             delete_file(file_name)
@@ -45,20 +45,21 @@ class TestWatch(unittest.TestCase):
         time_passed = 0
         while doc is None and time_passed < 10:
             doc = self.action.doc_manager.get_doc_by_prop('file_name', file_name)
+            #print("Doc: "+str(doc))
             time.sleep(1)
             time_passed += 1
         assert doc
         assert poll_doc(self.action, doc['id'])
 
     def test_watch_update(self):
-        file_name = "new_file.txt"
+        file_name = "sample.txt"
         self.files.append(file_name)
         if os.path.exists(file_name):
             delete_file(file_name)
         create_txt_file(file_name)
         doc = None
         time_passed = 0
-        while doc is None and time_passed < 10:
+        while doc is None and time_passed < 60:
             doc = self.action.doc_manager.get_doc_by_prop('file_name', file_name)
             time.sleep(1)
             time_passed += 1

@@ -62,19 +62,25 @@ class TestDownload(unittest.TestCase):
         self.downloaded_files.append(dl_file)
 
     def test_pull_all(self):
+        self.action.config_action(clone_option='off')
+        self.action.config_action(download_folder='--none')
+
         for document in self.files:
             for locale in self.locales:
                 dl_file = self.get_dl_path(locale, document)
                 self.downloaded_files.append(dl_file)
 
-        self.action.pull_action(None, False)
+        self.action.pull_action(None, False, False, False)
         for path in self.downloaded_files:
             assert os.path.isfile(path)
 
     def test_pull_locale(self):
+        self.action.config_action(clone_option='off')
+        self.action.config_action(download_folder='--none')
+
         for document in self.files:
             dl_file = self.get_dl_path(self.locales[0], document)
             self.downloaded_files.append(dl_file)
-        self.action.pull_action(self.locales[0], False)
+        self.action.pull_action(self.locales[0], False, False, False)
         for path in self.downloaded_files:
             assert os.path.isfile(path)
