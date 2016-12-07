@@ -681,9 +681,11 @@ class Action:
                 response = self.api.document_update(entry['id'], os.path.join(self.path, entry['file_name']))
                 if response.status_code != 202:
                     raise_error(response.json(), "Failed to update document {0}".format(entry['name']), True)
-                updated = True
-                logger.info('Updated ' + entry['name'])
-                self._update_document(entry['file_name'])
+                    return updated
+                else:
+                    updated = True
+                    logger.info('Updated ' + entry['name'])
+                    self._update_document(entry['file_name'])
             if not updated:
                 logger.info('All documents up-to-date with Lingotek Cloud. ')
 
