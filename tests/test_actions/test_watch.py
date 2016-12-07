@@ -37,10 +37,9 @@ class TestWatch(unittest.TestCase):
         self.action.clean_action(False, False, None)
         #delete downloads
         for fn in self.downloaded:
-            os.remove(fn)    
+            os.remove(fn)
         #delete directory
-        if os.path.exists(self.dir_name):
-            os.rmdir(self.dir_name)
+        delete_directory(self.dir_name)
 
     def test_watch_new_file(self):
         file_name = "test_watch_sample_0.txt"

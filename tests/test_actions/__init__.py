@@ -38,16 +38,23 @@ def delete_file(file_name, file_path=None):
     os.remove(file_path)
 
 def create_directory(dir_path):
-    print("create directory")
+    print("creating directory: "+dir_path)
     try:
-        os.mkdir(dir_path)
+        if not os.path.exists(dir_path):
+            os.mkdir(dir_path)
+        else:
+            if delete_directory(dir_path):
+                os.mkdir(dir_path)
     except OSError:
         pass
 
 def delete_directory(dir_path):
-    print("delete directory")
-    if os.path.exists(dir_path) and os.path.isdir(dir_path):
+    print("deleting directory: "+dir_path)
+    if os.path.exists(dir_path) and os.path.isdir(dir_path) and os.listdir(dir_path)==[]:
         os.rmdir(dir_path)
+        return True
+    else:
+        return False
 
 def append_file(file_name, path=None):
     if path:

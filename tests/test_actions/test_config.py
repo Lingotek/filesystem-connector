@@ -49,10 +49,10 @@ class TestConfig(unittest.TestCase):
 
     def test_add_download_folder(self):
         dirName = 'download'
-        os.mkdir(dirName)
+        create_directory(dirName)
         download_folder = dirName
         self.action.config_action(download_folder=dirName)
-        os.rmdir(dirName)
+        delete_directory(dirName)
         assert self.action.download_dir == download_folder
 
     def test_rm_download_folder(self):
@@ -78,20 +78,20 @@ class TestConfig(unittest.TestCase):
     def test_single_target_locale_folder(self):
         locale_code = 'ja_JP'
         dirName = 'japanese'
-        os.mkdir(dirName)
+        create_directory(dirName)
         self.action.config_action(locale_folder=(('ja_JP', dirName),))
-        os.rmdir(dirName)
+        delete_directory(dirName)
 
         assert self.action.locale_folders == {locale_code:dirName}
 
     def test_multiple_target_locale_folders(self):
-        os.mkdir('japanese')
+        create_directory('japanese')
         self.action.config_action(locale_folder=(('ja_JP', 'japanese'),))
-        os.rmdir('japanese')
+        delete_directory('japanese')
 
-        os.mkdir('chinese')
+        create_directory('chinese')
         self.action.config_action(locale_folder=(('zh_CN', 'chinese'),))
-        os.rmdir('chinese')
+        delete_directory('chinese')
 
         assert self.action.locale_folders == {'ja_JP':'japanese', 'zh_CN':'chinese'}
 
@@ -108,11 +108,11 @@ class TestConfig(unittest.TestCase):
 
     def test_turn_clone_off_folder(self):
         download_folder = 'translations'
-        os.mkdir(download_folder)
+        create_directory(download_folder)
         self.action.config_action(download_folder=download_folder)
         self.action.config_action(clone_option = 'off')
 
-        os.rmdir(download_folder)
+        delete_directory(download_folder)
 
         assert self.action.clone_option == 'off'
         assert self.action.download_option == 'folder'
