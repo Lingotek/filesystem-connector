@@ -71,6 +71,7 @@ class Action:
         self.community_id = conf_parser.get('main', 'community_id')
         self.workflow_id = conf_parser.get('main', 'workflow_id')
         self.locale = conf_parser.get('main', 'default_locale')
+        self.locale = self.locale.replace('_','-')
         try:
             if conf_parser.has_option('main', 'project_name'):
                 self.project_name = conf_parser.get('main', 'project_name')
@@ -539,7 +540,7 @@ class Action:
                 download_dir = self.download_dir
             locale_folders_str = "None"
             if self.locale_folders:
-                locale_folders_str = json.dumps(self.locale_folders).replace("{","").replace("}","")
+                locale_folders_str = json.dumps(self.locale_folders).replace("{","").replace("}","").replace("_","-")
             current_git_username = conf_parser.get('main', 'git_username')
             current_git_password = conf_parser.get('main', 'git_password')
             git_output = ('active' if self.git_autocommit == "True" else 'inactive')
@@ -549,9 +550,14 @@ class Action:
                 else:
                     git_output += (' (password:YES)' if current_git_password != '' else ' (no credentials set, recommend SSH key)')
             if print_config:
-                watch_locales = ','.join(target for target in self.watch_locales)
+                watch_locales = set()
+                for locale in self.watch_locales:
+                    watch_locales.add(locale.replace('_','-'))
+                watch_locales = ','.join(target for target in watch_locales)
+
                 if str(watch_locales) == "[]" or not watch_locales:
                     watch_locales = "None"
+
                 print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity ID: {4}\nWorkflow ID: {5}\n'
                     'Default Source Locale: {6}\nClone Option: {7}\nDownload Folder: {8}\nTarget Locales: {9}\nTarget Locale Folders: {10}\nGit Auto-commit: {11}\nAppend Option: {12}'.format(
                     self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.clone_option,
