@@ -29,19 +29,23 @@ class TestWatch(unittest.TestCase):
         watch_thread = Thread(target=self.action.watch_action, args=('.', (), None))
         watch_thread.daemon = True
         watch_thread.start()
-        print("here")
 
     def tearDown(self):
+        #delete files
         for fn in self.files:
             self.action.rm_action(fn, force=True)
         self.action.clean_action(False, False, None)
+        #delete downloads
         for fn in self.downloaded:
-            os.remove(fn)
+            os.remove(fn)    
+        #delete directory
+        if os.path.exists(self.dir_name):
+            os.rmdir(self.dir_name)
 
     def test_watch_new_file(self):
         file_name = "test_watch_sample_0.txt"
-        self.files.append(file_name)
-        if os.path.exists("dir1"+file_name):
+        self.files.append(self.dir_name+"/"+file_name)
+        if os.path.exists(self.dir_name+file_name):
             delete_file(file_name)
         create_txt_file(file_name, self.dir_name)
 
@@ -57,8 +61,8 @@ class TestWatch(unittest.TestCase):
 
     def test_watch_update(self):
         file_name = "test_watch_sample_1.txt"
-        self.files.append(file_name)
-        if os.path.exists("dir1"+file_name):
+        self.files.append(self.dir_name+'/'+file_name)
+        if os.path.exists(self.dir_name+file_name):
             delete_file(file_name)
         create_txt_file(file_name, self.dir_name)
 
