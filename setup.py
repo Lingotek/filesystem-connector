@@ -16,7 +16,7 @@ except (IOError, ImportError, OSError):
 
 setup(
     name='ltk',
-    version='0.3.0',
+    version='0.4.0',
     url='https://github.com/Lingotek/filesystem-connector',
     description='Command line tool that connects your content to the Lingotek Translation Network',
     long_description=long_description,
@@ -35,7 +35,6 @@ setup(
         'watchdog',
         'gitpython',
         'pexpect',
-        'winpexpect',
         'blessings'
     ],
     extras_require={

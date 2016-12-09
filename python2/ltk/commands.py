@@ -94,6 +94,7 @@ def ltk(is_quiet, verbosity_lvl):
 @click.option('-n', '--project_name', help='The preferred project name, defaults to the current directory name')
 @click.option('-w', '--workflow_id', default='c675bd20-0688-11e2-892e-0800200c9a66',
               help='The id of the workflow to use for this project; defaults to machine translate only.')
+@click.option('-b', '--browserless', flag_value=True, help='Authorizes without opening a web browser.  Requires manual input of username and password.')
 @click.option('-l', '--locale', default='en_US', help='The default source locale for the project; defaults to en_US')
 @click.option('-d', '--delete', flag_value=True,  # expose_value=False, callback=abort_if_false,
               # prompt='Are you sure you want to delete the current project remotely and re-initialize? '
@@ -102,7 +103,7 @@ def ltk(is_quiet, verbosity_lvl):
 # todo add a 'change' option so don't delete remote project
 # @click.option('-c', '--change', flag_value=True, help='Change the Lingotek project. ')
 @click.option('--reset', flag_value=True, help='Reauthorize and reset any stored access tokens')
-def init(host, access_token, path, project_name, workflow_id, locale, delete, reset):
+def init(host, access_token, path, project_name, workflow_id, locale, browserless, delete, reset):
     """ Connects a local project to Lingotek """
     try:
         host = 'https://' + host
@@ -111,7 +112,7 @@ def init(host, access_token, path, project_name, workflow_id, locale, delete, re
         if not project_name:
             project_name = os.path.basename(os.path.normpath(path))
         init_logger(path)
-        actions.init_action(host, access_token, path, project_name, workflow_id, locale, delete, reset)
+        actions.init_action(host, access_token, path, project_name, workflow_id, locale, browserless, delete, reset)
     except (ResourceNotFound, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
@@ -204,18 +205,19 @@ def push():
 
 
 @ltk.command(short_help="Add targets to document(s) to start translation; defaults to the entire project. Use ltk list -l to see possible locales")
-@click.option('-n', '--doc_name', help='The name of the document; specify for one document')
-@click.option('-p', '--path', type=click.Path(exists=True), help='A file name or directory for which to request targets')
+@click.option('-n', '--doc_name', help='The name of the document for which to request target locale(s)')
+@click.option('-p', '--path', type=click.Path(exists=True), help='The file name or directory for which to request target locale(s)')
 @click.option('-d', '--delete', 'to_delete', flag_value=True, help='Deletes a specified target locale')
 @click.option('--due_date', help='The due date of the translation')
-@click.option('-w', '--workflow', help='The workflow of the translation (do "ltk list -w" to see available workflows)')
-@click.argument('locales', required=True, nargs=-1)  # can have unlimited number of locales
+@click.option('-w', '--workflow', help='The workflow of the translation (Use "ltk list -w" to see available workflows)')
+@click.argument('locales', required=False, nargs=-1)  # can have unlimited number of locales
 def request(doc_name, path, locales, to_delete, due_date, workflow):
-    """ Add targets to document(s) to start translation; defaults to the entire project. Use ltk list -l to see possible locales """
+    """ Add targets to document(s) to start translation; defaults to the entire project. If no locales are specified, Filesystem Connector
+        will look for target watch locales set in ltk config. Use ltk list -l to see possible locales. """
     try:
         action = actions.Action(os.getcwd())
         init_logger(action.path)
-        if isinstance(locales,str):
+        if locales and isinstance(locales,str):
             locales = [locales]
 
         doc_name = remove_powershell_formatting(doc_name)
@@ -226,7 +228,6 @@ def request(doc_name, path, locales, to_delete, due_date, workflow):
         print_log(e)
         logger.error(e)
         return
-
 
 # todo add a --all option to see all document ids once only show relative to cwd is implemented
 @ltk.command(name='list', short_help='Shows docs (default), workflows, locales, formats, or filters')
