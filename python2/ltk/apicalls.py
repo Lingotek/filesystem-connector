@@ -5,7 +5,12 @@ import ltk.utils
 from ltk.exceptions import RequestFailedError,ConnectionFailed
 from ltk.logger import logger
 import sys, os
-import urllib.parse as parse
+# Python 2
+import urllib as parse
+# End Python 2
+# Python 3
+#  import urllib.parse as parse
+# End Python 3
 
 class ApiCalls:
     def __init__(self, host, access_token, watch=False, timeout=5):
