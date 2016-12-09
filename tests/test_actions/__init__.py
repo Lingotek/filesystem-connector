@@ -54,6 +54,7 @@ def delete_directory(dir_path):
         os.rmdir(dir_path)
         return True
     else:
+        print("directory " + dir_path + " is not empty, and could not be deleted")
         return False
 
 def append_file(file_name, path=None):
