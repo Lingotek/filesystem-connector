@@ -1978,7 +1978,7 @@ def create_global(access_token, host):
     sys_file.close()
 
 
-def init_action(host, access_token, project_path, folder_name, workflow_id, locale, delete, reset):
+def init_action(host, access_token, project_path, folder_name, workflow_id, locale, browserless, delete, reset):
     try:
         # check if Lingotek directory already exists
         to_init = reinit(host, project_path, delete, reset)
@@ -1987,14 +1987,34 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
             return
         elif to_init is not True:
             access_token = to_init
-
         ran_oauth = False
         if not access_token:
             access_token = check_global(host)
             if not access_token or reset:
-                from ltk.auth import run_oauth
-                access_token = run_oauth(host)
-                ran_oauth = True
+                if not browserless:
+                    from ltk.auth import run_oauth
+                    access_token = run_oauth(host)
+                    ran_oauth = True
+                else:
+                    api = ApiCalls(host, '')
+                    # Python 2
+                    # username = raw_input('Username: ')
+                    # End Python 2
+                    # Python 3
+                    username = input('Username: ')
+                    # End Python 3
+                    password = getpass.getpass()
+                    login_host = 'https://sso.lingotek.com' if 'myaccount' in host else 'https://cmssso.lingotek.com'
+
+                    if api.login(login_host, username, password):
+                        retrieved_token = api.authenticate(login_host)
+                        if retrieved_token:
+                            print('Authentication successful')
+                            access_token = retrieved_token
+                            ran_oauth = True
+                    if not ran_oauth: 
+                        print('Authentication failed.  Initialization canceled.')
+                        return
         # print("access_token: "+str(access_token))
         if ran_oauth:
             # create or overwrite global file
