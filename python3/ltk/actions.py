@@ -1961,6 +1961,7 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
                     # End Python 3
                     password = getpass.getpass()
                     login_host = 'https://sso.lingotek.com' if 'myaccount' in host else 'https://cmssso.lingotek.com'
+
                     if api.login(login_host, username, password):
                         retrieved_token = api.authenticate(login_host)
                         if retrieved_token:

@@ -30,8 +30,6 @@ class ApiCalls:
         try:
             uri = '/login'
             r = requests.get(host + uri)
-            # print(r.text)
-            input()
             cookie = r.headers['set-cookie']
             log_api('GET', uri, r)
             if cookie and len(cookie) > 0:
@@ -45,9 +43,8 @@ class ApiCalls:
 
 # Returns true if access_login is successful, false if otherwise
     def login(self, host, username, password):
-        # output = self.access_login(host)
-        output = True
-        self.cookie = 'connect.sid=s%3Ag2E787FSKEiNs4rlOVeKk3VDuZQpqUge.oR7gdtAi6GtRofk4qosqxUZb8%2BTesInzsuKhYrMM5pQ'
+        output = self.access_login(host)
+        if output == False: return False
         try:
             uri = '/login'
             payload = {'username': username, 'password': password}
