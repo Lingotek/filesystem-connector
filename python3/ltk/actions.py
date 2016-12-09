@@ -92,6 +92,11 @@ class Action:
                 self.update_config_file('watch_locales', json.dumps(list(self.watch_locales)), conf_parser, config_file_name, "")
             if conf_parser.has_option('main', 'locale_folders'):
                 self.locale_folders = json.loads(conf_parser.get('main', 'locale_folders'))
+                locale_folders = {}
+                #for key, value in self.locale_folders.items():
+                #    key = key.replace('_', '-');
+                #    locale_folders[key] = value
+                #self.locale_folders = locale_folders
             else:
                 self.locale_folders = {}
                 self.update_config_file('locale_folders', json.dumps(self.locale_folders), conf_parser, config_file_name, "")
@@ -1149,8 +1154,12 @@ class Action:
                         print("Cannot download "+str(entry['file_name']+" with no target locale."))
                         return
                     # download_root is the path to the root of the locale folder.
-                    if locale_code in self.locale_folders:
-                        download_root = self.locale_folders[locale_code]
+                    locale_folders = {}
+                    for key, value in self.locale_folders.items():
+                        key = key.replace('_', '-');
+                        locale_folders[key] = value
+                    if locale_code in locale_folders:
+                        download_root = locale_folders[locale_code]
                     elif self.download_dir and len(self.download_dir):
                         download_root = os.path.join((self.download_dir if self.download_dir and self.download_dir != 'null' else ''),locale_code)
                     else:
