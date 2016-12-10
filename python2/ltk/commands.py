@@ -94,6 +94,7 @@ def ltk(is_quiet, verbosity_lvl):
 @click.option('-n', '--project_name', help='The preferred project name, defaults to the current directory name')
 @click.option('-w', '--workflow_id', default='c675bd20-0688-11e2-892e-0800200c9a66',
               help='The id of the workflow to use for this project; defaults to machine translate only.')
+@click.option('-b', '--browserless', flag_value=True, help='Authorizes without opening a web browser.  Requires manual input of username and password.')
 @click.option('-l', '--locale', default='en_US', help='The default source locale for the project; defaults to en_US')
 @click.option('-d', '--delete', flag_value=True,  # expose_value=False, callback=abort_if_false,
               # prompt='Are you sure you want to delete the current project remotely and re-initialize? '
@@ -102,7 +103,7 @@ def ltk(is_quiet, verbosity_lvl):
 # todo add a 'change' option so don't delete remote project
 # @click.option('-c', '--change', flag_value=True, help='Change the Lingotek project. ')
 @click.option('--reset', flag_value=True, help='Reauthorize and reset any stored access tokens')
-def init(host, access_token, path, project_name, workflow_id, locale, delete, reset):
+def init(host, access_token, path, project_name, workflow_id, locale, browserless, delete, reset):
     """ Connects a local project to Lingotek """
     try:
         host = 'https://' + host
@@ -111,7 +112,7 @@ def init(host, access_token, path, project_name, workflow_id, locale, delete, re
         if not project_name:
             project_name = os.path.basename(os.path.normpath(path))
         init_logger(path)
-        actions.init_action(host, access_token, path, project_name, workflow_id, locale, delete, reset)
+        actions.init_action(host, access_token, path, project_name, workflow_id, locale, browserless, delete, reset)
     except (ResourceNotFound, RequestFailedError) as e:
         print_log(e)
         logger.error(e)

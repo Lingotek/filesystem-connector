@@ -468,7 +468,7 @@ class Action:
                 self.update_config_file('locale_folders', locale_folders_str, conf_parser, config_file_name, log_info)
             if 'remove_locales' in kwargs and kwargs['remove_locales']:
                 clear_locales = kwargs['remove_locales']
-                log_info = "Cleared all locale specific download folders."
+                log_info = "Removed all locale specific download folders."
                 self.locale_folders = {}
                 locale_folders_str = json.dumps(self.locale_folders)
                 self.update_config_file('locale_folders', locale_folders_str, conf_parser, config_file_name, log_info)
@@ -695,17 +695,19 @@ class Action:
             for entry in entries:
                 if not self.doc_manager.is_doc_modified(entry['file_name'], self.path):
                     continue
-                #print (entry['file_name'])
                 response = self.api.document_update(entry['id'], os.path.join(self.path, entry['file_name']))
                 if response.status_code != 202:
                     raise_error(response.json(), "Failed to update document {0}".format(entry['name']), True)
-                updated = True
-                logger.info('Updated ' + entry['name'])
-                self._update_document(entry['file_name'])
-                return True
+                    return updated
+                else:
+                    updated = True
+                    logger.info('Updated ' + entry['name'])
+                    self._update_document(entry['file_name'])
             if not updated:
                 logger.info('All documents up-to-date with Lingotek Cloud. ')
-                return False
+
+            return updated
+
         except Exception as e:
             log_error(self.error_file_name, e)
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
@@ -1129,7 +1131,6 @@ class Action:
                     self.download_locales(entry['id'], locales, auto_format, False)
                 else:
                     self.download_locales(entry['id'], locales, auto_format, True)
-
 
     def download_locales(self, document_id, locale_codes, auto_format, locale_ext=True):
         if locale_codes:
@@ -1978,7 +1979,7 @@ def create_global(access_token, host):
     sys_file.close()
 
 
-def init_action(host, access_token, project_path, folder_name, workflow_id, locale, delete, reset):
+def init_action(host, access_token, project_path, folder_name, workflow_id, locale, browserless, delete, reset):
     try:
         # check if Lingotek directory already exists
         to_init = reinit(host, project_path, delete, reset)
@@ -1987,14 +1988,34 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
             return
         elif to_init is not True:
             access_token = to_init
-
         ran_oauth = False
         if not access_token:
             access_token = check_global(host)
             if not access_token or reset:
-                from ltk.auth import run_oauth
-                access_token = run_oauth(host)
-                ran_oauth = True
+                if not browserless:
+                    from ltk.auth import run_oauth
+                    access_token = run_oauth(host)
+                    ran_oauth = True
+                else:
+                    api = ApiCalls(host, '')
+                    # Python 2
+                    username = raw_input('Username: ')
+                    # End Python 2
+                    # Python 3
+#                     username = input('Username: ')
+                    # End Python 3
+                    password = getpass.getpass()
+                    login_host = 'https://sso.lingotek.com' if 'myaccount' in host else 'https://cmssso.lingotek.com'
+
+                    if api.login(login_host, username, password):
+                        retrieved_token = api.authenticate(login_host)
+                        if retrieved_token:
+                            print('Authentication successful')
+                            access_token = retrieved_token
+                            ran_oauth = True
+                    if not ran_oauth:
+                        print('Authentication failed.  Initialization canceled.')
+                        return
         # print("access_token: "+str(access_token))
         if ran_oauth:
             # create or overwrite global file

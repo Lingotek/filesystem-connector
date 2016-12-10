@@ -17,24 +17,56 @@ def create_config():
     path = os.path.join(os.getcwd(),'config')
     shutil.copyfile(path, new_config_file_path)
 
-def create_txt_file(file_name):
+def create_txt_file(file_name, path=None):
     print("create_txt_file")
-    file_path = os.path.join(os.getcwd(), file_name)
+    if path:
+        file_path = os.path.join(path, file_name)
+    else:
+        file_path = os.path.join(os.getcwd(), file_name)
     with open(file_path, 'w') as txt_file:
         txt_file.write('This is a sample text file. ')
         txt_file.close()
     return file_path
 
-def delete_file(file_name):
+def delete_file(file_name, file_path=None):
     print("delete_file")
-    file_path = os.path.join(os.getcwd(), file_name)
-    os.remove(file_name)
+    if file_path:
+        file_path = os.path.join(file_path, file_name)
+        print(file_path)
+    else:
+        file_path = os.path.join(os.getcwd(), file_name)
+    os.remove(file_path)
 
-def append_file(file_name):
-    file_path = os.path.join(os.getcwd(), file_name)
+def create_directory(dir_path):
+    print("creating directory: "+dir_path)
+    try:
+        if not os.path.exists(dir_path):
+            os.mkdir(dir_path)
+        else:
+            if delete_directory(dir_path):
+                os.mkdir(dir_path)
+    except OSError:
+        pass
+
+def delete_directory(dir_path):
+    print("deleting directory: "+dir_path)
+    if os.path.exists(dir_path) and os.path.isdir(dir_path) and os.listdir(dir_path)==[]:
+        os.rmdir(dir_path)
+        return True
+    else:
+        print("directory " + dir_path + " is not empty, and could not be deleted")
+        return False
+
+def append_file(file_name, path=None):
+    if path:
+        file_path = os.path.join(path, file_name)
+    else:
+        file_path = os.path.join(os.getcwd(), file_name)
     with open(file_path, 'a') as txt_file:
         txt_file.write('Appended text. ')
+        print("appended text to file "+file_name)
         txt_file.close()
+
     return file_path
 
 def poll_doc(action, doc_id):

@@ -33,7 +33,7 @@ class TestList(unittest.TestCase):
         try:
             out = StringIO()
             sys.stdout = out
-            self.action.list_ids_action()
+            self.action.list_ids_action(False)
             info = out.getvalue()
             for doc_id in doc_ids:
                 assert doc_id in info
@@ -48,7 +48,7 @@ class TestList(unittest.TestCase):
         try:
             out = StringIO()
             sys.stdout = out
-            self.action.list_ids_action()
+            self.action.list_ids_action(False)
             info = out.getvalue()
             assert 'No local documents' in info
         finally:
@@ -83,7 +83,7 @@ class TestList(unittest.TestCase):
             sys.stdout = out
             self.action.list_format_action()
             info = out.getvalue()
-            assert info.startswith('Formats Lingotek supports')
+            assert info.startswith('Lingotek Cloud accepts content')
             assert 'CSV' in info
             assert 'XML_OKAPI' in info
         finally:
