@@ -86,8 +86,14 @@ def restart(message="Restarting watch", interval=5):
     """Restarts the program. Used after exceptions. Otherwise, watch doesn't work anymore."""
     time.sleep(interval)
     print(message)
-    python = sys.executable
-    os.execl(python, python, * sys.argv)
+    cmd = "ltk"
+    for arg in sys.argv[1:]:
+        cmd = cmd + " " + arg
+    os.system(cmd)
+
+    ''' This way (below) works for Linux, but does not work on Windows '''
+    #python = sys.executable
+    #os.execl(python, python, * sys.argv)
 
 def is_valid_locale(api, locale):
     """Returns true if the locale is found in Lingotek's remote list of locales or, if the api call fails, if the locale is found in the local list of locales."""
