@@ -124,9 +124,9 @@ class WatchAction(Action):
                 try:
                     # check that document is added in TMS before updating
                     if self.check_remote_doc_exist(fn) and self.doc_manager.is_doc_modified(fn, self.path):
-                        # logger.info('Detected local content modified: {0}'.format(fn))
-                        # self.update_document_action(os.path.join(self.path, fn))
-                        # logger.info('Updating remote content: {0}'.format(fn))
+                        #logger.info('Detected local content modified: {0}'.format(fn))
+                        #self.update_document_action(os.path.join(self.path, fn))
+                        #logger.info('Updating remote content: {0}'.format(fn))
                         self.polled_list.remove(fn)
                         self.update_content(fn)
                 except KeyboardInterrupt:
@@ -161,6 +161,11 @@ class WatchAction(Action):
                 # only add or update the document if it's not a hidden document and it's a new file
                 try:
                     if self.doc_manager.is_doc_new(relative_path) and self.watch_folder:
+                        #testing
+                        print("adding doc")
+                        print(relative_path)
+                        self.polled_list.add(relative_path) #test that this doesn't break other areas of watch
+                        #end testing
                         self.add_document(file_path, title, locale=self.locale)
                     elif self.doc_manager.is_doc_modified(relative_path, self.path):
                         self.update_content(relative_path)
@@ -368,7 +373,6 @@ class WatchAction(Action):
         watch_paths = None
         if not watch_paths:
             watch_paths = self.folder_manager.get_file_names()
-            print("Watch paths: "+str(watch_paths))
             for i in range(len(watch_paths)):
                 watch_paths[i] = get_relative_path(self.path, watch_paths[i])
         else:
