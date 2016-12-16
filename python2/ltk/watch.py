@@ -162,9 +162,7 @@ class WatchAction(Action):
                 try:
                     if self.doc_manager.is_doc_new(relative_path) and self.watch_folder:
                         #testing
-                        print("adding doc")
-                        print(relative_path)
-                        self.polled_list.add(relative_path) #test that this doesn't break other areas of watch
+                        #self.polled_list.add(relative_path) #test that this doesn't break other areas of watch
                         #end testing
                         self.add_document(file_path, title, locale=self.locale)
                     elif self.doc_manager.is_doc_modified(relative_path, self.path):
