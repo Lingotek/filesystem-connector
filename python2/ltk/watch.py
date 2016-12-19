@@ -1,6 +1,6 @@
 # Using the following encoding: utf-8
 import ctypes
-from ltk.actions import Action
+from ltk.actions.action import Action
 from ltk.logger import logger
 from ltk.utils import map_locale, restart, get_relative_path
 from ltk.locales import locale_list

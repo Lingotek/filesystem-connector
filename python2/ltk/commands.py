@@ -6,7 +6,7 @@ python_version = sys.version
 # #    print('Python 3 is required to run this version of the Lingotek Filesystem connector.\n\nFor other versions and troubleshooting, see: https://github.com/lingotek/filesystem-connector')
 # #    exit()
 # End Python 3
-from ltk import actions
+from ltk.actions import action_facade
 import os
 from ltk.exceptions import UninitializedError, ResourceNotFound, RequestFailedError, AlreadyExistsError
 from ltk.constants import LOG_FN, CONF_DIR
@@ -112,7 +112,7 @@ def init(host, access_token, path, project_name, workflow_id, locale, browserles
         if not project_name:
             project_name = os.path.basename(os.path.normpath(path))
         init_logger(path)
-        actions.init_action(host, access_token, path, project_name, workflow_id, locale, browserless, delete, reset)
+        action_facade.init_action(host, access_token, path, project_name, workflow_id, locale, browserless, delete, reset)
     except (ResourceNotFound, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
@@ -139,7 +139,7 @@ def init(host, access_token, path, project_name, workflow_id, locale, browserles
 def config(**kwargs):
     """ View or change local configuration """
     try:
-        action = actions.Action(os.getcwd())
+        action = action_facade.ActionFacade(os.getcwd())
         init_logger(action.path)
         for f in kwargs:
             if kwargs[f]:
@@ -174,7 +174,7 @@ def config(**kwargs):
 def add(file_names, **kwargs):
     """ Add files and folders for upload to Lingotek.  Fileglobs (e.g. *.txt) can be used to add all matching files and/or folders. Added folders will automatically add the new files added or created inside of them.  """
     try:
-        action = actions.Action(os.getcwd())
+        action = action_facade.ActionFacade(os.getcwd())
         init_logger(action.path)
 
         file_names = remove_powershell_formatting(file_names)
@@ -195,7 +195,7 @@ def add(file_names, **kwargs):
 def push():
     """ Sends updated content to Lingotek for documents that have been added """
     try:
-        action = actions.Action(os.getcwd())
+        action = action_facade.ActionFacade(os.getcwd())
         init_logger(action.path)
         action.push_action()
     except UninitializedError as e:
@@ -215,7 +215,7 @@ def request(doc_name, path, locales, to_delete, due_date, workflow):
     """ Add targets to document(s) to start translation; defaults to the entire project. If no locales are specified, Filesystem Connector
         will look for target watch locales set in ltk config. Use ltk list -l to see possible locales. """
     try:
-        action = actions.Action(os.getcwd())
+        action = action_facade.ActionFacade(os.getcwd())
         init_logger(action.path)
         if locales and isinstance(locales,str):
             locales = [locales]
@@ -241,7 +241,7 @@ def request(doc_name, path, locales, to_delete, due_date, workflow):
 def list_ids(id_type, hide_docs, title):
     """ Shows docs, workflows, locales, formats, or filters. By default lists added folders and docs. """
     try:
-        action = actions.Action(os.getcwd())
+        action = action_facade.ActionFacade(os.getcwd())
         init_logger(action.path)
         if id_type == 'workflow':
             action.list_workflow_action()
@@ -269,7 +269,7 @@ def list_ids(id_type, hide_docs, title):
 def status(**kwargs):
     """ Gets the status of a specific document or all documents """
     try:
-        action = actions.Action(os.getcwd())
+        action = action_facade.ActionFacade(os.getcwd())
         init_logger(action.path)
 
         for f in kwargs:
@@ -294,7 +294,7 @@ def status(**kwargs):
 def download(auto_format, locales, locale_ext, no_ext, file_names):
     """ Downloads translated content specified by filename for specified locales, or all locales if none are specified. Change download options and folders using ltk config."""
     try:
-        action = actions.Action(os.getcwd())
+        action = action_facade.ActionFacade(os.getcwd())
         init_logger(action.path)
         for name in file_names:
             action.download_by_path(name, locales, locale_ext, no_ext, auto_format)
@@ -313,7 +313,7 @@ def download(auto_format, locales, locale_ext, no_ext, file_names):
 def pull(auto_format, locale_ext, no_ext, locales):
     """ Pulls translations for all added documents for all locales or by specified locales """
     try:
-        action = actions.Action(os.getcwd())
+        action = action_facade.ActionFacade(os.getcwd())
         init_logger(action.path)
         if locales:
             for locale in locales:
@@ -340,7 +340,7 @@ def rm(file_names, **kwargs):
     If the remote copy should be kept, please use ltk clean.
     """
     try:
-        action = actions.Action(os.getcwd())
+        action = action_facade.ActionFacade(os.getcwd())
         init_logger(action.path)
         if not file_names and not ('all' in kwargs and kwargs['all']):
             logger.info("Usage: ltk rm [OPTIONS] FILE_NAMES...")
@@ -419,7 +419,7 @@ def clean(force, dis_all, file_paths):
     Enter file or directory names to remove local associations of specific files or directories.
     """
     try:
-        action = actions.Action(os.getcwd())
+        action = action_facade.ActionFacade(os.getcwd())
         init_logger(action.path)
 
         if len(file_paths) > 0:
@@ -444,7 +444,7 @@ def clone(folders, copy_root):
     (instead of creating a new folder inside of the locale folder).
     """
     try:
-        action = actions.Action(os.getcwd())
+        action = action_facade.ActionFacade(os.getcwd())
         init_logger(action.path)
         if isinstance(folders,str):
             folders = [folders]

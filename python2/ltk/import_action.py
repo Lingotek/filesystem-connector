@@ -1,4 +1,4 @@
-from ltk.actions import *
+from ltk.actions.action import *
 
 
 class ImportAction(Action):
