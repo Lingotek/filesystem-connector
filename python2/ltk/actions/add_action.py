@@ -18,7 +18,6 @@ class AddAction(Action):
                 return
 
             # get files to add and check if they exist
-            Action.init_config_file(self)
             matched_files = get_files(file_patterns)
             if not matched_files:
                 if added_folder:
@@ -36,36 +35,6 @@ class AddAction(Action):
                 logger.error("Error connecting to Lingotek's TMS")
             else:
                 logger.error("Error on add: "+str(e))
-
-    def add_document(self, file_name, title, **kwargs):
-        ''' adds the document to Lingotek cloud and the db '''
-
-        try:
-            if not 'locale' in kwargs or not kwargs['locale']:
-                locale = self.locale
-            else:
-                locale = kwargs['locale']
-
-            # add document to Lingotek cloud
-            response = self.api.add_document(locale, file_name, self.project_id, self.append_location(title, file_name), **kwargs)
-            if response.status_code != 202:
-                raise_error(response.json(), "Failed to add document {0}".format(title), True)
-            else:
-                title = self.append_location(title, file_name)
-                logger.info('Added document {0} with ID {1}'.format(title,response.json()['properties']['id']))
-                relative_path = self.norm_path(file_name)
-
-                # add document to the db
-                self._add_document(relative_path, title, response.json()['properties']['id'])
-
-        except KeyboardInterrupt:
-            raise_error("", "Canceled adding document")
-        except Exception as e:
-            log_error(self.error_file_name, e)
-            if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
-                logger.error("Error connecting to Lingotek's TMS")
-            else:
-                logger.error("Error on adding document "+str(file_name)+": "+str(e))
 
     def add_documents(self, matched_files, **kwargs):
         ''' adds new documents to the lingotek cloud and, after prompting user, overwrites changed documents that
@@ -110,6 +79,37 @@ class AddAction(Action):
                 logger.error("JSON error on adding document.")
 
             self.add_document(file_name, title, **kwargs)
+
+    def add_document(self, file_name, title, **kwargs):
+        ''' adds the document to Lingotek cloud and the db '''
+
+        try:
+            if not 'locale' in kwargs or not kwargs['locale']:
+                locale = self.locale
+            else:
+                locale = kwargs['locale']
+
+            # add document to Lingotek cloud
+            response = self.api.add_document(locale, file_name, self.project_id, self.append_location(title, file_name), **kwargs)
+            if response.status_code != 202:
+                raise_error(response.json(), "Failed to add document {0}".format(title), True)
+            else:
+                title = self.append_location(title, file_name)
+                logger.info('Added document {0} with ID {1}'.format(title,response.json()['properties']['id']))
+                relative_path = self.norm_path(file_name)
+
+                # add document to the db
+                self._add_document(relative_path, title, response.json()['properties']['id'])
+
+        except KeyboardInterrupt:
+            raise_error("", "Canceled adding document")
+
+        except Exception as e:
+            log_error(self.error_file_name, e)
+            if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
+                logger.error("Error connecting to Lingotek's TMS")
+            else:
+                logger.error("Error on adding document "+str(file_name)+": "+str(e))
 
     def add_folders(self, file_patterns):
         ''' checks each file pattern for a directory and adds matching patterns to the db '''

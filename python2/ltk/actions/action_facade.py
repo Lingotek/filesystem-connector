@@ -25,9 +25,34 @@ from ltk.git_auto import Git_Auto
 
 class ActionFacade:
     def __init__(self, path, watch=False, timeout=60):
+        self.host = ''
+        self.access_token = ''
+        self.project_id = ''
+        self.project_name = ''
         self.path = path
+        self.community_id = ''
+        self.workflow_id = ''  # default workflow id; MT phase only
+        self.locale = ''
+        self.clone_option = 'on'
+        self.download_option = 'clone'
+        self.download_dir = None  # directory where downloaded translation will be stored
+        self.watch_locales = set()  # if specified, add these target locales to any files in the watch folder
+        self.git_autocommit = None
+        self.git_username = ''
+        self.git_password = ''
+        self.append_option = 'none'
+        self.locale_folders = {}
+        if not self._is_initialized():
+            raise exceptions.UninitializedError("This project is not initialized. Please run init command.")
+        self._initialize_self()
         self.watch = watch
+        self.doc_manager = DocumentManager(self.path)
+        self.folder_manager = FolderManager(self.path)
         self.timeout = timeout
+        self.api = ApiCalls(self.host, self.access_token, self.watch, self.timeout)
+        self.git_auto = Git_Auto(self.path)
+        self.error_file_name = os.path.join(self.path, CONF_DIR, ERROR_FN)
+        self.uploadWaitTime = 300
 
         self.add = add_action.AddAction(path)
 
