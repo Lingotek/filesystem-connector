@@ -1,5 +1,4 @@
 from ltk.actions.action import *
-from ltk.utils import *
 
 class AddAction(Action):
     def __init__(self, path):

@@ -2048,25 +2048,6 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
         else:
             logger.error("Error on init: "+str(e))
 
-def add_folders(self, file_patterns):
-    ''' checks each file pattern for a directory and adds matching patterns to the db '''
-    ''' returns true if folder(s) have been added, otherwise false '''
-
-    added_folder = False
-    for pattern in file_patterns:
-        if os.path.exists(pattern):
-            if os.path.isdir(pattern):
-                if not self._is_folder_added(pattern):
-                    self.folder_manager.add_folder(self.norm_path(pattern.rstrip(os.sep)))
-                    logger.info("Added folder "+str(pattern))
-                else:
-                    logger.warning("Folder "+str(pattern)+" has already been added.")
-                added_folder = True
-        else:
-            logger.warning("Path \""+str(pattern)+"\" doesn't exist.")
-
-    return added_folder
-
 def find_conf(curr_path):
     """
     check if the conf folder exists in current directory's parent directories
