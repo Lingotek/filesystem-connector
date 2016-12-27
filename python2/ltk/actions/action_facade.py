@@ -685,7 +685,7 @@ class ActionFacade:
             print ('Remote documents: id, document name')
             for entry in response.json()['entities']:
                 title = entry['entities'][1]['properties']['title'].replace("Status of ", "")
-                id = entry['entities'][1]['properties']['id']
+                id = entry['entities'][0]['properties']['id']
                 info = '{id} \t {title}'.format(id=id, title=title)
                 print (info)
             return
