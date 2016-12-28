@@ -368,7 +368,6 @@ class WatchAction(Action):
         watch_paths = None
         if not watch_paths:
             watch_paths = self.folder_manager.get_file_names()
-            print("Watch paths: "+str(watch_paths))
             for i in range(len(watch_paths)):
                 watch_paths[i] = get_relative_path(self.path, watch_paths[i])
         else:

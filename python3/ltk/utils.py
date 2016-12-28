@@ -30,7 +30,7 @@ def detect_format(file_name, get_mapper=False):
         '.ditamap': 'DITAMAP',
         '.docx': 'DOCX_OKAPI',
         '.dtd': 'DTD',
-        '.xslx': 'EXCEL_OKAPI',  # xslx, xltx
+        '.xlsx': 'XLSX_OKAPI',
         '.idml': 'IDML',
         '.properties': 'JAVA_PROPERTIES_OKAPI',
         '.json': 'JSON',
@@ -43,6 +43,7 @@ def detect_format(file_name, get_mapper=False):
         '.regex': 'REGEX',
         '.rtf': 'RTF_OKAPI',
         '.srt': 'SUBTITLE_RIP',
+        '.strings': 'APPLE_STRINGS',
         '.tsv': 'TABLE',  # catkeys?
         '.ts': 'TS',
         '.xml': 'XML_OKAPI'

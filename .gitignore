@@ -16,3 +16,4 @@ tests/test_actions/*.json
 .cache/
 tests/test_actions/.cache/*
 tests/test_actions/dir1/*
+*.pypirc
