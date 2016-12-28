@@ -26,8 +26,15 @@ If you don't have `pip` installed, then you can [install it](https://pip.pypa.io
 $ curl -O https://raw.github.com/pypa/pip/master/contrib/get-pip.py
 $ python get-pip.py
 ```
+If not already installed, [python setuptools] (https://packaging.python.org/installing/#install-pip-setuptools-and-wheel) is required. You can install/ update using the following:
 
-* Start the tool by using `ltk`
+```bash
+$ pip install -U pip setuptools
+```
+
+Start the tool by using `ltk`
+ 
+Should you run into issues, checkout other installation notes [here](https://github.com/Lingotek/translation-utility/wiki/Other-Installation-Notes).
 
 ### Windows Installation ###
 For instructions on installing in Windows, go to the [Wiki](https://github.com/Lingotek/filesystem-connector/wiki/Installing-on-Windows).
@@ -46,6 +53,3 @@ Next, is a video that demonstrates how a folder can be watched for new files and
 
 [![Lingotek Filesystem Connector2](http://img.youtube.com/vi/CTRm-ythnPI/0.jpg)](https://youtu.be/CTRm-ythnPI)
 
-
-
-Checkout other installation notes [here](https://github.com/Lingotek/translation-utility/wiki/Other-Installation-Notes)
