@@ -24,7 +24,7 @@ class ConfigAction(Action):
                 self.set_target_locales(kwargs['target_locales'])
 
             if 'locale_folder' in kwargs and kwargs['locale_folder']:
-                self.set_locale_folder(kwargs['locale_folder'], self.config_file_name, self.conf_parser)
+                self.set_locale_folder(kwargs['locale_folder'])
 
             if 'remove_locales' in kwargs and kwargs['remove_locales']:
                 self.remove_locales(kwargs['remove_locales'])
