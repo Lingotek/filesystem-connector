@@ -238,23 +238,12 @@ def request(doc_name, path, locales, to_delete, due_date, workflow):
 @click.option('-f', '--formats', 'id_type', flag_value='format', help='List supported formats')
 @click.option('-r', '--remote', 'id_type', flag_value='remote', help='List all project documents on Lingotek Cloud')
 @click.option('--filters', 'id_type', flag_value='filter', help='List default and custom filters')
-def list_ids(id_type, hide_docs, title):
+def list_ids(**kwargs):
     """ Shows docs, workflows, locales, formats, or filters. By default lists added folders and docs. """
     try:
         action = action_facade.ActionFacade(os.getcwd())
         init_logger(action.path)
-        if id_type == 'workflow':
-            action.list_workflow_action()
-        elif id_type == 'locale':
-            action.list_locale_action()
-        elif id_type == 'format':
-            action.list_format_action()
-        elif id_type == 'filter':
-            action.list_filter_action()
-        elif id_type == 'remote':
-            action.list_remote_action()
-        else:
-            action.list_ids_action(hide_docs, title)
+        action.list_action(**kwargs)
 
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
