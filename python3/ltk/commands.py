@@ -480,5 +480,46 @@ def watch(ignore, delimiter, timeout, no_folders, force_poll): # path, ignore, d
         logger.error(e)
 
 
+# Filters (Split into files, see http://bit.ly/2jArTRm)
+
+@click.group(short_help="List, create, update, or delete Lingotek filters")
+def filters():
+    pass
+
+@filters.command(name='save',short_help="Create or update a filter on Lingotek")
+@click.argument('filename', required=True)
+@click.argument('filter_id', required=False)
+def save(filename, filter_id):
+    """Create or update filter on Lingotek"""
+    click.echo("TO-DO: save")
+    print("filename:",filename)
+    print("filter_id:",filter_id)
+
+@filters.command(name="get", short_help="Retrieve filter contents from Lingotek")
+@click.argument('filter_id')
+@click.argument('filename', required=False)
+def get(filter_id, filename):
+    """Retrieve the filter specified by FILTER_ID from Lingotek and store it in the current working directly as the title (or as as the optional_filename when specified) of the filter"""
+    click.echo("TO-DO: get filter")
+    print("filter_id:",filter_id)
+    print("filename:",filename)
+
+@filters.command()
+def list():
+    """List default and custom filters"""
+    action = actions.Action(os.getcwd())
+    init_logger(action.path)
+    action.list_filter_action()
+
+@filters.command(name="delete", short_help="Remove filter from Lingotek")
+@click.argument('filter_id')
+def delete(filter_id):
+    """Remove the filter specified by FILTER_ID."""
+    click.echo("TO-DO: delete filter")
+    print("delete filter_id:",filter_id)
+
+ltk.add_command(filters)
+
+
 if __name__ == '__main__':
     ltk()
