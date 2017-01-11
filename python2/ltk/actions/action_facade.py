@@ -60,7 +60,6 @@ class ActionFacade:
         ''' New items needed for facade '''
         self.add = add_action.AddAction(path)
         self.push = push_action.PushAction(self.add, path)
-        self.request = request_action.RequestAction(path)
 
     def _is_initialized(self):
         actual_path = find_conf(self.path)
