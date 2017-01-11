@@ -1,7 +1,7 @@
 from ltk.actions.action import *
 
 class RequestAction(Action):
-    def __init__(self, actionPath, doc_name, requestPath, entered_locales, to_delete, workflow, due_date, document_id=None, surpressMessage=False):
+    def __init__(self, actionPath, doc_name, requestPath, entered_locales, to_delete, due_date, workflow, document_id=None, surpressMessage=False):
         Action.__init__(self, actionPath)
 
         self.document_name = doc_name
@@ -76,7 +76,7 @@ class RequestAction(Action):
                     logger.info("File "+str(self.requestPath)+" not found")
                 else:
                     logger.info("No documents to request a target locale")
-                    
+
             is_successful = self._request_translations(locales)
             return is_successful
         except Exception as e:
