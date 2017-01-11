@@ -174,8 +174,9 @@ def config(**kwargs):
 def add(file_names, **kwargs):
     """ Add files and folders for upload to Lingotek.  Fileglobs (e.g. *.txt) can be used to add all matching files and/or folders. Added folders will automatically add the new files added or created inside of them.  """
     try:
-        action = action_facade.ActionFacade(os.getcwd())
-        init_logger(action.path)
+        path = os.getcwd()
+        add = add_action.AddAction(path)
+        init_logger(path)
 
         file_names = remove_powershell_formatting(file_names)
 
@@ -184,20 +185,22 @@ def add(file_names, **kwargs):
                 temp = remove_powershell_formatting(kwargs[f])
                 kwargs[f] = temp
 
-        action.add_action(file_names, **kwargs)
+        add.add_action(file_names, **kwargs)
     except (UninitializedError, RequestFailedError, ResourceNotFound, AlreadyExistsError) as e:
         print_log(e)
         logger.error(e)
         return
 
-
 @ltk.command(short_help="Sends updated content to Lingotek for documents that have been added")
 def push():
     """ Sends updated content to Lingotek for documents that have been added """
     try:
-        action = action_facade.ActionFacade(os.getcwd())
-        init_logger(action.path)
-        action.push_action()
+        path = os.getcwd()
+
+        add = add_action.AddAction(path)
+        push = push_action.PushAction(add, path)
+        init_logger(path)
+        push.push_action()
     except UninitializedError as e:
         print_log(e)
         logger.error(e)

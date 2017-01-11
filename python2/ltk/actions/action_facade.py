@@ -57,10 +57,6 @@ class ActionFacade:
         self.error_file_name = os.path.join(self.path, CONF_DIR, ERROR_FN)
         self.uploadWaitTime = 300
 
-        ''' New items needed for facade '''
-        self.add = add_action.AddAction(path)
-        self.push = push_action.PushAction(self.add, path)
-
     def _is_initialized(self):
         actual_path = find_conf(self.path)
         if not actual_path:
@@ -582,15 +578,6 @@ class ActionFacade:
                 logger.error("Error connecting to Lingotek's TMS")
             else:
                 logger.error("Error on config: "+str(e))
-
-    def add_action(self, file_patterns, **kwargs):
-
-        # self.add object was initialized in constructor of action facade
-        # the action.py file no longer has any of the add functions
-        self.add.add_action(file_patterns, **kwargs)
-
-    def push_action(self):
-        self.push.push_action()
 
     def update_document_action(self, file_name, title=None, **kwargs):
         try:
