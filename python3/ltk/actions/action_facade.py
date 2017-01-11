@@ -16,6 +16,7 @@ from ltk import exceptions
 from ltk.actions import action
 from ltk.actions import add_action
 from ltk.actions import push_action
+from ltk.actions import request_action
 from ltk.apicalls import ApiCalls
 from ltk.utils import *
 from ltk.managers import DocumentManager, FolderManager
@@ -59,6 +60,7 @@ class ActionFacade:
         ''' New items needed for facade '''
         self.add = add_action.AddAction(path)
         self.push = push_action.PushAction(self.add, path)
+        self.request = request_action.RequestAction(path)
 
     def _is_initialized(self):
         actual_path = find_conf(self.path)
@@ -636,7 +638,9 @@ class ActionFacade:
 
     # def request_action
     def target_action(self, document_name, path, entered_locales, to_delete, due_date, workflow, document_id=None, surpressMessage=False):
-        try:
+        self.request.target_action(document_name, path, entered_locales, to_delete, due_date, workflow, document_id, surpressMessage)
+
+        '''try:
             is_successful = False
             locales = []
             if entered_locales:
@@ -734,7 +738,7 @@ class ActionFacade:
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
                 logger.error("Error connecting to Lingotek's TMS")
             else:
-                logger.error("Error on request: "+str(e))
+                logger.error("Error on request: "+str(e))'''
 
     def list_ids_action(self, hide_docs, title=False):
         try:

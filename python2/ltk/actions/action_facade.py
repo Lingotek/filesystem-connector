@@ -15,6 +15,8 @@ import itertools
 from ltk import exceptions
 from ltk.actions import action
 from ltk.actions import add_action
+from ltk.actions import push_action
+from ltk.actions import request_action
 from ltk.apicalls import ApiCalls
 from ltk.utils import *
 from ltk.managers import DocumentManager, FolderManager
@@ -25,6 +27,7 @@ from ltk.git_auto import Git_Auto
 
 class ActionFacade:
     def __init__(self, path, watch=False, timeout=60):
+        ''' To be erased as determined not needed in the facade '''
         self.host = ''
         self.access_token = ''
         self.project_id = ''
@@ -54,7 +57,10 @@ class ActionFacade:
         self.error_file_name = os.path.join(self.path, CONF_DIR, ERROR_FN)
         self.uploadWaitTime = 300
 
+        ''' New items needed for facade '''
         self.add = add_action.AddAction(path)
+        self.push = push_action.PushAction(self.add, path)
+        self.request = request_action.RequestAction(path)
 
     def _is_initialized(self):
         actual_path = find_conf(self.path)
@@ -585,45 +591,7 @@ class ActionFacade:
         self.add.add_action(file_patterns, **kwargs)
 
     def push_action(self):
-        try:
-            entries = self.doc_manager.get_all_entries()
-            updated = False
-            folders = self.folder_manager.get_file_names()
-            if len(folders):
-                for folder in folders:
-                    matched_files = get_files(folder)
-                    if matched_files:
-                        for file_name in matched_files:
-                            try:
-                                relative_path = self.norm_path(file_name)
-                                title = os.path.basename(relative_path)
-                                if self.doc_manager.is_doc_new(relative_path) and not self.doc_manager.is_translation(relative_path, title, matched_files, self):
-                                    self.add_document(file_name, title)
-                            except json.decoder.JSONDecodeError as e:
-                                log_error(self.error_file_name, e)
-                                logger.error("JSON error on adding document.")
-            for entry in entries:
-                if not self.doc_manager.is_doc_modified(entry['file_name'], self.path):
-                    continue
-                response = self.api.document_update(entry['id'], os.path.join(self.path, entry['file_name']))
-                if response.status_code != 202:
-                    raise_error(response.json(), "Failed to update document {0}".format(entry['name']), True)
-                    return updated
-                else:
-                    updated = True
-                    logger.info('Updated ' + entry['name'])
-                    self._update_document(entry['file_name'])
-            if not updated:
-                logger.info('All documents up-to-date with Lingotek Cloud. ')
-
-            return updated
-
-        except Exception as e:
-            log_error(self.error_file_name, e)
-            if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
-                logger.error("Error connecting to Lingotek's TMS")
-            else:
-                logger.error("Error on push: "+str(e))
+        self.push.push_action()
 
     def update_document_action(self, file_name, title=None, **kwargs):
         try:
@@ -670,7 +638,9 @@ class ActionFacade:
 
     # def request_action
     def target_action(self, document_name, path, entered_locales, to_delete, due_date, workflow, document_id=None, surpressMessage=False):
-        try:
+        self.request.target_action(document_name, path, entered_locales, to_delete, due_date, workflow, document_id, surpressMessage)
+
+        '''try:
             is_successful = False
             locales = []
             if entered_locales:
@@ -768,7 +738,7 @@ class ActionFacade:
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
                 logger.error("Error connecting to Lingotek's TMS")
             else:
-                logger.error("Error on request: "+str(e))
+                logger.error("Error on request: "+str(e))'''
 
     def list_ids_action(self, hide_docs, title=False):
         try:

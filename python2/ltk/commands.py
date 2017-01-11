@@ -6,7 +6,7 @@ python_version = sys.version
 # #    print('Python 3 is required to run this version of the Lingotek Filesystem connector.\n\nFor other versions and troubleshooting, see: https://github.com/lingotek/filesystem-connector')
 # #    exit()
 # End Python 3
-from ltk.actions import action_facade
+from ltk.actions import *
 import os
 from ltk.exceptions import UninitializedError, ResourceNotFound, RequestFailedError, AlreadyExistsError
 from ltk.constants import LOG_FN, CONF_DIR
@@ -215,15 +215,15 @@ def request(doc_name, path, locales, to_delete, due_date, workflow):
     """ Add targets to document(s) to start translation; defaults to the entire project. If no locales are specified, Filesystem Connector
         will look for target watch locales set in ltk config. Use ltk list -l to see possible locales. """
     try:
-        action = action_facade.ActionFacade(os.getcwd())
-        init_logger(action.path)
+        request = request_action.RequestAction(os.getcwd(), doc_name, path, locales, to_delete, due_date, workflow)
+        init_logger(request.path)
         if locales and isinstance(locales,str):
             locales = [locales]
 
         doc_name = remove_powershell_formatting(doc_name)
         path = remove_powershell_formatting(path)
 
-        action.target_action(doc_name, path, locales, to_delete, due_date, workflow)
+        request.target_action()
     except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
