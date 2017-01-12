@@ -150,23 +150,24 @@ class ListAction(Action):
             print ('Remote documents: id, document name')
             for entry in response.json()['entities']:
                 i = 0
-                while 'properties' not in entry['entities']: i += 1
+                while 'properties' not in entry['entities'][i]: i += 1
                 title = entry['entities'][i]['properties']['title'].replace("Status of ", "")
                 id = entry['entities'][i]['properties']['id']
                 info = '{id} \t {title}'.format(id=id, title=title)
                 print (info)
-            return
 
     def list_workflows(self):
-        response = self.api.list_workflows(self.community_id)
-        if response.status_code != 200:
-            raise_error(response.json(), "Failed to list workflows")
-        ids, titles = log_id_names(response.json())
-        if not ids:
-            print ('No workflows')
-            return
-        print ('Workflows: id, title')
-        for i in range(len(ids)):
-            info = '{id} \t {title}'.format(id=ids[i], title=titles[i])
-            print (info)
-            
+        try:
+            response = self.api.list_workflows(self.community_id)
+            if response.status_code != 200:
+                raise_error(response.json(), "Failed to list workflows")
+            ids, titles = log_id_names(response.json())
+            if not ids:
+                print ('No workflows')
+                return
+            print ('Workflows: id, title')
+            for i in range(len(ids)):
+                info = '{id} \t {title}'.format(id=ids[i], title=titles[i])
+                print (info)
+        except:
+            logger.error("An error occurred while attempting to connect to remote.")
