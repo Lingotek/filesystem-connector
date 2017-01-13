@@ -272,16 +272,16 @@ def list_ids(id_type, hide_docs, title):
 def status(**kwargs):
     """ Gets the status of a specific document or all documents """
     try:
-        action = action_facade.ActionFacade(os.getcwd())
-        init_logger(action.path)
+        path = os.getcwd()
+        status = status_action.StatusAction(path)
+        init_logger(path)
 
         for f in kwargs:
             if kwargs[f]:
                 temp = remove_powershell_formatting(kwargs[f])
                 kwargs[f] = temp
 
-
-        action.status_action(**kwargs)
+        status.get_status(**kwargs)
     except (UninitializedError, ResourceNotFound) as e:
         print_log(e)
         logger.error(e)
