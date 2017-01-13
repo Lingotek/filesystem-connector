@@ -316,13 +316,14 @@ def download(auto_format, locales, locale_ext, no_ext, file_names):
 def pull(auto_format, locale_ext, no_ext, locales):
     """ Pulls translations for all added documents for all locales or by specified locales """
     try:
-        action = action_facade.ActionFacade(os.getcwd())
-        init_logger(action.path)
+        path = os.getcwd()
+        pull = pull_action.PullAction(path)
+        init_logger(path)
         if locales:
             for locale in locales:
-                action.pull_action(locale, locale_ext, no_ext, auto_format)
+                pull.pull_translations(locale, locale_ext, no_ext, auto_format)
         else:
-            action.pull_action(None, locale_ext, no_ext, auto_format)
+            pull.pull_translations(None, locale_ext, no_ext, auto_format)
     except UninitializedError as e:
         print_log(e)
         logger.error(e)
