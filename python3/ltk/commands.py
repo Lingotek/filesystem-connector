@@ -176,7 +176,7 @@ def add(file_names, **kwargs):
     try:
         path = os.getcwd()
         add = add_action.AddAction(path)
-        init_logger(path)
+        init_logger(add.path)
 
         file_names = remove_powershell_formatting(file_names)
 
@@ -195,11 +195,9 @@ def add(file_names, **kwargs):
 def push():
     """ Sends updated content to Lingotek for documents that have been added """
     try:
-        path = os.getcwd()
-
-        add = add_action.AddAction(path)
-        push = push_action.PushAction(add, path)
-        init_logger(path)
+        add = add_action.AddAction(os.getcwd())
+        push = push_action.PushAction(add, os.getcwd())
+        init_logger(push.path)
         push.push_action()
     except UninitializedError as e:
         print_log(e)
@@ -272,9 +270,8 @@ def list_ids(id_type, hide_docs, title):
 def status(**kwargs):
     """ Gets the status of a specific document or all documents """
     try:
-        path = os.getcwd()
-        status = status_action.StatusAction(path)
-        init_logger(path)
+        status = status_action.StatusAction(os.getcwd())
+        init_logger(status.path)
 
         for f in kwargs:
             if kwargs[f]:
