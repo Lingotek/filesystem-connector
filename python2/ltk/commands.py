@@ -174,9 +174,8 @@ def config(**kwargs):
 def add(file_names, **kwargs):
     """ Add files and folders for upload to Lingotek.  Fileglobs (e.g. *.txt) can be used to add all matching files and/or folders. Added folders will automatically add the new files added or created inside of them.  """
     try:
-        path = os.getcwd()
-        add = add_action.AddAction(path)
-        init_logger(path)
+        padd = add_action.AddAction(os.getcwd())
+        init_logger(add.path)
 
         file_names = remove_powershell_formatting(file_names)
 
@@ -195,11 +194,9 @@ def add(file_names, **kwargs):
 def push():
     """ Sends updated content to Lingotek for documents that have been added """
     try:
-        path = os.getcwd()
-
-        add = add_action.AddAction(path)
-        push = push_action.PushAction(add, path)
-        init_logger(path)
+        add = add_action.AddAction(os.getcwd())
+        push = push_action.PushAction(add, os.getcwd())
+        init_logger(push.path)
         push.push_action()
     except UninitializedError as e:
         print_log(e)
@@ -297,9 +294,8 @@ def status(**kwargs):
 def download(auto_format, locales, locale_ext, no_ext, file_names):
     """ Downloads translated content specified by filename for specified locales, or all locales if none are specified. Change download options and folders using ltk config."""
     try:
-        path = os.getcwd()
-        download = download_action.DownloadAction(path)
-        init_logger(path)
+        download = download_action.DownloadAction(os.getcwd())
+        init_logger(download.path)
         for name in file_names:
             download.download_by_path(name, locales, locale_ext, no_ext, auto_format)
 
