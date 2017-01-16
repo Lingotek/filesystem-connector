@@ -419,13 +419,13 @@ def clean(force, dis_all, file_paths):
     Enter file or directory names to remove local associations of specific files or directories.
     """
     try:
-        action = action_facade.ActionFacade(os.getcwd())
-        init_logger(action.path)
+        clean = clean_action.CleanAction(os.getcwd())
+        init_logger(clean.path)
 
         if len(file_paths) > 0:
             file_paths = remove_powershell_formatting(file_paths)
 
-        action.clean_action(force, dis_all, file_paths)
+        clean.clean_action(force, dis_all, file_paths)
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)

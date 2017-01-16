@@ -808,7 +808,7 @@ class ActionFacade:
                 else:
                     for entry in response.json()['entities']:
                         title = entry['entities'][1]['properties']['title']
-                        progress = entry['entities'][1]['properties']['progress']
+                        progress = entry['entities'][0]['properties']['progress']
                         self.print_status(title, progress)
                         if 'detailed' in kwargs and kwargs['detailed']:
                             self.print_detailed(entry['properties']['id'], title)
