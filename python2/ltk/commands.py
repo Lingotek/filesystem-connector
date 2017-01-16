@@ -313,7 +313,8 @@ def download(auto_format, locales, locale_ext, no_ext, file_names):
 def pull(auto_format, locale_ext, no_ext, locales):
     """ Pulls translations for all added documents for all locales or by specified locales """
     try:
-        pull = pull_action.PullAction(os.getcwd())
+        download = download_action.DownloadAction(os.getcwd())
+        pull = pull_action.PullAction(os.getcwd(), download)
         init_logger(pull.path)
         if locales:
             for locale in locales:

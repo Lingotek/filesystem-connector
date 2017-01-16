@@ -1,8 +1,9 @@
 from ltk.actions.action import *
 
 class PullAction(Action):
-    def __init__(self, path):
+    def __init__(self, path, download):
         Action.__init__(self, path)
+        self.download = download
 
     def pull_translations(self, locale_code, locale_ext, no_ext, auto_format):
         try:
@@ -18,9 +19,9 @@ class PullAction(Action):
                             locales = entry['locales']
                             for locale in locales:
                                 locale = locale.replace('_','-')
-                                self.download_action(entry['id'], locale, auto_format, locale_ext)
+                                self.download.download_action(entry['id'], locale, auto_format, locale_ext)
                         except KeyError:
-                            self.download_action(entry['id'], None, auto_format, locale_ext)
+                            self.download.download_action(entry['id'], None, auto_format, locale_ext)
                 else:
                     logger.info("No documents have been added")
             else:
