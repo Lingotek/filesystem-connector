@@ -174,7 +174,7 @@ def config(**kwargs):
 def add(file_names, **kwargs):
     """ Add files and folders for upload to Lingotek.  Fileglobs (e.g. *.txt) can be used to add all matching files and/or folders. Added folders will automatically add the new files added or created inside of them.  """
     try:
-        padd = add_action.AddAction(os.getcwd())
+        add = add_action.AddAction(os.getcwd())
         init_logger(add.path)
 
         file_names = remove_powershell_formatting(file_names)
