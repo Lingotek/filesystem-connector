@@ -294,10 +294,10 @@ def status(**kwargs):
 def download(auto_format, locales, locale_ext, no_ext, file_names):
     """ Downloads translated content specified by filename for specified locales, or all locales if none are specified. Change download options and folders using ltk config."""
     try:
-        action = action_facade.ActionFacade(os.getcwd())
-        init_logger(action.path)
+        download = download_action.DownloadAction(os.getcwd())
+        init_logger(download.path)
         for name in file_names:
-            action.download_by_path(name, locales, locale_ext, no_ext, auto_format)
+            download.download_by_path(name, locales, locale_ext, no_ext, auto_format)
 
     except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
         print_log(e)
