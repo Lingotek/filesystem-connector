@@ -65,7 +65,7 @@ class StatusAction(Action):
                 raise_error("", "Failed to get status of documents", True)
         else:
             for entry in response.json()['entities']:
-                title = entry['entities'][1]['properties']['title']
+                title = entry['entities'][0]['properties']['title']
                 progress = entry['entities'][0]['properties']['progress']
                 self._print_status(title, progress)
                 if detailed:
