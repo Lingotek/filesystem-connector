@@ -11,41 +11,15 @@ class CleanAction(Action):
                 self.doc_manager.clear_all()
                 logger.info("Removed all associations between local and remote documents.")
                 return
-            locals_to_delete = []
             if path:
-                self._clean_by_path(path)
+                locals_to_delete = self._clean_by_path(path)
             else:
-                response = self.api.list_documents(self.project_id)
-                local_ids = self.doc_manager.get_doc_ids()
-                tms_doc_ids = []
-                if response.status_code == 200:
-                    tms_documents = response.json()['entities']
-                    for entity in tms_documents:
-                        tms_doc_ids.append(entity['properties']['id'])
-                elif response.status_code == 204:
-                    pass
-                else:
-                    raise_error(response.json(), 'Error trying to list documents in TMS for cleaning')
-                locals_to_delete = [x for x in local_ids if x not in tms_doc_ids]
-
-                # check local files
-                db_entries = self.doc_manager.get_all_entries()
-                for entry in db_entries:
-                    # if local file doesn't exist, remove entry
-                    if not os.path.isfile(os.path.join(self.path, entry['file_name'])):
-                        locals_to_delete.append(entry['id'])
+                locals_to_delete = self._check_docs_to_clean()
 
             # remove entry for local doc -- possibly delete local file too?
             if locals_to_delete:
                 for curr_id in locals_to_delete:
-                    removed_doc = self.doc_manager.get_doc_by_prop('id', curr_id)
-                    if not removed_doc:
-                        continue
-                    removed_title = removed_doc['name']
-                    # todo somehow this line^ doc is null... after delete files remotely, then delete locally
-                    if force:
-                        self.delete_local(removed_title, curr_id)
-                    self.doc_manager.remove_element(curr_id)
+                    removed_title = self._clean_local(curr_id, force)
                     logger.info('Removing association for document {0}'.format(removed_title))
             else:
                 logger.info('Local documents already up-to-date with Lingotek Cloud')
@@ -58,18 +32,58 @@ class CleanAction(Action):
             else:
                 logger.error("Error on clean: "+str(e))
 
+    def _clean_local(self, doc_id, force):
+        removed_doc = self.doc_manager.get_doc_by_prop('id', doc_id)
+        if not removed_doc:
+            return
+        removed_title = removed_doc['name']
+        # todo somehow this line^ doc is null... after delete files remotely, then delete locally
+        if force:
+            self.delete_local(removed_title, doc_id)
+        self.doc_manager.remove_element(doc_id)
+
+        return removed_title
+
     def _clean_by_path(self, path):
+        locals_to_delete = []
         files = get_files(path)
         docs = self.doc_manager.get_file_names()
         # Efficiently go through the files in case of a large number of files to check or a large number of remote documents.
         if (files != None) and (len(files) > len(docs)):
             for file_name in docs:
-                if file_name in files:
-                    entry = self.doc_manager.get_doc_by_prop('file_name', self.norm_path(file_name))
-                    if entry:
-                        locals_to_delete.append(entry['id'])
+                for name in files:
+                    if file_name in name:
+                        entry = self.doc_manager.get_doc_by_prop('file_name', self.norm_path(file_name))
+                        if entry:
+                            locals_to_delete.append(entry['id'])
         else:
             for file_name in files:
                 entry = self.doc_manager.get_doc_by_prop('file_name', self.norm_path(file_name))
                 if entry:
                     locals_to_delete.append(entry['id'])
+
+        return locals_to_delete
+
+    def _check_docs_to_clean(self):
+        locals_to_delete = []
+        response = self.api.list_documents(self.project_id)
+        local_ids = self.doc_manager.get_doc_ids()
+        tms_doc_ids = []
+        if response.status_code == 200:
+            tms_documents = response.json()['entities']
+            for entity in tms_documents:
+                tms_doc_ids.append(entity['properties']['id'])
+        elif response.status_code == 204:
+            pass
+        else:
+            raise_error(response.json(), 'Error trying to list documents in TMS for cleaning')
+        locals_to_delete = [x for x in local_ids if x not in tms_doc_ids]
+
+        # check local files
+        db_entries = self.doc_manager.get_all_entries()
+        for entry in db_entries:
+            # if local file doesn't exist, remove entry
+            if not os.path.isfile(os.path.join(self.path, entry['file_name'])):
+                locals_to_delete.append(entry['id'])
+
+        return locals_to_delete
