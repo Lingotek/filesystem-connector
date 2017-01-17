@@ -741,20 +741,108 @@ class ActionFacade:
         for k,v in sorted(format_list.items()):
             print('%-30s' % k + '%s' % ' '.join(v))
 
-    def list_filter_action(self):
-        response = self.api.list_filters()
-        if response.status_code != 200:
-            raise_error(response.json(), 'Failed to get filters')
-        filter_entities = response.json()['entities']
-        print ('Filters: id, created, title')
-        for entry in sorted(filter_entities, key=lambda entry: entry['properties']['upload_date'], reverse=True):
-            properties = entry['properties']
-            title = properties['title']
-            filter_id = properties['id']
-            upload_date = time.strftime("%Y-%m-%d", time.localtime(int(properties['upload_date']/1000)))
-            is_public = " (public)" if properties['is_public'] else ""
-            print ('{0}  {1}  {2}{3}'.format(filter_id, upload_date, title, is_public))
+    def print_status(self, title, progress):
+        print ('{0}: {1}%'.format(title, progress))
+        # print title + ': ' + str(progress) + '%'
+        # for each doc id, also call /document/id/translation and get % of each locale
 
+    def print_detailed(self, doc_id, doc_name):
+        response = self.api.document_translation_status(doc_id)
+        if response.status_code != 200:
+            raise_error(response.json(), 'Failed to get detailed status of document', True, doc_id, doc_name)
+        try:
+            if 'entities' in response.json():
+                for entry in response.json()['entities']:
+                    curr_locale = entry['properties']['locale_code']
+                    curr_progress = entry['properties']['percent_complete']
+                    print ('\tlocale: {0} \t percent complete: {1}%'.format(curr_locale, curr_progress))
+                    # detailed_status[doc_id] = (curr_locale, curr_progress)
+        except KeyError as e:
+            log_error(self.error_file_name, e)
+            print("Error listing translations")
+            return
+            # return detailed_status
+
+    def status_action(self, **kwargs):
+        try:
+            # detailed_status = {}
+            doc_name = None
+            if 'doc_name' in kwargs:
+                doc_name = kwargs['doc_name']
+            if 'all' in kwargs and kwargs['all']:
+                response = self.api.list_documents(self.project_id)
+                if response.status_code == 204:
+                    print("No documents to report")
+                    return
+                elif response.status_code != 200:
+                    if check_response(response):
+                        raise_error(response.json(), "Failed to get status of documents", True)
+                    else:
+                        raise_error("", "Failed to get status of documents", True)
+                else:
+                    for entry in response.json()['entities']:
+                        title = entry['entities'][1]['properties']['title']
+                        progress = entry['entities'][1]['properties']['progress']
+                        self.print_status(title, progress)
+                        if 'detailed' in kwargs and kwargs['detailed']:
+                            self.print_detailed(entry['properties']['id'], title)
+                    return
+            else:
+                if doc_name is not None:
+                    entry = self.doc_manager.get_doc_by_prop('name', doc_name)
+                    try:
+                        doc_ids = [entry['id']]
+                    except TypeError:
+                        raise exceptions.ResourceNotFound("Document name specified for status doesn't exist: {0}".format(doc_name))
+                else:
+                    doc_ids = self.doc_manager.get_doc_ids()
+                if not doc_ids:
+                    print("No documents to report")
+                    return
+            for doc_id in doc_ids:
+                response = self.api.document_status(doc_id)
+                if response.status_code != 200:
+                    entry = self.doc_manager.get_doc_by_prop('id', doc_id)
+                    if entry:
+                        error_message = "Failed to get status of document "+entry['file_name']
+                    else:
+                        error_message = "Failed to get status of document "+str(doc_id)
+                    if check_response(response):
+                        raise_error(response.json(), error_message, True, doc_id)
+                    else:
+                        #if document has recently been added, determined by uploadWaitTime, let user know that document is still being processed
+                        #otherwise, suggest that user checks TMS for deletion or potential upload problems
+                        entry = self.doc_manager.get_doc_by_prop('id', doc_id)
+                        diff = time.time() - entry['added']
+                        if diff < self.uploadWaitTime:
+                            error_message = "\'" +entry['file_name']+ "\' is still being processed"
+                            raise_error("", str(response.status_code)+" Not Found: "+error_message, True, doc_id)
+                        else:
+                            error_message = "Check Lingotek TMS to see if \'" +entry['file_name']+ "\' has been deleted or was not properly imported"
+                            raise_error("", str(response.status_code)+" Not Found: "+error_message, True, doc_id)
+
+                else:
+                    title = response.json()['properties']['title']
+                    progress = response.json()['properties']['progress']
+                    self.print_status(title, progress)
+                    if 'detailed' in kwargs and kwargs['detailed']:
+                        self.print_detailed(doc_id, title)
+        except requests.exceptions.ConnectionError:
+            logger.warning("Could not connect to Lingotek")
+            exit()
+        except ValueError:
+            logger.warning("Could not connect to Lingotek")
+            exit()
+        # Python 3
+        except json.decoder.JSONDecodeError:
+            logger.warning("Could not connect to Lingotek")
+            exit()
+        # End Python 3
+        except Exception as e:
+            log_error(self.error_file_name, e)
+            logger.warning("Error on requesting status: "+str(e))
+
+>>>>>>> Added ltk filters full functionality:python3/ltk/actions.py
     def added_folder_of_file(self, file_path):
         folders = self.folder_manager.get_file_names()
         if not folders:
