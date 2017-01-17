@@ -444,7 +444,7 @@ def clone(folders, copy_root):
     (instead of creating a new folder inside of the locale folder).
     """
     try:
-        action = action_facade.ActionFacade(os.getcwd())
+        action = clone_action.CloneAction(os.getcwd())
         init_logger(action.path)
         if isinstance(folders,str):
             folders = [folders]
