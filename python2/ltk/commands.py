@@ -340,7 +340,7 @@ def rm(file_names, **kwargs):
     If the remote copy should be kept, please use ltk clean.
     """
     try:
-        action = action_facade.ActionFacade(os.getcwd())
+        action = rm_action.RmAction(os.getcwd())
         init_logger(action.path)
         if not file_names and not ('all' in kwargs and kwargs['all']):
             logger.info("Usage: ltk rm [OPTIONS] FILE_NAMES...")
