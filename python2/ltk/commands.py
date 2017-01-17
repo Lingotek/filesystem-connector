@@ -15,7 +15,6 @@ from ltk.logger import logger, API_LOG_LEVEL, API_RESPONSE_LOG_LEVEL, CustomForm
 
 from ltk import __version__
 from ltk.watch import WatchAction
-from ltk.import_action import ImportAction
 
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -365,7 +364,7 @@ def mv(source_path, destination_path):
     """
     try:
         # action = actions.Action(os.getcwd())
-        action = ImportAction(os.getcwd())
+        action = import_action.ImportAction(os.getcwd())
         init_logger(action.path)
 
         source_path = remove_powershell_formatting(source_path)
@@ -395,7 +394,7 @@ def import_command(import_all, force, path):
     # possibly have to patch title in Lingotek Cloud?
     try:
         # action = actions.Action(os.getcwd())
-        action = ImportAction(os.getcwd())
+        action = import_action.ImportAction(os.getcwd())
         init_logger(action.path)
 
         if path != None:
