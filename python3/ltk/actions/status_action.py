@@ -66,6 +66,7 @@ class StatusAction(Action):
         else:
             for entry in response.json()['entities']:
                 title = entry['entities'][0]['properties']['title']
+
                 progress = entry['entities'][0]['properties']['progress']
                 self._print_status(title, progress)
                 if detailed:
