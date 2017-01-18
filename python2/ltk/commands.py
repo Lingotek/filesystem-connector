@@ -360,20 +360,20 @@ def rm(file_names, **kwargs):
 @click.argument('destination_path', required=True, nargs=1)
 def mv(source_path, destination_path):
     """
-    Moves specified local doc to a specified destination directory, moving both the file itself and file location stores in the local database.
+    Moves specified local doc to a specified destination directory, moving both the file itself and file location stored in the local database.
     If SOURCE_PATH is a directory, all added files in the directory will be moved.
     """
     try:
         # action = actions.Action(os.getcwd())
-        action = ImportAction(os.getcwd())
-        init_logger(action.path)
+        move = move_action.MoveAction(os.getcwd())
+        init_logger(move.path)
 
         source_path = remove_powershell_formatting(source_path)
-        print("Source path " + str(source_path))
+        #print("Source path " + str(source_path))
         destination_path = remove_powershell_formatting(destination_path)
-        print("Destination path "+str(destination_path))
+        #print("Destination path "+str(destination_path))
 
-        action.mv_action(source_path, destination_path)
+        move.mv_action(source_path, destination_path)
     except(UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
