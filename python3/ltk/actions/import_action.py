@@ -1,6 +1,5 @@
 from ltk.actions.action import *
 
-
 class ImportAction(Action):
     def __init__(self, path):
         Action.__init__(self, path)
