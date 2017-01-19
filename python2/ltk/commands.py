@@ -250,7 +250,7 @@ def list_ids(id_type, hide_docs, title):
         elif id_type == 'format':
             action.list_format_action()
         elif id_type == 'filter':
-            action.list_filter_action()
+            action.filter_list_action()
         elif id_type == 'remote':
             action.list_remote_action()
         else:
@@ -326,7 +326,7 @@ def pull(auto_format, locale_ext, no_ext, locales):
         return
 
 
-@ltk.command(short_help="Disassociates local doc(s) from Lingotek Cloud and deletes the remote copy")
+@ltk.command(name="rm", short_help="Disassociates local doc(s) from Lingotek Cloud and deletes the remote copy")
 @click.argument('file_names', required=False, nargs=-1)
 @click.option('-d', '--directory', flag_value=True, help='Only remove directories, not files inside directories')
 @click.option('-i', '--id', flag_value=True, help='Delete documents with the specified ids (instead of file names) on Lingotek Cloud')
@@ -340,7 +340,7 @@ def rm(file_names, **kwargs):
     If the remote copy should be kept, please use ltk clean.
     """
     try:
-        action = action_facade.ActionFacade(os.getcwd())
+        action = rm_action.RmAction(os.getcwd())
         init_logger(action.path)
         if not file_names and not ('all' in kwargs and kwargs['all']):
             logger.info("Usage: ltk rm [OPTIONS] FILE_NAMES...")
@@ -371,7 +371,7 @@ def mv(source_path, destination_path):
         source_path = remove_powershell_formatting(source_path)
         print("Source path " + str(source_path))
         destination_path = remove_powershell_formatting(destination_path)
-        print("Destination path "+str(destination_path))
+        print("Destination path " + str(destination_path))
 
         action.mv_action(source_path, destination_path)
     except(UninitializedError, RequestFailedError) as e:
@@ -478,6 +478,63 @@ def watch(ignore, delimiter, timeout, no_folders, force_poll): # path, ignore, d
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
+
+
+# Filters (Split into files, see http://bit.ly/2jArTRm)
+
+@click.group(short_help="List, create, update, or delete Lingotek filters")
+def filters():
+    pass
+
+@filters.command(name='add',short_help="Create a filter on Lingotek.")
+@click.argument('filename')
+@click.option('-t', '--type', 'filter_type', type=click.Choice(['FPRM','SRX','ITS']), help="The filter type being added.  Must be one of the following: FPRM, SRX, ITS.  When not explicitly specified, the file extension is used to attempt to detect the type.")
+def filter_add(filename, filter_type):
+    """Create filter on Lingotek."""
+    action = filters_action.FiltersAction(os.getcwd())
+    init_logger(action.path)
+    action.filter_add_action(filename, filter_type)
+
+@filters.command(name='save',short_help="Update filter on Lingotek.")
+@click.argument('filter_id')
+@click.argument('filename')
+def filter_add(filter_id, filename):
+    """Update filter on Lingotek."""
+    action = filters_action.FiltersAction(os.getcwd())
+    init_logger(action.path)
+    action.filter_save_action(filter_id, filename)
+
+@filters.command(name="get", short_help="Retrieve filter contents from Lingotek.")
+@click.argument('filter_id')
+@click.argument('filename', required=False)
+@click.option('--info','info',flag_value=True, help="Retrieve filter info only.")
+@click.option('--overwrite',flag_value=True, help="Overwrite local file when it already exists.")
+def filter_get(filter_id, filename, info, overwrite):
+    """Retrieve the filter specified by FILTER_ID from Lingotek and store it in the current working directly as the title (or as as the optional_filename when specified) of the filter"""
+    action = filters_action.FiltersAction(os.getcwd())
+    init_logger(action.path)
+    if info == True:
+        action.filter_info_action(filter_id)
+    else:
+        action.filter_get_action(filter_id, filename, overwrite)
+
+@filters.command(name="list")
+def filter_list():
+    """List default and custom filters."""
+    action = filters_action.FiltersAction(os.getcwd())
+    init_logger(action.path)
+    action.filter_list_action()
+
+@filters.command(name="rm", short_help="Remove filter from Lingotek.")
+@click.argument('filter_id')
+def filter_rm(filter_id):
+    """Remove the filter specified by FILTER_ID."""
+    action = filters_action.FiltersAction(os.getcwd())
+    init_logger(action.path)
+    action.filter_rm_action(filter_id)
+
+
+ltk.add_command(filters)
 
 
 if __name__ == '__main__':

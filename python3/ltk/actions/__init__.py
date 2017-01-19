@@ -7,6 +7,7 @@ __all__ = [ "action",
             "pull_action",
             "push_action",
             "request_action",
+            "rm_action",
             "status_action",
             #"move_action",
           ]

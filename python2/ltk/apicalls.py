@@ -367,6 +367,70 @@ class ApiCalls:
             self.handleError()
         return r
 
+    def get_filter_content(self, filter_id):
+        """ gets a filter by id """
+        try:
+            uri = (API_URI['filter_content'] % locals())
+            r = requests.get(self.host + uri, headers=self.headers)
+            if r.status_code == 200:
+                log_api('GET', uri, r)
+            else:
+                log_api('GET', uri, r)
+        except requests.exceptions.ConnectionError:
+            self.handleError()
+        return r
+
+    def get_filter_info(self, filter_id):
+        """ gets a filter by id """
+        try:
+            uri = (API_URI['filter_id'] % locals())
+            r = requests.get(self.host + uri, headers=self.headers)
+            log_api('GET', uri, r)
+        except requests.exceptions.ConnectionError:
+            self.handleError()
+        return r
+
+    def patch_filter(self, filter_id, filename):
+        """ update a filter by id """
+        try:
+            uri = (API_URI['filter_id'] % locals())
+            params = {'id': filter_id}
+            content = open(filename, 'rb')
+            files = {'content': (filename, content)}
+            r = requests.patch(self.host + uri, headers=self.headers, data=params, files=files)
+            log_api('PATCH', uri, r)
+        except requests.exceptions.ConnectionError:
+            self.handleError()
+        return r
+
+    def post_filter(self, filename, filter_type='FPRM'):
+        """ post a filter """
+        try:
+            uri = API_URI['filter']
+            content = open(filename, 'rb')
+            files = {'content': (filename, content)}
+            if filter_type is None:
+                extension = os.path.splitext(filename)[1]
+                filter_type = extension[1:]
+            filter_type = filter_type.lower()
+            name = os.path.splitext(filename)[0] #remove extension from filename
+            params = {'name': name, 'type': filter_type}
+            r = requests.post(self.host + uri, headers=self.headers, data=params, files=files)
+            log_api('PATCH', uri, r)
+        except requests.exceptions.ConnectionError:
+            self.handleError()
+        return r
+
+    def delete_filter(self, filter_id):
+        """ deletes a filter """
+        try:
+            uri = (API_URI['filter_id'] % locals())
+            r = requests.delete(self.host + uri, headers=self.headers)
+            log_api('DELETE', uri, r)
+        except requests.exceptions.ConnectionError:
+            self.handleError()
+        return r
+
     def get_project_info(self, community_id):
         response = self.list_projects(community_id)
         info = {}
