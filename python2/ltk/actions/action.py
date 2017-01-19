@@ -1206,9 +1206,10 @@ class Action:
             logger.info('Something went wrong trying to download the local translation')
 
     def delete_local_path(self, path, message=None):
-        path = self.norm_path(path)
-        message = '{0} has been deleted locally.'.format(path) if not message else message
+        norm_path = self.norm_path(path)
+        message = '{0} has been deleted locally.'.format(norm_path) if not message else message
         try:
+            print(path)
             os.remove(path)
             logger.info(message)
         except OSError:
