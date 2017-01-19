@@ -491,7 +491,7 @@ def filters():
 @click.option('-t', '--type', 'filter_type', type=click.Choice(['FPRM','SRX','ITS']), help="The filter type being added.  Must be one of the following: FPRM, SRX, ITS.  When not explicitly specified, the file extension is used to attempt to detect the type.")
 def filter_add(filename, filter_type):
     """Create filter on Lingotek."""
-    action = actions.Action(os.getcwd())
+    action = filters_action.FiltersAction(os.getcwd())
     init_logger(action.path)
     action.filter_add_action(filename, filter_type)
 
@@ -500,7 +500,7 @@ def filter_add(filename, filter_type):
 @click.argument('filename')
 def filter_add(filter_id, filename):
     """Update filter on Lingotek."""
-    action = actions.Action(os.getcwd())
+    action = filters_action.FiltersAction(os.getcwd())
     init_logger(action.path)
     action.filter_save_action(filter_id, filename)
 
@@ -511,7 +511,7 @@ def filter_add(filter_id, filename):
 @click.option('--overwrite',flag_value=True, help="Overwrite local file when it already exists.")
 def filter_get(filter_id, filename, info, overwrite):
     """Retrieve the filter specified by FILTER_ID from Lingotek and store it in the current working directly as the title (or as as the optional_filename when specified) of the filter"""
-    action = actions.Action(os.getcwd())
+    action = filters_action.FiltersAction(os.getcwd())
     init_logger(action.path)
     if info == True:
         action.filter_info_action(filter_id)
@@ -521,7 +521,7 @@ def filter_get(filter_id, filename, info, overwrite):
 @filters.command(name="list")
 def filter_list():
     """List default and custom filters."""
-    action = actions.Action(os.getcwd())
+    action = filters_action.FiltersAction(os.getcwd())
     init_logger(action.path)
     action.filter_list_action()
 
@@ -529,7 +529,7 @@ def filter_list():
 @click.argument('filter_id')
 def filter_rm(filter_id):
     """Remove the filter specified by FILTER_ID."""
-    action = actions.Action(os.getcwd())
+    action = filters_action.FiltersAction(os.getcwd())
     init_logger(action.path)
     action.filter_rm_action(filter_id)
 

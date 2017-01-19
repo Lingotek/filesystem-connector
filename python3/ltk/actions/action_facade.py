@@ -842,7 +842,6 @@ class ActionFacade:
             log_error(self.error_file_name, e)
             logger.warning("Error on requesting status: "+str(e))
 
->>>>>>> Added ltk filters full functionality:python3/ltk/actions.py
     def added_folder_of_file(self, file_path):
         folders = self.folder_manager.get_file_names()
         if not folders:
