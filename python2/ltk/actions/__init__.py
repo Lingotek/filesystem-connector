@@ -1,8 +1,13 @@
 __all__ = [ "action",
             "action_facade",
-            "request_action",
             "add_action",
-            "push_action",
+            "clean_action",
             "download_action",
-            "rm_action"
+            "filters_action",
+            "pull_action",
+            "push_action",
+            "request_action",
+            "rm_action",
+            "status_action",
+            #"move_action",
           ]
