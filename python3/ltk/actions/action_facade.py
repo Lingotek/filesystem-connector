@@ -17,6 +17,7 @@ from ltk.actions import action
 from ltk.actions import add_action
 from ltk.actions import push_action
 from ltk.actions import request_action
+from ltk.actions import download_action
 from ltk.apicalls import ApiCalls
 from ltk.utils import *
 from ltk.managers import DocumentManager, FolderManager
@@ -767,6 +768,7 @@ class ActionFacade:
 
     def pull_action(self, locale_code, locale_ext, no_ext, auto_format):
         try:
+            download = download_action.DownloadAction(os.getcwd())
             if 'clone' in self.download_option and not locale_ext or (no_ext and not locale_ext):
                 locale_ext = False
             else:
@@ -779,16 +781,16 @@ class ActionFacade:
                             locales = entry['locales']
                             for locale in locales:
                                 locale = locale.replace('_','-')
-                                self.download_action(entry['id'], locale, auto_format, locale_ext)
+                                download.download_action(entry['id'], locale, auto_format, locale_ext)
                         except KeyError:
-                            self.download_action(entry['id'], None, auto_format, locale_ext)
+                            download.download_action(entry['id'], None, auto_format, locale_ext)
                 else:
                     logger.info("No documents have been added")
             else:
                 document_ids = self.doc_manager.get_doc_ids()
                 if document_ids:
                     for document_id in document_ids:
-                        self.download_action(document_id, locale_code, auto_format, locale_ext)
+                        download.download_action(document_id, locale_code, auto_format, locale_ext)
                 else:
                     logger.info("No documents have been added")
         except Exception as e:
