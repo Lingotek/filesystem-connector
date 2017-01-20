@@ -5,5 +5,6 @@ __all__ = [ "action",
             "push_action",
             "download_action",
             "pull_action",
-            "clean_action"
+            "clean_action",
+            "init_action"
           ]

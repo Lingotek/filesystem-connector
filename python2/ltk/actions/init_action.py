@@ -24,10 +24,10 @@ class InitAction():
                     else:
                         api = ApiCalls(host, '')
                         # Python 2
-                        # username = raw_input('Username: ')
+                        username = raw_input('Username: ')
                         # End Python 2
                         # Python 3
-                        username = input('Username: ')
+#                         username = input('Username: ')
                         # End Python 3
                         password = getpass.getpass()
                         login_host = 'https://sso.lingotek.com' if 'myaccount' in host else 'https://cmssso.lingotek.com'
@@ -102,10 +102,10 @@ class InitAction():
                         while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
                             prompt_message = 'Would you like to use an existing Lingotek project? [Y/n]: '
                             # Python 2
-                            # confirm = raw_input(prompt_message)
+                            confirm = raw_input(prompt_message)
                             # End Python 2
                             # Python 3
-                            confirm = input(prompt_message)
+#                             confirm = input(prompt_message)
                             # End Python 3
                         if not confirm or not confirm in ['n', 'N', 'no', 'No']:
                             project_id, project_name = display_choice('project', project_info)
@@ -118,26 +118,26 @@ class InitAction():
                             return
                     except KeyboardInterrupt:
                         # Python 2
-                        # logger.info("\nInit canceled")
+                        logger.info("\nInit canceled")
                         # End Python 2
                         # Python 3
-                        logger.error("\nInit canceled")
+#                         logger.error("\nInit canceled")
                         # End Python 3
                         return
                 prompt_message = "Please enter a new Lingotek project name: %s" % folder_name + chr(8) * len(folder_name)
                 try:
                     # Python 2
-                    # project_name = raw_input(prompt_message)
+                    project_name = raw_input(prompt_message)
                     # End Python 2
                     # Python 3
-                    project_name = input(prompt_message)
+#                     project_name = input(prompt_message)
                     # End Python 3
                 except KeyboardInterrupt:
                     # Python 2
-                    # logger.info("\nInit canceled")
+                    logger.info("\nInit canceled")
                     # End Python 2
                     # Python 3
-                    logger.error("\nInit canceled")
+#                     logger.error("\nInit canceled")
                     # End Python 3
                     return
                 if not project_name:
@@ -157,10 +157,10 @@ class InitAction():
                 config_file.close()
         except KeyboardInterrupt:
             # Python 2
-            # logger.info("\nInit canceled")
+            logger.info("\nInit canceled")
             # End Python 2
             # Python 3
-            logger.error("\nInit canceled")
+#             logger.error("\nInit canceled")
             # End Python 3
             return
         except Exception as e:
