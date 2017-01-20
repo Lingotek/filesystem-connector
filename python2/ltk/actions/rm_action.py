@@ -82,6 +82,7 @@ class RmAction(Action):
                 logger.error("Error on remove: "+str(e))
 
     def rm_clone(self, file_name):
+        trans_files = []
         entry = self.doc_manager.get_doc_by_prop("file_name", file_name)
         if entry:
             if 'locales' in entry and entry['locales']:
@@ -98,6 +99,8 @@ class RmAction(Action):
                     source_path = os.path.join(self.path,os.path.dirname(source_file_name))
 
                     trans_files.extend(get_translation_files(file_name, download_root, self.download_option, self.doc_manager))
+
+        return trans_files
 
     def rm_document(self, file_name, useID, force, doc_name=None, is_directory=False):
         try:
@@ -133,10 +136,10 @@ class RmAction(Action):
                         #delete local translation file(s) for the document being deleted
                         trans_files = []
                         if 'clone' in self.download_option:
-                            self.rm_clone(file_name)
+                            trans_files = self.rm_clone(file_name)
 
                         elif 'folder' in self.download_option:
-                            self.rm_folder(file_name)
+                            trans_files = self.rm_folder(file_name)
 
                         elif 'same' in self.download_option:
                             download_path = self.path
@@ -155,6 +158,7 @@ class RmAction(Action):
             logger.error("Error on removing document "+str(file_name)+": "+str(e))
 
     def rm_folder(self, file_name):
+        trans_files = []
         entry = self.doc_manager.get_doc_by_prop("file_name", file_name)
         if entry:
             if 'locales' in entry and entry['locales']:
@@ -170,6 +174,7 @@ class RmAction(Action):
 
                     download_path = os.path.join(self.path,download_path)
                     trans_files.extend(get_translation_files(file_name, download_path, self.download_option, self.doc_manager))
+        return trans_files
 
     def rm_remote(self, force):
         response = self.api.list_documents(self.project_id)
