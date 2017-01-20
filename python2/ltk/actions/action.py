@@ -1164,58 +1164,6 @@ def is_initialized(project_path):
     return False
 
 
-def reinit(host, project_path, delete, reset):
-    if is_initialized(project_path) and not reset:
-        logger.warning('This project is already initialized!')
-        if not delete:
-            return False
-        try:
-            confirm = 'not confirmed'
-            while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-                prompt_message = "Are you sure you want to delete the current project? " + \
-                    "This will also delete the project in your community. [Y/n]: "
-                # Python 2
-                confirm = raw_input(prompt_message)
-                # End Python 2
-                # Python 3
-#                 confirm = input(prompt_message)
-                # End Python 3
-        except KeyboardInterrupt:
-            # Python 2
-            logger.info("\nRenit canceled")
-            # End Python 2
-            # Python 3
-#             logger.error("\nReinit canceled")
-            # End Python 3
-            return
-        # confirm if deleting existing folder
-        if not confirm or confirm in ['n', 'N']:
-            return False
-        else:
-            # delete the corresponding project online
-            logger.info('Deleting old project folder and creating new one...')
-            config_file_name = os.path.join(project_path, CONF_DIR, CONF_FN)
-            if os.path.isfile(config_file_name):
-                old_config = ConfigParser()
-                old_config.read(config_file_name)
-                project_id = old_config.get('main', 'project_id')
-                access_token = old_config.get('main', 'access_token')
-                api = ApiCalls(host, access_token)
-                response = api.delete_project(project_id)
-                if response.status_code != 204 and response.status_code != 404:
-                    try:
-                        error = response.json()['messages'][0]
-                        raise exceptions.RequestFailedError(error)
-                    except (AttributeError, IndexError):
-                        raise exceptions.RequestFailedError("Failed to delete and re-initialize project")
-                # delete existing folder
-                to_remove = os.path.join(project_path, CONF_DIR)
-                shutil.rmtree(to_remove)
-            else:
-                raise exceptions.ResourceNotFound("Cannot find config file, please re-initialize project")
-            return access_token
-    return True
-
 def choice_mapper(info):
     mapper = {}
     import operator
