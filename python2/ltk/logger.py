@@ -11,6 +11,8 @@ logging.addLevelName(API_RESPONSE_LOG_LEVEL, 'API Response')
 def log_api(self, message, *args, **kwargs):
     if self.isEnabledFor(API_LOG_LEVEL):
         self._log(API_LOG_LEVEL, message, args, **kwargs)
+        handler = logger.handlers[0]
+        handler.close()
 
 def log_api_response(self, message, *args, **kwargs):
     if self.isEnabledFor(API_RESPONSE_LOG_LEVEL):
