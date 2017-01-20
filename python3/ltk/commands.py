@@ -173,8 +173,8 @@ def config(**kwargs):
 def add(file_names, **kwargs):
     """ Add files and folders for upload to Lingotek.  Fileglobs (e.g. *.txt) can be used to add all matching files and/or folders. Added folders will automatically add the new files added or created inside of them.  """
     try:
-        add = add_action.AddAction(os.getcwd())
-        init_logger(add.path)
+        action = add_action.AddAction(os.getcwd())
+        init_logger(action.path)
 
         file_names = remove_powershell_formatting(file_names)
 
@@ -183,7 +183,7 @@ def add(file_names, **kwargs):
                 temp = remove_powershell_formatting(kwargs[f])
                 kwargs[f] = temp
 
-        add.add_action(file_names, **kwargs)
+        action.add_action(file_names, **kwargs)
     except (UninitializedError, RequestFailedError, ResourceNotFound, AlreadyExistsError) as e:
         print_log(e)
         logger.error(e)
@@ -194,9 +194,9 @@ def push():
     """ Sends updated content to Lingotek for documents that have been added """
     try:
         add = add_action.AddAction(os.getcwd())
-        push = push_action.PushAction(add, os.getcwd())
-        init_logger(push.path)
-        push.push_action()
+        action = push_action.PushAction(add, os.getcwd())
+        init_logger(action.path)
+        action.push_action()
     except UninitializedError as e:
         print_log(e)
         logger.error(e)
@@ -214,15 +214,15 @@ def request(doc_name, path, locales, to_delete, due_date, workflow):
     """ Add targets to document(s) to start translation; defaults to the entire project. If no locales are specified, Filesystem Connector
         will look for target watch locales set in ltk config. Use ltk list -l to see possible locales. """
     try:
-        request = request_action.RequestAction(os.getcwd(), doc_name, path, locales, to_delete, due_date, workflow)
-        init_logger(request.path)
+        action = request_action.RequestAction(os.getcwd(), doc_name, path, locales, to_delete, due_date, workflow)
+        init_logger(action.path)
         if locales and isinstance(locales,str):
             locales = [locales]
 
         doc_name = remove_powershell_formatting(doc_name)
         path = remove_powershell_formatting(path)
 
-        request.target_action()
+        action.target_action()
     except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
@@ -268,15 +268,15 @@ def list_ids(id_type, hide_docs, title):
 def status(**kwargs):
     """ Gets the status of a specific document or all documents """
     try:
-        status = status_action.StatusAction(os.getcwd())
-        init_logger(status.path)
+        action = status_action.StatusAction(os.getcwd())
+        init_logger(action.path)
 
         for f in kwargs:
             if kwargs[f]:
                 temp = remove_powershell_formatting(kwargs[f])
                 kwargs[f] = temp
 
-        status.get_status(**kwargs)
+        action.get_status(**kwargs)
     except (UninitializedError, ResourceNotFound) as e:
         print_log(e)
         logger.error(e)
@@ -292,10 +292,10 @@ def status(**kwargs):
 def download(auto_format, locales, locale_ext, no_ext, file_names):
     """ Downloads translated content specified by filename for specified locales, or all locales if none are specified. Change download options and folders using ltk config."""
     try:
-        download = download_action.DownloadAction(os.getcwd())
-        init_logger(download.path)
+        action = download_action.DownloadAction(os.getcwd())
+        init_logger(action.path)
         for name in file_names:
-            download.download_by_path(name, locales, locale_ext, no_ext, auto_format)
+            action.download_by_path(name, locales, locale_ext, no_ext, auto_format)
 
     except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
         print_log(e)
@@ -312,13 +312,13 @@ def pull(auto_format, locale_ext, no_ext, locales):
     """ Pulls translations for all added documents for all locales or by specified locales """
     try:
         download = download_action.DownloadAction(os.getcwd())
-        pull = pull_action.PullAction(os.getcwd(), download)
-        init_logger(pull.path)
+        action = pull_action.PullAction(os.getcwd(), download)
+        init_logger(action.path)
         if locales:
             for locale in locales:
-                pull.pull_translations(locale, locale_ext, no_ext, auto_format)
+                action.pull_translations(locale, locale_ext, no_ext, auto_format)
         else:
-            pull.pull_translations(None, locale_ext, no_ext, auto_format)
+            action.pull_translations(None, locale_ext, no_ext, auto_format)
     except UninitializedError as e:
         print_log(e)
         logger.error(e)
@@ -364,15 +364,15 @@ def mv(source_path, destination_path):
     """
     try:
         # action = actions.Action(os.getcwd())
-        move = move_action.MoveAction(os.getcwd())
-        init_logger(move.path)
+        action = move_action.MoveAction(os.getcwd())
+        init_logger(action.path)
 
         source_path = remove_powershell_formatting(source_path)
         #print("Source path " + str(source_path))
         destination_path = remove_powershell_formatting(destination_path)
         #print("Destination path "+str(destination_path))
 
-        move.mv_action(source_path, destination_path)
+        action.mv_action(source_path, destination_path)
     except(UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
@@ -418,13 +418,13 @@ def clean(force, dis_all, file_paths):
     Enter file or directory names to remove local associations of specific files or directories.
     """
     try:
-        clean = clean_action.CleanAction(os.getcwd())
-        init_logger(clean.path)
+        action = clean_action.CleanAction(os.getcwd())
+        init_logger(action.path)
 
         if len(file_paths) > 0:
             file_paths = remove_powershell_formatting(file_paths)
 
-        clean.clean_action(force, dis_all, file_paths)
+        action.clean_action(force, dis_all, file_paths)
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
