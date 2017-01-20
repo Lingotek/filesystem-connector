@@ -333,6 +333,7 @@ class Action:
                 return locale
         return False
 
+<<<<<<< HEAD
     def config_action(self, **kwargs):
         try:
             config_file_name, conf_parser = self.init_config_file()
@@ -566,12 +567,52 @@ class Action:
                     'Default Source Locale: {6}\nClone Option: {7}\nDownload Folder: {8}\nTarget Locales: {9}\nTarget Locale Folders: {10}\nGit Auto-commit: {11}\nAppend Option: {12}'.format(
                     self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.clone_option,
                     download_dir, watch_locales, locale_folders_str, git_output, self.append_option))
+=======
+    def push_action(self):
+        try:
+            entries = self.doc_manager.get_all_entries()
+            updated = False
+            folders = self.folder_manager.get_file_names()
+            if len(folders):
+                for folder in folders:
+                    matched_files = get_files(folder)
+                    if matched_files:
+                        for file_name in matched_files:
+                            try:
+                                relative_path = self.norm_path(file_name)
+                                title = os.path.basename(relative_path)
+                                if self.doc_manager.is_doc_new(relative_path) and not self.doc_manager.is_translation(relative_path, title, matched_files, self):
+                                    self.add_document(file_name, title)
+                            except json.decoder.JSONDecodeError as e:
+                                log_error(self.error_file_name, e)
+                                logger.error("JSON error on adding document.")
+            for entry in entries:
+                if not self.doc_manager.is_doc_modified(entry['file_name'], self.path):
+                    continue
+                response = self.api.document_update(entry['id'], os.path.join(self.path, entry['file_name']))
+                if response.status_code != 202:
+                    raise_error(response.json(), "Failed to update document {0}".format(entry['name']), True)
+                    return updated
+                else:
+                    updated = True
+                    logger.info('Updated ' + entry['name'])
+                    self._update_document(entry['file_name'])
+            if not updated:
+                logger.info('All documents up-to-date with Lingotek Cloud. ')
+
+            return updated
+
+>>>>>>> int-1751
         except Exception as e:
             log_error(self.error_file_name, e)
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
                 logger.error("Error connecting to Lingotek's TMS")
             else:
+<<<<<<< HEAD
                 logger.error("Error on config: "+str(e))
+=======
+                logger.error("Error on push: "+str(e))
+>>>>>>> int-1751
 
     def update_document_action(self, file_name, title=None, **kwargs):
         try:
