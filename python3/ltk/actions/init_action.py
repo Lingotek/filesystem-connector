@@ -222,6 +222,10 @@ class InitAction():
             return v, mapper[choice][v]
 
     def reinit(self, host, project_path, delete, reset):
+<<<<<<< HEAD
+=======
+        print("here")
+>>>>>>> action-cleanup
         if is_initialized(project_path) and not reset:
             logger.warning('This project is already initialized!')
             if not delete:
