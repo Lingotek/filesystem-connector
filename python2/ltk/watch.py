@@ -337,9 +337,14 @@ class WatchAction(Action):
                         documents_downloaded = True
                         logger.info('Translation completed ({0} - {1})'.format(doc_id, locale))
                         if self.locale_delimiter:
+                            locale = locale.replace('_','-')
                             self.download.download_action(doc_id, locale, False, False)
                         else:
-                            self.download.download_action(doc_id, locale, False)
+                            locale = locale.replace('_','-')
+                            if self.clone_option == 'on':
+                                self.download.download_action(doc_id, locale, False, False)
+                            else:
+                                self.download.download_action(doc_id, locale, False)
                     elif progress != 100 and locale in downloaded:
                         # print("Locale "+str(locale)+" for document "+doc['name']+" is no longer completed.")
                         self.doc_manager.remove_element_in_prop(doc_id, 'downloaded', locale)
