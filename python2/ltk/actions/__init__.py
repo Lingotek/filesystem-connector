@@ -1,5 +1,4 @@
 __all__ = [ "action",
-            "action_facade",
             "add_action",
             "clean_action",
             "clone_action",
