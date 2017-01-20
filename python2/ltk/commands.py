@@ -139,7 +139,7 @@ def init(host, access_token, path, project_name, workflow_id, locale, browserles
 def config(**kwargs):
     """ View or change local configuration """
     try:
-        action = action_facade.ActionFacade(os.getcwd())
+        action = config_action.ConfigAction(os.getcwd())
         init_logger(action.path)
         for f in kwargs:
             if kwargs[f]:
