@@ -21,6 +21,7 @@ from ltk.actions import request_action
 from ltk.actions import download_action
 
 from ltk.actions import config_action
+from ltk.actions import list_action
 from ltk.apicalls import ApiCalls
 from ltk.utils import *
 from ltk.managers import DocumentManager, FolderManager
@@ -62,6 +63,7 @@ class ActionFacade:
         self.uploadWaitTime = 300
         self.add = add_action.AddAction(path)
         self.config = config_action.ConfigAction(path)
+        self.list = list_action.ListAction(path)
 
     def _is_initialized(self):
         actual_path = find_conf(self.path)
@@ -343,6 +345,10 @@ class ActionFacade:
     def config_action(self, **kwargs):
         self.config.config_action(**kwargs)
 
+    def list_action(self, **kwargs):
+        self.list.list_action(**kwargs)
+
+
     def push_action(self):
         try:
             entries = self.doc_manager.get_all_entries()
@@ -427,64 +433,108 @@ class ActionFacade:
             locale_info = []
         self.doc_manager.update_document('locales', locale_info, document_id)
 
-    def list_ids_action(self, hide_docs, title=False):
+    # def request_action
+    def target_action(self, document_name, path, entered_locales, to_delete, due_date, workflow, document_id=None, surpressMessage=False):
         try:
-            """ lists ids of list_type specified """
-            folders = self.folder_manager.get_file_names()
-            if len(folders):
-                underline("Folder path")
-                for folder in folders:
-                    if title:
-                        print(folder)
-                    else:
-                        print(self.get_relative_path(folder))
-                if hide_docs:
-                    return
-                print("")
-            elif hide_docs:
-                print("No added folders")
-                return
-            ids = []
-            titles = []
+            is_successful = False
             locales = []
-            max_length = 0
-            entries = self.doc_manager.get_all_entries()
-            for entry in entries:
-                # if entry['file_name'].startswith(cwd.replace(self.path, '')):
-                ids.append(entry['id'])
-                try:
-                    if title:
-                        name = entry['name']
+            if entered_locales:
+                for locale in entered_locales:
+                    locales.extend(locale.split(','))
+                locales = get_valid_locales(self.api, locales)
+            elif self.watch_locales:
+                locales = self.watch_locales
+            elif surpressMessage:
+                # don't print out anything when on watch
+                return False
+            else:
+                logger.info('No locales have been set. Locales can be passed in as arguments or set as target locales in ltk config.')
+                return False
+            if path:
+                document_id = None
+                document_name = None
+            change_db_entry = True
+            if to_delete:
+                if not entered_locales:
+                    logger.error("Please enter a target locale to delete")
+                    return
+                expected_code = 204
+                failure_message = 'Failed to delete target'
+                info_message = 'Deleted locale'
+            else:
+                expected_code = 201
+                failure_message = 'Failed to add target'
+                info_message = 'Added target'
+            # print("doc_name: "+str(document_name))
+            docs = []
+            if not path and not document_name and not document_id:
+                docs = self.doc_manager.get_all_entries()
+            elif path:
+                docs = self.get_docs_in_path(path)
+            else:
+                # todo: document name or file name? since file name will be relative to root
+                # todo: clean this code up some
+                if document_id:
+                    entry = self.doc_manager.get_doc_by_prop('id', document_id)
+                    if not entry:
+                        logger.error('Document specified for target doesn\'t exist: {0}'.format(document_id))
+                        return
+                elif document_name:
+                    entry = self.doc_manager.get_doc_by_prop('name', document_name)
+                    if not entry:
+                        logger.error('Document name specified for target doesn\'t exist: {0}'.format(document_name))
+                        return
+                        # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
+                if not entry:
+                    logger.error('Could not add target. File specified is invalid.')
+                    return
+                docs.append(entry)
+            if len(docs) == 0:
+                if path and len(path) > 0:
+                    logger.info("File "+str(path)+" not found")
+                else:
+                    logger.info("No documents to request a target locale")
+            for entry in docs:
+                document_id = entry['id']
+                document_name = entry['file_name']
+                for locale in locales:
+                    locale = locale.replace('_','-')
+                    response = self.api.document_add_target(document_id, locale, workflow, due_date) if not to_delete \
+                        else self.api.document_delete_target(document_id, locale)
+                    if response.status_code != expected_code:
+                        if (response.json() and response.json()['messages']):
+                            response_message = response.json()['messages'][0]
+                            print(response_message.replace(document_id, document_name + ' (' + document_id + ')'))
+                            if 'not found' in response_message:
+                                return
+                        raise_error(response.json(), '{message} {locale} for document {name}'.format(message=failure_message, locale=locale, name=document_name), True)
+                        if not 'already exists' in response_message:
+                            change_db_entry = False
+                        # self.update_doc_locales(document_id)
+                        continue
+                    logger.info('{message} {locale} for document {name}'.format(message=info_message,
+                                                                                locale=locale, name=document_name))
+                remote_locales = self.get_doc_locales(document_id, document_name) # Get locales from Lingotek Cloud
+                locales_to_add = []
+                if change_db_entry:
+                    # Make sure that the locales that were just added are added to the database as well as the previous remote locales (since they were only just recently added to Lingotek's system)
+                    if to_delete and entered_locales:
+                        locales_to_add = locales
                     else:
-                        name = self.get_relative_path(self.norm_path(entry['file_name']))
-                        # print("relative path: "+name)
-                    if len(name) > max_length:
-                        max_length = len(name)
-                    titles.append(name)
-                except (IndexError, KeyError) as e:
-                    log_error(self.error_file_name, e)
-                    titles.append("        ")
-                try:
-                    locales.append(entry['locales'])
-                except KeyError:
-                    locales.append([])
-            if not ids:
-                print ('No local documents')
-                return
-            if max_length > 90:
-                max_length = 90
-            underline('%-*s' % (max_length,'Filename') + ' %-38s' % 'Lingotek ID' + 'Locales')
-            for i in range(len(ids)):
-                title = titles[i]
-                if len(title) > max_length:
-                    title = title[(len(titles[i])-30):]
-                info = '%-*s' % (max_length,title) + ' %-38s' % ids[i] + ', '.join(locale.replace('_','-') for locale in locales[i])
-                print (info)
+                        if remote_locales:
+                            for locale in remote_locales:
+                                if locale not in locales:
+                                    locales_to_add.append(locale)
+                    self._target_action_db(to_delete, locales_to_add, document_id)
+                    is_successful = True
+            return is_successful
+>>>>>>> int-1783
         except Exception as e:
             log_error(self.error_file_name, e)
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
                 logger.error("Error connecting to Lingotek's TMS")
             else:
+<<<<<<< HEAD
                 logger.error("Error on list: "+str(e))
 
     def list_remote_action(self):
@@ -557,6 +607,9 @@ class ActionFacade:
         print("-----------------------------------------------------------")
         for k,v in sorted(format_list.items()):
             print('%-30s' % k + '%s' % ' '.join(v))
+=======
+                logger.error("Error on request: "+str(e))
+>>>>>>> int-1783
 
     def print_status(self, title, progress):
         print ('{0}: {1}%'.format(title, progress))

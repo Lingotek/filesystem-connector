@@ -216,7 +216,7 @@ class ConfigAction(Action):
             locale = folder[0].replace("-","_")
             if not is_valid_locale(self.api, locale):
                 logger.warning(str(locale+' is not a valid locale. See "ltk list -l" for the list of valid locales'))
-                print_config = Falsef
+                print_config = False
                 continue
             if folder[1] == '--none':
                 folders_count -= 1
