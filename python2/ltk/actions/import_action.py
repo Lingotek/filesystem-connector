@@ -4,7 +4,6 @@ class ImportAction(Action):
     def __init__(self, path):
         Action.__init__(self, path)
 
-
     def get_import_ids(self,info):
         mapper = choice_mapper(info)
         chosen_ids = []
