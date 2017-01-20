@@ -6,7 +6,7 @@ from ltk.exceptions import RequestFailedError,ConnectionFailed
 from ltk.logger import logger
 import sys, os
 # Python 2
-# import urllib as parse
+# import urlparse as parse
 # End Python 2
 # Python 3
 import urllib.parse as parse

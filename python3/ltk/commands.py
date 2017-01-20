@@ -111,7 +111,8 @@ def init(host, access_token, path, project_name, workflow_id, locale, browserles
         if not project_name:
             project_name = os.path.basename(os.path.normpath(path))
         init_logger(path)
-        action_facade.init_action(host, access_token, path, project_name, workflow_id, locale, browserless, delete, reset)
+        init = init_action.InitAction()
+        init.init_action(host, access_token, path, project_name, workflow_id, locale, browserless, delete, reset)
     except (ResourceNotFound, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
