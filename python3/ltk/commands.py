@@ -241,7 +241,7 @@ def request(doc_name, path, locales, to_delete, due_date, workflow):
 def list(**kwargs):
     """ Shows docs, workflows, locales, formats, or filters. By default lists added folders and docs. """
     try:
-        action = action_facade.ActionFacade(os.getcwd())
+        action = list_action.ListAction(os.getcwd())
         init_logger(action.path)
         action.list_action(**kwargs)
 
