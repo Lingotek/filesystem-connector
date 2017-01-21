@@ -6,7 +6,7 @@ python_version = sys.version
 # #    print('Python 3 is required to run this version of the Lingotek Filesystem connector.\n\nFor other versions and troubleshooting, see: https://github.com/lingotek/filesystem-connector')
 # #    exit()
 # End Python 3
-from ltk import actions
+from ltk.actions import *
 import os
 from ltk.exceptions import UninitializedError, ResourceNotFound, RequestFailedError, AlreadyExistsError
 from ltk.constants import LOG_FN, CONF_DIR
@@ -15,7 +15,6 @@ from ltk.logger import logger, API_LOG_LEVEL, API_RESPONSE_LOG_LEVEL, CustomForm
 
 from ltk import __version__
 from ltk.watch import WatchAction
-from ltk.import_action import ImportAction
 
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -112,7 +111,8 @@ def init(host, access_token, path, project_name, workflow_id, locale, browserles
         if not project_name:
             project_name = os.path.basename(os.path.normpath(path))
         init_logger(path)
-        actions.init_action(host, access_token, path, project_name, workflow_id, locale, browserless, delete, reset)
+        init = init_action.InitAction()
+        init.init_action(host, access_token, path, project_name, workflow_id, locale, browserless, delete, reset)
     except (ResourceNotFound, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
@@ -139,7 +139,7 @@ def init(host, access_token, path, project_name, workflow_id, locale, browserles
 def config(**kwargs):
     """ View or change local configuration """
     try:
-        action = actions.Action(os.getcwd())
+        action = config_action.ConfigAction(os.getcwd())
         init_logger(action.path)
         for f in kwargs:
             if kwargs[f]:
@@ -174,7 +174,7 @@ def config(**kwargs):
 def add(file_names, **kwargs):
     """ Add files and folders for upload to Lingotek.  Fileglobs (e.g. *.txt) can be used to add all matching files and/or folders. Added folders will automatically add the new files added or created inside of them.  """
     try:
-        action = actions.Action(os.getcwd())
+        action = add_action.AddAction(os.getcwd())
         init_logger(action.path)
 
         file_names = remove_powershell_formatting(file_names)
@@ -190,12 +190,12 @@ def add(file_names, **kwargs):
         logger.error(e)
         return
 
-
 @ltk.command(short_help="Sends updated content to Lingotek for documents that have been added")
 def push():
     """ Sends updated content to Lingotek for documents that have been added """
     try:
-        action = actions.Action(os.getcwd())
+        add = add_action.AddAction(os.getcwd())
+        action = push_action.PushAction(add, os.getcwd())
         init_logger(action.path)
         action.push_action()
     except UninitializedError as e:
@@ -215,7 +215,7 @@ def request(doc_name, path, locales, to_delete, due_date, workflow):
     """ Add targets to document(s) to start translation; defaults to the entire project. If no locales are specified, Filesystem Connector
         will look for target watch locales set in ltk config. Use ltk list -l to see possible locales. """
     try:
-        action = actions.Action(os.getcwd())
+        action = request_action.RequestAction(os.getcwd(), doc_name, path, locales, to_delete, due_date, workflow)
         init_logger(action.path)
         if locales and isinstance(locales,str):
             locales = [locales]
@@ -223,7 +223,7 @@ def request(doc_name, path, locales, to_delete, due_date, workflow):
         doc_name = remove_powershell_formatting(doc_name)
         path = remove_powershell_formatting(path)
 
-        action.target_action(doc_name, path, locales, to_delete, due_date, workflow)
+        action.target_action()
     except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
@@ -238,23 +238,12 @@ def request(doc_name, path, locales, to_delete, due_date, workflow):
 @click.option('-f', '--formats', 'id_type', flag_value='format', help='List supported formats')
 @click.option('-r', '--remote', 'id_type', flag_value='remote', help='List all project documents on Lingotek Cloud')
 @click.option('--filters', 'id_type', flag_value='filter', help='List default and custom filters')
-def list_ids(id_type, hide_docs, title):
+def list(**kwargs):
     """ Shows docs, workflows, locales, formats, or filters. By default lists added folders and docs. """
     try:
-        action = actions.Action(os.getcwd())
+        action = list_action.ListAction(os.getcwd())
         init_logger(action.path)
-        if id_type == 'workflow':
-            action.list_workflow_action()
-        elif id_type == 'locale':
-            action.list_locale_action()
-        elif id_type == 'format':
-            action.list_format_action()
-        elif id_type == 'filter':
-            action.list_filter_action()
-        elif id_type == 'remote':
-            action.list_remote_action()
-        else:
-            action.list_ids_action(hide_docs, title)
+        action.list_action(**kwargs)
 
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
@@ -269,7 +258,7 @@ def list_ids(id_type, hide_docs, title):
 def status(**kwargs):
     """ Gets the status of a specific document or all documents """
     try:
-        action = actions.Action(os.getcwd())
+        action = status_action.StatusAction(os.getcwd())
         init_logger(action.path)
 
         for f in kwargs:
@@ -277,8 +266,7 @@ def status(**kwargs):
                 temp = remove_powershell_formatting(kwargs[f])
                 kwargs[f] = temp
 
-
-        action.status_action(**kwargs)
+        action.get_status(**kwargs)
     except (UninitializedError, ResourceNotFound) as e:
         print_log(e)
         logger.error(e)
@@ -294,7 +282,7 @@ def status(**kwargs):
 def download(auto_format, locales, locale_ext, no_ext, file_names):
     """ Downloads translated content specified by filename for specified locales, or all locales if none are specified. Change download options and folders using ltk config."""
     try:
-        action = actions.Action(os.getcwd())
+        action = download_action.DownloadAction(os.getcwd())
         init_logger(action.path)
         for name in file_names:
             action.download_by_path(name, locales, locale_ext, no_ext, auto_format)
@@ -313,20 +301,21 @@ def download(auto_format, locales, locale_ext, no_ext, file_names):
 def pull(auto_format, locale_ext, no_ext, locales):
     """ Pulls translations for all added documents for all locales or by specified locales """
     try:
-        action = actions.Action(os.getcwd())
+        download = download_action.DownloadAction(os.getcwd())
+        action = pull_action.PullAction(os.getcwd(), download)
         init_logger(action.path)
         if locales:
             for locale in locales:
-                action.pull_action(locale, locale_ext, no_ext, auto_format)
+                action.pull_translations(locale, locale_ext, no_ext, auto_format)
         else:
-            action.pull_action(None, locale_ext, no_ext, auto_format)
+            action.pull_translations(None, locale_ext, no_ext, auto_format)
     except UninitializedError as e:
         print_log(e)
         logger.error(e)
         return
 
 
-@ltk.command(short_help="Disassociates local doc(s) from Lingotek Cloud and deletes the remote copy")
+@ltk.command(name="rm", short_help="Disassociates local doc(s) from Lingotek Cloud and deletes the remote copy")
 @click.argument('file_names', required=False, nargs=-1)
 @click.option('-d', '--directory', flag_value=True, help='Only remove directories, not files inside directories')
 @click.option('-i', '--id', flag_value=True, help='Delete documents with the specified ids (instead of file names) on Lingotek Cloud')
@@ -340,7 +329,7 @@ def rm(file_names, **kwargs):
     If the remote copy should be kept, please use ltk clean.
     """
     try:
-        action = actions.Action(os.getcwd())
+        action = rm_action.RmAction(os.getcwd())
         init_logger(action.path)
         if not file_names and not ('all' in kwargs and kwargs['all']):
             logger.info("Usage: ltk rm [OPTIONS] FILE_NAMES...")
@@ -360,18 +349,18 @@ def rm(file_names, **kwargs):
 @click.argument('destination_path', required=True, nargs=1)
 def mv(source_path, destination_path):
     """
-    Moves specified local doc to a specified destination directory, moving both the file itself and file location stores in the local database.
+    Moves specified local doc to a specified destination directory, moving both the file itself and file location stored in the local database.
     If SOURCE_PATH is a directory, all added files in the directory will be moved.
     """
     try:
         # action = actions.Action(os.getcwd())
-        action = ImportAction(os.getcwd())
+        action = move_action.MoveAction(os.getcwd())
         init_logger(action.path)
 
         source_path = remove_powershell_formatting(source_path)
-        print("Source path " + str(source_path))
+        #print("Source path " + str(source_path))
         destination_path = remove_powershell_formatting(destination_path)
-        print("Destination path "+str(destination_path))
+        #print("Destination path "+str(destination_path))
 
         action.mv_action(source_path, destination_path)
     except(UninitializedError, RequestFailedError) as e:
@@ -395,7 +384,7 @@ def import_command(import_all, force, path):
     # possibly have to patch title in Lingotek Cloud?
     try:
         # action = actions.Action(os.getcwd())
-        action = ImportAction(os.getcwd())
+        action = import_action.ImportAction(os.getcwd())
         init_logger(action.path)
 
         if path != None:
@@ -419,7 +408,7 @@ def clean(force, dis_all, file_paths):
     Enter file or directory names to remove local associations of specific files or directories.
     """
     try:
-        action = actions.Action(os.getcwd())
+        action = clean_action.CleanAction(os.getcwd())
         init_logger(action.path)
 
         if len(file_paths) > 0:
@@ -444,7 +433,7 @@ def clone(folders, copy_root):
     (instead of creating a new folder inside of the locale folder).
     """
     try:
-        action = actions.Action(os.getcwd())
+        action = clone_action.CloneAction(os.getcwd())
         init_logger(action.path)
         if isinstance(folders,str):
             folders = [folders]
@@ -478,6 +467,63 @@ def watch(ignore, delimiter, timeout, no_folders, force_poll): # path, ignore, d
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
+
+
+# Filters (Split into files, see http://bit.ly/2jArTRm)
+
+@click.group(short_help="List, create, update, or delete Lingotek filters")
+def filters():
+    pass
+
+@filters.command(name='add',short_help="Create a filter on Lingotek.")
+@click.argument('filename')
+@click.option('-t', '--type', 'filter_type', type=click.Choice(['FPRM','SRX','ITS']), help="The filter type being added.  Must be one of the following: FPRM, SRX, ITS.  When not explicitly specified, the file extension is used to attempt to detect the type.")
+def filter_add(filename, filter_type):
+    """Create filter on Lingotek."""
+    action = filters_action.FiltersAction(os.getcwd())
+    init_logger(action.path)
+    action.filter_add_action(filename, filter_type)
+
+@filters.command(name='save',short_help="Update filter on Lingotek.")
+@click.argument('filter_id')
+@click.argument('filename')
+def filter_add(filter_id, filename):
+    """Update filter on Lingotek."""
+    action = filters_action.FiltersAction(os.getcwd())
+    init_logger(action.path)
+    action.filter_save_action(filter_id, filename)
+
+@filters.command(name="get", short_help="Retrieve filter contents from Lingotek.")
+@click.argument('filter_id')
+@click.argument('filename', required=False)
+@click.option('--info','info',flag_value=True, help="Retrieve filter info only.")
+@click.option('--overwrite',flag_value=True, help="Overwrite local file when it already exists.")
+def filter_get(filter_id, filename, info, overwrite):
+    """Retrieve the filter specified by FILTER_ID from Lingotek and store it in the current working directly as the title (or as as the optional_filename when specified) of the filter"""
+    action = filters_action.FiltersAction(os.getcwd())
+    init_logger(action.path)
+    if info == True:
+        action.filter_info_action(filter_id)
+    else:
+        action.filter_get_action(filter_id, filename, overwrite)
+
+@filters.command(name="list")
+def filter_list():
+    """List default and custom filters."""
+    action = filters_action.FiltersAction(os.getcwd())
+    init_logger(action.path)
+    action.filter_list_action()
+
+@filters.command(name="rm", short_help="Remove filter from Lingotek.")
+@click.argument('filter_id')
+def filter_rm(filter_id):
+    """Remove the filter specified by FILTER_ID."""
+    action = filters_action.FiltersAction(os.getcwd())
+    init_logger(action.path)
+    action.filter_rm_action(filter_id)
+
+
+ltk.add_command(filters)
 
 
 if __name__ == '__main__':

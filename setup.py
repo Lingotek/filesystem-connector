@@ -18,7 +18,7 @@ setup(
     name='ltk',
     version='0.4.1',
     url='https://github.com/Lingotek/filesystem-connector',
-    description='Command line tool that connects your content to the Lingotek Translation Network',
+    description='The Lingotek Filesystem Connector (ltk) links your files and folders to the Translation Network™',
     long_description=long_description,
     author='Lingotek',
     author_email='integrations@lingotek.com',

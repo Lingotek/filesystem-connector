@@ -1,8 +1,11 @@
 # Using the following encoding: utf-8
 import ctypes
-from ltk.actions import Action
+from ltk.actions.action import Action
+from ltk.actions import add_action
+from ltk.actions import request_action
+from ltk.actions import download_action
 from ltk.logger import logger
-from ltk.utils import map_locale, restart, get_relative_path
+from ltk.utils import map_locale, restart, get_relative_path, log_error
 from ltk.locales import locale_list
 import time
 import requests
@@ -38,7 +41,8 @@ def retry(logger, timeout=5, exec_type=None):
 def is_hidden_file(file_path):
     # todo more robust checking for OSX files that doesn't start with '.'
     name = os.path.basename(os.path.abspath(file_path))
-    return name and (name.startswith('.') or name.startswith('~') or ('.git' in file_path) or has_hidden_attribute(file_path) or name == "4913")
+    return name and (name.startswith('.') or name.startswith('~') or ('.git' in file_path) or has_hidden_attribute(file_path) or
+        ('.ini' in file_path) or ('Thumbs.db' in file_path) or ('ehthumbs.db' in file_path) or name == "4913")
 
 def has_hidden_attribute(file_path):
     """ Detects if a file has hidden attributes """
@@ -74,6 +78,8 @@ class WatchAction(Action):
         self.git_auto = Git_Auto(path)
         self.polled_list = set([])
         self.force_poll = False
+        self.add = add_action.AddAction(path)
+        self.download = download_action.DownloadAction(path)
         # if remote:  # poll lingotek cloud periodically if this option enabled
         # self.remote_thread = threading.Thread(target=self.poll_remote(), args=())
         # self.remote_thread.daemon = True
@@ -124,9 +130,9 @@ class WatchAction(Action):
                 try:
                     # check that document is added in TMS before updating
                     if self.check_remote_doc_exist(fn) and self.doc_manager.is_doc_modified(fn, self.path):
-                        # logger.info('Detected local content modified: {0}'.format(fn))
-                        # self.update_document_action(os.path.join(self.path, fn))
-                        # logger.info('Updating remote content: {0}'.format(fn))
+                        #logger.info('Detected local content modified: {0}'.format(fn))
+                        #self.update_document_action(os.path.join(self.path, fn))
+                        #logger.info('Updating remote content: {0}'.format(fn))
                         self.polled_list.remove(fn)
                         self.update_content(fn)
                 except KeyboardInterrupt:
@@ -161,7 +167,12 @@ class WatchAction(Action):
                 # only add or update the document if it's not a hidden document and it's a new file
                 try:
                     if self.doc_manager.is_doc_new(relative_path) and self.watch_folder:
-                        self.add_document(file_path, title, locale=self.locale)
+                        #testing
+                        #self.polled_list.add(relative_path) #test that this doesn't break other areas of watch
+                        #end testing
+
+                        self.add.add_document(file_path, title, locale=self.locale)
+
                     elif self.doc_manager.is_doc_modified(relative_path, self.path):
                         self.update_content(relative_path)
                     else:
@@ -252,7 +263,8 @@ class WatchAction(Action):
             #         printStr += target+","
             # print(printStr)
             if self.api.get_document(document_id):
-                if self.target_action(title, file_name, locales_to_add, None, None, None, document_id, True) and document_id in self.watch_queue:
+                request = request_action.RequestAction(self.path, title, file_name, locales_to_add, None, None, None, document_id, True)
+                if request.target_action() and document_id in self.watch_queue:
                     self.watch_queue.remove(document_id)
 
     def process_queue(self):
@@ -327,9 +339,14 @@ class WatchAction(Action):
                         documents_downloaded = True
                         logger.info('Translation completed ({0} - {1})'.format(doc_id, locale))
                         if self.locale_delimiter:
-                            self.download_action(doc_id, locale, False, False)
+                            locale = locale.replace('_','-')
+                            self.download.download_action(doc_id, locale, False, False)
                         else:
-                            self.download_action(doc_id, locale, False)
+                            locale = locale.replace('_','-')
+                            if self.clone_option == 'on':
+                                self.download.download_action(doc_id, locale, False, False)
+                            else:
+                                self.download.download_action(doc_id, locale, False)
                     elif progress != 100 and locale in downloaded:
                         # print("Locale "+str(locale)+" for document "+doc['name']+" is no longer completed.")
                         self.doc_manager.remove_element_in_prop(doc_id, 'downloaded', locale)
@@ -368,7 +385,6 @@ class WatchAction(Action):
         watch_paths = None
         if not watch_paths:
             watch_paths = self.folder_manager.get_file_names()
-            print("Watch paths: "+str(watch_paths))
             for i in range(len(watch_paths)):
                 watch_paths[i] = get_relative_path(self.path, watch_paths[i])
         else:
