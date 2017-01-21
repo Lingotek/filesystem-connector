@@ -59,7 +59,7 @@ class CloneAction(Action):
                 if are_added_folders:
                     folder = os.path.join(self.path,folder)
                 # print("folder to be cloned: "+str(folder))
-                folders_map[folder_paths[len(folder_paths)-1]] = get_sub_folders(folder)
+                folders_map[folder_paths[len(folder_paths)-1]] = self.get_sub_folders(folder)
             # print("folders: "+str(folders_map))
             cloned_folders = False
             for locale in self.watch_locales:
@@ -84,3 +84,62 @@ class CloneAction(Action):
         except Exception as e:
             log_error(self.error_file_name, e)
             logger.error("Error on clean: "+str(e))
+
+
+    def get_sub_folders(self, patterns):
+        """ gets all sub-folders matching pattern from root
+            pattern supports any unix shell-style wildcards (not same as RE)
+            returns the relative paths starting from each pattern"""
+
+        cwd = os.getcwd()
+        if isinstance(patterns,str):
+            patterns = [patterns]
+        allPatterns = []
+        if isinstance(patterns,list) or isinstance(patterns,tuple):
+            for pattern in patterns:
+                # print("pattern in loop: "+str(pattern))
+                basename = os.path.basename(pattern)
+                if basename and basename != "":
+                    allPatterns.extend(self.getRegexDirs(pattern,cwd))
+                else:
+                    allPatterns.append(pattern)
+        else:
+            basename = os.path.basename(patterns)
+            if basename and basename != "":
+                allPatterns.extend(self.getRegexDirs(patterns,cwd))
+            else:
+                allPatterns.append(patterns)
+        matched_dirs = []
+        # print("all patterns: "+str(allPatterns))
+        for pattern in allPatterns:
+            path = os.path.abspath(pattern)
+            # print("looking at path "+str(path))
+            # check if pattern contains subdirectory
+            if os.path.exists(path):
+                if os.path.isdir(path):
+                    for root, subdirs, files in os.walk(path):
+                        split_path = root.split('/')
+                        for subdir in subdirs:
+                            # print(os.path.join(root, subdir))
+                            matched_dirs.append(os.path.join(root,subdir).replace(str(path)+os.sep,""))
+            else:
+                logger.info("Directory not found: "+pattern)
+        if len(matched_dirs) == 0:
+            return None
+        return matched_dirs
+
+    def getRegexDirs(self, pattern,path):
+        dir_name = os.path.dirname(pattern)
+        if dir_name:
+            path = os.path.join(path,dir_name)
+        pattern_name = os.path.basename(pattern)
+        # print("path: "+path)
+        # print("pattern: "+str(pattern))
+        matched_dirs = []
+        if pattern_name and not "*" in pattern:
+            return [pattern]
+        for path, subdirs, files in os.walk(path):
+            for dn in fnmatch.filter(subdirs, pattern):
+                matched_dirs.append(os.path.join(path, dn))
+        print("matched dirs: "+str(matched_dirs))
+        return matched_dirs

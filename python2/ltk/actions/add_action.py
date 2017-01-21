@@ -128,3 +128,47 @@ class AddAction(Action):
                 logger.warning("Path \""+str(pattern)+"\" doesn't exist.")
 
         return added_folder
+
+    def _is_folder_added(self, file_name):
+        """ checks if a folder has been added or is a subfolder of an added folder """
+        folder_names = self.folder_manager.get_file_names()
+        for folder in folder_names:
+            # print("folder: "+str(os.path.join(self.path,folder)))
+            # print("folder to be added: "+os.path.abspath(file_name))
+            if os.path.join(self.path,folder) in os.path.abspath(file_name):
+                return True
+        return False
+
+    def append_location(self, name, path_to_file, in_directory=False):
+        repo_directory = path_to_file
+        path_sep = os.sep
+        if not in_directory:
+            while repo_directory and repo_directory != "" and not (os.path.isdir(repo_directory + "/.ltk")):
+                repo_directory = repo_directory.split(path_sep)[:-1]
+                repo_directory = path_sep.join(repo_directory)
+            if repo_directory == "":
+                logger.warning('Error: File must be contained within an ltk-initialized directory')
+                return name
+            path_to_file = path_to_file.replace(repo_directory, '', 1).strip(os.sep)
+        config_file_name, conf_parser = self.init_config_file()
+        if not conf_parser.has_option('main', 'append_option'): self.update_config_file('append_option', 'none', conf_parser, config_file_name, 'Update: Added optional file location appending (ltk config --help)')
+        append_option = conf_parser.get('main', 'append_option')
+        if append_option == 'none': return name
+        elif append_option == 'full': return '{0} ({1})'.format(name, path_to_file.rstrip(name).rstrip(os.sep))
+        elif len(append_option) > 5 and append_option[:5] == 'name:':
+            folder_name = append_option[5:]
+            if folder_name in path_to_file:
+                return '{0} ({1})'.format(name, path_to_file[path_to_file.find(folder_name)+len(folder_name):].rstrip(name).strip(os.sep))
+            else: return '{0} ({1})'.format(name, path_to_file.rstrip(name).rstrip(os.sep))
+        elif len(append_option) > 7 and append_option[:7] == 'number:':
+            try: folder_number = int(append_option[7:])
+            except ValueError:
+                logger.warning('Error: Value after "number" must be an integer')
+                return name
+            if(folder_number >=0):
+                return '{0} ({1})'.format(name, path_sep.join(path_to_file.rstrip(name).rstrip(os.sep).split(path_sep)[(-1*folder_number) if folder_number != 0 else len(path_to_file):]))
+            else:
+                logger.warning('Error: Value after "number" must be a non-negative integer')
+                return name
+        else:
+            logger.warning('Error: Invalid value listed for append option. Please update; see ltk config --help')

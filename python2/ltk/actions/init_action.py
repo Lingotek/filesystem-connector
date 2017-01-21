@@ -7,7 +7,7 @@ class InitAction():
     def init_action(self, host, access_token, project_path, folder_name, workflow_id, locale, browserless, delete, reset):
         try:
             # check if Lingotek directory already exists
-            to_init = reinit(host, project_path, delete, reset)
+            to_init = self.reinit(host, project_path, delete, reset)
             # print("to_init: "+str(to_init))
             if not to_init:
                 return
@@ -44,7 +44,7 @@ class InitAction():
             # print("access_token: "+str(access_token))
             if ran_oauth:
                 # create or overwrite global file
-                create_global(access_token, host)
+                self.create_global(access_token, host)
 
             api = ApiCalls(host, access_token)
             # create a directory
@@ -73,7 +73,7 @@ class InitAction():
             if not community_info:
                 from ltk.auth import run_oauth
                 access_token = run_oauth(host)
-                create_global(access_token, host)
+                self.create_global(access_token, host)
                 community_info = api.get_communities_info()
                 if not community_info:
                     raise exceptions.RequestFailedError("Unable to get user's list of communities")
@@ -186,7 +186,7 @@ class InitAction():
         else:
             return None
 
-    def display_choice(display_type, info):
+    def display_choice(self, display_type, info):
         if display_type == 'community':
             prompt_message = 'Which community should this project belong to? '
         elif display_type == 'project':
@@ -220,3 +220,85 @@ class InitAction():
         for v in mapper[choice]:
             logger.info('Selected "{0}" {1}.'.format(mapper[choice][v], display_type))
             return v, mapper[choice][v]
+
+    def reinit(self, host, project_path, delete, reset):
+        print("here")
+        if is_initialized(project_path) and not reset:
+            logger.warning('This project is already initialized!')
+            if not delete:
+                return False
+            try:
+                confirm = 'not confirmed'
+                while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
+                    prompt_message = "Are you sure you want to delete the current project? " + \
+                        "This will also delete the project in your community. [Y/n]: "
+                    # Python 2
+                    confirm = raw_input(prompt_message)
+                    # End Python 2
+                    # Python 3
+#                     confirm = input(prompt_message)
+                    # End Python 3
+            except KeyboardInterrupt:
+                # Python 2
+                logger.info("\nRenit canceled")
+                # End Python 2
+                # Python 3
+#                 logger.error("\nReinit canceled")
+                # End Python 3
+                return
+            # confirm if deleting existing folder
+            if not confirm or confirm in ['n', 'N']:
+                return False
+            else:
+                # delete the corresponding project online
+                logger.info('Deleting old project folder and creating new one...')
+                config_file_name = os.path.join(project_path, CONF_DIR, CONF_FN)
+                if os.path.isfile(config_file_name):
+                    old_config = ConfigParser()
+                    old_config.read(config_file_name)
+                    project_id = old_config.get('main', 'project_id')
+                    access_token = old_config.get('main', 'access_token')
+                    api = ApiCalls(host, access_token)
+                    response = api.delete_project(project_id)
+                    if response.status_code != 204 and response.status_code != 404:
+                        try:
+                            error = response.json()['messages'][0]
+                            raise exceptions.RequestFailedError(error)
+                        except (AttributeError, IndexError):
+                            raise exceptions.RequestFailedError("Failed to delete and re-initialize project")
+                    # delete existing folder
+                    to_remove = os.path.join(project_path, CONF_DIR)
+                    shutil.rmtree(to_remove)
+                else:
+                    raise exceptions.ResourceNotFound("Cannot find config file, please re-initialize project")
+                return access_token
+        return True
+
+    def create_global(self, access_token, host):
+        """
+        create a .lingotek file in user's $HOME directory
+        """
+        # go to the home dir
+        home_path = os.path.expanduser('~')
+        file_name = os.path.join(home_path, SYSTEM_FILE)
+        config_parser = ConfigParser()
+        if os.path.isfile(file_name):
+            config_parser.read(file_name)
+        sys_file = open(file_name, 'w')
+        if config_parser.has_section('main'):
+            if not config_parser.has_option('main', host) and config_parser.has_option('main', 'access_token') and config_parser.get('main', 'access_token') == access_token:
+                config_parser.set('main', 'host', host)
+            elif config_parser.has_option('main', host) and config_parser.get('main', host) == host:
+                config_parser.set('main', 'access_token', access_token)
+            else:
+                if config_parser.has_section('alternative') and config_parser.has_option('alternative', 'host') and config_parser.get('alternative', 'host') == host:
+                    config_parser.set('alternative','access_token', access_token)
+                config_parser.add_section('alternative')
+                config_parser.set('alternative', 'access_token', access_token)
+                config_parser.set('alternative', 'host', host)
+        else:
+            config_parser.add_section('main')
+            config_parser.set('main', 'access_token', access_token)
+            config_parser.set('main', 'host', host)
+        config_parser.write(sys_file)
+        sys_file.close()
