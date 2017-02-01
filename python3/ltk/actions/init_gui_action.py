@@ -24,6 +24,7 @@ class InitActionGUI():
     def set_project_id(project_id):
         self.projectId = project_id
 
+
     def authenticateUser(self, host, username, password):
         self.apiCall = ApiCalls(host, '')
         login_host = 'https://sso.lingotek.com' if 'myaccount' in host else 'https://cmssso.lingotek.com'
