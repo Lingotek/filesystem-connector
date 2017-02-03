@@ -11,6 +11,7 @@ class InitActionGUI():
         self.project_info = None
         self.workflows = None
         self.workflow_titles = None
+        self.workflow_info = None
         self.community_id = ""
         self.project_id = ""
         self.workflow_id = ""
@@ -28,12 +29,13 @@ class InitActionGUI():
     def authenticateUser(self, host, username, password):
         self.apiCall = ApiCalls(host, '')
         login_host = 'https://sso.lingotek.com' if 'myaccount' in host else 'https://cmssso.lingotek.com'
-
         if self.apiCall.login(login_host, username, password):
             retrieved_token = self.apiCall.authenticate(login_host)
             if retrieved_token:
                 self.access_token = retrieved_token
                 ran_oauth = True
+            else:
+                ran_oauth = False
         if not ran_oauth:
             # print('Authentication failed.  Initialization canceled.')
             return "Authentication failed"
@@ -88,16 +90,16 @@ class InitActionGUI():
 
     def get_workflows(self, community_id):
 # This should be parents self.api
-        response = self.api.list_workflows(community_id)
+        response = self.apiCall.list_workflows(community_id)
         if response.status_code != 200:
             raise_error(response.json(), "Failed to list workflows")
         ids, titles = log_id_names(response.json())
-        self.workflow_titles = titles
+        self.workflow_info = dict(zip(ids, titles))
+        # config_parser.set('main', 'workflow_id', workflow_id)
+        return self.workflow_info
 
-    def create_project():
-# LOOK MORE INTO PROJECT NAME
-        project_name = folder_name
-        response = self.api.add_project(project_name, community_id, workflow_id)
+    def create_project(self, project_name, community_id, workflow_id ):
+        response = self.apiCall.add_project(project_name, community_id, workflow_id)
         if response.status_code != 201:
             try:
                 raise_error(response.json(), 'Failed to add current project to Lingotek Cloud')
@@ -107,9 +109,9 @@ class InitActionGUI():
         project_id = response.json()['properties']['id']
         config_parser.set('main', 'project_id', project_id)
         config_parser.set('main', 'project_name', project_name)
-
-        config_parser.write(config_file)
-        config_file.close()
+        # config_parser.write(config_file)
+        # config_file.close()
+        return project_id
 
     def finish_config():
         if len(self.project_info) > 0:
