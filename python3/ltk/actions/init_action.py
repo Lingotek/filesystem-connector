@@ -4,7 +4,8 @@ class InitAction():
     '''def __init__(self, path):
         #Action.__init__(self, path)'''
 
-    def init_action(self, host, access_token, project_path, folder_name, workflow_id, locale, browserless, delete, reset):
+    def init_action(self, host, access_token, client_id, project_path, folder_name, workflow_id, locale, browserless, delete, reset):
+        client_id = 'ab33b8b9-4c01-43bd-a209-b59f933e4fc4' if not client_id else client_id
         try:
             # check if Lingotek directory already exists
             to_init = self.reinit(host, project_path, delete, reset)
@@ -19,7 +20,7 @@ class InitAction():
                 if not access_token or reset:
                     if not browserless:
                         from ltk.auth import run_oauth
-                        access_token = run_oauth(host)
+                        access_token = run_oauth(host, client_id)
                         ran_oauth = True
                     else:
                         api = ApiCalls(host, '')
@@ -72,7 +73,7 @@ class InitAction():
             community_info = api.get_communities_info()
             if not community_info:
                 from ltk.auth import run_oauth
-                access_token = run_oauth(host)
+                access_token = run_oauth(host, client_id)
                 self.create_global(access_token, host)
                 community_info = api.get_communities_info()
                 if not community_info:
