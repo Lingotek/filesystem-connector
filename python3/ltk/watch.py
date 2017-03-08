@@ -1,12 +1,12 @@
 # Using the following encoding: utf-8
 import ctypes
-from ltk.actions.action import Action
-from ltk.actions import add_action
-from ltk.actions import request_action
-from ltk.actions import download_action
-from ltk.logger import logger
-from ltk.utils import map_locale, restart, get_relative_path, log_error
-from ltk.locales import locale_list
+from fsc.python3.ltk.actions.action import Action
+from fsc.python3.ltk.actions import add_action
+from fsc.python3.ltk.actions import request_action
+from fsc.python3.ltk.actions import download_action
+from fsc.python3.ltk.logger import logger
+from fsc.python3.ltk.utils import map_locale, restart, get_relative_path, log_error
+from fsc.python3.ltk.locales import locale_list
 import time
 import requests
 from requests.exceptions import ConnectionError
@@ -15,8 +15,8 @@ import re
 import sys
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEvent
-from ltk.watchhandler import WatchHandler
-from ltk.git_auto import Git_Auto
+from fsc.python3.ltk.watchhandler import WatchHandler
+from fsc.python3.ltk.git_auto import Git_Auto
 
 # retry decorator to retry connections
 def retry(logger, timeout=5, exec_type=None):
@@ -63,6 +63,7 @@ class WatchAction(Action):
     # def __init__(self, path, remote=False):
     def __init__(self, path=None, timeout=60):
         Action.__init__(self, path, True, timeout)
+        self.end_watch = False
         self.observers = []  # watchdog observers that will watch the files
         self.handler = WatchHandler()
         self.handler.on_modified = self._on_modified
@@ -380,11 +381,17 @@ class WatchAction(Action):
         print
         return abspath.rstrip(os.sep)
 
+    def stop_all_observers(self):
+        self.end_watch = True
+        for observer in self.observers:
+            observer.stop()
+
     def watch_action(self, ignore, delimiter=None, no_folders=False, force_poll=False): # watch_paths, ignore, delimiter=None, no_folders=False):
         # print self.path
         watch_paths = None
         if not watch_paths:
             watch_paths = self.folder_manager.get_file_names()
+            print(len(watch_paths))
             for i in range(len(watch_paths)):
                 watch_paths[i] = get_relative_path(self.path, watch_paths[i])
         else:
@@ -419,6 +426,8 @@ class WatchAction(Action):
         # start_time = time.clock()
         try:
             while True:
+                if self.end_watch == True:
+                    break
                 self.poll_remote()
                 current_timeout = self.timeout
                 while len(self.watch_queue) and current_timeout > 0:
