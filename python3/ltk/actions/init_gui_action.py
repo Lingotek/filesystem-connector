@@ -47,6 +47,20 @@ class InitActionGUI():
             else:
                 return self.communities
 
+    def get_communities_solo(self, host, access_token):
+        if access_token is not "":
+            self.apiCall = ApiCalls(host, access_token)
+            self.communities = self.apiCall.get_communities_info()
+            if not self.communities:
+                self.create_global(access_token, host)
+                community_info = self.apiCall.get_communities_info()
+                if not self.communities:
+                    return None
+            if len(self.communities) == 0:
+                return None
+            else:
+                return self.communities
+
     def get_projects(self, community_id):
         if community_id != None:
             response = self.apiCall.list_projects(community_id)
@@ -55,7 +69,25 @@ class InitActionGUI():
             self.project_info = self.apiCall.get_project_info(community_id)
             return self.project_info
 
+    def get_projects_solo(self, community_id, host, access_token):
+        self.apiCall = ApiCalls(host, access_token)
+        if community_id != None:
+            response = self.apiCall.list_projects(community_id)
+            if response.status_code != 200:
+                return False
+            self.project_info = self.apiCall.get_project_info(community_id)
+            return self.project_info
+
     def get_workflows(self, community_id):
+        response = self.apiCall.list_workflows(community_id)
+        if response.status_code != 200:
+            raise_error(response.json(), "Failed to list workflows")
+        ids, titles = log_id_names(response.json())
+        self.workflow_info = dict(zip(ids, titles))
+        return self.workflow_info
+
+    def get_workflows_solo(self, community_id, host, access_token):
+        self.apiCall = ApiCalls(host, access_token)
         response = self.apiCall.list_workflows(community_id)
         if response.status_code != 200:
             raise_error(response.json(), "Failed to list workflows")
