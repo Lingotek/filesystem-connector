@@ -102,7 +102,8 @@ class DownloadAction(Action):
                         if self.git_auto.repo_exists(self.download_path):
                             self.git_auto.initialize_repo()
                     if os.path.isfile(self.download_path):
-                        self.git_auto.add_fileself(self.download_path)
+                        # self.git_auto.add_fileself(self.download_path)
+                        self.git_auto.add_file(self.download_path)
 
                 # create new file and write contents
                 try:
