@@ -18,6 +18,8 @@ from watchdog.events import FileSystemEvent
 from ltk.watchhandler import WatchHandler
 from ltk.git_auto import Git_Auto
 
+DEFAULT_COMMIT_MESSAGE  = "Translations updated for "
+
 # retry decorator to retry connections
 def retry(logger, timeout=5, exec_type=None):
     if not exec_type:
@@ -298,7 +300,7 @@ class WatchAction(Action):
         """ poll lingotek servers to check if translation is finished """
         documents = self.doc_manager.get_all_entries()  # todo this gets all documents, not necessarily only ones in watch folder
         documents_downloaded = False
-        git_commit_message = ""
+        git_commit_message = DEFAULT_COMMIT_MESSAGE
         for doc in documents:
             doc_id = doc['id']
             if doc_id in self.watch_queue:
