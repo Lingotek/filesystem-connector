@@ -22,6 +22,7 @@ class PullAction(Action):
             if not locale_code:
                 if entries:
                     for entry in entries:
+                        print(entry)
                         git_commit_message += ("" if first_in_message else "; ") + entry['name'] + ": "
                         first_in_message = False
                         first_locale = True
@@ -42,7 +43,7 @@ class PullAction(Action):
                 document_ids = self.doc_manager.get_doc_ids()
                 if document_ids:
                     for document_id in document_ids:
-                        git_commit_message += ("" if first_in_message else "; ") + self.doc_manager.get_doc_by_prop("id", document_id)["name"] + ": "
+                        git_commit_message += ("" if first_in_message else "; ") + self.doc_manager.get_doc_by_prop("id", document_id)["name"] + ": " + locale_code
                         first_in_message = False
                         first_locale = True
                         self.download.download_action(document_id, locale_code, auto_format, locale_ext)
@@ -53,9 +54,10 @@ class PullAction(Action):
             if documents_added:
                 config_file_name, conf_parser = self.init_config_file()
                 git_autocommit = conf_parser.get('main', 'git_autocommit')
-                input(git_autocommit)
                 if git_autocommit == "True":
-                    input(git_commit_message)
+                    if not self.git_auto.repo_is_defined:
+                        if(self.git_auto.repo_exists()):
+                            self.git_auto.initialize_repo()
                     self.git_auto.commit(git_commit_message)
                     self.git_auto.push()
 

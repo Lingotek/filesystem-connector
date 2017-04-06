@@ -62,10 +62,9 @@ class Git_Auto:
 	def push(self, username=None, password=None):
 		if not self.repo_is_defined:
 			error("No Git repository found for the current directory.")
-			self.repo.git.push()
 			return
 		try:
-			pexpect.spawnu('git push')
+			g = pexpect.spawnu('git push')
 		except:
 			try:
 				self.repo.git.push()
@@ -91,7 +90,7 @@ class Git_Auto:
 					# End Python 3
 				else:
 					break
-		except:
+		except Exception as e:
 			print("Notice: Auto-credentials currently not operational")
 		'''
 		# if 'nt' not in os.name:
