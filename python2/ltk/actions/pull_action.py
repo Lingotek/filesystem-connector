@@ -22,7 +22,6 @@ class PullAction(Action):
             if not locale_code:
                 if entries:
                     for entry in entries:
-                        print(entry)
                         git_commit_message += ("" if first_in_message else "; ") + entry['name'] + ": "
                         first_in_message = False
                         first_locale = True
