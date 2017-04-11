@@ -26,6 +26,7 @@ class Git_Auto:
 			return False
 		else:
 			self.repo_directory = repo_directory
+			self.initialize_repo()
 			return True
 
 	def initialize_repo(self, directory=None):
@@ -37,16 +38,14 @@ class Git_Auto:
 
 	def add_file(self, file_name):
 		if not self.repo_is_defined:
-			error("No Git repository found for the current directory.")
-			return
-		self.repo.git.add(file_name)
+			if(self.repo_exists()):
+				self.repo.git.add(file_name)
 
 	def commit(self, message):
 		if not self.repo_is_defined:
-			error("No Git repository found for the current directory.")
-			return
-		message.rstrip(' ')
-		self.repo.index.commit(message)
+			if(self.repo_exists()):
+				message.rstrip(' ')
+				self.repo.index.commit(message)
 
 	def encrypt(self, password):
 		# Python 2
@@ -61,8 +60,9 @@ class Git_Auto:
 
 	def push(self, username=None, password=None):
 		if not self.repo_is_defined:
-			error("No Git repository found for the current directory.")
-			return
+			if not (self.repo_exists()):
+				error("No Git repository found for the current directory.")
+				return
 		try:
 			g = pexpect.spawnu('git push')
 		except:

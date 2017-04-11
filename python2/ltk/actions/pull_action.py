@@ -56,9 +56,8 @@ class PullAction(Action):
                 if git_autocommit in ['True', 'on']:    #'True' option for back-support of previous layout
                     if not self.git_auto.repo_is_defined:
                         if(self.git_auto.repo_exists()):
-                            self.git_auto.initialize_repo()
-                    self.git_auto.commit(git_commit_message)
-                    self.git_auto.push()
+                            self.git_auto.commit(git_commit_message)
+                            self.git_auto.push()
 
         except Exception as e:
             log_error(self.error_file_name, e)

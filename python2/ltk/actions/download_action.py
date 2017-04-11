@@ -99,10 +99,9 @@ class DownloadAction(Action):
                 git_autocommit = conf_parser.get('main', 'git_autocommit')
                 if git_autocommit in ['True', 'on']:
                     if not self.git_auto.repo_is_defined:
-                        if self.git_auto.repo_exists(self.download_path):
-                            self.git_auto.initialize_repo()
-                    if os.path.isfile(self.download_path):
-                        # self.git_auto.add_fileself(self.download_path)
+                        if self.git_auto.repo_exists(self.download_path) and os.path.isfile(self.download_path):
+                            self.git_auto.add_file(self.download_path)
+                    else:
                         self.git_auto.add_file(self.download_path)
 
                 # create new file and write contents
