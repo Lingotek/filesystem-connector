@@ -358,19 +358,8 @@ class WatchAction(Action):
         config_file_name, conf_parser = self.init_config_file()
         git_autocommit = conf_parser.get('main', 'git_autocommit')
         if git_autocommit in ['True', 'on'] and documents_downloaded == True:
-            username = conf_parser.get('main', 'git_username')
-            password = conf_parser.get('main', 'git_password')
             self.git_auto.commit(git_commit_message)
-            if username and username != "":
-                if password and password != "":
-                    self.git_auto.push(username=username, password=password)
-                else:
-                    self.git_auto.push(username=username)
-            else:
-                if password and password != "":
-                    self.git_auto.push(password=password)
-                else:
-                    self.git_auto.push()
+            self.git_auto.push()
 
 
     def complete_path(self, file_location):

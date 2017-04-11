@@ -96,13 +96,6 @@ class DownloadAction(Action):
                         self.download_path = os.path.join(self.path,os.path.join(self.download_path, downloaded_name))
                 self.doc_manager.add_element_to_prop(document_id, 'downloaded', locale_code)
                 config_file_name, conf_parser = self.init_config_file()
-                git_autocommit = conf_parser.get('main', 'git_autocommit')
-                if git_autocommit in ['True', 'on']:
-                    if not self.git_auto.repo_is_defined:
-                        if self.git_auto.repo_exists(self.download_path) and os.path.isfile(self.download_path):
-                            self.git_auto.add_file(self.download_path)
-                    else:
-                        self.git_auto.add_file(self.download_path)
 
                 # create new file and write contents
                 try:
@@ -112,6 +105,14 @@ class DownloadAction(Action):
                     logger.info('Downloaded: {0} ({1} - {2})'.format(downloaded_name, self.get_relative_path(self.download_path), locale_code))
                 except:
                     logger.warning('Error: Download failed at '+self.download_path)
+                    return self.download_path
+                git_autocommit = conf_parser.get('main', 'git_autocommit')
+                if git_autocommit in ['True', 'on']:
+                    if not self.git_auto.repo_is_defined:
+                        if self.git_auto.repo_exists(self.download_path) and os.path.isfile(self.download_path):
+                            self.git_auto.add_file(self.download_path)
+                    else:
+                        self.git_auto.add_file(self.download_path)
 
                 return self.download_path
             else:

@@ -59,6 +59,8 @@ class Git_Auto:
 		return password
 
 	def push(self, username=None, password=None):
+		username = conf_parser.get('main', 'git_username')
+        password = conf_parser.get('main', 'git_password')
 		if not self.repo_is_defined:
 			if not (self.repo_exists()):
 				error("No Git repository found for the current directory.")
@@ -75,8 +77,6 @@ class Git_Auto:
 			return
 		try:
 			g.logfile_read = sys.stdout
-			if not username: username = ''
-			if not password: password = ''
 			while True:
 				i = g.expect([u'Username for .*', u'Password for .*', pexpect.EOF])
 				if(i == 0):
