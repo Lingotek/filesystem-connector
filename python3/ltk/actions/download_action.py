@@ -97,7 +97,7 @@ class DownloadAction(Action):
                 self.doc_manager.add_element_to_prop(document_id, 'downloaded', locale_code)
                 config_file_name, conf_parser = self.init_config_file()
                 git_autocommit = conf_parser.get('main', 'git_autocommit')
-                if git_autocommit == "True":
+                if git_autocommit in ['True', 'on']:
                     if not self.git_auto.repo_is_defined:
                         if self.git_auto.repo_exists(self.download_path):
                             self.git_auto.initialize_repo()

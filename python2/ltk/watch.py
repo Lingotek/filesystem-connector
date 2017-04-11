@@ -357,7 +357,7 @@ class WatchAction(Action):
                         self.polled_list.add(file_name)
         config_file_name, conf_parser = self.init_config_file()
         git_autocommit = conf_parser.get('main', 'git_autocommit')
-        if git_autocommit == "True" and documents_downloaded == True:
+        if git_autocommit in ['True', 'on'] and documents_downloaded == True:
             username = conf_parser.get('main', 'git_username')
             password = conf_parser.get('main', 'git_password')
             self.git_auto.commit(git_commit_message)

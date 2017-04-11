@@ -133,7 +133,7 @@ def init(host, access_token, client_id, path, project_name, workflow_id, locale,
                    '(ex: -t locale,locale)')
 @click.option('-p', '--locale_folder', nargs=2, type=str, multiple=True, help='For a specific locale, specify the root folder where downloaded translations should appear. Use --none for the path to clear the download folder for a specific locale. Example: -p fr_FR translations/fr_FR')
 @click.option('-r', '--remove_locales', flag_value=True, help='Remove all locale folders and use the default download location instead.')
-@click.option('-g', '--git', is_flag=True, help='Toggle Git auto-commit')
+@click.option('-g', '--git', help='Toggle Git auto-commit option on and off')
 @click.option('-gu', '--git_credentials', is_flag=True, help='Open prompt for Git credentials for auto-fill (\'none\' to unset); only enabled for Mac and Linux')
 @click.option('-a', '--append_option', help='Change the format of the default name given to documents on the Lingotek system.  Define file information to append to document names as none, full, number:+a number of folders down to include (e.g. number:2), or name:+a name of a directory to start after if found in file path (e.g. name:dir). Default option is none.')
 def config(**kwargs):
