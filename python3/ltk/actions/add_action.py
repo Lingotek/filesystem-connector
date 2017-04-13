@@ -60,7 +60,7 @@ class AddAction(Action):
                 # title = os.path.basename(os.path.normpath(file_name)).split('.')[0]
                 relative_path = self.norm_path(file_name)
                 title = os.path.basename(relative_path)
-                if not self.doc_manager.is_doc_new(relative_path) and not self.is_hidden_file(relative_path):
+                if not self.doc_manager.is_doc_new(relative_path):
                     if self.doc_manager.is_doc_modified(relative_path, self.path):
                         if 'overwrite' in kwargs and kwargs['overwrite']:
                             confirm = 'Y'
@@ -98,6 +98,8 @@ class AddAction(Action):
     def add_document(self, file_name, title, **kwargs):
         ''' adds the document to Lingotek cloud and the db '''
 
+        if self.is_hidden_file(file_name):
+            return
         try:
             if not 'locale' in kwargs or not kwargs['locale']:
                 locale = self.locale
