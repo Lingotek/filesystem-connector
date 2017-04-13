@@ -40,18 +40,6 @@ def retry(logger, timeout=5, exec_type=None):
         return wrapper
     return decorator
 
-def is_hidden_file(file_path):
-    # todo more robust checking for OSX files that doesn't start with '.'
-    name = os.path.basename(os.path.abspath(file_path))
-    if has_hidden_attribute(file_path) or ('Thumbs.db' in file_path) or ('ehthumbs.db' in file_path):
-        return True
-    while name != "":
-        if name.startswith('.') or name.startswith('~') or name == "4913":
-            return True
-        name = name.split(os.sep)[1:]
-        name = (os.sep).join(name)
-    return False
-
 def has_hidden_attribute(file_path):
     """ Detects if a file has hidden attributes """
     try:
@@ -92,6 +80,19 @@ class WatchAction(Action):
         # self.remote_thread = threading.Thread(target=self.poll_remote(), args=())
         # self.remote_thread.daemon = True
         # self.remote_thread.start()
+
+    def is_hidden_file(self, file_path):
+        # todo more robust checking for OSX files that doesn't start with '.'
+        name = os.path.abspath(file_path).replace(self.path, "")
+        if has_hidden_attribute(file_path) or ('Thumbs.db' in file_path) or ('ehthumbs.db' in file_path):
+            return True
+        while name != "":
+            input(name)
+            if name.startswith('.') or name.startswith('~') or name == "4913":
+                return True
+            name = name.split(os.sep)[1:]
+            name = (os.sep).join(name)
+        return False
 
     def is_translation(self, file_name):
         locales = locale_list
@@ -164,7 +165,7 @@ class WatchAction(Action):
         try:
             file_path = event.src_path
             # if it's a hidden document, don't do anything
-            if not is_hidden_file(file_path) and not self.is_translation(file_path):
+            if not self.is_hidden_file(file_path) and not self.is_translation(file_path):
                 relative_path = file_path.replace(self.path, '')
                 title = os.path.basename(os.path.normpath(file_path))
                 curr_ext = os.path.splitext(file_path)[1]
@@ -389,10 +390,10 @@ class WatchAction(Action):
             for path in watch_paths:
                 watch_paths_list.append(path.rstrip(os.sep))
             watch_paths = watch_paths_list
-        if len(watch_paths) and not no_folders: # Use watch path specified as an option/parameter
-            self.watch_folders = True
+        if len(watch_paths) and not no_folders:
+            self.watch_folder = True
         else:
-            self.watch_folder = False # Only watch added files
+            watch_paths = [os.getcwd()]
         if self.watch_folder:
             watch_message = "Watching for updates in "
             for i in range(len(watch_paths)):
