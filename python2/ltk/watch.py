@@ -43,8 +43,14 @@ def retry(logger, timeout=5, exec_type=None):
 def is_hidden_file(file_path):
     # todo more robust checking for OSX files that doesn't start with '.'
     name = os.path.basename(os.path.abspath(file_path))
-    return name and (name.startswith('.') or name.startswith('~') or ('.git' in file_path) or has_hidden_attribute(file_path) or
-        ('.ini' in file_path) or ('Thumbs.db' in file_path) or ('ehthumbs.db' in file_path) or name == "4913")
+    if has_hidden_attribute(file_path) or ('Thumbs.db' in file_path) or ('ehthumbs.db' in file_path):
+        return True
+    while name != "":
+        if name.startswith('.') or name.startswith('~') or name == "4913":
+            return True
+        name = name.split(os.sep)[1:]
+        name = (os.sep).join(name)
+    return False
 
 def has_hidden_attribute(file_path):
     """ Detects if a file has hidden attributes """
