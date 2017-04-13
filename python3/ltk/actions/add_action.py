@@ -1,4 +1,20 @@
 from ltk.actions.action import *
+import ctypes
+
+def has_hidden_attribute(file_path):
+    """ Detects if a file has hidden attributes """
+    try:
+        # Python 2
+        # attrs = ctypes.windll.kernel32.GetFileAttributesW(unicode(file_path))
+        # End Python 2
+        # Python 3
+        attrs = ctypes.windll.kernel32.GetFileAttributesW(str(file_path))
+        # End Python 3
+        assert attrs != -1
+        result = bool(attrs & 2)
+    except (AttributeError, AssertionError):
+        result = False
+    return result
 
 class AddAction(Action):
     def __init__(self, path):
