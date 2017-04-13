@@ -284,6 +284,11 @@ class ConfigAction(Action):
         self.conf_parser.set('main', 'workflow_id', workflow_id)
 
     def update_config_parser_info(self):
+        # clone_option = self.conf_parser.get('main', 'clone_option')
+        # download_folder = self.conf_parser.get('main', 'download_folder')
+        # download_option = self.conf_parser.get('main', 'download_option')
+        # if 'download_option' == 'same' or (clone_option == "off" and download_folder == "null"):
+        #     self.update_config_file('download_option', 'folder', self.conf_parser, self.config_file_name, "")
         if not self.conf_parser.has_option('main', 'git_autocommit'):
             self.update_config_file('git_autocommit', 'False', self.conf_parser, self.config_file_name, 'Update: Added \'git auto-commit\' option (ltk config --help)')
             self.update_config_file('git_username', '', self.conf_parser, self.config_file_name, 'Update: Added \'git username\' option (ltk config --help)')
