@@ -142,7 +142,7 @@ class ImportAction(Action):
         else:
             file_path = os.path.join(self.path, title)
         # file_path = os.path.join(os.getcwd(), title)  # import to current working directory
-        logger.info('Importing "{0}" to {1}..'.format(title, file_path))
+        logger.info('Importing "{0}" to {1}'.format(title, file_path))
         # use status action to get locale info for importing
         try:
             locale_map = self.import_locale_info(document_id)

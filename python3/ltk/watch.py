@@ -18,6 +18,8 @@ from watchdog.events import FileSystemEvent
 from ltk.watchhandler import WatchHandler
 from ltk.git_auto import Git_Auto
 
+DEFAULT_COMMIT_MESSAGE  = "Translations updated for "
+
 # retry decorator to retry connections
 def retry(logger, timeout=5, exec_type=None):
     if not exec_type:
@@ -37,12 +39,6 @@ def retry(logger, timeout=5, exec_type=None):
                         raise e
         return wrapper
     return decorator
-
-def is_hidden_file(file_path):
-    # todo more robust checking for OSX files that doesn't start with '.'
-    name = os.path.basename(os.path.abspath(file_path))
-    return name and (name.startswith('.') or name.startswith('~') or ('.git' in file_path) or has_hidden_attribute(file_path) or
-        ('.ini' in file_path) or ('Thumbs.db' in file_path) or ('ehthumbs.db' in file_path) or name == "4913")
 
 def has_hidden_attribute(file_path):
     """ Detects if a file has hidden attributes """
@@ -84,6 +80,18 @@ class WatchAction(Action):
         # self.remote_thread = threading.Thread(target=self.poll_remote(), args=())
         # self.remote_thread.daemon = True
         # self.remote_thread.start()
+
+    def is_hidden_file(self, file_path):
+        # todo more robust checking for OSX files that doesn't start with '.'
+        name = os.path.abspath(file_path).replace(self.path, "")
+        if has_hidden_attribute(file_path) or ('Thumbs.db' in file_path) or ('ehthumbs.db' in file_path):
+            return True
+        while name != "":
+            if name.startswith('.') or name.startswith('~') or name == "4913":
+                return True
+            name = name.split(os.sep)[1:]
+            name = (os.sep).join(name)
+        return False
 
     def is_translation(self, file_name):
         locales = locale_list
@@ -156,7 +164,7 @@ class WatchAction(Action):
         try:
             file_path = event.src_path
             # if it's a hidden document, don't do anything
-            if not is_hidden_file(file_path) and not self.is_translation(file_path):
+            if not self.is_hidden_file(file_path) and not self.is_translation(file_path):
                 relative_path = file_path.replace(self.path, '')
                 title = os.path.basename(os.path.normpath(file_path))
                 curr_ext = os.path.splitext(file_path)[1]
@@ -298,7 +306,7 @@ class WatchAction(Action):
         """ poll lingotek servers to check if translation is finished """
         documents = self.doc_manager.get_all_entries()  # todo this gets all documents, not necessarily only ones in watch folder
         documents_downloaded = False
-        git_commit_message = ""
+        git_commit_message = DEFAULT_COMMIT_MESSAGE
         for doc in documents:
             doc_id = doc['id']
             if doc_id in self.watch_queue:
@@ -355,20 +363,9 @@ class WatchAction(Action):
                         self.polled_list.add(file_name)
         config_file_name, conf_parser = self.init_config_file()
         git_autocommit = conf_parser.get('main', 'git_autocommit')
-        if git_autocommit == "True" and documents_downloaded == True:
-            username = conf_parser.get('main', 'git_username')
-            password = conf_parser.get('main', 'git_password')
+        if git_autocommit in ['True', 'on'] and documents_downloaded == True:
             self.git_auto.commit(git_commit_message)
-            if username and username != "":
-                if password and password != "":
-                    self.git_auto.push(username=username, password=password)
-                else:
-                    self.git_auto.push(username=username)
-            else:
-                if password and password != "":
-                    self.git_auto.push(password=password)
-                else:
-                    self.git_auto.push()
+            self.git_auto.push()
 
 
     def complete_path(self, file_location):
@@ -392,10 +389,10 @@ class WatchAction(Action):
             for path in watch_paths:
                 watch_paths_list.append(path.rstrip(os.sep))
             watch_paths = watch_paths_list
-        if len(watch_paths) and not no_folders: # Use watch path specified as an option/parameter
-            self.watch_folders = True
+        if len(watch_paths) and not no_folders:
+            self.watch_folder = True
         else:
-            self.watch_folder = False # Only watch added files
+            watch_paths = [os.getcwd()]
         if self.watch_folder:
             watch_message = "Watching for updates in "
             for i in range(len(watch_paths)):
