@@ -87,7 +87,6 @@ class WatchAction(Action):
         if has_hidden_attribute(file_path) or ('Thumbs.db' in file_path) or ('ehthumbs.db' in file_path):
             return True
         while name != "":
-            input(name)
             if name.startswith('.') or name.startswith('~') or name == "4913":
                 return True
             name = name.split(os.sep)[1:]
