@@ -93,7 +93,10 @@ class DownloadAction(Action):
                             self.download_path = os.path.join(self.path,os.path.join(self.download_path, downloaded_name))
                             self.DOWNLOAD_NUMBER += 1
                     else:
-                        self.download_path = os.path.join(self.path,os.path.join(self.download_path, downloaded_name))
+                        if self.download_path == "null":
+                            self.download_path = os.path.join(self.path,downloaded_name)
+                        else:
+                            self.download_path = os.path.join(self.path,os.path.join(self.download_path, downloaded_name))
                 self.doc_manager.add_element_to_prop(document_id, 'downloaded', locale_code)
                 config_file_name, conf_parser = self.init_config_file()
 

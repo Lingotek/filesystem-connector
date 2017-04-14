@@ -107,6 +107,7 @@ class WatchAction(Action):
             file_name = re.sub('\.{2,}', '.', file_name)
             file_name = file_name.rstrip('.')
             doc = self.doc_manager.get_doc_by_prop('file_name', file_name.replace(self.path, ''))
+            replace_target = replace_target.replace("-", "_")
             if doc:
                 if 'locales' in doc and replace_target in doc['locales']:
                     return True
