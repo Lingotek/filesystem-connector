@@ -141,7 +141,7 @@ class ImportAction(Action):
         elif (response.status_code == 404):
             if document_info and document_info['title']:
                 title = document_info['title']
-                logger.info('Document \'{0}\' not found'.format(title))
+                logger.info('Document not found {0}'.format(title))
             else:
                 logger.info('Document with ID: \'{0}\' not found'.format(document_id))
             return
