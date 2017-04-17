@@ -1,4 +1,11 @@
+''' Python Dependencies '''
+import ctypes
+
+''' Internal Dependencies '''
 from ltk.actions.action import *
+
+''' Globals '''
+HIDDEN_ATTRIBUTE = 0x02
 
 class InitAction():
     '''def __init__(self, path):
@@ -50,8 +57,22 @@ class InitAction():
             api = ApiCalls(host, access_token)
             # create a directory
             try:
-                os.mkdir(os.path.join(project_path, CONF_DIR))
-            except OSError:
+                if not os.path.isdir(os.path.join(project_path, CONF_DIR)):
+                    os.mkdir(os.path.join(project_path, CONF_DIR))
+
+                # if on Windows system, set directory properties to hidden
+                if os.name == 'nt':
+                    # Python 2
+                    # ret = ctypes.windll.kernel32.SetFileAttributesW(unicode(os.path.join(project_path, CONF_DIR)), HIDDEN_ATTRIBUTE)
+                    # End Python 2
+                    # Python 3
+                    ret = ctypes.windll.kernel32.SetFileAttributesW(os.path.join(project_path, CONF_DIR), HIDDEN_ATTRIBUTE)
+                    # End Python 3
+                    if(ret != 1):   # return value of 1 signifies success
+                        pass
+
+            except OSError as e:
+                #logger.info(e)
                 pass
 
             logger.info('Initializing project...')
@@ -305,3 +326,14 @@ class InitAction():
             config_parser.set('main', 'host', host)
         config_parser.write(sys_file)
         sys_file.close()
+
+        # if on Windows system, set file properties to hidden
+        if os.name == 'nt':
+            # Python 2
+            # ret = ctypes.windll.kernel32.SetFileAttributesW(unicode(file_name), HIDDEN_ATTRIBUTE)
+            # End Python 2
+            # Python 3
+            ret = ctypes.windll.kernel32.SetFileAttributesW(file_name, HIDDEN_ATTRIBUTE)
+            # End Python 3
+            if(ret != 1):   # return value of 1 signifies success
+                pass

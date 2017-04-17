@@ -1,30 +1,33 @@
+''' Python Dependencies '''
 import click
+import ctypes
+import logging
+import os
 import sys
+
+''' Internal Dependencies '''
+from ltk import __version__
+from ltk.actions import *
+from ltk.constants import LOG_FN, CONF_DIR
+from ltk.exceptions import UninitializedError, ResourceNotFound, RequestFailedError, AlreadyExistsError
+from ltk.logger import logger, API_LOG_LEVEL, API_RESPONSE_LOG_LEVEL, CustomFormatter
+from ltk.utils import remove_powershell_formatting
+from ltk.watch import WatchAction
+
+''' Globals '''
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
+HIDDEN_ATTRIBUTE = 0x02
 python_version = sys.version
 # Python 3
 # if python_version[0] < '3':
 #    print('Python 3 is required to run this version of the Lingotek Filesystem connector.\n\nFor other versions and troubleshooting, see: https://github.com/lingotek/filesystem-connector')
 #    exit()
 # End Python 3
-from ltk.actions import *
-import os
-from ltk.exceptions import UninitializedError, ResourceNotFound, RequestFailedError, AlreadyExistsError
-from ltk.constants import LOG_FN, CONF_DIR
-import logging
-from ltk.logger import logger, API_LOG_LEVEL, API_RESPONSE_LOG_LEVEL, CustomFormatter
 
-from ltk import __version__
-from ltk.watch import WatchAction
-
-
-CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
-
-from ltk.utils import remove_powershell_formatting
 
 def abort_if_false(ctx, param, value):
     if not value:
         ctx.abort()
-
 
 def init_logger(path):
     """
@@ -36,10 +39,36 @@ def init_logger(path):
     else:
         try:
             file_handler = logging.FileHandler(os.path.join(path, CONF_DIR, LOG_FN))
-        except IOError:
+
+            # if on Windows system, set directory properties to hidden
+            if os.name == 'nt':
+                logger.info("On Windows, make .ltk folder hidden")
+                # Python 2
+                # ret = ctypes.windll.kernel32.SetFileAttributesW(unicode(os.path.join(path, CONF_DIR)), HIDDEN_ATTRIBUTE)
+                # End Python 2
+                # Python 3
+                ret = ctypes.windll.kernel32.SetFileAttributesW(os.path.join(path, CONF_DIR), HIDDEN_ATTRIBUTE)
+                # End Python 3
+                if(ret != 1):   # return value of 1 signifies success
+                    pass
+        except IOError as e:
+            #logger.info(e)
             # todo error check when running init without existing conf dir
             os.mkdir(os.path.join(path, CONF_DIR))
+            # if on Windows system, make directory hidden
+            if os.name == 'nt':
+                logger.info("On Windows, make .ltk folder hidden")
+                # Python 2
+                # ret = ctypes.windll.kernel32.SetFileAttributesW(unicode(os.path.join(path, CONF_DIR)), HIDDEN_ATTRIBUTE)
+                # End Python 2
+                # Python 3
+                ret = ctypes.windll.kernel32.SetFileAttributesW(os.path.join(path, CONF_DIR), HIDDEN_ATTRIBUTE)
+                # End Python 3
+                if(ret != 1):   # return value of 1 signifies success
+                    pass
+
             file_handler = logging.FileHandler(os.path.join(path, CONF_DIR, LOG_FN))
+
     console_handler = logging.StreamHandler(sys.stdout)
     file_handler.setLevel(API_LOG_LEVEL)
     file_handler.setFormatter(logging.Formatter('%(asctime)s  %(levelname)s: %(message)s'))
