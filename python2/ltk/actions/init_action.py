@@ -90,13 +90,16 @@ class InitAction():
             if community_id != None:
                 config_parser.set('main', 'community_id', community_id)
                 response = api.list_projects(community_id)
-                if response.status_code != 200:
+                if response.status_code == 204:#no projects in community
+                    project_info = []
+                elif response.status_code == 200:
+                    project_info = api.get_project_info(community_id)
+                else:
                     try:
                         raise_error(response.json(), 'Something went wrong trying to find projects in your community')
                     except:
                         logger.error('Something went wrong trying to find projects in your community')
                         return
-                project_info = api.get_project_info(community_id)
                 if len(project_info) > 0:
                     confirm = 'none'
                     try:
