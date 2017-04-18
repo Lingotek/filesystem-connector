@@ -1,5 +1,5 @@
 from tests.test_actions import *
-from ltk.actions import Action
+from ltk.actions.push_action import *
 from io import StringIO
 import sys
 import unittest
@@ -28,7 +28,7 @@ class TestPush(unittest.TestCase):
         for df in self.downloaded:
             os.remove(df)
 
-        delete_directory("es_AR")
+        delete_directory("es-AR")
 
         self.downloaded = []
         self.action.clean_action(True, False, None)
@@ -37,7 +37,7 @@ class TestPush(unittest.TestCase):
 
     def test_push_1(self):
         append_file(self.files[0])
-        locales = ['es_AR']
+        locales = ['es-AR']
         test_doc_id = self.action.doc_manager.get_doc_by_prop('file_name',self.files[0])['id']
         self.action.target_action(self.files[0], None, locales, False, None, None, test_doc_id)
         with open(self.files[0]) as f:
@@ -57,7 +57,7 @@ class TestPush(unittest.TestCase):
     def test_push_mult(self):
         append_file(self.files[0])
         append_file(self.files[1])
-        locales = ['es_AR']
+        locales = ['es-AR']
         test_doc_id_0 = self.action.doc_manager.get_doc_by_prop('file_name',self.files[0])['id']
         test_doc_id_1 = self.action.doc_manager.get_doc_by_prop('file_name',self.files[1])['id']
         self.action.target_action(self.files[0], None, locales, False, None, None, test_doc_id_0)

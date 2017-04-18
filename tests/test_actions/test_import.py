@@ -1,5 +1,7 @@
 from tests.test_actions import *
-from ltk.import_action import ImportAction
+from ltk.actions.import_action import ImportAction
+from ltk.actions.clean_action import CleanAction
+from ltk.actions.rm_action import RmAction
 
 import unittest
 
@@ -14,7 +16,8 @@ class TestImport(unittest.TestCase):
 
     def setUp(self):
         self.action = ImportAction(os.getcwd())
-        self.action.clean_action(False, False, None)
+        self.clean_action = CleanAction(os.getcwd())
+        self.clean_action.clean_action(False, False, None)
         self.files = ['sample.txt', 'sample1.txt', 'sample2.txt']
         for fn in self.files:
             create_txt_file(fn)
@@ -31,9 +34,11 @@ class TestImport(unittest.TestCase):
         self.imported = []
 
     def tearDown(self):
+        self.rm_action = RmAction(os.getcwd())
         for doc_id in self.doc_ids:
-            self.action.rm_action(doc_id, id=True)
-        self.action.clean_action(True, False, None)
+            self.rm_action.rm_action(doc_id, id=True)
+        self.clean_action.clean_action(True, False, None)
+        self.rm_action.close()
         self.action.close()
 
     def test_import_all(self):

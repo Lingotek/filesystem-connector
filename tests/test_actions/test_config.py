@@ -1,5 +1,5 @@
 from tests.test_actions import *
-from ltk import actions
+from ltk.actions.config_action import *
 from io import StringIO
 import unittest
 
@@ -7,7 +7,7 @@ import unittest
 class TestConfig(unittest.TestCase):
     def setUp(self):
         create_config()
-        self.action = actions.Action(os.getcwd())
+        self.action = ConfigAction(os.getcwd())
 
     def tearDown(self):
         cleanup()
@@ -30,11 +30,11 @@ class TestConfig(unittest.TestCase):
             sys.stdout = sys.__stdout__
 
     def test_change_locale(self):
-        new_locale = 'de_DE'
+        new_locale = 'de-DE'
         self.action.config_action(locale=new_locale)
         assert self.action.locale == new_locale
 
-        new_locale = 'es_AR'
+        new_locale = 'es-AR'
         self.action.config_action(locale=new_locale)
         assert self.action.locale == new_locale
 

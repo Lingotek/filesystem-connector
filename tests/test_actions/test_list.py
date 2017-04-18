@@ -1,5 +1,5 @@
 from tests.test_actions import *
-from ltk.actions import Action
+from ltk.actions.list_action import *
 from io import StringIO
 import sys
 import unittest
