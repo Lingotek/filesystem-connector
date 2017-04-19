@@ -5,7 +5,12 @@ import json
 from ltk.constants import CONF_DIR, DB_FN, FOLDER_DB_FN
 from ltk.apicalls import ApiCalls
 
-from ConfigParser import ConfigParser
+# Python 2
+from ConfigParser import ConfigParser, NoOptionError
+# End Python 2
+# Python 3
+# from configparser import ConfigParser, NoOptionError
+# End Python 3
 
 class DocumentManager:
     def __init__(self, path):
@@ -36,7 +41,7 @@ class DocumentManager:
             if file_name[:len(download_folder)] == download_folder:
                 return False
             #if doc is in a user specified locale download folder return false
-            for k,v in locale_folders.iteritems():
+            for k,v in locale_folders.items():
                 if file_name[:len(v)] == v:
                     return False
             #if doc is in a clone folder of a locale name return false
