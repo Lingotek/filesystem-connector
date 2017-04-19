@@ -25,36 +25,32 @@ class DocumentManager:
         else:
             return False
 
-    def is_doc_new(self, file_name, root_path):
-        config = ConfigParser()
-        config.read( root_path + "/.ltk/config")
-        download_folder = config.get('main','download_folder')
-        locale_folders = config.get('main','locale_folders')
-        locale_folders = json.loads(locale_folders)
-        #if doc is in the user specified download folder return false
-        print("download folder: " + download_folder)
-        print("possible download folder: " + file_name[1:len(download_folder)+1])
-        if file_name[1:len(download_folder)+1] == download_folder:
-            return False
-        #if doc is in a user specified locale download folder return false
-        print(locale_folders)
-        print(locale_folders.get('de-DE'))
-        for k,v in locale_folders.iteritems():
-            print("locale folder: " + v)
-            print("possible locale folder: " + file_name[1:len(v)+1])
-            if file_name[1:len(v)+1] == v:
+    def is_doc_new(self, file_name, root_path=None):
+        if root_path != None:
+            config = ConfigParser()
+            config.read( root_path + "/.ltk/config")
+            download_folder = config.get('main','download_folder')
+            locale_folders = config.get('main','locale_folders')
+            locale_folders = json.loads(locale_folders)
+            #if doc is in the user specified download folder return false
+            if file_name[:len(download_folder)] == download_folder:
                 return False
-        #if doc is in a clone folder of a locale name return false
-        content = self._db.all()
-        for doc in content:
-            if 'file_name' in doc.keys():
-                name = doc.get('file_name')
-            if 'downloaded' in doc.keys():
-                locales = doc.get('downloaded')
-                for locale in locales:
-                    possible_file_name = locale + "/" + name
-                    if possible_file_name == file_name:
-                        return False
+            #if doc is in a user specified locale download folder return false
+            for k,v in locale_folders.iteritems():
+                if file_name[:len(v)] == v:
+                    return False
+            #if doc is in a clone folder of a locale name return false
+            content = self._db.all()
+            for doc in content:
+                if 'file_name' in doc.keys():
+                    name = doc.get('file_name')
+                if 'downloaded' in doc.keys():
+                    locales = doc.get('downloaded')
+                    for locale in locales:
+                        possible_file_name = locale + "/" + name
+                        possible_file_name = possible_file_name.replace("_","-")
+                        if possible_file_name == file_name:
+                            return False
 
         file_name_exists = self._db.search(where('file_name') == file_name)
         if not file_name_exists:
