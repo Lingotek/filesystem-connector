@@ -16,7 +16,7 @@ class TestRequest(unittest.TestCase):
         cleanup()
 
     def setUp(self):
-        self.action = PullAction(os.getcwd())
+        self.action = RequestAction(os.getcwd())
         self.clean_action = CleanAction(os.getcwd())
         self.add_action = AddAction(os.getcwd())
         self.rm_action = RmAction(os.getcwd())
