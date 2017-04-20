@@ -42,7 +42,7 @@ class TestDownload(unittest.TestCase):
     def tearDown(self):
         self.rm_action = RmAction(os.getcwd())
         for curr_file in self.files:
-            self.rm_action.rm_action(curr_file, force=True)
+            self.rm_action.rm_action([curr_file], force=True)
         self.clean_action.clean_action(False, False, None)
         for dl_file in self.downloaded_files:
             if os.path.exists(dl_file):
@@ -64,9 +64,11 @@ class TestDownload(unittest.TestCase):
     def test_download_name(self):
         self.config_action.config_action(clone_option='off')
         self.config_action.config_action(download_folder='--none')
+        self.action.download_option = ":)"
 
         self.action.download_by_path(self.first_doc, self.locales[0], False, False, False)
         dl_file = self.get_dl_path(self.locales[0], self.first_doc)
+        print("dl_file", dl_file)
 
         assert self.locales[0] in dl_file
 
