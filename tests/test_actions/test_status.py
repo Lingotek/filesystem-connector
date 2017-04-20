@@ -18,7 +18,6 @@ class TestStatusAction(unittest.TestCase):
         self.clean_action = CleanAction(os.getcwd())
         self.add_action = AddAction(os.getcwd())
         self.rm_action = RmAction(os.getcwd())
-        self.request_action = RequestAction(os.getcwd())
         self.clean_action.clean_action(True, False, None)
         self.file_name = 'sample.txt'
         self.file_path = create_txt_file(self.file_name)
@@ -48,7 +47,8 @@ class TestStatusAction(unittest.TestCase):
     def test_status_detailed(self):
         # see that there are targets
         # request translations
-        self.action.target_action(None, self.file_name, self.targets, False, None, None)
+        self.request_action = RequestAction(os.getcwd(), None, self.file_name, self.targets, False, None, None)
+        self.action.target_action()
         try:
             out = StringIO()
             sys.stdout = out

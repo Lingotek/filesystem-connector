@@ -1,5 +1,8 @@
 from tests.test_actions import *
 from ltk.actions.request_action import *
+from ltk.actions.clean_action import CleanAction
+from ltk.actions.add_action import AddAction
+from ltk.actions.rm_action import RmAction
 import time
 import unittest
 
@@ -13,21 +16,24 @@ class TestRequest(unittest.TestCase):
         cleanup()
 
     def setUp(self):
-        self.action = Action(os.getcwd())
-        self.action.clean_action(True, False, None)
+        self.action = PullAction(os.getcwd())
+        self.clean_action = CleanAction(os.getcwd())
+        self.add_action = AddAction(os.getcwd())
+        self.rm_action = RmAction(os.getcwd())
+        self.clean_action.clean_action(True, False, None)
         self.files = ['sample.txt', 'sample1.txt', 'sample2.txt']
         self.first_doc = 'sample.txt'
         for fn in self.files:
             create_txt_file(fn)
-        self.action.add_action(['sample*.txt'], overwrite=True)
+        self.add_action.add_action(['sample*.txt'], overwrite=True)
         self.doc_ids = self.action.doc_manager.get_doc_ids()
         for doc_id in self.doc_ids:
             assert poll_doc(self.action, doc_id)
 
     def tearDown(self):
         for curr_file in self.files:
-            self.action.rm_action(curr_file, force=True)
-        self.action.clean_action(True, False, None)
+            self.rm_action.rm_action(curr_file, force=True)
+        self.clean_action.clean_action(True, False, None)
         self.action.close()
 
     def check_locales_exist(self, documents, locales):

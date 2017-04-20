@@ -1,5 +1,8 @@
 from tests.test_actions import *
 from ltk.actions.list_action import *
+from ltk.actions.clean_action import CleanAction
+from ltk.actions.add_action import AddAction
+from ltk.actions.rm_action import RmAction
 from io import StringIO
 import sys
 import unittest
@@ -14,11 +17,13 @@ class TestList(unittest.TestCase):
         cleanup()
 
     def setUp(self):
-        self.action = Action(os.getcwd())
-        self.action.clean_action(True, False, None)
+        self.action = ListAction(os.getcwd())
+        self.clean_action = CleanAction(os.getcwd())
+        self.add_action = AddAction(os.getcwd())
+        self.clean_action.clean_action(True, False, None)
 
     def tearDown(self):
-        self.action.clean_action(True, False, None)
+        self.clean_action.clean_action(True, False, None)
         self.action.close()
 
     def test_list_doc(self):
@@ -26,7 +31,7 @@ class TestList(unittest.TestCase):
         file_paths = []
         for fn in files:
             file_paths.append(create_txt_file(fn))
-        self.action.add_action(['sample*.txt'], overwrite=True)
+        self.add_action.add_action(['sample*.txt'], overwrite=True)
         doc_ids = self.action.doc_manager.get_doc_ids()
         for doc_id in doc_ids:
             assert poll_doc(self.action, doc_id)
@@ -41,8 +46,8 @@ class TestList(unittest.TestCase):
             sys.stdout = sys.__stdout__
 
         for fn in files:
-            self.action.rm_action(fn, force=True)
-        self.action.clean_action(False, False, None)
+            self.rm_action.rm_action(fn, force=True)
+        self.clean_action.clean_action(False, False, None)
 
     def test_list_no_docs(self):
         try:

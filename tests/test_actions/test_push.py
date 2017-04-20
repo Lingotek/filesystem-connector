@@ -1,5 +1,9 @@
 from tests.test_actions import *
 from ltk.actions.push_action import *
+from ltk.actions.clean_action import CleanAction
+from ltk.actions.rm_action import RmAction
+from ltk.actions.request_action import RequestAction
+from ltk.actions.download_action import DownloadAction
 from io import StringIO
 import sys
 import unittest
@@ -9,7 +13,10 @@ class TestPush(unittest.TestCase):
     def setUp(self):
         create_config()
         self.downloaded = []
-        self.action = Action(os.getcwd())
+        self.action = PushAction(os.getcwd())
+        self.clean_action = CleanAction(os.getcwd())
+        self.rm_action = RmAction(os.getcwd())
+        self.download_action = DownloadAction(os.getcwd())
         self.action.clean_action(True, False, None)
         self.files = ['sample.txt', 'sample1.txt', 'sample2.txt']
         for fn in self.files:
@@ -22,7 +29,7 @@ class TestPush(unittest.TestCase):
     def tearDown(self):
         #delete files added to lingotek cloud
         for curr_file in self.files:
-            self.action.rm_action(curr_file, force=True)
+            self.rm_action.rm_action(curr_file, force=True)
 
         #delete downloaded translations
         for df in self.downloaded:
@@ -31,7 +38,7 @@ class TestPush(unittest.TestCase):
         delete_directory("es-AR")
 
         self.downloaded = []
-        self.action.clean_action(True, False, None)
+        self.clean_action.clean_action(True, False, None)
         self.action.close()
         cleanup()
 
@@ -39,12 +46,13 @@ class TestPush(unittest.TestCase):
         append_file(self.files[0])
         locales = ['es-AR']
         test_doc_id = self.action.doc_manager.get_doc_by_prop('file_name',self.files[0])['id']
-        self.action.target_action(self.files[0], None, locales, False, None, None, test_doc_id)
+        self.request_action = RequestAction(os.getcwd(), self.files[0], None, locales, False, None, None, test_doc_id)
+        self.action.target_action()
         with open(self.files[0]) as f:
             downloaded = f.read()
         self.action.push_action()
         assert check_updated_ids(self.action, [test_doc_id]) # Poll and wait until the modification has taken effect in the cloud
-        downloaded_path = self.action.download_action(test_doc_id, locales[0], False)
+        downloaded_path = self.download_action.download_action(test_doc_id, locales[0], False)
         #print("downloaded_path: "+str(downloaded_path))
         self.downloaded.append(downloaded_path)
         with open(downloaded_path, 'r') as f:
@@ -60,12 +68,14 @@ class TestPush(unittest.TestCase):
         locales = ['es-AR']
         test_doc_id_0 = self.action.doc_manager.get_doc_by_prop('file_name',self.files[0])['id']
         test_doc_id_1 = self.action.doc_manager.get_doc_by_prop('file_name',self.files[1])['id']
-        self.action.target_action(self.files[0], None, locales, False, None, None, test_doc_id_0)
-        self.action.target_action(self.files[1], None, locales, False, None, None, test_doc_id_1)
+        self.request_action = RequestAction(self.files[0], None, locales, False, None, None, test_doc_id_0)
+        self.action.target_action()
+        self.request_action = RequestAction(self.files[1], None, locales, False, None, None, test_doc_id_1)
+        self.action.target_action()
         self.action.push_action()
         assert check_updated_ids(self.action, [test_doc_id_0, test_doc_id_1]) # Poll and wait until the modification has taken effect on the cloud
-        dl_path_0 = self.action.download_action(test_doc_id_0, locales[0], False)
-        dl_path_1 = self.action.download_action(test_doc_id_1, locales[0], False)
+        dl_path_0 = self.download_action.download_action(test_doc_id_0, locales[0], False)
+        dl_path_1 = self.download_action.download_action(test_doc_id_1, locales[0], False)
         self.downloaded = [dl_path_0, dl_path_1]
         for path in self.downloaded:
             with open(path, 'r') as f:
