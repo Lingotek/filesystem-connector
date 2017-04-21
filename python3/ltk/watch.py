@@ -76,6 +76,7 @@ class WatchAction(Action):
         self.force_poll = False
         self.add = add_action.AddAction(path)
         self.download = download_action.DownloadAction(path)
+        self.root_path = path
         # if remote:  # poll lingotek cloud periodically if this option enabled
         # self.remote_thread = threading.Thread(target=self.poll_remote(), args=())
         # self.remote_thread.daemon = True
@@ -175,7 +176,7 @@ class WatchAction(Action):
                     return
                 # only add or update the document if it's not a hidden document and it's a new file
                 try:
-                    if self.doc_manager.is_doc_new(relative_path) and self.watch_folder:
+                    if self.doc_manager.is_doc_new(relative_path, self.root_path) and self.watch_folder:
                         #testing
                         #self.polled_list.add(relative_path) #test that this doesn't break other areas of watch
                         #end testing
