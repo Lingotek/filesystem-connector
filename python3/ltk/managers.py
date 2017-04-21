@@ -38,7 +38,7 @@ class DocumentManager:
             locale_folders = config.get('main','locale_folders')
             locale_folders = json.loads(locale_folders)
             #if doc is in the user specified download folder return false
-            if file_name[:len(download_folder)] == download_folder:
+            if file_name[:len(download_folder)] == download_folder and download_folder is not "":
                 return False
             #if doc is in a user specified locale download folder return false
             for k,v in locale_folders.items():
