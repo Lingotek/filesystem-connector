@@ -160,7 +160,7 @@ def init(host, access_token, client_id, path, project_name, workflow_id, locale,
               help='Specify target locales that documents in watch_folder should be assigned; may either specify '
                    'with multiple -t flags (ex: -t locale -t locale) or give a list separated by commas and no spaces '
                    '(ex: -t locale,locale)')
-@click.option('-p', '--locale_folder', nargs=2, type=str, multiple=True, help='For a specific locale, specify the root folder where downloaded translations should appear. Use --none for the path to clear the download folder for a specific locale. Example: -p fr_FR translations/fr_FR')
+@click.option('-p', '--locale_folder', nargs=2, type=str, multiple=True, help='For a specific locale, specify the root folder where downloaded translations should appear. Use --none for the path to clear the download folder for a specific locale. Example: -p fr_FR translations/fr_FR. Note: This only works with clone option \'on\'')
 @click.option('-r', '--remove_locales', flag_value=True, help='Remove all locale folders and use the default download location instead.')
 @click.option('-g', '--git', help='Toggle Git auto-commit option on and off')
 @click.option('-gu', '--git_credentials', is_flag=True, help='Open prompt for Git credentials for auto-fill (\'none\' to unset); only enabled for Mac and Linux')
