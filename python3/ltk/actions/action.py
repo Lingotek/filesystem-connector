@@ -355,7 +355,7 @@ class Action:
         locale_progress = {}
         response = self.api.document_translation_status(document_id)
         if response.status_code != 200:
-            if poll:
+            if poll or response.status_code == 404:
                 return {}
             else:
                 # raise_error(response.json(), 'Failed to get locale details of document', True)
