@@ -53,8 +53,10 @@ class DocumentManager:
                     locales = doc.get('downloaded')
                     for locale in locales:
                         possible_file_name = locale + "/" + name
+                        possible_win_file_name = locale + "\\" + name
+                        possible_win_file_name = possible_win_file_name.replace("_","-")
                         possible_file_name = possible_file_name.replace("_","-")
-                        if possible_file_name == file_name:
+                        if possible_file_name == file_name or possible_win_file_name == file_name:
                             return False
 
         file_name_exists = self._db.search(where('file_name') == file_name)
