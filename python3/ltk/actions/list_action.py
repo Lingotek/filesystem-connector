@@ -3,7 +3,7 @@ from ltk.actions.action import *
 class ListAction(Action):
     def __init__(self, path):
         Action.__init__(self, path)
-    
+
     def list_action(self, **kwargs):
         if 'id_type' in kwargs and kwargs['id_type']:
             id_type = kwargs['id_type']
@@ -17,7 +17,7 @@ class ListAction(Action):
                 self.list_filters()
             elif id_type == 'remote':
                 self.list_remote()
-        
+
         elif 'hide_docs' in kwargs and 'title' in kwargs:
             self.list_ids(kwargs['hide_docs'], kwargs['title'])
 
@@ -57,7 +57,7 @@ class ListAction(Action):
         print("-----------------------------------------------------------")
         for k,v in sorted(format_list.items()):
             print('%-30s' % k + '%s' % ' '.join(v))
-    
+
     def list_ids(self, hide_docs, title=False):
         try:
             """ lists ids of list_type specified """
@@ -117,7 +117,7 @@ class ListAction(Action):
                 logger.error("Error connecting to Lingotek's TMS")
             else:
                 logger.error("Error on list: "+str(e))
-    
+
     def list_locales(self):
         locale_info = []
         response = self.api.list_locales()
@@ -147,12 +147,10 @@ class ListAction(Action):
             else:
                 raise_error("", "Failed to get status of documents", True)
         else:
-            print ('Remote documents: id, document name')
+            print ('Remote documents:\nID \t \t \t \t \t Document name')
             for entry in response.json()['entities']:
-                i = 0
-                while 'properties' not in entry['entities'][i]: i += 1
-                title = entry['entities'][i]['properties']['title'].replace("Status of ", "")
-                id = entry['entities'][i]['properties']['id']
+                title = entry['properties']['title']
+                id = entry['properties']['id']
                 info = '{id} \t {title}'.format(id=id, title=title)
                 print (info)
 

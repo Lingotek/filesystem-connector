@@ -22,6 +22,9 @@ logging.Logger.api_call = log_api
 logging.Logger.api_response = log_api_response
 
 logger = logging.getLogger('lib')
+# Python 2
+logging.getLogger('lib').addHandler(logging.NullHandler())
+# End Python 2
 
 class CustomFormatter(logging.Formatter):
     # default_format = '%(levelname)s: %(message)s'

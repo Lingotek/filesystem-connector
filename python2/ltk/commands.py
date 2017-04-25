@@ -1,30 +1,33 @@
+''' Python Dependencies '''
 import click
+import ctypes
+import logging
+import os
 import sys
+
+''' Internal Dependencies '''
+from ltk import __version__
+from ltk.actions import *
+from ltk.constants import LOG_FN, CONF_DIR
+from ltk.exceptions import UninitializedError, ResourceNotFound, RequestFailedError, AlreadyExistsError
+from ltk.logger import logger, API_LOG_LEVEL, API_RESPONSE_LOG_LEVEL, CustomFormatter
+from ltk.utils import remove_powershell_formatting
+from ltk.watch import WatchAction
+
+''' Globals '''
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
+HIDDEN_ATTRIBUTE = 0x02
 python_version = sys.version
 # Python 3
 # # if python_version[0] < '3':
 # #    print('Python 3 is required to run this version of the Lingotek Filesystem connector.\n\nFor other versions and troubleshooting, see: https://github.com/lingotek/filesystem-connector')
 # #    exit()
 # End Python 3
-from ltk.actions import *
-import os
-from ltk.exceptions import UninitializedError, ResourceNotFound, RequestFailedError, AlreadyExistsError
-from ltk.constants import LOG_FN, CONF_DIR
-import logging
-from ltk.logger import logger, API_LOG_LEVEL, API_RESPONSE_LOG_LEVEL, CustomFormatter
 
-from ltk import __version__
-from ltk.watch import WatchAction
-
-
-CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
-
-from ltk.utils import remove_powershell_formatting
 
 def abort_if_false(ctx, param, value):
     if not value:
         ctx.abort()
-
 
 def init_logger(path):
     """
@@ -36,10 +39,36 @@ def init_logger(path):
     else:
         try:
             file_handler = logging.FileHandler(os.path.join(path, CONF_DIR, LOG_FN))
-        except IOError:
+
+            # if on Windows system, set directory properties to hidden
+            if os.name == 'nt':
+                logger.info("On Windows, make .ltk folder hidden")
+                # Python 2
+                ret = ctypes.windll.kernel32.SetFileAttributesW(unicode(os.path.join(path, CONF_DIR)), HIDDEN_ATTRIBUTE)
+                # End Python 2
+                # Python 3
+#                 ret = ctypes.windll.kernel32.SetFileAttributesW(os.path.join(path, CONF_DIR), HIDDEN_ATTRIBUTE)
+                # End Python 3
+                if(ret != 1):   # return value of 1 signifies success
+                    pass
+        except IOError as e:
+            #logger.info(e)
             # todo error check when running init without existing conf dir
             os.mkdir(os.path.join(path, CONF_DIR))
+            # if on Windows system, make directory hidden
+            if os.name == 'nt':
+                logger.info("On Windows, make .ltk folder hidden")
+                # Python 2
+                ret = ctypes.windll.kernel32.SetFileAttributesW(unicode(os.path.join(path, CONF_DIR)), HIDDEN_ATTRIBUTE)
+                # End Python 2
+                # Python 3
+#                 ret = ctypes.windll.kernel32.SetFileAttributesW(os.path.join(path, CONF_DIR), HIDDEN_ATTRIBUTE)
+                # End Python 3
+                if(ret != 1):   # return value of 1 signifies success
+                    pass
+
             file_handler = logging.FileHandler(os.path.join(path, CONF_DIR, LOG_FN))
+
     console_handler = logging.StreamHandler(sys.stdout)
     file_handler.setLevel(API_LOG_LEVEL)
     file_handler.setFormatter(logging.Formatter('%(asctime)s  %(levelname)s: %(message)s'))
@@ -85,15 +114,15 @@ def ltk(is_quiet, verbosity_lvl):
 
 @ltk.command()
 @click.option('--access_token', help='Your access token')
-@click.option('--host', type=click.Choice(['myaccount.lingotek.com', 'cms.lingotek.com']), default='myaccount.lingotek.com',
+@click.option('--host', type=click.Choice(['myaccount.lingotek.com', 'cms.lingotek.com', 'clone.lingotek.com']), default='myaccount.lingotek.com',
               help='Environment: myaccount for production, cms for sandbox; the default is production')
-# @click.option('--host', help='host')
+@click.option('--client_id', help='This is an advanced option that should only be used for clients that have been issued a specified client_id for analytics')
 @click.option('--path', type=click.Path(exists=True),
               help='The path to the project directory to be initialized; defaults to the current directory')
 @click.option('-n', '--project_name', help='The preferred project name, defaults to the current directory name')
 @click.option('-w', '--workflow_id', default='c675bd20-0688-11e2-892e-0800200c9a66',
-              help='The id of the workflow to use for this project; defaults to machine translate only.')
-@click.option('-b', '--browserless', flag_value=True, help='Authorizes without opening a web browser.  Requires manual input of username and password.')
+              help='The id of the workflow to use for this project; defaults to machine translate only')
+@click.option('-b', '--browserless', flag_value=True, help='Authorizes without opening a web browser, requires manual input of username and password')
 @click.option('-l', '--locale', default='en_US', help='The default source locale for the project; defaults to en_US')
 @click.option('-d', '--delete', flag_value=True,  # expose_value=False, callback=abort_if_false,
               # prompt='Are you sure you want to delete the current project remotely and re-initialize? '
@@ -102,7 +131,7 @@ def ltk(is_quiet, verbosity_lvl):
 # todo add a 'change' option so don't delete remote project
 # @click.option('-c', '--change', flag_value=True, help='Change the Lingotek project. ')
 @click.option('--reset', flag_value=True, help='Reauthorize and reset any stored access tokens')
-def init(host, access_token, path, project_name, workflow_id, locale, browserless, delete, reset):
+def init(host, access_token, client_id, path, project_name, workflow_id, locale, browserless, delete, reset):
     """ Connects a local project to Lingotek """
     try:
         host = 'https://' + host
@@ -112,7 +141,7 @@ def init(host, access_token, path, project_name, workflow_id, locale, browserles
             project_name = os.path.basename(os.path.normpath(path))
         init_logger(path)
         init = init_action.InitAction()
-        init.init_action(host, access_token, path, project_name, workflow_id, locale, browserless, delete, reset)
+        init.init_action(host, access_token, client_id, path, project_name, workflow_id, locale, browserless, delete, reset)
     except (ResourceNotFound, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
@@ -123,17 +152,17 @@ def init(host, access_token, path, project_name, workflow_id, locale, browserles
 #TO-DO: @click.option('-a', '--all', help='List all configuration settings (including access token)')
 @click.option('-l', '--locale', help='Change the default source locale for the project')
 @click.option('-w', '--workflow_id', help='Change the default workflow id for the project')
-@click.option('-c', '--clone_option', help='Toggle clone download option on and off. (i.e. ltk clone on/off) Turning clone ON: Translations will be downloaded to a cloned folder structure, where the root folder for each locale is the locale folder specified in config or a locale folder inside of the default download folder. If no default download folder set, translations will be downloaded to the directory where the project was initialized.' +
-                                                'Turning clone OFF: If a download folder is specified, downloaded tranlsations will download to that folder, but not in a cloned folder structure. If no download folder is specified, downloaded translations will go to the same folder as their corresponding source files.')
+@click.option('-c', '--clone_option', help='Toggle clone download option \'on\' and \'off\'. Turning clone \'on\': Translations will be downloaded to a cloned folder structure, where the root folder for each locale is the locale folder specified in config or a locale folder inside of the default download folder. If a default download folder is not set, then translations will be downloaded to the directory where the project was initialized.' +
+                                                'Turning clone \'off\': If a download folder is specified, downloaded translations will download to that folder, but not in a cloned folder structure. If no download folder is specified, downloaded translations will go to the same folder as their corresponding source files.')
 @click.option('-d', '--download_folder',
               help='Specify a default folder for where downloaded translations should go. Use --none to remove the download folder. Using --none will cause downloaded translations to download to the same folder as their corresponding source files.')
 @click.option('-t', '--target_locales', multiple=True,
               help='Specify target locales that documents in watch_folder should be assigned; may either specify '
                    'with multiple -t flags (ex: -t locale -t locale) or give a list separated by commas and no spaces '
                    '(ex: -t locale,locale)')
-@click.option('-p', '--locale_folder', nargs=2, type=str, multiple=True, help='For a specific locale, specify the root folder where downloaded translations should appear. Use --none for the path to clear the download folder for a specific locale. Example: -p fr_FR translations/fr_FR')
+@click.option('-p', '--locale_folder', nargs=2, type=str, multiple=True, help='For a specific locale, specify the root folder where downloaded translations should appear. Use --none for the path to clear the download folder for a specific locale. Example: -p fr_FR translations/fr_FR. Note: This only works with clone option \'on\'')
 @click.option('-r', '--remove_locales', flag_value=True, help='Remove all locale folders and use the default download location instead.')
-@click.option('-g', '--git', is_flag=True, help='Toggle Git auto-commit')
+@click.option('-g', '--git', help='Toggle Git auto-commit option on and off')
 @click.option('-gu', '--git_credentials', is_flag=True, help='Open prompt for Git credentials for auto-fill (\'none\' to unset); only enabled for Mac and Linux')
 @click.option('-a', '--append_option', help='Change the format of the default name given to documents on the Lingotek system.  Define file information to append to document names as none, full, number:+a number of folders down to include (e.g. number:2), or name:+a name of a directory to start after if found in file path (e.g. name:dir). Default option is none.')
 def config(**kwargs):
@@ -170,7 +199,34 @@ def config(**kwargs):
 @click.option('-fsi', '--fprm_subfilter_id', help='fprm subfilter id')
 @click.option('-v', '--vault_id', help='Save-to TM vault id')
 @click.option('-e', '--external_url', help='Source url')
+@click.option('--note', help='Note')
+
+# Metadata - optional parameters
+@click.option('--author_email', help='Author email')
+@click.option('--author_name', help='Author name')
+@click.option('--business_division', help='Business division')
+@click.option('--business_unit', help='Business unit')
+@click.option('--campaign_id', help='Campaign ID')
+@click.option('--campaign_rating', help='Campaign rating')
+@click.option('--channel', help='Channel')
+@click.option('--contact_email', help='Contact email')
+@click.option('--contact_name', help='Contact name')
+@click.option('--content_description', help='Content description')
+@click.option('--content_type', help='Content type')
+@click.option('--domain', help='Domain')
+@click.option('--due_date', help='Due date (as Unix timestamp, in milliseconds)')
+@click.option('--due_reason', help='Reason for due date')
+@click.option('--external_application_id', help='External application ID')
+@click.option('--external_document_id', help='External document ID')
+@click.option('--external_style_id', help='External style ID')
+@click.option('--purchase_order', help='Purchase Order')
+@click.option('--reference_url', help='Reference URL')
+@click.option('--region', help='Region')
+@click.option('--require_review', help='Require review')
+@click.option('--category_id', help='Category ID')
+
 @click.option('-o', '--overwrite', flag_value=True, help='Overwrite previously added file if the file has been modified')
+
 def add(file_names, **kwargs):
     """ Add files and folders for upload to Lingotek.  Fileglobs (e.g. *.txt) can be used to add all matching files and/or folders. Added folders will automatically add the new files added or created inside of them.  """
     try:
@@ -321,7 +377,7 @@ def pull(auto_format, locale_ext, no_ext, locales):
 @click.option('-i', '--id', flag_value=True, help='Delete documents with the specified ids (instead of file names) on Lingotek Cloud')
 @click.option('-n', '--name', flag_value=True, help='Delete documents with the specified names (instead of file names or paths) on Lingotek Cloud')
 @click.option('-a', '--all', flag_value=True, help='Delete all documents from Lingotek Cloud that are found locally')
-@click.option('-r', '--remote', flag_value=True, help='When used with -a, deletes all documents from Lingotek Cloud for the current project')
+@click.option('-r', '--remote', flag_value=True, help='Deletes specified documents from Lingotek Cloud for the current project')
 @click.option('-f', '--force', flag_value=True, help='Delete both local and remote files, as well as any local translation files')
 def rm(file_names, **kwargs):
     """

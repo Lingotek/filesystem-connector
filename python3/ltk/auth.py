@@ -93,8 +93,7 @@ class ClientRedirectHandler(BaseHTTPRequestHandler, object):
         self.wfile.write(b"</body></html>")
 
 
-def run_oauth(host):
-    print ('running oauth')
+def run_oauth(host, client_id):
     r_host = 'localhost'  # host to redirect to
     r_ports = [9000, 9001, 9002]
     httpd = None
@@ -114,7 +113,6 @@ def run_oauth(host):
                  'Please unblock one of these ports for authorizing with Lingotek. '
                  'This local webserver will stop serving after two requests and free the port up again.')
     oauth_callback = 'http://{0}:{1}/'.format(r_host, r_port)
-    client_id = 'ab33b8b9-4c01-43bd-a209-b59f933e4fc4'
     response_type = 'token'
     payload = {'client_id': client_id, 'redirect_uri': oauth_callback, 'response_type': response_type}
     # Python 2
@@ -124,6 +122,7 @@ def run_oauth(host):
     payload_url = urllib.parse.urlencode(payload)
     # End Python 3
     authorize_url = host + '/auth/authorize.html?' + payload_url
+
     import webbrowser
     webbrowser.open_new(authorize_url)
     print ('Your browser has been opened to visit: \n{0}\n'.format(authorize_url))

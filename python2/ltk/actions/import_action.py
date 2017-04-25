@@ -131,6 +131,20 @@ class ImportAction(Action):
     def import_document(self, document_id, document_info, force=False, path=False):
         local_ids = self.doc_manager.get_doc_ids()
         response = self.api.document_content(document_id, None, None)
+        if(response.status_code == 400):
+            if document_info and document_info['title']:
+                title = document_info['title']
+                logger.info('Failed to import document: {0}'.format(title))
+            else:
+                logger.info('Failed to import document: {0}'.format(document_id))
+            return
+        elif (response.status_code == 404):
+            if document_info and document_info['title']:
+                title = document_info['title']
+                logger.info('Document not found {0}'.format(title))
+            else:
+                logger.info('Document with ID: \'{0}\' not found'.format(document_id))
+            return
         title, extension = os.path.splitext(document_info['title'])
         if not extension:
             extension = document_info['extension']
@@ -142,7 +156,7 @@ class ImportAction(Action):
         else:
             file_path = os.path.join(self.path, title)
         # file_path = os.path.join(os.getcwd(), title)  # import to current working directory
-        logger.info('Importing "{0}" to {1}..'.format(title, file_path))
+        logger.info('Importing "{0}" to {1}'.format(title, file_path))
         # use status action to get locale info for importing
         try:
             locale_map = self.import_locale_info(document_id)
@@ -153,14 +167,13 @@ class ImportAction(Action):
 #             locale_info = list(iter(locale_map))
             # End Python 3
         except exceptions.RequestFailedError:
+            print("failed on locale info")
             locale_info = []
 
         changed_path = False
         changed_path, new_path, write_file, delete_file = self.import_check(document_id, title, force, path)
         if delete_file and changed_path and os.path.exists(changed_path):
             self.delete_local_path(changed_path, 'Deleting local file {0}'.format(changed_path))
-
-
 
         if write_file:
 

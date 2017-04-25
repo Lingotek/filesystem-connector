@@ -1,4 +1,20 @@
 from ltk.actions.action import *
+import ctypes
+
+def has_hidden_attribute(file_path):
+    """ Detects if a file has hidden attributes """
+    try:
+        # Python 2
+        attrs = ctypes.windll.kernel32.GetFileAttributesW(unicode(file_path))
+        # End Python 2
+        # Python 3
+#         attrs = ctypes.windll.kernel32.GetFileAttributesW(str(file_path))
+        # End Python 3
+        assert attrs != -1
+        result = bool(attrs & 2)
+    except (AttributeError, AssertionError):
+        result = False
+    return result
 
 class AddAction(Action):
     def __init__(self, path):
@@ -82,6 +98,8 @@ class AddAction(Action):
     def add_document(self, file_name, title, **kwargs):
         ''' adds the document to Lingotek cloud and the db '''
 
+        if self.is_hidden_file(file_name):
+            return
         try:
             if not 'locale' in kwargs or not kwargs['locale']:
                 locale = self.locale
@@ -110,6 +128,18 @@ class AddAction(Action):
             else:
                 logger.error("Error on adding document "+str(file_name)+": "+str(e))
 
+    def is_hidden_file(self, file_path):
+        # todo more robust checking for OSX files that doesn't start with '.'
+        name = os.path.abspath(file_path).replace(self.path, "")
+        if has_hidden_attribute(file_path) or ('Thumbs.db' in file_path) or ('ehthumbs.db' in file_path):
+            return True
+        while name != "":
+            if name.startswith('.') or name.startswith('~') or name == "4913":
+                return True
+            name = name.split(os.sep)[1:]
+            name = (os.sep).join(name)
+        return False
+
     def add_folders(self, file_patterns):
         ''' checks each file pattern for a directory and adds matching patterns to the db '''
         ''' returns true if folder(s) have been added, otherwise false '''
@@ -118,7 +148,9 @@ class AddAction(Action):
         for pattern in file_patterns:
             if os.path.exists(pattern):
                 if os.path.isdir(pattern):
-                    if not self._is_folder_added(pattern):
+                    if self.is_hidden_file(pattern):
+                        logger.warning("Folder is hidden")
+                    elif not self._is_folder_added(pattern):
                         self.folder_manager.add_folder(self.norm_path(pattern.rstrip(os.sep)))
                         logger.info("Added folder "+str(pattern))
                     else:
