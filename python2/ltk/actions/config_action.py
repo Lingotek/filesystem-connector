@@ -109,7 +109,7 @@ class ConfigAction(Action):
 
     def set_clone_option(self, clone_option):
         self.clone_action = clone_option
-        log_info = 'Turned clone '+clone_option
+        log_info = 'Turned clone '+ clone_option
         if clone_option == 'on':
             download_option = 'clone'
             self.download_option = download_option

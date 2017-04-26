@@ -97,6 +97,7 @@ class AddAction(Action):
 
     def add_document(self, file_name, title, **kwargs):
         ''' adds the document to Lingotek cloud and the db '''
+        #super.initialize_self()
 
         if self.is_hidden_file(file_name):
             return

@@ -42,13 +42,14 @@ class ApiCalls:
                 return True
             else: return False
         except Exception as e:
-            print("access_login", e)
+            log_error("access_login", e)
             self.handleError()
             return False
 
-# Returns true if access_login is successful, false if otherwise
+    # Returns true if access_login is successful, false if otherwise
     def login(self, host, username, password):
         output = self.access_login(host)
+        output = True
         if output == False: return False
         try:
             uri = '/login'
@@ -60,32 +61,41 @@ class ApiCalls:
             self.handleError()
         return output
 
-
-# Returns access token if successful in retrieving it, None if otherwise
+    # Returns access token if successful in retrieving it, None if otherwise
     def authenticate(self, host):
         output = None
         try:
             start = self.startup(host)
-            if not start.url: return None
+            if not start.url:
+                return None
             query = parse.parse_qs(parse.urlparse(start.url).query)
-            if 'client_id' in query.keys(): cid = query['client_id']
-            else: return None
+            if 'client_id' in query.keys():
+                cid = query['client_id']
+            else:
+                return None
+            if 'redirect_uri' in query.keys():
+                redirect_uri = query['redirect_uri']
+            else:
+                return None
+            if 'response_type' in query.keys():
+                response_type = query['response_type']
+            else:
+                return None
             uri = '/dialog/authorize'
-            payload = {'redirect_uri':'https://cms.lingotek.com/tms-ui/html/portal/sso_redirect.html','response_type':'token','client_id':cid}
-            # r = requests.get(host + uri, headers={'Host': 'cmssso.lingotek.com', 'Referer': 'https://cmssso.lingotek.com/login', 'Cache-Control':'max-age=0', 'Upgrade-Insecure-Requests':'1', 'Cookie':'__ctmid=58220c510010e8c8dc704410; _gat=1; _ga=GA1.2.831256021.1467748163; connect.sid=s%3AxU6QRRV9jDVSX3SeYAOElBOI1Y5HdMRK.yU%2FTgKno2PqlKGljl50dJ8HarhRUT71zT0rF6aniDvw'}, data=payload)
-            # r = requests.get(host + uri, headers={'Cookie':'connect.sid=s%3Aq4dTUpbJVb8uIgbM7s2T0txtHR6qpkhE.5dFEBdjsPtlcDGgG9MO9yNQMhyrkMpJVjhLH84J2mKI'}, params=payload)
+            payload = {'redirect_uri':redirect_uri,'response_type':response_type,'client_id':cid}
             r = requests.get(host + uri, headers={'Cookie': self.cookie}, params=payload)
             log_api('GET', uri, r)
-            # r = requests.get(host + uri, headers=self.headers, params=payload)
             fragment = parse.parse_qs(parse.urlparse(r.url).fragment)
-            if 'access_token' in fragment.keys() and len(fragment['access_token']) > 0: return fragment['access_token'][0]
-            else: return None
+            if 'access_token' in fragment.keys() and len(fragment['access_token']) > 0:
+                return fragment['access_token'][0]
+            else:
+                return None
         except Exception as e:
-            print("authenticate", e)
+            print("authenticate: ", e)
             self.handleError()
             return None
 
-# Returns a request object used in the authenticate function
+    # Returns a request object used in the authenticate function
     def startup(self, host):
         try:
             uri = '/lingopoint/portal/startup.action'

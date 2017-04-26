@@ -44,10 +44,10 @@ def has_hidden_attribute(file_path):
     """ Detects if a file has hidden attributes """
     try:
         # Python 2
-        attrs = ctypes.windll.kernel32.GetFileAttributesW(unicode(file_path))
+        # attrs = ctypes.windll.kernel32.GetFileAttributesW(unicode(file_path))
         # End Python 2
         # Python 3
-#         attrs = ctypes.windll.kernel32.GetFileAttributesW(str(file_path))
+        attrs = ctypes.windll.kernel32.GetFileAttributesW(str(file_path))
         # End Python 3
         assert attrs != -1
         result = bool(attrs & 2)
@@ -59,6 +59,7 @@ class WatchAction(Action):
     # def __init__(self, path, remote=False):
     def __init__(self, path=None, timeout=60):
         Action.__init__(self, path, True, timeout)
+        self.end_watch = False
         self.observers = []  # watchdog observers that will watch the files
         self.handler = WatchHandler()
         self.handler.on_modified = self._on_modified
@@ -216,10 +217,12 @@ class WatchAction(Action):
                     except IndexError:
                         logger.warning('Cannot detect locales from file: {0}, not adding any locales'.format(title))
                 self.watch_add_target(relative_path, document_id)
-                # logger.info('Added new document {0}'.format(title
-            # else:
-            #     print("Skipping hidden file "+file_path)
+                logger.info('Added new document {0}'.format(title))
+            else:
+                print("Skipping hidden file "+file_path)
+                logger.info("Skipping hidden file "+file_path)
         except KeyboardInterrupt:
+            logger.info("KeyboardInterrupt")
             for observer in self.observers:
                 observer.stop()
         # except Exception as err:
@@ -282,6 +285,7 @@ class WatchAction(Action):
         # todo may want to process more than 1 item every "poll"..
         # if self.watch_queue:
         #     self.watch_add_target(None, self.watch_queue.pop(0))
+        logger.info("in process_queue")
         for document_id in self.watch_queue:
             self.watch_add_target(None, document_id)
 
@@ -330,11 +334,11 @@ class WatchAction(Action):
             if file_name not in self.polled_list or self.force_poll:
                 locale_progress = self.import_locale_info(doc_id, True)
                 # Python 2
-                for locale, progress in locale_progress.iteritems():
+                # for locale, progress in locale_progress.iteritems():
                 # End Python 2
                 # Python 3
-#                 for locale in locale_progress:
-#                     progress = locale_progress[locale]
+                for locale in locale_progress:
+                    progress = locale_progress[locale]
                 # End Python 3
                     if progress == 100 and locale not in downloaded:
                         document_added = False
@@ -379,8 +383,12 @@ class WatchAction(Action):
         print
         return abspath.rstrip(os.sep)
 
+    def stop_all_observers(self):
+        self.end_watch = True
+        for observer in self.observers:
+            observer.stop()
+
     def watch_action(self, ignore, delimiter=None, no_folders=False, force_poll=False): # watch_paths, ignore, delimiter=None, no_folders=False):
-        # print self.path
         watch_paths = None
         if not watch_paths:
             watch_paths = self.folder_manager.get_file_names()
@@ -403,8 +411,11 @@ class WatchAction(Action):
                 if i < len(watch_paths)-1:
                     watch_message += " "
             print (watch_message)
+            logger.info("Watching for updates in")
+            logger.info(watch_message)
         else:
             print ("Watching for updates to added documents")
+            logger.info("Watching for updates to added documents")
         if force_poll:
             self.force_poll = True
         self.ignore_ext.extend(ignore)
@@ -418,6 +429,9 @@ class WatchAction(Action):
         # start_time = time.clock()
         try:
             while True:
+                if self.end_watch == True:
+                    #logger.info("Stopping watch")
+                    break
                 self.poll_remote()
                 current_timeout = self.timeout
                 while len(self.watch_queue) and current_timeout > 0:

@@ -1,4 +1,6 @@
+''' Internal Dependencies '''
 from ltk.actions.action import *
+from utils import notification
 
 class StatusAction(Action):
     def __init__(self, path):
@@ -99,6 +101,25 @@ class StatusAction(Action):
             self._print_status(title, progress)
             if detailed:
                 self._print_detailed_status(doc_id, title)
+
+    def _get_status_of_all_local_docs(self):
+        docs = self.doc_manager.get_doc_ids()
+        completed = 0
+
+        for doc in docs:
+            response = self.api.document_status(doc)
+            if response.status_code != 200:
+                return "Status: Processing translation requests"
+            else:
+                progress = response.json()['properties']['progress']
+                if progress == 100:
+                    completed += 1
+        if completed == len(docs):
+            return "Status: Ready to translate"
+
+        else:
+            return "Status: " + str(completed) + " of " + str(len(docs)) + " translated"
+
 
     def _print_status(self, title, progress):
         print ('{0}: {1}%'.format(title, progress))
