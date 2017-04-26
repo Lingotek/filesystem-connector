@@ -137,7 +137,7 @@ class ConfigAction(Action):
         folder_is_added = False
         folders = self.folder_manager.get_file_names()
         for folder in folders:
-            if dir_are_same(download_folder, folder):
+            if os.path.samefile(download_folder, folder):
                 folder_is_added = True
         if folder_is_added == True:
             logger.warning("folder \'" + download_folder + "\'" + " is a added folder. Added folders cannot be set as the download folder. To remove folder use the \'ltk rm\' command." )

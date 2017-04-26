@@ -552,12 +552,3 @@ def log_id_names(json):
         ids.append(entity['properties']['id'])
         titles.append(entity['properties']['title'])
     return ids, titles
-
-def dir_are_same(dir1, dir2):
-    if dir1[-1] == '/' or dir1[-1] == '\\':
-        dir1 = dir1[:-1]
-    if dir2[-1] == '/' or dir2[-1] == '\\':
-        dir2 = dir2[:-1]
-    if dir1 == dir2:
-        return True
-    return False
