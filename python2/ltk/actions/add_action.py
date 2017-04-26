@@ -150,6 +150,8 @@ class AddAction(Action):
                 if os.path.isdir(pattern):
                     if self.is_hidden_file(pattern):
                         logger.warning("Folder is hidden")
+                    elif self.download_dir is not "null" and dir_are_same(pattern, self.download_dir):
+                        logger.warning("The folder " + "\'" + pattern + "\'" + " set as the downlaod folder. You cannot add the download folder.")
                     elif not self._is_folder_added(pattern):
                         self.folder_manager.add_folder(self.norm_path(pattern.rstrip(os.sep)))
                         logger.info("Added folder "+str(pattern))

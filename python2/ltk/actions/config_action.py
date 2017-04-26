@@ -134,7 +134,15 @@ class ConfigAction(Action):
             print_config = False
 
     def set_download_folder(self, download_folder):
-        if download_folder == '--none':
+        folder_is_added = False
+        folders = self.folder_manager.get_file_names()
+        for folder in folders:
+            if dir_are_same(download_folder, folder):
+                folder_is_added = True
+        if folder_is_added == True:
+            logger.warning("folder \'" + download_folder + "\'" + " is a added folder. Added folders cannot be set as the download folder. To remove folder use the \'ltk rm\' command" )
+            self.print_config = False
+        elif download_folder == '--none':
             new_download_option = 'same'
             self.download_option = new_download_option
             self.update_config_file('download_folder',"", self.conf_parser, self.config_file_name, "")
@@ -156,7 +164,7 @@ class ConfigAction(Action):
                     self.update_config_file('download_option', new_download_option, self.conf_parser, self.config_file_name, "")
             else:
                 logger.warning('Error: Invalid value for "-d" / "--download_folder": The folder {0} does not exist'.format(os.path.join(self.path,download_path)))
-                print_config = False
+                self.print_config = False
 
     def set_git_autocommit(self, git_autocommit):
         # if self.git_autocommit == 'True' or self.git_auto.repo_exists(self.path):
