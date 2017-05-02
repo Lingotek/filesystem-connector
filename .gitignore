@@ -7,6 +7,7 @@ venv/
 .ltk-logs
 info.py
 dist/
+build/
 **/config
 downloaded/
 uploads/
