@@ -135,14 +135,20 @@ class ConfigAction(Action):
 
     def set_download_folder(self, download_folder):
         if download_folder == '--none':
-            new_download_option = 'same'
-            self.download_option = new_download_option
-            self.update_config_file('download_folder',"", self.conf_parser, self.config_file_name, "")
-            if self.download_option != 'clone':
+            if self.download_dir == None or self.download_dir == "" or self.download_dir == "null":
+                pass
+            else:
                 new_download_option = 'same'
                 self.download_option = new_download_option
-                log_info = 'Removed download folder'
-                self.update_config_file('download_option', new_download_option, self.conf_parser, self.config_file_name, log_info)
+                self.update_config_file('download_folder',"", self.conf_parser, self.config_file_name, "")
+                if self.download_option != 'clone':
+                    if self.watch_locales != None and len(self.watch_locales) != 0:
+                        new_download_option = 'folder'
+                    else:
+                        new_download_option = 'same'
+                    self.download_option = new_download_option
+                    log_info = 'Removed download folder'
+                    self.update_config_file('download_option', new_download_option, self.conf_parser, self.config_file_name, log_info)
         else:
             download_path = self.norm_path(download_folder)
             if os.path.exists(os.path.join(self.path,download_path)):
