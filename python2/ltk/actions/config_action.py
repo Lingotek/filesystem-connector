@@ -142,7 +142,7 @@ class ConfigAction(Action):
                 self.download_option = new_download_option
                 self.update_config_file('download_folder',"", self.conf_parser, self.config_file_name, "")
                 if self.download_option != 'clone':
-                    if self.watch_locales != None and len(self.watch_locales) != 0:
+                    if self.watch_locales != None and len(self.locale_folders) != 0:
                         new_download_option = 'folder'
                     else:
                         new_download_option = 'same'
