@@ -1,30 +1,33 @@
+''' Python Dependencies '''
 import click
+import ctypes
+import logging
+import os
 import sys
+
+''' Internal Dependencies '''
+from ltk import __version__
+from ltk.actions import *
+from ltk.constants import LOG_FN, CONF_DIR
+from ltk.exceptions import UninitializedError, ResourceNotFound, RequestFailedError, AlreadyExistsError
+from ltk.logger import logger, API_LOG_LEVEL, API_RESPONSE_LOG_LEVEL, CustomFormatter
+from ltk.utils import remove_powershell_formatting
+from ltk.watch import WatchAction
+
+''' Globals '''
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
+HIDDEN_ATTRIBUTE = 0x02
 python_version = sys.version
 # Python 3
 # # if python_version[0] < '3':
 # #    print('Python 3 is required to run this version of the Lingotek Filesystem connector.\n\nFor other versions and troubleshooting, see: https://github.com/lingotek/filesystem-connector')
 # #    exit()
 # End Python 3
-from ltk.actions import *
-import os
-from ltk.exceptions import UninitializedError, ResourceNotFound, RequestFailedError, AlreadyExistsError
-from ltk.constants import LOG_FN, CONF_DIR
-import logging
-from ltk.logger import logger, API_LOG_LEVEL, API_RESPONSE_LOG_LEVEL, CustomFormatter
 
-from ltk import __version__
-from ltk.watch import WatchAction
-
-
-CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
-
-from ltk.utils import remove_powershell_formatting
 
 def abort_if_false(ctx, param, value):
     if not value:
         ctx.abort()
-
 
 def init_logger(path):
     """
@@ -36,10 +39,36 @@ def init_logger(path):
     else:
         try:
             file_handler = logging.FileHandler(os.path.join(path, CONF_DIR, LOG_FN))
-        except IOError:
+
+            # if on Windows system, set directory properties to hidden
+            if os.name == 'nt':
+                logger.info("On Windows, make .ltk folder hidden")
+                # Python 2
+                ret = ctypes.windll.kernel32.SetFileAttributesW(unicode(os.path.join(path, CONF_DIR)), HIDDEN_ATTRIBUTE)
+                # End Python 2
+                # Python 3
+#                 ret = ctypes.windll.kernel32.SetFileAttributesW(os.path.join(path, CONF_DIR), HIDDEN_ATTRIBUTE)
+                # End Python 3
+                if(ret != 1):   # return value of 1 signifies success
+                    pass
+        except IOError as e:
+            #logger.info(e)
             # todo error check when running init without existing conf dir
             os.mkdir(os.path.join(path, CONF_DIR))
+            # if on Windows system, make directory hidden
+            if os.name == 'nt':
+                logger.info("On Windows, make .ltk folder hidden")
+                # Python 2
+                ret = ctypes.windll.kernel32.SetFileAttributesW(unicode(os.path.join(path, CONF_DIR)), HIDDEN_ATTRIBUTE)
+                # End Python 2
+                # Python 3
+#                 ret = ctypes.windll.kernel32.SetFileAttributesW(os.path.join(path, CONF_DIR), HIDDEN_ATTRIBUTE)
+                # End Python 3
+                if(ret != 1):   # return value of 1 signifies success
+                    pass
+
             file_handler = logging.FileHandler(os.path.join(path, CONF_DIR, LOG_FN))
+
     console_handler = logging.StreamHandler(sys.stdout)
     file_handler.setLevel(API_LOG_LEVEL)
     file_handler.setFormatter(logging.Formatter('%(asctime)s  %(levelname)s: %(message)s'))
@@ -131,7 +160,7 @@ def init(host, access_token, client_id, path, project_name, workflow_id, locale,
               help='Specify target locales that documents in watch_folder should be assigned; may either specify '
                    'with multiple -t flags (ex: -t locale -t locale) or give a list separated by commas and no spaces '
                    '(ex: -t locale,locale)')
-@click.option('-p', '--locale_folder', nargs=2, type=str, multiple=True, help='For a specific locale, specify the root folder where downloaded translations should appear. Use --none for the path to clear the download folder for a specific locale. Example: -p fr_FR translations/fr_FR')
+@click.option('-p', '--locale_folder', nargs=2, type=str, multiple=True, help='For a specific locale, specify the root folder where downloaded translations should appear. Use --none for the path to clear the download folder for a specific locale. Example: -p fr_FR translations/fr_FR. Note: This only works with clone option \'on\'')
 @click.option('-r', '--remove_locales', flag_value=True, help='Remove all locale folders and use the default download location instead.')
 @click.option('-g', '--git', help='Toggle Git auto-commit option on and off')
 @click.option('-gu', '--git_credentials', is_flag=True, help='Open prompt for Git credentials for auto-fill (\'none\' to unset); only enabled for Mac and Linux')
@@ -348,7 +377,7 @@ def pull(auto_format, locale_ext, no_ext, locales):
 @click.option('-i', '--id', flag_value=True, help='Delete documents with the specified ids (instead of file names) on Lingotek Cloud')
 @click.option('-n', '--name', flag_value=True, help='Delete documents with the specified names (instead of file names or paths) on Lingotek Cloud')
 @click.option('-a', '--all', flag_value=True, help='Delete all documents from Lingotek Cloud that are found locally')
-@click.option('-r', '--remote', flag_value=True, help='When used with -a, deletes all documents from Lingotek Cloud for the current project')
+@click.option('-r', '--remote', flag_value=True, help='Deletes specified documents from Lingotek Cloud for the current project')
 @click.option('-f', '--force', flag_value=True, help='Delete both local and remote files, as well as any local translation files')
 def rm(file_names, **kwargs):
     """

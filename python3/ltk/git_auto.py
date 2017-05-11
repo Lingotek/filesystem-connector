@@ -1,3 +1,10 @@
+# Python 2
+# from ConfigParser import ConfigParser, NoOptionError
+# End Python 2
+# Python 3
+from configparser import ConfigParser, NoOptionError
+# End Python 3
+from ltk.constants import CONF_DIR, CONF_FN, SYSTEM_FILE, ERROR_FN
 import sys
 import os.path
 import codecs
@@ -16,6 +23,13 @@ class Git_Auto:
 		self.join = os.path.join
 		self.repo_is_defined = False
 		self.repo_directory = ""
+		self.config_file_name, self.conf_parser = self.init_config_file()
+
+	def init_config_file(self):
+		config_file_name = os.path.join(self.path, CONF_DIR, CONF_FN)
+		conf_parser = ConfigParser()
+		conf_parser.read(config_file_name)
+		return config_file_name, conf_parser
 
 	def repo_exists(self, repo_directory=os.getcwd()):
 		while repo_directory and repo_directory != "" and not (os.path.isdir(repo_directory + "/.git")):
@@ -26,6 +40,7 @@ class Git_Auto:
 			return False
 		else:
 			self.repo_directory = repo_directory
+			self.initialize_repo()
 			return True
 
 	def initialize_repo(self, directory=None):
@@ -37,35 +52,35 @@ class Git_Auto:
 
 	def add_file(self, file_name):
 		if not self.repo_is_defined:
-			error("No Git repository found for the current directory.")
-			return
-		self.repo.git.add(file_name)
+			if(self.repo_exists()):
+				self.repo.git.add(file_name)
 
 	def commit(self, message):
 		if not self.repo_is_defined:
-			error("No Git repository found for the current directory.")
-			return
-		message.rstrip(' ')
-		self.repo.index.commit("Translations updated for " + message)
+			if(self.repo_exists()):
+				message.rstrip(' ')
+				self.repo.index.commit(message)
 
 	def encrypt(self, password):
 		# Python 2
 		# password = codecs.encode(password, 'base64')
-        # End Python 2
-        # Python 3
+		# End Python 2
+		# Python 3
 		password = bytes(password, 'utf-8')
 		password = codecs.encode(password, 'base64')
 		password = str(password, 'utf-8')
-        # End Python 3
+		# End Python 3
 		return password
 
 	def push(self, username=None, password=None):
+		username = self.conf_parser.get('main', 'git_username')
+		password = self.conf_parser.get('main', 'git_password')
 		if not self.repo_is_defined:
-			error("No Git repository found for the current directory.")
-			self.repo.git.push()
-			return
+			if not (self.repo_exists()):
+				error("No Git repository found for the current directory.")
+				return
 		try:
-			pexpect.spawnu('git push')
+			g = pexpect.spawnu('git push')
 		except:
 			try:
 				self.repo.git.push()
@@ -76,8 +91,6 @@ class Git_Auto:
 			return
 		try:
 			g.logfile_read = sys.stdout
-			if not username: username = ''
-			if not password: password = ''
 			while True:
 				i = g.expect([u'Username for .*', u'Password for .*', pexpect.EOF])
 				if(i == 0):
@@ -86,12 +99,12 @@ class Git_Auto:
 					# Python 2
 					# g.send(codecs.decode(password, 'base64')+'\n')
 					# End Python 2
-	       			# Python 3
+					# Python 3
 					g.send(str(codecs.decode(password.encode(), 'base64'), 'utf-8')+'\n')
 					# End Python 3
 				else:
 					break
-		except:
+		except Exception as e:
 			print("Notice: Auto-credentials currently not operational")
 		'''
 		# if 'nt' not in os.name:
