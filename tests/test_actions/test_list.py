@@ -21,6 +21,7 @@ class TestList(unittest.TestCase):
         self.clean_action = CleanAction(os.getcwd())
         self.add_action = AddAction(os.getcwd())
         self.clean_action.clean_action(True, False, None)
+        self.rm_action = RmAction(os.getcwd())        
 
     def tearDown(self):
         self.clean_action.clean_action(True, False, None)
@@ -38,7 +39,7 @@ class TestList(unittest.TestCase):
         try:
             out = StringIO()
             sys.stdout = out
-            self.action.list_ids_action(False)
+            self.action.list_ids(False)
             info = out.getvalue()
             for doc_id in doc_ids:
                 assert doc_id in info
@@ -53,7 +54,7 @@ class TestList(unittest.TestCase):
         try:
             out = StringIO()
             sys.stdout = out
-            self.action.list_ids_action(False)
+            self.action.list_ids(False)
             info = out.getvalue()
             assert 'No local documents' in info
         finally:
@@ -63,7 +64,7 @@ class TestList(unittest.TestCase):
         try:
             out = StringIO()
             sys.stdout = out
-            self.action.list_workflow_action()
+            self.action.list_workflows()
             info = out.getvalue()
             assert 'Workflows' in info
             assert 'c675bd20-0688-11e2-892e-0800200c9a66' in info
@@ -75,10 +76,10 @@ class TestList(unittest.TestCase):
         try:
             out = StringIO()
             sys.stdout = out
-            self.action.list_locale_action()
+            self.action.list_locales()
             info = out.getvalue()
-            assert 'ar_AE (Arabic, United Arab Emirates)' in info
-            assert 'zh_TW (Chinese, Taiwan)' in info
+            assert 'ar-AE (Arabic, United Arab Emirates)' in info
+            assert 'zh-TW (Chinese, Taiwan)' in info
         finally:
             sys.stdout = sys.__stdout__
 
@@ -86,7 +87,7 @@ class TestList(unittest.TestCase):
         try:
             out = StringIO()
             sys.stdout = out
-            self.action.list_format_action()
+            self.action.list_formats()
             info = out.getvalue()
             assert info.startswith('Lingotek Cloud accepts content')
             assert 'CSV' in info
@@ -98,7 +99,7 @@ class TestList(unittest.TestCase):
         try:
             out = StringIO()
             sys.stdout = out
-            self.action.list_filter_action()
+            self.action.list_filters()
             info = out.getvalue()
             decoded_info = info
             assert 'Filters:' in info

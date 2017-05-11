@@ -21,12 +21,14 @@ class TestDownload(unittest.TestCase):
         cleanup()
 
     def setUp(self):
+        self.config_action = ConfigAction(os.getcwd())
+        self.config_action.config_action(clone_option='off')
+        self.config_action.config_action(download_folder='--none')
         self.downloaded_files = []
-        self.locales = ['ja_JP', 'zh_CN']
+        self.locales = ['ja-JP', 'zh-CN']
         self.action = DownloadAction(os.getcwd())
         self.clean_action = CleanAction(os.getcwd())
         self.request_action = RequestAction(os.getcwd(), None, None, self.locales, False, None, None)
-        self.config_action = ConfigAction(os.getcwd())
         self.pull_action = PullAction(os.getcwd(), self.action)
         self.clean_action.clean_action(False, False, None)
         self.files = ['sample.txt', 'sample1.txt']
@@ -62,9 +64,7 @@ class TestDownload(unittest.TestCase):
         return dl_path
 
     def test_download_name(self):
-        self.config_action.config_action(clone_option='off')
-        self.config_action.config_action(download_folder='--none')
-        self.action.download_option = ":)"
+        
 
         self.action.download_by_path(self.first_doc, self.locales[0], False, False, False)
         dl_file = self.get_dl_path(self.locales[0], self.first_doc)
@@ -77,9 +77,6 @@ class TestDownload(unittest.TestCase):
         self.downloaded_files.append(dl_file)
 
     def test_pull_all(self):
-        self.config_action.config_action(clone_option='off')
-        self.config_action.config_action(download_folder='--none')
-
         for document in self.files:
             for locale in self.locales:
                 dl_file = self.get_dl_path(locale, document)
@@ -90,9 +87,6 @@ class TestDownload(unittest.TestCase):
             assert os.path.isfile(path)
 
     def test_pull_locale(self):
-        self.config_action.config_action(clone_option='off')
-        self.config_action.config_action(download_folder='--none')
-
         for document in self.files:
             dl_file = self.get_dl_path(self.locales[0], document)
             self.downloaded_files.append(dl_file)
