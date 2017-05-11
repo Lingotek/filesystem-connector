@@ -168,7 +168,6 @@ class WatchAction(Action):
             in_db = False
             fn = ''
             for entry in db_entries:
-                print(entry)
                 if event.src_path.endswith(entry['file_name']):
                     fn = entry['file_name']
                     in_db = True
