@@ -1,5 +1,5 @@
-from fsc.python3.ltk.actions.action import *
-from fsc.python3.ltk.apicalls import ApiCalls
+from ltk.actions.action import *
+from ltk.apicalls import ApiCalls
 import os.path
 
 class InitActionGUI():

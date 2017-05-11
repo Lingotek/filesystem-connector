@@ -1,4 +1,4 @@
-from fsc.python3.ltk.actions.action import *
+from ltk.actions.action import *
 
 class StatusAction(Action):
     def __init__(self, path):
@@ -105,7 +105,25 @@ class StatusAction(Action):
         # print title + ': ' + str(progress) + '%'
         # for each doc id, also call /document/id/translation and get % of each locale
 
+    def _get_status_of_all_local_docs(self):
+        doc_ids = self.doc_manager.get_doc_ids()
+        completed = 0
+
+        for doc_id in doc_ids:
+            response = self.api.document_status(doc_id)
+            if response.status_code != 200:
+                return "Status: processing"
+            else:
+                progress = response.json()['properties']['progress']
+                if progress == 100:
+                    completed += 1
+        if completed == len(doc_ids):
+            return "Status: ready"
+        else:
+            return "Status: " + str(completed) + " of " + str(len(doc_ids))
+
     def _print_detailed_status(self, doc_id, doc_name):
+        print("status_action _print_detailed_status")
         response = self.api.document_translation_status(doc_id)
         if response.status_code != 200:
             raise_error(response.json(), 'Failed to get detailed status of document', True, doc_id, doc_name)

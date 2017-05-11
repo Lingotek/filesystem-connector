@@ -1,4 +1,4 @@
-from fsc.python3.ltk.actions.action import *
+from ltk.actions.action import *
 
 class ConfigAction(Action):
     def __init__(self, path):
@@ -32,7 +32,7 @@ class ConfigAction(Action):
             self.update_config_parser_info()
 
             if 'git' in kwargs and kwargs['git']:
-                self.set_git_autocommit()
+                self.set_git_autocommit(kwargs['git'])
 
             if 'git_credentials' in kwargs and kwargs['git_credentials']:
                 self.set_git_credentials()
@@ -58,8 +58,8 @@ class ConfigAction(Action):
             locale_folders_str = json.dumps(self.locale_folders).replace("{","").replace("}","").replace("_","-")
         current_git_username = self.conf_parser.get('main', 'git_username')
         current_git_password = self.conf_parser.get('main', 'git_password')
-        git_output = ('active' if self.git_autocommit == "True" else 'inactive')
-        if self.git_autocommit == "True":
+        git_output = ('active' if self.git_autocommit in ['True', 'on'] else 'inactive')
+        if self.git_autocommit in ['True', 'on']:
             if current_git_username != "":
                 git_output += (' (' + current_git_username + ', password:' + ('YES' if current_git_password != '' else 'NO')) + ')'
             else:
@@ -158,17 +158,24 @@ class ConfigAction(Action):
                 logger.warning('Error: Invalid value for "-d" / "--download_folder": The folder {0} does not exist'.format(os.path.join(self.path,download_path)))
                 print_config = False
 
-    def set_git_autocommit(self):
-        if self.git_autocommit == 'True' or self.git_auto.repo_exists(self.path):
-            log_info = 'Git auto-commit status changed from {0}active'.format(
-                ('active to in' if self.git_autocommit == "True" else 'inactive to '))
-            config_file = open(self.config_file_name, 'w')
-            if self.git_autocommit == "True":
-                self.update_config_file('git_autocommit', 'False', self.conf_parser, self.config_file_name, log_info)
-                self.git_autocommit = "False"
-            else:
-                self.update_config_file('git_autocommit', 'True', self.conf_parser, self.config_file_name, log_info)
-                self.git_autocommit = "True"
+    def set_git_autocommit(self, git_autocommit):
+        # if self.git_autocommit == 'True' or self.git_auto.repo_exists(self.path):
+        #     log_info = 'Git auto-commit status changed from {0}active'.format(
+        #         ('active to in' if self.git_autocommit == "True" else 'inactive to '))
+        #     config_file = open(self.config_file_name, 'w')
+        #     if self.git_autocommit == "True":
+        #         self.update_config_file('git_autocommit', 'False', self.conf_parser, self.config_file_name, log_info)
+        #         self.git_autocommit = "False"
+        #     else:
+        #         self.update_config_file('git_autocommit', 'True', self.conf_parser, self.config_file_name, log_info)
+        #         self.git_autocommit = "True"
+        self.git_autocommit = git_autocommit
+        log_info = 'Turned git auto-commit ' + git_autocommit
+        if git_autocommit in ['on', 'off']:
+            self.update_config_file('git_autocommit', git_autocommit, self.conf_parser, self.config_file_name, log_info)
+        else:
+            logger.warning('Error: Invalid value for "-g" / "--clone_option": Must be either "on" or "off"')
+            print_config = False
 
     def set_git_credentials(self):
         if "nt" not in os.name:
@@ -277,6 +284,11 @@ class ConfigAction(Action):
         self.conf_parser.set('main', 'workflow_id', workflow_id)
 
     def update_config_parser_info(self):
+        # clone_option = self.conf_parser.get('main', 'clone_option')
+        # download_folder = self.conf_parser.get('main', 'download_folder')
+        # download_option = self.conf_parser.get('main', 'download_option')
+        # if 'download_option' == 'same' or (clone_option == "off" and download_folder == "null"):
+        #     self.update_config_file('download_option', 'folder', self.conf_parser, self.config_file_name, "")
         if not self.conf_parser.has_option('main', 'git_autocommit'):
             self.update_config_file('git_autocommit', 'False', self.conf_parser, self.config_file_name, 'Update: Added \'git auto-commit\' option (ltk config --help)')
             self.update_config_file('git_username', '', self.conf_parser, self.config_file_name, 'Update: Added \'git username\' option (ltk config --help)')

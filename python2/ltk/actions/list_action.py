@@ -1,4 +1,4 @@
-from fsc.python3.ltk.actions.action import *
+from ltk.actions.action import *
 
 class ListAction(Action):
     def __init__(self, path):
@@ -147,12 +147,10 @@ class ListAction(Action):
             else:
                 raise_error("", "Failed to get status of documents", True)
         else:
-            print ('Remote documents: id, document name')
+            print ('Remote documents:\nID \t \t \t \t \t Document name')
             for entry in response.json()['entities']:
-                i = 0
-                while 'properties' not in entry['entities'][i]: i += 1
-                title = entry['entities'][i]['properties']['title'].replace("Status of ", "")
-                id = entry['entities'][i]['properties']['id']
+                title = entry['properties']['title']
+                id = entry['properties']['id']
                 info = '{id} \t {title}'.format(id=id, title=title)
                 print (info)
 

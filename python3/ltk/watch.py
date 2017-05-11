@@ -1,12 +1,12 @@
 # Using the following encoding: utf-8
 import ctypes
-from fsc.python3.ltk.actions.action import Action
-from fsc.python3.ltk.actions import add_action
-from fsc.python3.ltk.actions import request_action
-from fsc.python3.ltk.actions import download_action
-from fsc.python3.ltk.logger import logger
-from fsc.python3.ltk.utils import map_locale, restart, get_relative_path, log_error
-from fsc.python3.ltk.locales import locale_list
+from ltk.actions.action import Action
+from ltk.actions import add_action
+from ltk.actions import request_action
+from ltk.actions import download_action
+from ltk.logger import logger
+from ltk.utils import map_locale, restart, get_relative_path, log_error
+from ltk.locales import locale_list
 import time
 import requests
 from requests.exceptions import ConnectionError
@@ -15,8 +15,8 @@ import re
 import sys
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEvent
-from fsc.python3.ltk.watchhandler import WatchHandler
-from fsc.python3.ltk.git_auto import Git_Auto
+from ltk.watchhandler import WatchHandler
+from ltk.git_auto import Git_Auto
 
 # retry decorator to retry connections
 def retry(logger, timeout=5, exec_type=None):

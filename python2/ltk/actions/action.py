@@ -258,6 +258,7 @@ class Action:
         return docs
 
     def get_doc_locales(self, doc_id, doc_name):
+        print("action get_doc_locales")
         locales = []
         response = self.api.document_translation_status(doc_id)
         if response.status_code != 200:
@@ -290,6 +291,7 @@ class Action:
         return False
 
     def update_document_action(self, file_name, title=None, **kwargs):
+        print("action update_document_action")
         try:
             relative_path = self.norm_path(file_name)
             entry = self.doc_manager.get_doc_by_prop('file_name', relative_path)
@@ -300,8 +302,10 @@ class Action:
                 logger.error("Document name specified for update doesn't exist: {0}".format(title))
                 return
             if title:
+                print("action api.document_update with title")
                 response = self.api.document_update(document_id, file_name, title=title, **kwargs)
             else:
+                print("action api.document_update w/o title")
                 response = self.api.document_update(document_id, file_name)
             if response.status_code != 202:
                 raise_error(response.json(), "Failed to update document {0}".format(file_name), True)
@@ -352,6 +356,7 @@ class Action:
         return file_path
 
     def import_locale_info(self, document_id, poll=False):
+        print("action import_locale_info")
         locale_progress = {}
         response = self.api.document_translation_status(document_id)
         if response.status_code != 200:

@@ -1,4 +1,4 @@
-from fsc.python3.ltk.actions.action import *
+from ltk.actions.action import *
 
 class CleanAction(Action):
     def __init__(self, path):

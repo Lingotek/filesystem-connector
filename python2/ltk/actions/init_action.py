@@ -1,10 +1,11 @@
-from fsc.python3.ltk.actions.action import *
+from ltk.actions.action import *
 
 class InitAction():
     '''def __init__(self, path):
         #Action.__init__(self, path)'''
 
-    def init_action(self, host, access_token, project_path, folder_name, workflow_id, locale, browserless, delete, reset):
+    def init_action(self, host, access_token, client_id, project_path, folder_name, workflow_id, locale, browserless, delete, reset):
+        client_id = 'ab33b8b9-4c01-43bd-a209-b59f933e4fc4' if not client_id else client_id
         try:
             # check if Lingotek directory already exists
             to_init = self.reinit(host, project_path, delete, reset)
@@ -19,7 +20,7 @@ class InitAction():
                 if not access_token or reset:
                     if not browserless:
                         from ltk.auth import run_oauth
-                        access_token = run_oauth(host)
+                        access_token = run_oauth(host, client_id)
                         ran_oauth = True
                     else:
                         api = ApiCalls(host, '')
@@ -72,7 +73,7 @@ class InitAction():
             community_info = api.get_communities_info()
             if not community_info:
                 from ltk.auth import run_oauth
-                access_token = run_oauth(host)
+                access_token = run_oauth(host, client_id)
                 self.create_global(access_token, host)
                 community_info = api.get_communities_info()
                 if not community_info:
@@ -89,13 +90,16 @@ class InitAction():
             if community_id != None:
                 config_parser.set('main', 'community_id', community_id)
                 response = api.list_projects(community_id)
-                if response.status_code != 200:
+                if response.status_code == 204:#no projects in community
+                    project_info = []
+                elif response.status_code == 200:
+                    project_info = api.get_project_info(community_id)
+                else:
                     try:
                         raise_error(response.json(), 'Something went wrong trying to find projects in your community')
                     except:
                         logger.error('Something went wrong trying to find projects in your community')
                         return
-                project_info = api.get_project_info(community_id)
                 if len(project_info) > 0:
                     confirm = 'none'
                     try:

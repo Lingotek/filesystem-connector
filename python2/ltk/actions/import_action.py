@@ -1,4 +1,4 @@
-from fsc.python3.ltk.actions.action import *
+from ltk.actions.action import *
 
 class ImportAction(Action):
     def __init__(self, path):
@@ -129,6 +129,7 @@ class ImportAction(Action):
         return path_changed, new_path, write_file, delete_file
 
     def import_document(self, document_id, document_info, force=False, path=False):
+        print("import action import_document")
         local_ids = self.doc_manager.get_doc_ids()
         response = self.api.document_content(document_id, None, None)
         title, extension = os.path.splitext(document_info['title'])
@@ -142,7 +143,7 @@ class ImportAction(Action):
         else:
             file_path = os.path.join(self.path, title)
         # file_path = os.path.join(os.getcwd(), title)  # import to current working directory
-        logger.info('Importing "{0}" to {1}..'.format(title, file_path))
+        logger.info('Importing "{0}" to {1}'.format(title, file_path))
         # use status action to get locale info for importing
         try:
             locale_map = self.import_locale_info(document_id)

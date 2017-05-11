@@ -1,4 +1,4 @@
-from fsc.python3.ltk.actions.action import *
+from ltk.actions.action import *
 
 class RequestAction(Action):
     def __init__(self, actionPath, doc_name, requestPath, entered_locales, to_delete, due_date, workflow, document_id=None, surpressMessage=False):

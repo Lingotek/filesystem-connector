@@ -4,13 +4,16 @@ from ltk.utils import restart
 import ltk.utils
 from ltk.exceptions import RequestFailedError,ConnectionFailed
 from ltk.logger import logger
+import time
 import sys, os
+import os.path
 # Python 2
 import urlparse as parse
 # End Python 2
 # Python 3
 # import urllib.parse as parse
 # End Python 3
+import loginInfo
 
 class ApiCalls:
     def __init__(self, host, access_token, watch=False, timeout=5):
@@ -32,6 +35,7 @@ class ApiCalls:
 
 # Returns true if successful in retrieving cookie, false if otherwise
     def access_login(self, host):
+        print("API Call access_login")
         try:
             uri = '/login'
             r = requests.get(host + uri)
@@ -48,6 +52,7 @@ class ApiCalls:
 
 # Returns true if access_login is successful, false if otherwise
     def login(self, host, username, password):
+        print("API Call login")
         output = self.access_login(host)
         if output == False: return False
         try:
@@ -63,6 +68,7 @@ class ApiCalls:
 
 # Returns access token if successful in retrieving it, None if otherwise
     def authenticate(self, host):
+        print("API Call authenticate")
         output = None
         try:
             start = self.startup(host)
@@ -87,6 +93,7 @@ class ApiCalls:
 
 # Returns a request object used in the authenticate function
     def startup(self, host):
+        print("API Call startup")
         try:
             uri = '/lingopoint/portal/startup.action'
             r = requests.get(host + uri, headers={'Host':'cms.lingotek.com'})
@@ -97,6 +104,7 @@ class ApiCalls:
         return r
 
     def list_communities(self):
+        print("API Call list_communities")
         """ gets the communities that a user is in """
         try:
             uri = API_URI['community']
@@ -108,6 +116,7 @@ class ApiCalls:
         return r
 
     def list_document_formats(self):
+        print("API Call list_document_formats")
         """ gets the communities that a user is in """
         try:
             uri = API_URI['document_format']
@@ -119,6 +128,7 @@ class ApiCalls:
         return r
 
     def list_projects(self, community_id):
+        print("API Call list_projects")
         """ gets the projects a user has """
         try:
             uri = API_URI['project']
@@ -130,6 +140,7 @@ class ApiCalls:
         return r
 
     def add_project(self, project_name, community_id, workflow_id):
+        print("API Call add_project")
         """ adds a project """
         try:
             uri = API_URI['project']
@@ -141,6 +152,7 @@ class ApiCalls:
         return r
 
     def patch_project(self, project_id, workflow_id):
+        print("API Call patch_project")
         """ updates a project """
         try:
             uri = (API_URI['project_id'] % locals())
@@ -154,6 +166,7 @@ class ApiCalls:
         return r
 
     def project_add_target(self, project_id, locale, due_date):
+        print("API Call project_add_target")
         """ adds a target to all documents within a project """
         try:
             uri = (API_URI['project_translation'] % locals())
@@ -167,6 +180,7 @@ class ApiCalls:
         return r
 
     def project_status(self, project_id):
+        print("API Call project_status")
         """ gets the status of a project """
         try:
             uri = (API_URI['project_status'] % locals())
@@ -177,6 +191,7 @@ class ApiCalls:
         return r
 
     def project_delete_target(self, project_id, locale):
+        print("API Call project_delete_target")
         try:
             uri = (API_URI['project_translation_locale'] % locals())
             r = requests.delete(self.host + uri, headers=self.headers)
@@ -186,6 +201,7 @@ class ApiCalls:
         return r
 
     def delete_project(self, project_id):
+        print("API Call delete_project")
         """ deletes a project """
         try:
             uri = (API_URI['project_id'] % locals())
@@ -196,6 +212,7 @@ class ApiCalls:
         return r
 
     def get_document(self, document_id):
+        print("API Call get_document")
         """ gets a document by id """
         try:
             uri = (API_URI['document_id'] % locals())
@@ -206,6 +223,8 @@ class ApiCalls:
         return r
 
     def add_document(self, source_locale, file_name, project_id, title, **kwargs):
+        print("API Call add_document")
+        loginInfo.bar_delegate.createUpdateStatusThread()
         """ adds a document """
         try:
             uri = API_URI['document']
@@ -216,6 +235,9 @@ class ApiCalls:
             detected_format = ltk.utils.detect_format(file_name)
             if ('format' not in kwargs or kwargs['format'] is None):
                 payload['format'] = detected_format
+            if os.path.isfile(file_name) == False or os.path.getsize(file_name) == 0:
+                print("File is empty or not settled")
+                time.sleep(3)
             document = open(file_name, 'rb')
             files = {'content': (file_name, document)}
             if 'srx' in kwargs and kwargs['srx'] is not None:
@@ -233,6 +255,7 @@ class ApiCalls:
         return r
 
     def document_add_target(self, document_id, locale, workflow_id=None, due_date=None):
+        print("API Call document_add_target")
         """ adds a target to existing document, starts the workflow """
         try:
             uri = (API_URI['document_translation'] % locals())
@@ -248,6 +271,7 @@ class ApiCalls:
         return r
 
     def list_documents(self, project_id):
+        print("API Call list_documents")
         """ lists all documents a user has access to, could be filtered by project id """
         try:
             uri = API_URI['document']
@@ -261,6 +285,7 @@ class ApiCalls:
         return r
 
     def document_status(self, document_id):
+        # print("API Call document_status")
         """ gets the status of a document """
         try:
             uri = (API_URI['document_status'] % locals())
@@ -273,6 +298,7 @@ class ApiCalls:
         return r
 
     def document_translation_status(self, document_id):
+        print("API Call document_translation_status")
         """ gets the status of document translations """
         try:
             uri = (API_URI['document_translation'] % locals())
@@ -283,6 +309,7 @@ class ApiCalls:
         return r
 
     def document_content(self, document_id, locale_code, auto_format):
+        print("API Call document_content")
         """ downloads the translated document """
         try:
             uri = (API_URI['document_content'] % locals())
@@ -298,6 +325,7 @@ class ApiCalls:
         return r
 
     def document_update(self, document_id, file_name=None, **kwargs):
+        print("API Call document_update")
         try:
             uri = (API_URI['document_id'] % locals())
             payload = {'id': document_id}
@@ -323,6 +351,7 @@ class ApiCalls:
         return r
 
     def document_delete_target(self, document_id, locale):
+        print("API Call document_delete_target")
         try:
             uri = (API_URI['document_translation_locale'] % locals())
             r = requests.delete(self.host + uri, headers=self.headers)
@@ -332,6 +361,7 @@ class ApiCalls:
         return r
 
     def document_delete(self, document_id):
+        print("API Call document_delete")
         try:
             uri = (API_URI['document_id'] % locals())
             r = requests.delete(self.host + uri, headers=self.headers)
@@ -341,6 +371,7 @@ class ApiCalls:
         return r
 
     def list_workflows(self, community_id):
+        print("API Call list_workflows")
         try:
             uri = API_URI['workflow']
             payload = {'community_id': community_id, 'limit': 1000}
@@ -351,6 +382,7 @@ class ApiCalls:
         return r
 
     def list_locales(self):
+        print("API Call list_locales")
         try:
             uri = 'http://gmc.lingotek.com/v1/locales'
             r = requests.get(uri)
@@ -359,6 +391,7 @@ class ApiCalls:
         return r
 
     def list_filters(self):
+        print("API Call list_filters")
         try:
             uri = API_URI['filter']
             r = requests.get(self.host + uri, headers=self.headers, params={'limit': 1000})
@@ -368,6 +401,7 @@ class ApiCalls:
         return r
 
     def get_filter_content(self, filter_id):
+        print("API Call get_filter_content")
         """ gets a filter by id """
         try:
             uri = (API_URI['filter_content'] % locals())
@@ -381,6 +415,7 @@ class ApiCalls:
         return r
 
     def get_filter_info(self, filter_id):
+        print("API Call get_filter_info")
         """ gets a filter by id """
         try:
             uri = (API_URI['filter_id'] % locals())
@@ -391,6 +426,7 @@ class ApiCalls:
         return r
 
     def patch_filter(self, filter_id, filename):
+        print("API Call patch_filter")
         """ update a filter by id """
         try:
             uri = (API_URI['filter_id'] % locals())
@@ -404,6 +440,7 @@ class ApiCalls:
         return r
 
     def post_filter(self, filename, filter_type='FPRM'):
+        print("API Call post_filter")
         """ post a filter """
         try:
             uri = API_URI['filter']
@@ -422,6 +459,7 @@ class ApiCalls:
         return r
 
     def delete_filter(self, filter_id):
+        print("API Call delete_filter")
         """ deletes a filter """
         try:
             uri = (API_URI['filter_id'] % locals())
@@ -432,6 +470,7 @@ class ApiCalls:
         return r
 
     def get_project_info(self, community_id):
+        print("API Call get_project_info")
         response = self.list_projects(community_id)
         info = {}
         if response.status_code == 200:
@@ -447,6 +486,7 @@ class ApiCalls:
             raise RequestFailedError("Unable to get existing projects")
 
     def get_communities_info(self):
+        print("API Call get_communities_info")
         response = self.list_communities()
         if response.status_code != 200:
             # raise RequestFailedError("Unable to get user's list of communities")
@@ -458,6 +498,7 @@ class ApiCalls:
         return info
 
     def get_document_formats(self):
+        print("API Call get_document_formats")
         response = self.list_document_formats()
         info = {}
         if response.status_code != 200:

@@ -1,4 +1,4 @@
-from fsc.python3.ltk.actions.action import *
+from ltk.actions.action import *
 
 class RmAction(Action):
     def __init__(self, path):
@@ -36,7 +36,7 @@ class RmAction(Action):
                 removed_folder = True
                 logger.info("Removed all folders.")
                 if 'remote' in kwargs and kwargs['remote']:
-                    self.rm_remote(force)
+                    matched_files = self.rm_remote(force)
                 else:
                     useID = False
                     matched_files = self.doc_manager.get_file_names()
@@ -188,8 +188,11 @@ class RmAction(Action):
                 raise_error("", "Failed to get status of documents", True)
             return
         else:
+            matched_files = []
             for entry in response.json()['entities']:
-                id = entry['entities'][0]['properties']['id']
+                id = entry['properties']['id']
                 doc_name = entry['properties']['name']
-                self.rm_document(id, True, force, False, doc_name)
-            return
+
+                doc = self.doc_manager.get_doc_by_prop("id",id)
+                matched_files.append(doc["file_name"])
+            return matched_files
