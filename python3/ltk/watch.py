@@ -65,6 +65,7 @@ class WatchAction(Action):
         self.handler.on_modified = self._on_modified
         self.handler.on_created = self._on_created
         self.handler.on_moved = self._on_moved
+        self.handler.on_deleted = self._on_deleted
         self.watch_queue = []  # not much slower than deque unless expecting 100+ items
         self.locale_delimiter = None
         self.ignore_ext = []  # file types to ignore as specified by the user
