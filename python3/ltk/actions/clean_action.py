@@ -25,6 +25,7 @@ class CleanAction(Action):
                 logger.info('Local documents already up-to-date with Lingotek Cloud')
                 return
             logger.info('Cleaned up associations between local documents and Lingotek Cloud')
+            return True
         except Exception as e:
             log_error(self.error_file_name, e)
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
