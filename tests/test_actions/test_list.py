@@ -50,7 +50,7 @@ class TestList(unittest.TestCase):
             self.rm_action.rm_action(fn, force=True)
         self.clean_action.clean_action(False, False, None)
 
-    def test_list_no_docs(self):
+    def test_list_docs_none(self):
         try:
             out = StringIO()
             sys.stdout = out

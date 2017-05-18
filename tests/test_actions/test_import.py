@@ -37,16 +37,22 @@ class TestImport(unittest.TestCase):
         self.rm_action = RmAction(os.getcwd())
         for doc_id in self.doc_ids:
             self.rm_action.rm_action(doc_id, id=True)
+        for doc_id in self.imported:
+            self.rm_action.rm_action(doc_id, id=True)
         self.clean_action.clean_action(True, False, None)
         self.rm_action.close()
         self.action.close()
 
     def test_import_all(self):
+        files = os.listdir()
         self.action.import_action(True, True, None)
         for doc_id in self.doc_ids:
             doc = self.action.doc_manager.get_doc_by_prop('id', doc_id)
             assert doc
             self.imported.append(doc['id'])
+        added_files = list(set(os.listdir()) - set(files))
+        for file in added_files:
+            os.remove(file)
 
     def test_import_locale(self):
         locale = "ja_JP"

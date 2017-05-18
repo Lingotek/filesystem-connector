@@ -30,19 +30,20 @@ class TestPush(unittest.TestCase):
 
     def tearDown(self):
         #delete files added to lingotek cloud
-        for curr_file in self.files:
-            self.rm_action.rm_action(curr_file, force=True)
+        # for curr_file in self.files:
+        #     self.rm_action.rm_action(curr_file, force=True)
 
         #delete downloaded translations
-        for df in self.downloaded:
-            os.remove(df)
+        # for df in self.downloaded:
+        #     os.remove(df)
 
-        delete_directory("es-AR")
+        print("FILES:", os.listdir("es-AR"))
+        # delete_directory("es-AR")
 
         self.downloaded = []
-        self.clean_action.clean_action(True, False, None)
+        # self.clean_action.clean_action(True, False, None)
         self.action.close()
-        cleanup()
+        # cleanup()
 
     def test_push_1(self):
         append_file(self.files[0])

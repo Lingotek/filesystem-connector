@@ -124,7 +124,7 @@ def check_updated(action, doc_id, orig_date):
         if response.status_code == 200:
             mod_date = response.json()['properties']['modified_date']
             # print("mod_date: "+str(mod_date))
-            new_count = response.json()['entities'][1]['properties']['count']['character']
+            new_count = response.json()['entities'][0]['properties']['count']['character']
             # print("character count: "+str(new_count))
             # if (orig_count != new_count):
             if (mod_date != orig_date):
