@@ -56,7 +56,6 @@ class AddAction(Action):
     def add_documents(self, matched_files, **kwargs):
         ''' adds new documents to the lingotek cloud and, after prompting user, overwrites changed documents that
                 have already been added '''
-        print("____________add_documents()")
 
         for file_name in matched_files:
             try:
