@@ -32,8 +32,7 @@ def retry(logger, timeout=5, exec_type=None):
                 try:
                     return function(*args, **kwargs)
                 except Exception as e:
-                    # log_error(self.error_file_name, e)
-                    logger.error(e)
+                    log_error(self.error_file_name, e)
                     if e.__class__ in exec_type:
                         logger.error("Connection has timed out. Retrying..")
                         time.sleep(timeout)  # sleep for some time then retry

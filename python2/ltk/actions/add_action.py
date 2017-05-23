@@ -211,15 +211,3 @@ class AddAction(Action):
                 return name
         else:
             logger.warning('Error: Invalid value listed for append option. Please update; see ltk config --help')
-
-    # def check_for_connection(self):
-    #     print("check for internet connection")
-    #     try:
-    #         host = socket.gethostbyname("www.google.com")
-    #         s = socket.create_connection((host, 80), 2)
-    #         print("Connected")
-    #         return True
-    #     except:
-    #         pass
-    #     print("Not connected")
-    #     return False
