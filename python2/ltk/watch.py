@@ -17,6 +17,7 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEvent
 from ltk.watchhandler import WatchHandler
 from ltk.git_auto import Git_Auto
+import check_connection
 
 DEFAULT_COMMIT_MESSAGE  = "Translations updated for "
 
@@ -31,7 +32,8 @@ def retry(logger, timeout=5, exec_type=None):
                 try:
                     return function(*args, **kwargs)
                 except Exception as e:
-                    log_error(self.error_file_name, e)
+                    # log_error(self.error_file_name, e)
+                    logger.error(e)
                     if e.__class__ in exec_type:
                         logger.error("Connection has timed out. Retrying..")
                         time.sleep(timeout)  # sleep for some time then retry
@@ -418,12 +420,13 @@ class WatchAction(Action):
         # start_time = time.clock()
         try:
             while True:
-                self.poll_remote()
-                current_timeout = self.timeout
-                while len(self.watch_queue) and current_timeout > 0:
-                    self.process_queue()
-                    time.sleep(queue_timeout)
-                    current_timeout -= queue_timeout
+                if check_connection.check_for_connection():
+                    self.poll_remote()
+                    current_timeout = self.timeout
+                    while len(self.watch_queue) and current_timeout > 0:
+                        self.process_queue()
+                        time.sleep(queue_timeout)
+                        current_timeout -= queue_timeout
                 time.sleep(self.timeout)
         except KeyboardInterrupt:
             for observer in self.observers:

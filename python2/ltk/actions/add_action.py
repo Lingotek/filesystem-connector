@@ -1,5 +1,7 @@
 from ltk.actions.action import *
 import ctypes
+import socket
+import ltk.check_connection
 
 def has_hidden_attribute(file_path):
     """ Detects if a file has hidden attributes """
@@ -54,6 +56,7 @@ class AddAction(Action):
     def add_documents(self, matched_files, **kwargs):
         ''' adds new documents to the lingotek cloud and, after prompting user, overwrites changed documents that
                 have already been added '''
+        print("____________add_documents()")
 
         for file_name in matched_files:
             try:
@@ -97,6 +100,11 @@ class AddAction(Action):
 
     def add_document(self, file_name, title, **kwargs):
         ''' adds the document to Lingotek cloud and the db '''
+
+        if ltk.check_connection.check_for_connection() == False:
+            logger.warning("Cannot connect to network. Documents added to the watch folder will be translated after you reconnect to the network.")
+            while ltk.check_connection.check_for_connection() == False:
+                time.sleep(15)
 
         if self.is_hidden_file(file_name):
             return
@@ -204,3 +212,15 @@ class AddAction(Action):
                 return name
         else:
             logger.warning('Error: Invalid value listed for append option. Please update; see ltk config --help')
+
+    # def check_for_connection(self):
+    #     print("check for internet connection")
+    #     try:
+    #         host = socket.gethostbyname("www.google.com")
+    #         s = socket.create_connection((host, 80), 2)
+    #         print("Connected")
+    #         return True
+    #     except:
+    #         pass
+    #     print("Not connected")
+    #     return False
