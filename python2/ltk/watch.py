@@ -1,23 +1,28 @@
 # Using the following encoding: utf-8
+''' Python Dependencies '''
 import ctypes
+import os
+import re
+import requests
+from requests.exceptions import ConnectionError
+import sys
+import time
+from threading import Thread
+
+''' Internal Dependencies '''
 from ltk.actions.action import Action
 from ltk.actions import add_action
 from ltk.actions import request_action
 from ltk.actions import download_action
 from ltk.actions import rm_action
+from ltk.actions import clean_action
+from ltk.git_auto import Git_Auto
+from ltk.locales import locale_list
 from ltk.logger import logger
 from ltk.utils import map_locale, restart, get_relative_path, log_error
-from ltk.locales import locale_list
-import time
-import requests
-from requests.exceptions import ConnectionError
-import os
-import re
-import sys
+from ltk.watchhandler import WatchHandler
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEvent
-from ltk.watchhandler import WatchHandler
-from ltk.git_auto import Git_Auto
 
 DEFAULT_COMMIT_MESSAGE  = "Translations updated for "
 
@@ -79,11 +84,18 @@ class WatchAction(Action):
         self.add = add_action.AddAction(path)
         self.download = download_action.DownloadAction(path)
         self.rm = rm_action.RmAction(path)
+        self.clean = clean_action.CleanAction(path)
+        if(self.clean.clean_action(False, False, None)):
+            print('Cleaned up associations between local documents and Lingotek Cloud')
         self.root_path = path
         # if remote:  # poll lingotek cloud periodically if this option enabled
         # self.remote_thread = threading.Thread(target=self.poll_remote(), args=())
         # self.remote_thread.daemon = True
         # self.remote_thread.start()
+        self.threading = True
+        self.thread = Thread(target=self.cleanWhileWatching)
+        self.thread.start()
+        # self.thread.join()
 
     def is_hidden_file(self, file_path):
         # todo more robust checking for OSX files that doesn't start with '.'
@@ -149,6 +161,7 @@ class WatchAction(Action):
                         self.polled_list.remove(fn)
                         self.update_content(fn)
                 except KeyboardInterrupt:
+                    self.threading = False
                     for observer in self.observers:
                         observer.stop()
                 except ConnectionError:
@@ -158,6 +171,7 @@ class WatchAction(Action):
                     print(sys.exc_info()[1])
                     restart()
         except KeyboardInterrupt:
+            self.threading = False
             for observer in self.observers:
                 observer.stop()
         except Exception as err:
@@ -191,6 +205,7 @@ class WatchAction(Action):
                     else:
                         return
                 except KeyboardInterrupt:
+                    self.threading = False
                     for observer in self.observers:
                         observer.stop()
                 except ConnectionError:
@@ -223,10 +238,20 @@ class WatchAction(Action):
             # else:
             #     print("Skipping hidden file "+file_path)
         except KeyboardInterrupt:
+            self.threading = False
             for observer in self.observers:
                 observer.stop()
         # except Exception as err:
         #     restart("Error on created: "+str(err)+"\nRestarting watch.")
+
+    def cleanWhileWatching(self):
+        count = 0
+        while self.threading:
+            time.sleep(1)
+            count += 1
+            if count > 59:
+                self.clean.clean_action(False, False, None)
+                count = 0
 
     def _on_moved(self, event):
         """Used for programs, such as gedit, that modify documents by moving (overwriting)
@@ -236,6 +261,7 @@ class WatchAction(Action):
             event = FileSystemEvent(event.dest_path)
             self._on_modified(event)
         except KeyboardInterrupt:
+            self.threading = False
             for observer in self.observers:
                 observer.stop()
         except Exception as err:
@@ -244,8 +270,9 @@ class WatchAction(Action):
     def _on_deleted(self, event):
         file_name = os.path.basename(event.src_path)
         doc = self.doc_manager.get_doc_by_prop('file_name', file_name)
-        doc_id = doc['id']
-        self.rm.rm_document(doc_id,True,False)
+        if doc:
+            doc_id = doc['id']
+            self.rm.rm_document(doc_id,True,False)
 
     def get_watch_locales(self, document_id):
         """ determine the locales that should be added for a watched doc """
@@ -435,6 +462,7 @@ class WatchAction(Action):
                     current_timeout -= queue_timeout
                 time.sleep(self.timeout)
         except KeyboardInterrupt:
+            self.threading = False
             for observer in self.observers:
                 observer.stop()
         # except Exception as err:

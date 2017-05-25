@@ -7,6 +7,7 @@ import requests
 from requests.exceptions import ConnectionError
 import sys
 import time
+from threading import Thread
 
 ''' Internal Dependencies '''
 from ltk.actions.action import Action
@@ -91,6 +92,9 @@ class WatchAction(Action):
         # self.remote_thread = threading.Thread(target=self.poll_remote(), args=())
         # self.remote_thread.daemon = True
         # self.remote_thread.start()
+        self.threading = True
+        self.thread = Thread(target=self.cleanWhileWatching)
+        self.thread.start()
 
     def is_hidden_file(self, file_path):
         # todo more robust checking for OSX files that doesn't start with '.'
@@ -156,6 +160,7 @@ class WatchAction(Action):
                         self.polled_list.remove(fn)
                         self.update_content(fn)
                 except KeyboardInterrupt:
+                    self.threading = False
                     for observer in self.observers:
                         observer.stop()
                 except ConnectionError:
@@ -165,6 +170,7 @@ class WatchAction(Action):
                     print(sys.exc_info()[1])
                     restart()
         except KeyboardInterrupt:
+            self.threading = False
             for observer in self.observers:
                 observer.stop()
         except Exception as err:
@@ -198,6 +204,7 @@ class WatchAction(Action):
                     else:
                         return
                 except KeyboardInterrupt:
+                    self.threading = False
                     for observer in self.observers:
                         observer.stop()
                 except ConnectionError:
@@ -230,10 +237,20 @@ class WatchAction(Action):
             # else:
             #     print("Skipping hidden file "+file_path)
         except KeyboardInterrupt:
+            self.threading = False
             for observer in self.observers:
                 observer.stop()
         # except Exception as err:
         #     restart("Error on created: "+str(err)+"\nRestarting watch.")
+
+    def cleanWhileWatching(self):
+        count = 0
+        while self.threading:
+            time.sleep(1)
+            count += 1
+            if count > 59:
+                self.clean.clean_action(False, False, None)
+                count = 0
 
     def _on_moved(self, event):
         """Used for programs, such as gedit, that modify documents by moving (overwriting)
@@ -243,6 +260,7 @@ class WatchAction(Action):
             event = FileSystemEvent(event.dest_path)
             self._on_modified(event)
         except KeyboardInterrupt:
+            self.threading = False
             for observer in self.observers:
                 observer.stop()
         except Exception as err:
@@ -443,6 +461,7 @@ class WatchAction(Action):
                     current_timeout -= queue_timeout
                 time.sleep(self.timeout)
         except KeyboardInterrupt:
+            self.threading = False
             for observer in self.observers:
                 observer.stop()
         # except Exception as err:
