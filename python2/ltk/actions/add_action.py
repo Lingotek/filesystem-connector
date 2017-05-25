@@ -1,5 +1,7 @@
 from ltk.actions.action import *
 import ctypes
+import socket
+import ltk.check_connection
 
 def has_hidden_attribute(file_path):
     """ Detects if a file has hidden attributes """
@@ -97,6 +99,11 @@ class AddAction(Action):
 
     def add_document(self, file_name, title, **kwargs):
         ''' adds the document to Lingotek cloud and the db '''
+
+        if ltk.check_connection.check_for_connection() == False:
+            logger.warning("Cannot connect to network. Documents added to the watch folder will be translated after you reconnect to the network.")
+            while ltk.check_connection.check_for_connection() == False:
+                time.sleep(15)
 
         if self.is_hidden_file(file_name):
             return

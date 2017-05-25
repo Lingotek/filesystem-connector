@@ -17,6 +17,7 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEvent
 from ltk.watchhandler import WatchHandler
 from ltk.git_auto import Git_Auto
+import check_connection
 
 DEFAULT_COMMIT_MESSAGE  = "Translations updated for "
 
@@ -418,12 +419,13 @@ class WatchAction(Action):
         # start_time = time.clock()
         try:
             while True:
-                self.poll_remote()
-                current_timeout = self.timeout
-                while len(self.watch_queue) and current_timeout > 0:
-                    self.process_queue()
-                    time.sleep(queue_timeout)
-                    current_timeout -= queue_timeout
+                if check_connection.check_for_connection():
+                    self.poll_remote()
+                    current_timeout = self.timeout
+                    while len(self.watch_queue) and current_timeout > 0:
+                        self.process_queue()
+                        time.sleep(queue_timeout)
+                        current_timeout -= queue_timeout
                 time.sleep(self.timeout)
         except KeyboardInterrupt:
             for observer in self.observers:
