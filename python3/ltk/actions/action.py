@@ -211,6 +211,7 @@ class Action:
     def norm_path(self, file_location):
         # print("original path: "+str(file_location))
         if file_location:
+            file_location = os.path.normpath(file_location)
             # abspath=os.path.abspath(file_location)
             # print("abspath: "+str(os.path.abspath(os.path.expanduser(file_location))))
             # print("self.path: "+self.path)
