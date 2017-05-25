@@ -31,7 +31,8 @@ class Action:
         self.community_id = ''
         self.workflow_id = ''  # default workflow id; MT phase only
         self.locale = ''
-        self.clone_option = 'on'
+        self.clone_option = ''
+        self.auto_format_option = ''
         self.download_option = 'clone'
         self.download_dir = None  # directory where downloaded translation will be stored
         self.watch_locales = set()  # if specified, add these target locales to any files in the watch folder
@@ -70,6 +71,7 @@ class Action:
         self.community_id = conf_parser.get('main', 'community_id')
         self.workflow_id = conf_parser.get('main', 'workflow_id')
         self.locale = conf_parser.get('main', 'default_locale')
+        self.auto_format_option = conf_parser.get('main', 'auto_format')
         self.locale = self.locale.replace('_','-')
         try:
             if conf_parser.has_option('main', 'project_name'):
