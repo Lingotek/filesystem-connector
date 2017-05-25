@@ -31,7 +31,7 @@ class Action:
         self.community_id = ''
         self.workflow_id = ''  # default workflow id; MT phase only
         self.locale = ''
-        self.clone_option = ''
+        self.clone_option = 'on'
         self.auto_format_option = ''
         self.download_option = 'clone'
         self.download_dir = None  # directory where downloaded translation will be stored
