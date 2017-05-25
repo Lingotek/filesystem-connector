@@ -66,6 +66,7 @@ class TestWatch(unittest.TestCase):
 
     def test_watch_update(self):
         file_name = "test_watch_sample_1.txt"
+        print("SELF.DIR_NAME", self.dir_name)
         self.files.append(self.dir_name+'/'+file_name)
         if os.path.exists(self.dir_name+file_name):
             delete_file(file_name)
