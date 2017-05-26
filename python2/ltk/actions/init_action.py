@@ -88,7 +88,6 @@ class InitAction():
             config_parser.set('main', 'workflow_id', workflow_id)
             config_parser.set('main', 'default_locale', locale)
             config_parser.set('main', 'git_autocommit', 'False')
-            config_parser.set('main', 'auto_format', 'on')
             config_parser.set('main', 'git_username', '')
             config_parser.set('main', 'git_password', '')
             # get community id

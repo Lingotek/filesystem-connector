@@ -71,9 +71,13 @@ class Action:
         self.community_id = conf_parser.get('main', 'community_id')
         self.workflow_id = conf_parser.get('main', 'workflow_id')
         self.locale = conf_parser.get('main', 'default_locale')
-        self.auto_format_option = conf_parser.get('main', 'auto_format')
+
         self.locale = self.locale.replace('_','-')
         try:
+            if conf_parser.has_option('main', 'auto_format'):
+                self.auto_format_option = conf_parser.get('main', 'auto_format')
+            else:
+                self.update_config_file('auto_format', 'on', conf_parser, config_file_name, "")
             if conf_parser.has_option('main', 'project_name'):
                 self.project_name = conf_parser.get('main', 'project_name')
             if conf_parser.has_option('main', 'download_folder'):
