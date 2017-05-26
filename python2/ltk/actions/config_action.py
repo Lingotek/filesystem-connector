@@ -40,6 +40,9 @@ class ConfigAction(Action):
             if 'append_option' in kwargs and kwargs['append_option']:
                 self.set_append_option(kwargs['append_option'])
 
+            if 'auto_format' in kwargs and kwargs['auto_format']:
+                self.set_auto_format_option(kwargs['auto_format'])
+
             self.print_output()
 
         except Exception as e:
@@ -74,8 +77,8 @@ class ConfigAction(Action):
                 watch_locales = "None"
 
             print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity ID: {4}\nWorkflow ID: {5}\n'
-                'Default Source Locale: {6}\nClone Option: {7}\nDownload Folder: {8}\nTarget Locales: {9}\nTarget Locale Folders: {10}\nGit Auto-commit: {11}\nAppend Option: {12}'.format(
-                self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.clone_option,
+                'Default Source Locale: {6}\nClone Option: {7}\nAuto Format: {8}\nDownload Folder: {9}\nTarget Locales: {10}\nTarget Locale Folders: {11}\nGit Auto-commit: {12}\nAppend Option: {13}'.format(
+                self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.clone_option, self.auto_format_option,
                 download_dir, watch_locales, locale_folders_str, git_output, self.append_option))
         self.print_config = True
 
@@ -106,6 +109,18 @@ class ConfigAction(Action):
         else:
             logger.warning('Error: Invalid value for "-a" / "--append_option": Must be one of "none", "full", "number:", or "name:"')
             self.print_config = False
+
+    def set_auto_format_option(self, auto_format_option):
+        log_info = 'Turned auto format '+auto_format_option
+        if auto_format_option == 'on':
+            self.auto_format_option = 'on'
+            self.update_config_file('auto_format', auto_format_option, self.conf_parser, self.config_file_name, log_info)
+        elif auto_format_option == 'off':
+            self.auto_format_option = 'off'
+            self.update_config_file('auto_format', auto_format_option, self.conf_parser, self.config_file_name, log_info)
+        else:
+            logger.warning('Error: Invalid value for "-f" / "--auto_format": Must be either "on" or "off"')
+            print_config = False
 
     def set_clone_option(self, clone_option):
         self.clone_action = clone_option
