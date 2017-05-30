@@ -85,8 +85,12 @@ class WatchAction(Action):
         self.download = download_action.DownloadAction(path)
         self.rm = rm_action.RmAction(path)
         self.clean = clean_action.CleanAction(path)
-        if(self.clean.clean_action(False, False, None)):
-            print('Cleaned up associations between local documents and Lingotek Cloud')
+        deleted_docs = self.clean._check_docs_to_clean()
+        for d in deleted_docs:
+            self.rm.rm_document(d,True,False)
+            print("Document: " + d + " removed")
+        # if(self.clean.clean_action(False, False, None)):
+        #     print('Cleaned up associations between local documents and Lingotek Cloud')
         self.root_path = path
         # if remote:  # poll lingotek cloud periodically if this option enabled
         # self.remote_thread = threading.Thread(target=self.poll_remote(), args=())
