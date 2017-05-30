@@ -10,6 +10,8 @@ class PullAction(Action):
         self.download = download
 
     def pull_translations(self, locale_code, locale_ext, no_ext, auto_format):
+        if auto_format == False and self.auto_format_option == 'on':
+            auto_format = True
         first_in_message = True
         documents_added = True
         git_commit_message = DEFAULT_COMMIT_MESSAGE

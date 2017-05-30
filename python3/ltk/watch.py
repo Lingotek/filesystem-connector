@@ -17,6 +17,7 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEvent
 from ltk.watchhandler import WatchHandler
 from ltk.git_auto import Git_Auto
+import check_connection
 
 DEFAULT_COMMIT_MESSAGE  = "Translations updated for "
 
@@ -317,6 +318,10 @@ class WatchAction(Action):
     @retry(logger)
     def poll_remote(self):
         """ poll lingotek servers to check if translation is finished """
+        if self.auto_format_option == 'on':
+            autoFormat = True;
+        else:
+            autoFormat = False;
         documents = self.doc_manager.get_all_entries()  # todo this gets all documents, not necessarily only ones in watch folder
         documents_downloaded = False
         git_commit_message = DEFAULT_COMMIT_MESSAGE
@@ -361,13 +366,13 @@ class WatchAction(Action):
                         logger.info('Translation completed ({0} - {1})'.format(doc_id, locale))
                         if self.locale_delimiter:
                             locale = locale.replace('_','-')
-                            self.download.download_action(doc_id, locale, False, False)
+                            self.download.download_action(doc_id, locale, autoFormat, False)
                         else:
                             locale = locale.replace('_','-')
                             if self.clone_option == 'on':
-                                self.download.download_action(doc_id, locale, False, False)
+                                self.download.download_action(doc_id, locale, autoFormat, False)
                             else:
-                                self.download.download_action(doc_id, locale, False)
+                                self.download.download_action(doc_id, locale, autoFormat)
                     elif progress != 100 and locale in downloaded:
                         # print("Locale "+str(locale)+" for document "+doc['name']+" is no longer completed.")
                         self.doc_manager.remove_element_in_prop(doc_id, 'downloaded', locale)
@@ -435,6 +440,7 @@ class WatchAction(Action):
         # start_time = time.clock()
         try:
             while True:
+<<<<<<< HEAD
                 if self.end_watch == True:
                     break
                 self.poll_remote()
@@ -443,6 +449,15 @@ class WatchAction(Action):
                     self.process_queue()
                     time.sleep(queue_timeout)
                     current_timeout -= queue_timeout
+=======
+                if check_connection.check_for_connection():
+                    self.poll_remote()
+                    current_timeout = self.timeout
+                    while len(self.watch_queue) and current_timeout > 0:
+                        self.process_queue()
+                        time.sleep(queue_timeout)
+                        current_timeout -= queue_timeout
+>>>>>>> dev
                 time.sleep(self.timeout)
         except KeyboardInterrupt:
             for observer in self.observers:

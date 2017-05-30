@@ -1,4 +1,25 @@
 from ltk.actions.action import *
+<<<<<<< HEAD
+=======
+import ctypes
+import socket
+import ltk.check_connection
+
+def has_hidden_attribute(file_path):
+    """ Detects if a file has hidden attributes """
+    try:
+        # Python 2
+        attrs = ctypes.windll.kernel32.GetFileAttributesW(unicode(file_path))
+        # End Python 2
+        # Python 3
+#         attrs = ctypes.windll.kernel32.GetFileAttributesW(str(file_path))
+        # End Python 3
+        assert attrs != -1
+        result = bool(attrs & 2)
+    except (AttributeError, AssertionError):
+        result = False
+    return result
+>>>>>>> dev
 
 class AddAction(Action):
     def __init__(self, path):
@@ -82,6 +103,16 @@ class AddAction(Action):
     def add_document(self, file_name, title, **kwargs):
         ''' adds the document to Lingotek cloud and the db '''
 
+<<<<<<< HEAD
+=======
+        if ltk.check_connection.check_for_connection() == False:
+            logger.warning("Cannot connect to network. Documents added to the watch folder will be translated after you reconnect to the network.")
+            while ltk.check_connection.check_for_connection() == False:
+                time.sleep(15)
+
+        if self.is_hidden_file(file_name):
+            return
+>>>>>>> dev
         try:
             if not 'locale' in kwargs or not kwargs['locale']:
                 locale = self.locale
@@ -142,17 +173,17 @@ class AddAction(Action):
     def append_location(self, name, path_to_file, in_directory=False):
         repo_directory = path_to_file
         path_sep = os.sep
+        config_file_name, conf_parser = self.init_config_file()
+        if not conf_parser.has_option('main', 'append_option'): self.update_config_file('append_option', 'none', conf_parser, config_file_name, 'Update: Added optional file location appending (ltk config --help)')
+        append_option = conf_parser.get('main', 'append_option')
         if not in_directory:
             while repo_directory and repo_directory != "" and not (os.path.isdir(repo_directory + "/.ltk")):
                 repo_directory = repo_directory.split(path_sep)[:-1]
                 repo_directory = path_sep.join(repo_directory)
-            if repo_directory == "":
+            if repo_directory == "" and append_option != 'none':
                 logger.warning('Error: File must be contained within an ltk-initialized directory')
                 return name
             path_to_file = path_to_file.replace(repo_directory, '', 1).strip(os.sep)
-        config_file_name, conf_parser = self.init_config_file()
-        if not conf_parser.has_option('main', 'append_option'): self.update_config_file('append_option', 'none', conf_parser, config_file_name, 'Update: Added optional file location appending (ltk config --help)')
-        append_option = conf_parser.get('main', 'append_option')
         if append_option == 'none': return name
         elif append_option == 'full': return '{0} ({1})'.format(name, path_to_file.rstrip(name).rstrip(os.sep))
         elif len(append_option) > 5 and append_option[:5] == 'name:':

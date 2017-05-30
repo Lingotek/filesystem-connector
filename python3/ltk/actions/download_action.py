@@ -44,6 +44,7 @@ class DownloadAction(Action):
                         return
                     self._clone_download(locale_code)
                 elif 'folder' in self.download_option:
+                    locale_code = locale_code.replace("-","_")
                     if locale_code in self.locale_folders:
                         if self.locale_folders[locale_code] == 'null':
                             logger.warning("Download failed: folder not specified for "+locale_code)
