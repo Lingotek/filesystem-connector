@@ -1,23 +1,34 @@
 # Using the following encoding: utf-8
+''' Python Dependencies '''
 import ctypes
+import os
+import re
+import requests
+from requests.exceptions import ConnectionError
+import sys
+import time
+from threading import Thread
+
+''' Internal Dependencies '''
 from ltk.actions.action import Action
 from ltk.actions import add_action
 from ltk.actions import request_action
 from ltk.actions import download_action
+from ltk.actions import rm_action
+from ltk.actions import clean_action
+from ltk.git_auto import Git_Auto
+from ltk.locales import locale_list
 from ltk.logger import logger
 from ltk.utils import map_locale, restart, get_relative_path, log_error
-from ltk.locales import locale_list
-import time
-import requests
-from requests.exceptions import ConnectionError
-import os
-import re
-import sys
+from ltk.watchhandler import WatchHandler
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEvent
+<<<<<<< HEAD
 from ltk.watchhandler import WatchHandler
 from ltk.git_auto import Git_Auto
 import check_connection
+=======
+>>>>>>> int-2049
 
 import loginInfo
 DEFAULT_COMMIT_MESSAGE  = "Translations updated for "
@@ -67,6 +78,7 @@ class WatchAction(Action):
         self.handler.on_modified = self._on_modified
         self.handler.on_created = self._on_created
         self.handler.on_moved = self._on_moved
+        self.handler.on_deleted = self._on_deleted
         self.watch_queue = []  # not much slower than deque unless expecting 100+ items
         self.locale_delimiter = None
         self.ignore_ext = []  # file types to ignore as specified by the user
@@ -79,11 +91,22 @@ class WatchAction(Action):
         self.force_poll = False
         self.add = add_action.AddAction(path)
         self.download = download_action.DownloadAction(path)
+        self.rm = rm_action.RmAction(path)
+        self.clean = clean_action.CleanAction(path)
+        deleted_docs = self.clean._check_docs_to_clean()
+        for d in deleted_docs:
+            self.rm.rm_document(d,True,False)
+            print("Document: " + d + " removed")
+        # if(self.clean.clean_action(False, False, None)):
+        #     print('Cleaned up associations between local documents and Lingotek Cloud')
         self.root_path = path
         # if remote:  # poll lingotek cloud periodically if this option enabled
         # self.remote_thread = threading.Thread(target=self.poll_remote(), args=())
         # self.remote_thread.daemon = True
         # self.remote_thread.start()
+        self.threading = True
+        self.thread = Thread(target=self.cleanWhileWatching)
+        self.thread.start()
 
     def is_hidden_file(self, file_path):
         # todo more robust checking for OSX files that doesn't start with '.'
@@ -160,6 +183,7 @@ class WatchAction(Action):
                             print("doc not in polled_list")
                         self.update_content(fn)
                 except KeyboardInterrupt:
+                    self.threading = False
                     for observer in self.observers:
                         observer.stop()
                 except ConnectionError:
@@ -169,6 +193,7 @@ class WatchAction(Action):
                     print(sys.exc_info()[1])
                     restart()
         except KeyboardInterrupt:
+            self.threading = False
             for observer in self.observers:
                 observer.stop()
         except Exception as err:
@@ -211,43 +236,55 @@ class WatchAction(Action):
                             self.update_content(relative_path)
                         else:
                             return
-                    except KeyboardInterrupt:
-                        for observer in self.observers:
-                            observer.stop()
-                    except ConnectionError:
-                        print("Could not connect to remote server.")
-                        restart()
-                    except ValueError:
-                        print(sys.exc_info()[1])
-                        restart()
-                    doc = self.doc_manager.get_doc_by_prop('file_name', relative_path)
-                    if doc:
-                        document_id = doc['id']
-                    else:
-                        return
-                    if self.locale_delimiter:
-                        try:
-                            # curr_locale = title.split(self.locale_delimiter)[1]
-                            # todo locale detection needs to be more robust
-                            curr_locale = title.split(self.locale_delimiter)[-2]
-                            fixed_locale = map_locale(curr_locale)
-                            if fixed_locale:
-                                print ("fixed locale: ", fixed_locale)
-                                # self.watch_locales.add(fixed_locale)
-                                self.detected_locales[document_id] = fixed_locale
-                            else:
-                                logger.warning('This document\'s detected locale: {0} is not supported.'.format(curr_locale))
-                        except IndexError:
-                            logger.warning('Cannot detect locales from file: {0}, not adding any locales'.format(title))
-                    self.watch_add_target(relative_path, document_id)
-                    # logger.info('Added new document {0}'.format(title
-                # else:
-                #     print("Skipping hidden file "+file_path)
+                except KeyboardInterrupt:
+                    self.threading = False
+                    for observer in self.observers:
+                        observer.stop()
+                except ConnectionError:
+                    print("Could not connect to remote server.")
+                    restart()
+                except ValueError:
+                    print(sys.exc_info()[1])
+                    restart()
+                doc = self.doc_manager.get_doc_by_prop('file_name', relative_path)
+                if doc:
+                    document_id = doc['id']
+                else:
+                    return
+                if self.locale_delimiter:
+                    try:
+                        # curr_locale = title.split(self.locale_delimiter)[1]
+                        # todo locale detection needs to be more robust
+                        curr_locale = title.split(self.locale_delimiter)[-2]
+                        fixed_locale = map_locale(curr_locale)
+                        if fixed_locale:
+                            print ("fixed locale: ", fixed_locale)
+                            # self.watch_locales.add(fixed_locale)
+                            self.detected_locales[document_id] = fixed_locale
+                        else:
+                            logger.warning('This document\'s detected locale: {0} is not supported.'.format(curr_locale))
+                    except IndexError:
+                        logger.warning('Cannot detect locales from file: {0}, not adding any locales'.format(title))
+                self.watch_add_target(relative_path, document_id)
+                # logger.info('Added new document {0}'.format(title
+            # else:
+            #     print("Skipping hidden file "+file_path)
+>>>>>>> int-2049
         except KeyboardInterrupt:
+            self.threading = False
             for observer in self.observers:
                 observer.stop()
         # except Exception as err:
         #     restart("Error on created: "+str(err)+"\nRestarting watch.")
+
+    def cleanWhileWatching(self):
+        count = 0
+        while self.threading:
+            time.sleep(1)
+            count += 1
+            if count > 59:
+                self.clean.clean_action(False, False, None)
+                count = 0
 
     def _on_moved(self, event):
         """Used for programs, such as gedit, that modify documents by moving (overwriting)
@@ -257,10 +294,18 @@ class WatchAction(Action):
             event = FileSystemEvent(event.dest_path)
             self._on_modified(event)
         except KeyboardInterrupt:
+            self.threading = False
             for observer in self.observers:
                 observer.stop()
         except Exception as err:
             restart("Error on moved: "+str(err)+"\nRestarting watch.")
+
+    def _on_deleted(self, event):
+        file_name = os.path.basename(event.src_path)
+        doc = self.doc_manager.get_doc_by_prop('file_name', file_name)
+        if doc:
+            doc_id = doc['id']
+            self.rm.rm_document(doc_id,True,False)
 
     def get_watch_locales(self, document_id):
         """ determine the locales that should be added for a watched doc """
@@ -472,6 +517,7 @@ class WatchAction(Action):
                         current_timeout -= queue_timeout
                 time.sleep(self.timeout)
         except KeyboardInterrupt:
+            self.threading = False
             for observer in self.observers:
                 observer.stop()
         # except Exception as err:

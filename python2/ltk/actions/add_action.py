@@ -1,6 +1,4 @@
 from ltk.actions.action import *
-<<<<<<< HEAD
-=======
 import ctypes
 import socket
 import ltk.check_connection
@@ -19,7 +17,6 @@ def has_hidden_attribute(file_path):
     except (AttributeError, AssertionError):
         result = False
     return result
->>>>>>> dev
 
 class AddAction(Action):
     def __init__(self, path):
@@ -103,8 +100,6 @@ class AddAction(Action):
     def add_document(self, file_name, title, **kwargs):
         ''' adds the document to Lingotek cloud and the db '''
 
-<<<<<<< HEAD
-=======
         if ltk.check_connection.check_for_connection() == False:
             logger.warning("Cannot connect to network. Documents added to the watch folder will be translated after you reconnect to the network.")
             while ltk.check_connection.check_for_connection() == False:
@@ -112,7 +107,6 @@ class AddAction(Action):
 
         if self.is_hidden_file(file_name):
             return
->>>>>>> dev
         try:
             if not 'locale' in kwargs or not kwargs['locale']:
                 locale = self.locale

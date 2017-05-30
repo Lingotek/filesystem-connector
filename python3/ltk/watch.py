@@ -440,16 +440,6 @@ class WatchAction(Action):
         # start_time = time.clock()
         try:
             while True:
-<<<<<<< HEAD
-                if self.end_watch == True:
-                    break
-                self.poll_remote()
-                current_timeout = self.timeout
-                while len(self.watch_queue) and current_timeout > 0:
-                    self.process_queue()
-                    time.sleep(queue_timeout)
-                    current_timeout -= queue_timeout
-=======
                 if check_connection.check_for_connection():
                     self.poll_remote()
                     current_timeout = self.timeout
@@ -457,7 +447,6 @@ class WatchAction(Action):
                         self.process_queue()
                         time.sleep(queue_timeout)
                         current_timeout -= queue_timeout
->>>>>>> dev
                 time.sleep(self.timeout)
         except KeyboardInterrupt:
             for observer in self.observers:
