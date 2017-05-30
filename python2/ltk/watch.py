@@ -23,12 +23,9 @@ from ltk.utils import map_locale, restart, get_relative_path, log_error
 from ltk.watchhandler import WatchHandler
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEvent
-<<<<<<< HEAD
 from ltk.watchhandler import WatchHandler
 from ltk.git_auto import Git_Auto
 import check_connection
-=======
->>>>>>> int-2049
 
 import loginInfo
 DEFAULT_COMMIT_MESSAGE  = "Translations updated for "
@@ -236,40 +233,39 @@ class WatchAction(Action):
                             self.update_content(relative_path)
                         else:
                             return
-                except KeyboardInterrupt:
-                    self.threading = False
-                    for observer in self.observers:
-                        observer.stop()
-                except ConnectionError:
-                    print("Could not connect to remote server.")
-                    restart()
-                except ValueError:
-                    print(sys.exc_info()[1])
-                    restart()
-                doc = self.doc_manager.get_doc_by_prop('file_name', relative_path)
-                if doc:
-                    document_id = doc['id']
-                else:
-                    return
-                if self.locale_delimiter:
-                    try:
-                        # curr_locale = title.split(self.locale_delimiter)[1]
-                        # todo locale detection needs to be more robust
-                        curr_locale = title.split(self.locale_delimiter)[-2]
-                        fixed_locale = map_locale(curr_locale)
-                        if fixed_locale:
-                            print ("fixed locale: ", fixed_locale)
-                            # self.watch_locales.add(fixed_locale)
-                            self.detected_locales[document_id] = fixed_locale
-                        else:
-                            logger.warning('This document\'s detected locale: {0} is not supported.'.format(curr_locale))
-                    except IndexError:
-                        logger.warning('Cannot detect locales from file: {0}, not adding any locales'.format(title))
-                self.watch_add_target(relative_path, document_id)
+                    except KeyboardInterrupt:
+                        self.threading = False
+                        for observer in self.observers:
+                            observer.stop()
+                    except ConnectionError:
+                        print("Could not connect to remote server.")
+                        restart()
+                    except ValueError:
+                        print(sys.exc_info()[1])
+                        restart()
+                    doc = self.doc_manager.get_doc_by_prop('file_name', relative_path)
+                    if doc:
+                        document_id = doc['id']
+                    else:
+                        return
+                    if self.locale_delimiter:
+                        try:
+                            # curr_locale = title.split(self.locale_delimiter)[1]
+                            # todo locale detection needs to be more robust
+                            curr_locale = title.split(self.locale_delimiter)[-2]
+                            fixed_locale = map_locale(curr_locale)
+                            if fixed_locale:
+                                print ("fixed locale: ", fixed_locale)
+                                # self.watch_locales.add(fixed_locale)
+                                self.detected_locales[document_id] = fixed_locale
+                            else:
+                                logger.warning('This document\'s detected locale: {0} is not supported.'.format(curr_locale))
+                        except IndexError:
+                            logger.warning('Cannot detect locales from file: {0}, not adding any locales'.format(title))
+                    self.watch_add_target(relative_path, document_id)
                 # logger.info('Added new document {0}'.format(title
-            # else:
-            #     print("Skipping hidden file "+file_path)
->>>>>>> int-2049
+        # else:
+        #     print("Skipping hidden file "+file_path)
         except KeyboardInterrupt:
             self.threading = False
             for observer in self.observers:
