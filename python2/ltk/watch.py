@@ -153,7 +153,10 @@ class WatchAction(Action):
                         #logger.info('Detected local content modified: {0}'.format(fn))
                         #self.update_document_action(os.path.join(self.path, fn))
                         #logger.info('Updating remote content: {0}'.format(fn))
-                        self.polled_list.remove(fn)
+                        try:
+                            self.polled_list.remove(fn)
+                        except Exception as err:
+                            print("doc not in polled_list")
                         self.update_content(fn)
                 except KeyboardInterrupt:
                     for observer in self.observers:
@@ -309,7 +312,7 @@ class WatchAction(Action):
 
     def update_content(self, relative_path):
         print("Watch update_content")
-        loginInfo.bar_delegate.createUpdateStatusThread()
+        loginInfo.bar_delegate.createIconUpdateThread()
         if self.update_document_action(os.path.join(self.path, relative_path)):
             self.updated[relative_path] = 0
             logger.info('Updating remote content: {0}'.format(relative_path))

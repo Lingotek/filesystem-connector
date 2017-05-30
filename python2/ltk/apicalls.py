@@ -224,7 +224,7 @@ class ApiCalls:
 
     def add_document(self, source_locale, file_name, project_id, title, **kwargs):
         print("API Call add_document")
-        loginInfo.bar_delegate.createUpdateStatusThread()
+        loginInfo.bar_delegate.createIconUpdateThread()
         """ adds a document """
         try:
             uri = API_URI['document']

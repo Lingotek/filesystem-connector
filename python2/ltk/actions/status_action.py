@@ -120,7 +120,7 @@ class StatusAction(Action):
         if completed == len(doc_ids):
             return "Status: ready"
         else:
-            return "Status: " + str(completed) + " of " + str(len(doc_ids))
+            return "Status: " +  str(len(doc_ids) - completed) + " document(s) remaining"
 
     def _print_detailed_status(self, doc_id, doc_name):
         print("status_action _print_detailed_status")
