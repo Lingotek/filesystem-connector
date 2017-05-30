@@ -1,4 +1,5 @@
 from ltk.actions.action import *
+import check_connection
 
 class ConfigAction(Action):
     def __init__(self, path):
@@ -288,7 +289,8 @@ class ConfigAction(Action):
             log_info = 'Removing all target locales'
             self.update_config_file('watch_locales', '', self.conf_parser, self.config_file_name, log_info)
         else:
-            target_locales = get_valid_locales(self.api,locales)
+            if check_connection.check_for_connection():
+                target_locales = get_valid_locales(self.api,locales)
             target_locales_str = ','.join(target for target in target_locales)
             if len(target_locales_str) > 0:
                 log_info = 'Set target locales to {}'.format(target_locales_str)

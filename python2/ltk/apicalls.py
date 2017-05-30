@@ -29,7 +29,7 @@ class ApiCalls:
     def handleError(self):
         if self.watch:
             logger.warning("Could not connect to Lingotek")
-            restart("Restarting watch", self.timeout)
+            # restart("Restarting watch", self.timeout)
         else:
             raise ConnectionFailed("Could not connect to Lingotek")
 
