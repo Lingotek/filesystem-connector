@@ -51,12 +51,15 @@ class DocumentManager:
                     name = doc.get('file_name')
                 if 'downloaded' in doc.keys():
                     locales = doc.get('downloaded')
+                    name_parts = name.strip().split(".")
+                    file_name_name = ""
+                    for x in range(0, len(name_parts)-1):
+                        file_name_name += name_parts[x]
                     for locale in locales:
-                        possible_file_name = locale + "/" + name
-                        possible_win_file_name = locale + "\\" + name
-                        possible_win_file_name = possible_win_file_name.replace("_","-")
+                        possible_no_clone_file_name = file_name_name + "." + locale + "." + name_parts[len(name_parts)-1]
+                        possible_file_name = os.path.join(locale, name)
                         possible_file_name = possible_file_name.replace("_","-")
-                        if possible_file_name == file_name or possible_win_file_name == file_name:
+                        if possible_file_name == file_name or possible_no_clone_file_name == file_name:
                             return False
 
         file_name_exists = self._db.search(where('file_name') == file_name)
