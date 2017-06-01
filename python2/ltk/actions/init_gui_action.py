@@ -106,6 +106,18 @@ class InitActionGUI():
         project_id = response.json()['properties']['id']
         return project_id
 
+    def patch_project(self, project_id, workflow_id):
+        response = self.apiCall.patch_project(project_id, workflow_id)
+        if response.status_code != 204:
+            try:
+                raise_error(response.json(), 'Failed to update the project')
+                return False
+            except:
+                logger.error('Failed to update the project')
+                return False
+
+        return True
+
     def finish_config(self, project_id, project_name, workflow_id, project_path, locale, host, access_token, community_id):
         try:
             os.mkdir(os.path.join(project_path, CONF_DIR))
