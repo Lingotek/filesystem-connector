@@ -15,6 +15,8 @@ from requests.exceptions import ConnectionError
 import os
 import re
 import sys
+from threading import Thread
+
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEvent
 from ltk.watchhandler import WatchHandler
