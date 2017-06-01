@@ -4,6 +4,8 @@ from ltk.actions.action import Action
 from ltk.actions import add_action
 from ltk.actions import request_action
 from ltk.actions import download_action
+from ltk.actions import rm_action
+from ltk.actions import clean_action
 from ltk.logger import logger
 from ltk.utils import map_locale, restart, get_relative_path, log_error
 from ltk.locales import locale_list
