@@ -253,6 +253,15 @@ class WatchAction(Action):
         # except Exception as err:
         #     restart("Error on created: "+str(err)+"\nRestarting watch.")
 
+    def cleanWhileWatching(self):
+        count = 0
+        while self.threading:
+            time.sleep(1)
+            count += 1
+            if count > 59:
+                self.clean.clean_action(False, False, None)
+                count = 0
+
     def _on_moved(self, event):
         """Used for programs, such as gedit, that modify documents by moving (overwriting)
         the previous document with the temporary file. Only the moved event contains the name of the
