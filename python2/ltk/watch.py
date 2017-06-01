@@ -19,6 +19,8 @@ from ltk.watchhandler import WatchHandler
 from ltk.git_auto import Git_Auto
 import check_connection
 
+import loginInfo
+
 DEFAULT_COMMIT_MESSAGE  = "Translations updated for "
 
 # retry decorator to retry connections
