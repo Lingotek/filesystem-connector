@@ -81,11 +81,20 @@ class WatchAction(Action):
         self.force_poll = False
         self.add = add_action.AddAction(path)
         self.download = download_action.DownloadAction(path)
+        self.rm = rm_action.RmAction(path)
+        self.clean = clean_action.CleanAction(path)
+        deleted_docs = self.clean._check_docs_to_clean()
+        for d in deleted_docs:
+            self.rm.rm_document(d,True,False)
+            print("Document: " + d + " removed")
         self.root_path = path
         # if remote:  # poll lingotek cloud periodically if this option enabled
         # self.remote_thread = threading.Thread(target=self.poll_remote(), args=())
         # self.remote_thread.daemon = True
         # self.remote_thread.start()
+        self.threading = True
+        self.thread = Thread(target=self.cleanWhileWatching)
+        self.thread.start()
 
     def is_hidden_file(self, file_path):
         # todo more robust checking for OSX files that doesn't start with '.'
