@@ -68,6 +68,7 @@ class WatchAction(Action):
         self.handler.on_modified = self._on_modified
         self.handler.on_created = self._on_created
         self.handler.on_moved = self._on_moved
+        self.handler.on_deleted = self._on_deleted
         self.watch_queue = []  # not much slower than deque unless expecting 100+ items
         self.locale_delimiter = None
         self.ignore_ext = []  # file types to ignore as specified by the user
@@ -251,6 +252,13 @@ class WatchAction(Action):
                 observer.stop()
         except Exception as err:
             restart("Error on moved: "+str(err)+"\nRestarting watch.")
+
+    def _on_deleted(self, event):
+        file_name = os.path.basename(event.src_path)
+        doc = self.doc_manager.get_doc_by_prop('file_name', file_name)
+        if doc:
+            doc_id = doc['id']
+            self.rm.rm_document(doc_id,True,False)
 
     def get_watch_locales(self, document_id):
         """ determine the locales that should be added for a watched doc """
