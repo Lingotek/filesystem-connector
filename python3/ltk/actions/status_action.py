@@ -100,6 +100,23 @@ class StatusAction(Action):
             if detailed:
                 self._print_detailed_status(doc_id, title)
 
+    def _get_status_of_all_local_docs(self):
+        doc_ids = self.doc_manager.get_doc_ids()
+        completed = 0
+
+        for doc_id in doc_ids:
+            response = self.api.document_status(doc_id)
+            if response.status_code != 200:
+                return "Status: processing"
+            else:
+                progress = response.json()['properties']['progress']
+                if progress == 100:
+                    completed += 1
+        if completed == len(doc_ids):
+            return "Status: ready"
+        else:
+            return "Status: " +  str(len(doc_ids) - completed) + " document(s) remaining"
+
     def _print_status(self, title, progress):
         print ('{0}: {1}%'.format(title, progress))
         # print title + ': ' + str(progress) + '%'
