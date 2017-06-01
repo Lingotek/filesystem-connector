@@ -129,7 +129,6 @@ class ImportAction(Action):
         return path_changed, new_path, write_file, delete_file
 
     def import_document(self, document_id, document_info, force=False, path=False):
-        print("import action import_document")
         local_ids = self.doc_manager.get_doc_ids()
         response = self.api.document_content(document_id, None, None)
         if(response.status_code == 400):

@@ -20,7 +20,6 @@ class RequestAction(Action):
         self.docs = []
 
     def target_action(self):
-        print("request_action target_action")
         try:
             is_successful = False
             locales = []
@@ -88,7 +87,6 @@ class RequestAction(Action):
                 logger.error("Error on request: "+str(e))
 
     def _request_translations(self, locales):
-        print("request action _request_translations")
         is_successful = False
 
         for entry in self.docs:

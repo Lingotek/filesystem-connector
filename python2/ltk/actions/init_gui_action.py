@@ -28,8 +28,6 @@ class InitActionGUI():
                 ran_oauth = True
             else:
                 ran_oauth = False
-        else:
-            return "Connection Error"
         if not ran_oauth:
             return "Authentication failed"
         return self.access_token
@@ -96,18 +94,6 @@ class InitActionGUI():
         ids, titles = log_id_names(response.json())
         self.workflow_info = dict(zip(ids, titles))
         return self.workflow_info
-
-    def patch_project(self, project_id, workflow_id):
-        response = self.apiCall.patch_project(project_id, workflow_id)
-        if response.status_code != 204:
-            try:
-                raise_error(response.json(), 'Failed to update the project')
-                return False
-            except:
-                logger.error('Failed to update the project')
-                return False
-
-        return True
 
     def create_project(self, project_name, community_id, workflow_id ):
         response = self.apiCall.add_project(project_name, community_id, workflow_id)

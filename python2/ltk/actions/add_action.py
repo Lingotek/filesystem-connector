@@ -1,7 +1,6 @@
 from ltk.actions.action import *
 import ctypes
 import socket
-import ltk.check_connection
 
 def has_hidden_attribute(file_path):
     """ Detects if a file has hidden attributes """
@@ -135,6 +134,18 @@ class AddAction(Action):
             else:
                 logger.error("Error on adding document "+str(file_name)+": "+str(e))
 
+    def is_hidden_file(self, file_path):
+        # todo more robust checking for OSX files that doesn't start with '.'
+        name = os.path.abspath(file_path).replace(self.path, "")
+        if has_hidden_attribute(file_path) or ('Thumbs.db' in file_path) or ('ehthumbs.db' in file_path):
+            return True
+        while name != "":
+            if name.startswith('.') or name.startswith('~') or name == "4913":
+                return True
+            name = name.split(os.sep)[1:]
+            name = (os.sep).join(name)
+        return False
+
     def add_folders(self, file_patterns):
         ''' checks each file pattern for a directory and adds matching patterns to the db '''
         ''' returns true if folder(s) have been added, otherwise false '''
@@ -143,7 +154,9 @@ class AddAction(Action):
         for pattern in file_patterns:
             if os.path.exists(pattern):
                 if os.path.isdir(pattern):
-                    if not self._is_folder_added(pattern):
+                    if self.is_hidden_file(pattern):
+                        logger.warning("Folder is hidden")
+                    elif not self._is_folder_added(pattern):
                         self.folder_manager.add_folder(self.norm_path(pattern.rstrip(os.sep)))
                         logger.info("Added folder "+str(pattern))
                     else:
@@ -162,18 +175,6 @@ class AddAction(Action):
             # print("folder to be added: "+os.path.abspath(file_name))
             if os.path.join(self.path,folder) in os.path.abspath(file_name):
                 return True
-        return False
-
-    def is_hidden_file(self, file_path):
-        # todo more robust checking for OSX files that doesn't start with '.'
-        name = os.path.abspath(file_path).replace(self.path, "")
-        if has_hidden_attribute(file_path) or ('Thumbs.db' in file_path) or ('ehthumbs.db' in file_path):
-            return True
-        while name != "":
-            if name.startswith('.') or name.startswith('~') or name == "4913":
-                return True
-            name = name.split(os.sep)[1:]
-            name = (os.sep).join(name)
         return False
 
     def append_location(self, name, path_to_file, in_directory=False):

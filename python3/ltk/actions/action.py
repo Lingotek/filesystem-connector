@@ -20,6 +20,7 @@ from ltk.constants import CONF_DIR, CONF_FN, SYSTEM_FILE, ERROR_FN
 import json
 from ltk.logger import logger
 from ltk.git_auto import Git_Auto
+import ltk.check_connection
 
 class Action:
     def __init__(self, path, watch=False, timeout=60):

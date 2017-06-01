@@ -1,7 +1,6 @@
 from ltk.actions.action import *
 import ctypes
 import socket
-import ltk.check_connection
 
 def has_hidden_attribute(file_path):
     """ Detects if a file has hidden attributes """

@@ -85,13 +85,12 @@ def map_locale(locale):
 
 def restart(message="Restarting watch", interval=5):
     """Restarts the program. Used after exceptions. Otherwise, watch doesn't work anymore."""
-    print("Utils. Restart watch does not work for GUI")
-    # time.sleep(interval)
-    # print(message)
-    # cmd = "ltk"
-    # for arg in sys.argv[1:]:
-    #     cmd = cmd + " " + arg
-    # os.system(cmd)
+    time.sleep(interval)
+    print(message)
+    cmd = "ltk"
+    for arg in sys.argv[1:]:
+        cmd = cmd + " " + arg
+    os.system(cmd)
 
     ''' This way (below) works for Linux, but does not work on Windows '''
     #python = sys.executable

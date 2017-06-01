@@ -1,5 +1,4 @@
 from ltk.actions.action import *
-import loginInfo
 
 class DownloadAction(Action):
     def __init__(self, path):
@@ -33,7 +32,6 @@ class DownloadAction(Action):
                 self.download_action(document_id, locale_code, auto_format, locale_ext)
 
     def download_action(self, document_id, locale_code, auto_format, locale_ext=True):
-        print("downloadAction download_action")
         try:
             response = self.api.document_content(document_id, locale_code, auto_format)
             entry = None
@@ -46,7 +44,6 @@ class DownloadAction(Action):
                         return
                     self._clone_download(locale_code)
                 elif 'folder' in self.download_option:
-                    locale_code = locale_code.replace("-","_")
                     if locale_code in self.locale_folders:
                         if self.locale_folders[locale_code] == 'null':
                             logger.warning("Download failed: folder not specified for "+locale_code)
@@ -70,7 +67,6 @@ class DownloadAction(Action):
                                     'Something went wrong trying to download document: {0}'.format(document_id), True)
                         return
                     self.download_path = os.path.join(self.download_path, title)
-                    loginInfo.bar_delegate.documentHadDownloaded()
                     logger.info('Downloaded: {0} ({1} - {2})'.format(title, self.get_relative_path(self.download_path), locale_code))
                 else:
                     file_name = entry['file_name']
@@ -109,7 +105,6 @@ class DownloadAction(Action):
                     with open(self.download_path, 'wb') as fh:
                         for chunk in response.iter_content(1024):
                             fh.write(chunk)
-                    loginInfo.bar_delegate.documentHadDownloaded()
                     logger.info('Downloaded: {0} ({1} - {2})'.format(downloaded_name, self.get_relative_path(self.download_path), locale_code))
                 except:
                     logger.warning('Error: Download failed at '+self.download_path)

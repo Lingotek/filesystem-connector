@@ -1,33 +1,24 @@
 # Using the following encoding: utf-8
-''' Python Dependencies '''
 import ctypes
-import os
-import re
-import requests
-from requests.exceptions import ConnectionError
-import sys
-import time
-from threading import Thread
-
-''' Internal Dependencies '''
 from ltk.actions.action import Action
 from ltk.actions import add_action
 from ltk.actions import request_action
 from ltk.actions import download_action
-from ltk.actions import rm_action
-from ltk.actions import clean_action
-from ltk.git_auto import Git_Auto
-from ltk.locales import locale_list
 from ltk.logger import logger
 from ltk.utils import map_locale, restart, get_relative_path, log_error
-from ltk.watchhandler import WatchHandler
+from ltk.locales import locale_list
+import time
+import requests
+from requests.exceptions import ConnectionError
+import os
+import re
+import sys
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEvent
 from ltk.watchhandler import WatchHandler
 from ltk.git_auto import Git_Auto
 import check_connection
 
-import loginInfo
 DEFAULT_COMMIT_MESSAGE  = "Translations updated for "
 
 # retry decorator to retry connections
@@ -75,7 +66,6 @@ class WatchAction(Action):
         self.handler.on_modified = self._on_modified
         self.handler.on_created = self._on_created
         self.handler.on_moved = self._on_moved
-        self.handler.on_deleted = self._on_deleted
         self.watch_queue = []  # not much slower than deque unless expecting 100+ items
         self.locale_delimiter = None
         self.ignore_ext = []  # file types to ignore as specified by the user
@@ -88,22 +78,11 @@ class WatchAction(Action):
         self.force_poll = False
         self.add = add_action.AddAction(path)
         self.download = download_action.DownloadAction(path)
-        self.rm = rm_action.RmAction(path)
-        self.clean = clean_action.CleanAction(path)
-        deleted_docs = self.clean._check_docs_to_clean()
-        for d in deleted_docs:
-            self.rm.rm_document(d,True,False)
-            print("Document: " + d + " removed")
-        # if(self.clean.clean_action(False, False, None)):
-        #     print('Cleaned up associations between local documents and Lingotek Cloud')
         self.root_path = path
         # if remote:  # poll lingotek cloud periodically if this option enabled
         # self.remote_thread = threading.Thread(target=self.poll_remote(), args=())
         # self.remote_thread.daemon = True
         # self.remote_thread.start()
-        self.threading = True
-        self.thread = Thread(target=self.cleanWhileWatching)
-        self.thread.start()
 
     def is_hidden_file(self, file_path):
         # todo more robust checking for OSX files that doesn't start with '.'
@@ -118,14 +97,11 @@ class WatchAction(Action):
         return False
 
     def is_translation(self, file_name):
-        print("watch is_translation")
         locales = locale_list
         if any('.'+locale in file_name for locale in locales):
-            print("is_translation cp 1")
             locales = {v:k for k,v in enumerate(locales) if v in file_name}.keys()
             replace_target = None
             for locale in locales:
-                print("is_translation cp 2")
                 original = file_name
                 file_name = file_name.replace('.'+locale, '')
                 if file_name != original:
@@ -136,27 +112,22 @@ class WatchAction(Action):
             doc = self.doc_manager.get_doc_by_prop('file_name', file_name.replace(self.path, ''))
             replace_target = replace_target.replace("-", "_")
             if doc:
-                print("is_translation cp 4")
                 if 'locales' in doc and replace_target in doc['locales']:
                     return True
         return False
 
     def check_remote_doc_exist(self, fn, document_id=None):
-        print("Watch check_remote_doc_exist")
         """ check if a document exists remotely """
         if not document_id:
             entry = self.doc_manager.get_doc_by_prop('file_name', fn)
             document_id = entry['id']
         response = self.api.get_document(document_id)
         if response.status_code != 200:
-            print("does not exist")
             return False
-        print("exists")
         return True
 
     def _on_modified(self, event):
         """ Notify Lingotek cloud when a previously added file is modified """
-        # print("Watch.py _on_modified")
         try:
             db_entries = self.doc_manager.get_all_entries()
             in_db = False
@@ -174,13 +145,9 @@ class WatchAction(Action):
                         #logger.info('Detected local content modified: {0}'.format(fn))
                         #self.update_document_action(os.path.join(self.path, fn))
                         #logger.info('Updating remote content: {0}'.format(fn))
-                        try:
-                            self.polled_list.remove(fn)
-                        except Exception as err:
-                            print("doc not in polled_list")
+                        self.polled_list.remove(fn)
                         self.update_content(fn)
                 except KeyboardInterrupt:
-                    self.threading = False
                     for observer in self.observers:
                         observer.stop()
                 except ConnectionError:
@@ -190,7 +157,6 @@ class WatchAction(Action):
                     print(sys.exc_info()[1])
                     restart()
         except KeyboardInterrupt:
-            self.threading = False
             for observer in self.observers:
                 observer.stop()
         except Exception as err:
@@ -234,7 +200,6 @@ class WatchAction(Action):
                         else:
                             return
                     except KeyboardInterrupt:
-                        self.threading = False
                         for observer in self.observers:
                             observer.stop()
                     except ConnectionError:
@@ -263,24 +228,14 @@ class WatchAction(Action):
                         except IndexError:
                             logger.warning('Cannot detect locales from file: {0}, not adding any locales'.format(title))
                     self.watch_add_target(relative_path, document_id)
-                # logger.info('Added new document {0}'.format(title
-        # else:
-        #     print("Skipping hidden file "+file_path)
+                    # logger.info('Added new document {0}'.format(title
+                # else:
+                #     print("Skipping hidden file "+file_path)
         except KeyboardInterrupt:
-            self.threading = False
             for observer in self.observers:
                 observer.stop()
         # except Exception as err:
         #     restart("Error on created: "+str(err)+"\nRestarting watch.")
-
-    def cleanWhileWatching(self):
-        count = 0
-        while self.threading:
-            time.sleep(1)
-            count += 1
-            if count > 59:
-                self.clean.clean_action(False, False, None)
-                count = 0
 
     def _on_moved(self, event):
         """Used for programs, such as gedit, that modify documents by moving (overwriting)
@@ -290,18 +245,10 @@ class WatchAction(Action):
             event = FileSystemEvent(event.dest_path)
             self._on_modified(event)
         except KeyboardInterrupt:
-            self.threading = False
             for observer in self.observers:
                 observer.stop()
         except Exception as err:
             restart("Error on moved: "+str(err)+"\nRestarting watch.")
-
-    def _on_deleted(self, event):
-        file_name = os.path.basename(event.src_path)
-        doc = self.doc_manager.get_doc_by_prop('file_name', file_name)
-        if doc:
-            doc_id = doc['id']
-            self.rm.rm_document(doc_id,True,False)
 
     def get_watch_locales(self, document_id):
         """ determine the locales that should be added for a watched doc """
@@ -320,7 +267,6 @@ class WatchAction(Action):
         return locales
 
     def watch_add_target(self, file_name, document_id):
-        print("watch watch_add_target")
         if not file_name:
             title=self.doc_manager.get_doc_by_prop("id", document_id)
         else:
@@ -349,18 +295,14 @@ class WatchAction(Action):
         # if self.watch_queue:
         #     self.watch_add_target(None, self.watch_queue.pop(0))
         for document_id in self.watch_queue:
-            print("watch_add_target from process_queue")
             self.watch_add_target(None, document_id)
 
     def update_content(self, relative_path):
-        print("Watch update_content")
-        loginInfo.bar_delegate.createIconUpdateThread()
         if self.update_document_action(os.path.join(self.path, relative_path)):
             self.updated[relative_path] = 0
             logger.info('Updating remote content: {0}'.format(relative_path))
 
     def check_modified(self, doc): # Checks if the version of a document on Lingotek's system is more recent than the local version
-        print("watch check_modified")
         old_date = doc['last_mod']
         response = self.api.get_document(doc['id'])
         if response.status_code == 200:
@@ -375,7 +317,6 @@ class WatchAction(Action):
 
     @retry(logger)
     def poll_remote(self):
-        print("watch action poll_remote")
         """ poll lingotek servers to check if translation is finished """
         if self.auto_format_option == 'on':
             autoFormat = True;
@@ -402,9 +343,7 @@ class WatchAction(Action):
             except KeyError:
                 downloaded = []
                 self.doc_manager.update_document('downloaded', downloaded, doc_id)
-            print("poll remote cp 1")
             if file_name not in self.polled_list or self.force_poll:
-                print("poll remote cp 2")
                 locale_progress = self.import_locale_info(doc_id, True)
                 # Python 2
                 for locale, progress in locale_progress.iteritems():
@@ -413,8 +352,6 @@ class WatchAction(Action):
 #                 for locale in locale_progress:
 #                     progress = locale_progress[locale]
                 # End Python 3
-                    print("progress: " + str(progress))
-                    print("local: " + locale)
                     if progress == 100 and locale not in downloaded:
                         document_added = False
                         if (doc['name']+": ") not in git_commit_message:
@@ -464,7 +401,6 @@ class WatchAction(Action):
             observer.stop()
 
     def watch_action(self, ignore, delimiter=None, no_folders=False, force_poll=False): # watch_paths, ignore, delimiter=None, no_folders=False):
-        print("watch watch_action")
         # print self.path
         watch_paths = None
         if not watch_paths:
@@ -513,7 +449,6 @@ class WatchAction(Action):
                         current_timeout -= queue_timeout
                 time.sleep(self.timeout)
         except KeyboardInterrupt:
-            self.threading = False
             for observer in self.observers:
                 observer.stop()
         # except Exception as err:
