@@ -51,10 +51,10 @@ def has_hidden_attribute(file_path):
     """ Detects if a file has hidden attributes """
     try:
         # Python 2
-        # attrs = ctypes.windll.kernel32.GetFileAttributesW(unicode(file_path))
+        attrs = ctypes.windll.kernel32.GetFileAttributesW(unicode(file_path))
         # End Python 2
         # Python 3
-        attrs = ctypes.windll.kernel32.GetFileAttributesW(str(file_path))
+#         attrs = ctypes.windll.kernel32.GetFileAttributesW(str(file_path))
         # End Python 3
         assert attrs != -1
         result = bool(attrs & 2)
@@ -66,6 +66,7 @@ class WatchAction(Action):
     # def __init__(self, path, remote=False):
     def __init__(self, path=None, timeout=60):
         Action.__init__(self, path, True, timeout)
+        print("Start Watch action")
         self.end_watch = False
         self.observers = []  # watchdog observers that will watch the files
         self.handler = WatchHandler()
@@ -87,18 +88,16 @@ class WatchAction(Action):
         self.download = download_action.DownloadAction(path)
         self.rm = rm_action.RmAction(path)
         self.clean = clean_action.CleanAction(path)
-        deleted_docs = self.clean._check_docs_to_clean()
-        for d in deleted_docs:
-            self.rm.rm_document(d,True,False)
-            print("Document: " + d + " removed")
         self.root_path = path
+        if check_connection.check_for_connection == True:
+            self.exucuteOnceOnline()
+        else:
+            self.cleanThread = Thread(target=self.waitForConnection)
+            self.cleanThread.start()
         # if remote:  # poll lingotek cloud periodically if this option enabled
         # self.remote_thread = threading.Thread(target=self.poll_remote(), args=())
         # self.remote_thread.daemon = True
         # self.remote_thread.start()
-        self.threading = True
-        self.thread = Thread(target=self.cleanWhileWatching)
-        self.thread.start()
 
     def is_hidden_file(self, file_path):
         # todo more robust checking for OSX files that doesn't start with '.'
@@ -253,6 +252,20 @@ class WatchAction(Action):
         # except Exception as err:
         #     restart("Error on created: "+str(err)+"\nRestarting watch.")
 
+    def waitForConnection(self):
+        while check_connection.check_for_connection() == False:
+            time.sleep(15)
+        self.exucuteOnceOnline()
+
+    def exucuteOnceOnline(self):
+        deleted_docs = self.clean._check_docs_to_clean()
+        for d in deleted_docs:
+            self.rm.rm_document(d,True,False)
+            print("Document: " + d + " removed")
+        self.threading = True
+        self.thread = Thread(target=self.cleanWhileWatching)
+        self.thread.start()
+
     def cleanWhileWatching(self):
         count = 0
         while self.threading:
@@ -299,6 +312,7 @@ class WatchAction(Action):
         return locales
 
     def watch_add_target(self, file_name, document_id):
+        print("watch_add_target")
         if not file_name:
             title=self.doc_manager.get_doc_by_prop("id", document_id)
         else:
@@ -351,6 +365,7 @@ class WatchAction(Action):
     @retry(logger)
     def poll_remote(self):
         """ poll lingotek servers to check if translation is finished """
+        print("poll_remote")
         if self.auto_format_option == 'on':
             autoFormat = True;
         else:
@@ -379,11 +394,11 @@ class WatchAction(Action):
             if file_name not in self.polled_list or self.force_poll:
                 locale_progress = self.import_locale_info(doc_id, True)
                 # Python 2
-                # for locale, progress in locale_progress.iteritems():
+                for locale, progress in locale_progress.iteritems():
                 # End Python 2
                 # Python 3
-                for locale in locale_progress:
-                    progress = locale_progress[locale]
+#                 for locale in locale_progress:
+#                     progress = locale_progress[locale]
                 # End Python 3
                     if progress == 100 and locale not in downloaded:
                         document_added = False
