@@ -48,7 +48,7 @@ class TestStatusAction(unittest.TestCase):
         # see that there are targets
         # request translations
         self.request_action = RequestAction(os.getcwd(), None, self.file_name, self.targets, False, None, None)
-        self.action.target_action()
+        self.request_action.target_action()
         try:
             out = StringIO()
             sys.stdout = out

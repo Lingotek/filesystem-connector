@@ -68,7 +68,6 @@ class TestDownload(unittest.TestCase):
 
         self.action.download_by_path(self.first_doc, self.locales[0], False, False, False)
         dl_file = self.get_dl_path(self.locales[0], self.first_doc)
-        print("dl_file", dl_file)
 
         assert self.locales[0] in dl_file
 

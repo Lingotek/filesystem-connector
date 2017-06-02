@@ -19,7 +19,7 @@ class TestWatch(unittest.TestCase):
         cleanup()
 
     def setUp(self):
-        self.action = WatchAction(os.getcwd(), 1)
+        self.action = WatchAction(os.getcwd())
         self.clean_action = CleanAction(os.getcwd())
         self.add_action = AddAction(os.getcwd())
         self.rm_action = RmAction(os.getcwd())
@@ -66,7 +66,6 @@ class TestWatch(unittest.TestCase):
 
     def test_watch_update(self):
         file_name = "test_watch_sample_1.txt"
-        print("SELF.DIR_NAME", self.dir_name)
         self.files.append(self.dir_name+'/'+file_name)
         if os.path.exists(self.dir_name+file_name):
             delete_file(file_name)
