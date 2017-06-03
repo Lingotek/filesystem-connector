@@ -96,9 +96,9 @@ class WatchAction(Action):
         # self.remote_thread = threading.Thread(target=self.poll_remote(), args=())
         # self.remote_thread.daemon = True
         # self.remote_thread.start()
-        self.threading = True
-        self.thread = Thread(target=self.cleanWhileWatching)
-        self.thread.start()
+        # self.threading = True
+        # self.thread = Thread(target=self.cleanWhileWatching)
+        # self.thread.start()
 
     def is_hidden_file(self, file_path):
         # todo more robust checking for OSX files that doesn't start with '.'
@@ -273,6 +273,10 @@ class WatchAction(Action):
     def _on_deleted(self, event):
         file_name = os.path.basename(event.src_path)
         doc = self.doc_manager.get_doc_by_prop('file_name', file_name)
+        try:
+            self.polled_list.remove(doc['name'])
+        except KeyError:
+            print("Document was not in polled_list")
         if doc:
             doc_id = doc['id']
             self.rm.rm_document(doc_id,True,False)
