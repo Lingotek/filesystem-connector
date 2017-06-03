@@ -262,19 +262,6 @@ class WatchAction(Action):
         # except Exception as err:
         #     restart("Error on created: "+str(err)+"\nRestarting watch.")
 
-    def waitForConnection(self):
-        while check_connection.check_for_connection() == False:
-            time.sleep(15)
-        self.exucuteOnceOnline()
-
-    def exucuteOnceOnline(self):
-        deleted_docs = self.clean._check_docs_to_clean()
-        for d in deleted_docs:
-            self.rm.rm_document(d,True,False)
-            print("Document: " + d + " removed")
-        self.threading = True
-        self.thread = Thread(target=self.cleanWhileWatching)
-        self.thread.start()
 
     def cleanWhileWatching(self):
         count = 0
