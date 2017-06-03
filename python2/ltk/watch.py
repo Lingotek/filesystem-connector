@@ -89,7 +89,7 @@ class WatchAction(Action):
         self.rm = rm_action.RmAction(path)
         self.clean = clean_action.CleanAction(path)
         self.root_path = path
-        if check_connection.check_for_connection == True:
+        if check_connection.check_for_connection() == True:
             self.exucuteOnceOnline()
         else:
             self.cleanThread = Thread(target=self.waitForConnection)
@@ -98,6 +98,16 @@ class WatchAction(Action):
         # self.remote_thread = threading.Thread(target=self.poll_remote(), args=())
         # self.remote_thread.daemon = True
         # self.remote_thread.start()
+
+    def waitForConnection(self):
+        while check_connection.check_for_connection() == False:
+            time.sleep(15)
+        self.exucuteOnceOnline()
+
+    def exucuteOnceOnline(self):
+        deleted_docs = self.clean._check_docs_to_clean()
+        for d in deleted_docs:
+            self.rm.rm_document(d,True,False)
 
     def is_hidden_file(self, file_path):
         # todo more robust checking for OSX files that doesn't start with '.'
@@ -291,6 +301,10 @@ class WatchAction(Action):
     def _on_deleted(self, event):
         file_name = os.path.basename(event.src_path)
         doc = self.doc_manager.get_doc_by_prop('file_name', file_name)
+        try:
+            self.polled_list.remove(doc['name'])
+        except KeyError:
+            print("Document was not in polled_list")
         if doc:
             doc_id = doc['id']
             self.rm.rm_document(doc_id,True,False)
@@ -308,6 +322,8 @@ class WatchAction(Action):
         try:
             locales = [locale for locale in self.watch_locales if locale not in entry['locales']]
         except KeyError:
+            locales = self.watch_locales
+        except Exception:
             locales = self.watch_locales
         return locales
 
