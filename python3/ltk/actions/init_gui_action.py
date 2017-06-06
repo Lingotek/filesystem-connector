@@ -118,7 +118,7 @@ class InitActionGUI():
 
         return True
 
-    def finish_config(self, project_id, project_name, workflow_id, project_path, locale, host, access_token, community_id):
+    def finish_config(self, project_id, project_name, workflow_id, project_path, locale, host, access_token, community_id, workflow_name=None):
         try:
             os.mkdir(os.path.join(project_path, CONF_DIR))
         except OSError:
@@ -131,8 +131,9 @@ class InitActionGUI():
         config_file = open(config_file_name, 'w')
         config_parser = ConfigParser()
 
-        response = self.apiCall.get_workflow(workflow_id)
-        workflow_name = response.json()['properties']['title']
+        if workflow_name == None:
+            response = self.apiCall.get_workflow(workflow_id)
+            workflow_name = response.json()['properties']['title']
 
         config_parser.add_section('main')
         config_parser.set('main', 'access_token', access_token)
