@@ -503,6 +503,8 @@ class WatchAction(Action):
         # start_time = time.clock()
         try:
             while True:
+                if self.end_watch == True:
+                    break
                 if check_connection.check_for_connection():
                     self.poll_remote()
                     current_timeout = self.timeout
