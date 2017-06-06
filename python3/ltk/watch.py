@@ -163,6 +163,18 @@ class WatchAction(Action):
                         #logger.info('Updating remote content: {0}'.format(fn))
                         self.polled_list.remove(fn)
                         self.update_content(fn)
+                    elif self.check_remote_doc_exist(fn) == False and self.doc_manager.is_doc_modified(fn, self.path):
+                        doc = self.doc_manager.get_doc_by_prop('file_name', fn)
+                        if doc:
+                            doc_id = doc['id']
+                        self.doc_manager.remove_element(doc_id)
+                        try:
+                            self.polled_list.remove(doc['name'])
+                        except Exception:
+                            print("Document was not in polled_list")
+                        # print("-----------Remove Document")
+                        # self.rm.rm_document(doc_id,True,False)
+                        # print("-----------Document removed")
                 except KeyboardInterrupt:
                     self.threading = False
                     for observer in self.observers:
@@ -275,7 +287,7 @@ class WatchAction(Action):
         doc = self.doc_manager.get_doc_by_prop('file_name', file_name)
         try:
             self.polled_list.remove(doc['name'])
-        except KeyError:
+        except Exception:
             print("Document was not in polled_list")
         if doc:
             doc_id = doc['id']
