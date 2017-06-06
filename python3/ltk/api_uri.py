@@ -14,6 +14,7 @@ API_URI = {
     'document_translation_locale': '/api/document/%(document_id)s/translation/%(locale)s',  # gets the status of target
     'document_format': '/api/document/format',
     'workflow': '/api/workflow',
+    'workflow_id': '/api/workflow/%(workflow_id)s',
     'filter': '/api/filter',
     'filter_id': '/api/filter/%(filter_id)s',
     'filter_content': '/api/filter/%(filter_id)s/content'

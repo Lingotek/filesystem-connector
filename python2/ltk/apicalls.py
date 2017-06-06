@@ -350,6 +350,16 @@ class ApiCalls:
             self.handleError()
         return r
 
+    def get_workflow(self, workflow_id):
+        try:
+            uri = (API_URI['workflow_id'] % locals())
+            payload = {'workflow_id': workflow_id}
+            r = requests.get(self.host + uri, headers=self.headers, params=payload)
+            log_api('GET', uri, r)
+        except requests.exceptions.ConnectionError:
+            self.handleError()
+        return r
+
     def list_locales(self):
         try:
             uri = 'http://gmc.lingotek.com/v1/locales'

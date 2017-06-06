@@ -131,6 +131,9 @@ class InitActionGUI():
         config_file = open(config_file_name, 'w')
         config_parser = ConfigParser()
 
+        response = self.apiCall.get_workflow(workflow_id)
+        workflow_name = response.json()['properties']['title']
+
         config_parser.add_section('main')
         config_parser.set('main', 'access_token', access_token)
         config_parser.set('main', 'host', host)
@@ -141,6 +144,7 @@ class InitActionGUI():
         config_parser.set('main', 'root_path', project_path)
         config_parser.set('main', 'default_locale', locale)
         config_parser.set('main', 'workflow_id', workflow_id)
+        config_parser.set('main', 'workflow_name', workflow_name)
         config_parser.set('main', 'project_id', project_id)
         config_parser.set('main', 'project_name', project_name)
 
