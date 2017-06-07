@@ -125,16 +125,23 @@ class InitActionGUI():
     def init_api_call(self, host):
         self.apiCall = ApiCalls(host, self.access_token)
 
-    def finish_config(self, project_id, project_name, workflow_id, project_path, locale, host, access_token, community_id, community_name, watch_locales, download_folder, username, startOnStartup=True):
+    def finish_config(self, project_id, project_name, workflow_id, project_path, locale, host, access_token, community_id, community_name, watch_locales, download_folder, username, finished_config=False):
         #logger.info("PROJECT PATH "+project_path)
         self.init_logger(project_path)
+        startOnStartup = False
         try:
             conf_dir_path = os.path.join(project_path, CONF_DIR)
             if not (os.path.isdir):
                 os.mkdir(conf_dir_path)
 
             ''' Set .ltk folder as hidden '''
+            # Python 2
+            # attrs = ctypes.windll.kernel32.GetFileAttributesW(unicode(file_path))
             ret = ctypes.windll.kernel32.SetFileAttributesW(unicode(conf_dir_path), HIDDEN_ATTRIBUTE)
+            # End Python 2
+            # Python 3
+            #ret = ctypes.windll.kernel32.SetFileAttributesW(str(conf_dir_path), HIDDEN_ATTRIBUTE)
+            # End Python 3
             if(ret != 1):   # return value of 1 signifies success
                 log_error("Failed to make .ltk folder hidden")
 
@@ -168,18 +175,18 @@ class InitActionGUI():
         configAction.set_download_folder(download_folder)
 
         # create a folder in the AppData folder that will store settings and the log
-        self.setLingotekAppDataFolder(project_path, download_folder, username, community_name, startOnStartup)
+        self.setLingotekAppDataFolder(project_path, download_folder, username, community_name, startOnStartup, finished_config)
 
         # configure windows registry key for start on startup '''
         if startOnStartup == True:
             # create registry key so that program runs on startup
             logger.info("Creating windows registry key")
-            path_to_exe = winshell.folder("PROGRAM_FILES") + "\\" + PROGRAM_FILES_FN + "\\" + EXE_FN
-            set_run_key.set("Lingotek", path_to_exe)
+            path_to_exe = os.path.join(winshell.folder("PROGRAM_FILES"),PROGRAM_FILES_FN, EXE_FN)
+            #set_run_key.set("Lingotek", path_to_exe)
         else:
             # remove registry key so program does not run on startup
             logger.info("Deleting windows registry key")
-            set_run_key.set("Lingotek", None)
+            #set_run_key.set("Lingotek", None)
 
     def init_logger(self, path):
         """
@@ -204,11 +211,11 @@ class InitActionGUI():
         logger.addHandler(file_handler)
         logger.addHandler(console_handler)
 
-    def setLingotekAppDataFolder(self, project_path, download_path, username, community_name, start_on_startup):
+    def setLingotekAppDataFolder(self, project_path, download_path, username, community_name, start_on_startup, finished_config):
         if(self.has_global):
             local_appdata = winshell.folder("local_appdata")
-            local_appData_folder = local_appdata+"\\Lingotek"
-            local_appData_file = local_appdata+"\\Lingotek\\lingotek.cfg"
+            local_appData_folder = os.path.join(local_appdata,"Lingotek")
+            local_appData_file = os.path.join(local_appdata,"Lingotek","lingotek.cfg")
             try:
                 if not os.path.exists(local_appData_folder):
                     os.mkdir(local_appData_folder)
@@ -229,10 +236,16 @@ class InitActionGUI():
             else:
                 config_parser.set('main', 'start_on_startup', "False")
 
+            if finished_config == True:
+                config_parser.set('main', 'finished_config', "True")
+            else:
+                config_parser.set('main', 'finished_config', "False")
+
+            config_parser.set('main', 'running_instance', "True")
+
             config_parser.write(config_file)
             config_file.close()
-        else:
-            pass
+            print("finished writing to config file")
 
     def create_global(self, access_token, host):
         """
@@ -241,6 +254,9 @@ class InitActionGUI():
         # go to the home dir
         home_path = os.path.expanduser('~')
         file_name = os.path.join(home_path, SYSTEM_FILE)
+        if(os.path.isfile(file_name)):
+            os.remove(file_name)
+            
         config_parser = ConfigParser()
         try:
             sys_file = open(file_name, 'w')
@@ -269,6 +285,7 @@ class InitActionGUI():
             if(ret != 1):
                 log_error("Failed making .lingotek file hidden")
 
+            print("has global")
             self.has_global = True
         except IOError, e:
             log_error(ERROR_FN, str(e))

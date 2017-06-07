@@ -44,10 +44,10 @@ def has_hidden_attribute(file_path):
     """ Detects if a file has hidden attributes """
     try:
         # Python 2
-        # attrs = ctypes.windll.kernel32.GetFileAttributesW(unicode(file_path))
+        attrs = ctypes.windll.kernel32.GetFileAttributesW(unicode(file_path))
         # End Python 2
         # Python 3
-        attrs = ctypes.windll.kernel32.GetFileAttributesW(str(file_path))
+        # attrs = ctypes.windll.kernel32.GetFileAttributesW(str(file_path))
         # End Python 3
         assert attrs != -1
         result = bool(attrs & 2)
@@ -86,13 +86,17 @@ class WatchAction(Action):
     def is_hidden_file(self, file_path):
         # todo more robust checking for OSX files that doesn't start with '.'
         name = os.path.abspath(file_path).replace(self.path, "")
+        # removed from the if statement below: has_hidden_attribute(file_path)
         if has_hidden_attribute(file_path) or ('Thumbs.db' in file_path) or ('ehthumbs.db' in file_path):
+            logger.info("Doc is hidden "+ file_path)
             return True
         while name != "":
             if name.startswith('.') or name.startswith('~') or name == "4913":
+                logger.info("Doc is hidden "+ file_path)
                 return True
             name = name.split(os.sep)[1:]
             name = (os.sep).join(name)
+
         return False
 
     def is_translation(self, file_name):
@@ -112,7 +116,9 @@ class WatchAction(Action):
             replace_target = replace_target.replace("-", "_")
             if doc:
                 if 'locales' in doc and replace_target in doc['locales']:
+                    logger.info("Doc is a translation: "+file_name)
                     return True
+
         return False
 
     def check_remote_doc_exist(self, fn, document_id=None):
@@ -219,8 +225,8 @@ class WatchAction(Action):
                 self.watch_add_target(relative_path, document_id)
                 logger.info('Added new document {0}'.format(title))
             else:
-                print("Skipping hidden file "+file_path)
-                logger.info("Skipping hidden file "+file_path)
+                print("Skipping file "+file_path)
+                logger.info("Skipping file "+file_path)
         except KeyboardInterrupt:
             logger.info("KeyboardInterrupt")
             for observer in self.observers:
