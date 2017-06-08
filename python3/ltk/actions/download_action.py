@@ -1,5 +1,5 @@
 from ltk.actions.action import *
-import loginInfo
+import appInfo
 
 class DownloadAction(Action):
     def __init__(self, path):
@@ -68,7 +68,7 @@ class DownloadAction(Action):
                                     'Something went wrong trying to download document: {0}'.format(document_id), True)
                         return
                     self.download_path = os.path.join(self.download_path, title)
-                    loginInfo.bar_delegate.documentHadDownloaded()
+                    appInfo.bar_delegate.documentHadDownloaded()
                     logger.info('Downloaded: {0} ({1} - {2})'.format(title, self.get_relative_path(self.download_path), locale_code))
                 else:
                     file_name = entry['file_name']
@@ -107,7 +107,7 @@ class DownloadAction(Action):
                     with open(self.download_path, 'wb') as fh:
                         for chunk in response.iter_content(1024):
                             fh.write(chunk)
-                    loginInfo.bar_delegate.documentHadDownloaded()
+                    appInfo.bar_delegate.documentHadDownloaded()
                     logger.info('Downloaded: {0} ({1} - {2})'.format(downloaded_name, self.get_relative_path(self.download_path), locale_code))
                 except:
                     logger.warning('Error: Download failed at '+self.download_path)
