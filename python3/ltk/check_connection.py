@@ -1,5 +1,7 @@
 import socket
 
+# This is a comment for testing the subdirectory
+
 def check_for_connection():
     try:
         host = socket.gethostbyname("www.google.com")
