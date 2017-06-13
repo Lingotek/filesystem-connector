@@ -6,6 +6,7 @@ from ltk.actions import request_action
 from ltk.actions import download_action
 from ltk.actions import rm_action
 from ltk.actions import clean_action
+from ltk.actions import status_action
 from ltk.logger import logger
 from ltk.utils import map_locale, restart, get_relative_path, log_error
 from ltk.locales import locale_list
@@ -88,6 +89,7 @@ class WatchAction(Action):
         self.download = download_action.DownloadAction(path)
         self.rm = rm_action.RmAction(path)
         self.clean = clean_action.CleanAction(path)
+        self.status = status_action.StatusAction(path)
         self.root_path = path
         if check_connection.check_for_connection() == True:
             self.exucuteOnceOnline()
@@ -520,3 +522,6 @@ class WatchAction(Action):
         #     restart("Error: "+str(err)+"\nRestarting watch.")
         for observer in self.observers:
             observer.join()
+
+    def get_status_of_watch_queue(self):
+        return self.status._get_status_of_selected_docs(self.watch_queue)
