@@ -24,7 +24,7 @@ from ltk.watchhandler import WatchHandler
 from ltk.git_auto import Git_Auto
 import check_connection
 
-import appInfo
+from data import appInfo
 
 DEFAULT_COMMIT_MESSAGE  = "Translations updated for "
 

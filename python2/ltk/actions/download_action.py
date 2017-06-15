@@ -1,5 +1,5 @@
 from ltk.actions.action import *
-import appInfo
+from data import appInfo
 
 class DownloadAction(Action):
     def __init__(self, path):
