@@ -203,10 +203,10 @@ class InitAction():
             print("Using configuration in file "+str(sys_file))
             conf_parser = ConfigParser()
             conf_parser.read(sys_file)
-            if conf_parser.has_section('alternative') and conf_parser.get('alternative', 'host') == host:
-                return conf_parser.get('alternative', 'access_token')
+            if conf_parser.has_section(host) and conf_parser.get(host, 'host') == host:
+                return conf_parser.get(host, 'access_token')
             if conf_parser.has_section('main'):
-                if not conf_parser.has_option('main','host') or conf_parser.get('main', 'host') == host:
+                if not conf_parser.has_option('main', 'host') or conf_parser.get('main', 'host') == host:
                     return conf_parser.get('main', 'access_token')
         else:
             return None
@@ -310,16 +310,20 @@ class InitAction():
             config_parser.read(file_name)
         sys_file = open(file_name, 'w')
         if config_parser.has_section('main'):
-            if not config_parser.has_option('main', host) and config_parser.has_option('main', 'access_token') and config_parser.get('main', 'access_token') == access_token:
+            if not config_parser.has_option('main', host) \
+                and config_parser.has_option('main', 'access_token') \
+                and config_parser.get('main', 'access_token') == access_token:
                 config_parser.set('main', 'host', host)
             elif config_parser.has_option('main', host) and config_parser.get('main', host) == host:
                 config_parser.set('main', 'access_token', access_token)
             else:
-                if config_parser.has_section('alternative') and config_parser.has_option('alternative', 'host') and config_parser.get('alternative', 'host') == host:
-                    config_parser.set('alternative','access_token', access_token)
-                config_parser.add_section('alternative')
-                config_parser.set('alternative', 'access_token', access_token)
-                config_parser.set('alternative', 'host', host)
+                if config_parser.has_section(host) \
+                    and config_parser.has_option(host, 'host') \
+                    and config_parser.get(host, 'host') == host:
+                    config_parser.set(host, 'access_token', access_token)
+                config_parser.add_section(host)
+                config_parser.set(host, 'access_token', access_token)
+                config_parser.set(host, 'host', host)
         else:
             config_parser.add_section('main')
             config_parser.set('main', 'access_token', access_token)
