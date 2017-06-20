@@ -231,7 +231,7 @@ class WatchAction(Action):
                             #testing
                             #self.polled_list.add(relative_path) #test that this doesn't break other areas of watch
                             #end testing
-                            appInfo.bar_delegate.createIconUpdateThread()
+                            appInfo.staus_bar_delegate.documentHasBeenAdded()
                             self.add.add_document(file_path, title, locale=self.locale)
 
                         elif self.doc_manager.is_doc_modified(relative_path, self.path):
@@ -361,7 +361,7 @@ class WatchAction(Action):
             self.watch_add_target(None, document_id)
 
     def update_content(self, relative_path):
-        appInfo.bar_delegate.createIconUpdateThread()
+        appInfo.staus_bar_delegate.documentHasBeenAdded()
         if self.update_document_action(os.path.join(self.path, relative_path)):
             self.updated[relative_path] = 0
             logger.info('Updating remote content: {0}'.format(relative_path))

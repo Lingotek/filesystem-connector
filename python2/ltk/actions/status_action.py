@@ -113,7 +113,10 @@ class StatusAction(Action):
         if completed == len(id_list):
             return "Status: ready"
         else:
-            return "Status: " +  str(len(id_list) - completed) + " document(s) remaining"
+            if len(id_list) > completed:
+                return "Status: " +  str(len(id_list) - completed) + " document(s) remaining"
+            else:
+                return "Status: processing"
 
     def _print_status(self, title, progress):
         print ('{0}: {1}%'.format(title, progress))
