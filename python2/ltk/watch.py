@@ -86,7 +86,7 @@ class WatchAction(Action):
     def is_hidden_file(self, file_path):
         # todo more robust checking for OSX files that doesn't start with '.'
         name = os.path.abspath(file_path).replace(self.path, "")
-        if has_hidden_attribute(file_path) or ('Thumbs.db' in file_path) or ('ehthumbs.db' in file_path):
+        if has_hidden_attribute(file_path) or ('Thumbs.db' in file_path) or ('ehthumbs.db' in file_path) or ('desktop.ini' in file_path):
             return True
         while name != "":
             if name.startswith('.') or name.startswith('~') or name == "4913":
