@@ -35,11 +35,8 @@ class RmAction(Action):
                 self.folder_manager.clear_all()
                 removed_folder = True
                 logger.info("Removed all folders.")
-                if 'remote' in kwargs and kwargs['remote']:
-                    matched_files = self.rm_remote(force)
-                else:
-                    useID = False
-                    matched_files = self.doc_manager.get_file_names()
+                useID = False
+                matched_files = self.doc_manager.get_file_names()
 
             elif not useID:
                 # use current working directory as root for files instead of project root
@@ -193,6 +190,12 @@ class RmAction(Action):
                 id = entry['properties']['id']
                 doc_name = entry['properties']['name']
 
+                print("Getting doc....")
                 doc = self.doc_manager.get_doc_by_prop("id",id)
+                print("Got doc.....")
+                print(doc)
                 matched_files.append(doc["file_name"])
+                print("appended")
+
+            print("returning")
             return matched_files
