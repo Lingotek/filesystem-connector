@@ -9,7 +9,7 @@ class DownloadAction(Action):
         self.default_download_ext = "({0})".format(self.DOWNLOAD_NUMBER)
         self.current_doc = ''
 
-    def download_by_path(self, file_path, locale_codes, locale_ext, no_ext, auto_format):
+    def download_by_path(self, file_path, locale_codes, locale_ext, no_ext, auto_format, xliff):
         docs = self.get_docs_in_path(file_path)
         if len(docs) == 0:
             logger.warning("No document found with file path "+str(file_path))
@@ -21,19 +21,19 @@ class DownloadAction(Action):
                 elif 'locales' in entry:
                     locales = entry['locales']
                 if 'clone' in self.download_option and not locale_ext or (no_ext and not locale_ext):
-                    self.download_locales(entry['id'], locales, auto_format, False)
+                    self.download_locales(entry['id'], locales, auto_format, xliff, False)
                 else:
-                    self.download_locales(entry['id'], locales, auto_format, True)
+                    self.download_locales(entry['id'], locales, auto_format, xliff, True)
 
-    def download_locales(self, document_id, locale_codes, auto_format, locale_ext=True):
+    def download_locales(self, document_id, locale_codes, auto_format, xliff, locale_ext=True):
         if locale_codes:
             for locale_code in locale_codes:
                 locale_code = locale_code.replace("_","-")
-                self.download_action(document_id, locale_code, auto_format, locale_ext)
+                self.download_action(document_id, locale_code, auto_format, xliff, locale_ext)
 
-    def download_action(self, document_id, locale_code, auto_format, locale_ext=True):
+    def download_action(self, document_id, locale_code, auto_format, xliff, locale_ext=True):
         try:
-            response = self.api.document_content(document_id, locale_code, auto_format)
+            response = self.api.document_content(document_id, locale_code, auto_format, xliff)
             entry = None
             entry = self.doc_manager.get_doc_by_prop('id', document_id)
             if response.status_code == 200:
@@ -83,6 +83,8 @@ class DownloadAction(Action):
                         downloaded_name = self.append_ext_to_file(locale_code, base_name, True)
                     else:
                         downloaded_name = base_name
+                    if 'xliff' in response.headers['Content-Type']:
+                        downloaded_name = self.change_file_extension('xml', downloaded_name)
                     if 'same' in self.download_option:
                         self.download_path = os.path.dirname(file_name)
                         new_path = os.path.join(self.path,os.path.join(self.download_path, downloaded_name))
@@ -163,6 +165,20 @@ class DownloadAction(Action):
                     except Exception as e:
                         log_error(self.error_file_name, e)
                         logger.warning("Could not create cloned directory "+new_path)
+
+    def change_file_extension(self, new_ext, base_name):
+        name_parts = base_name.split('.')
+        new_name = None
+        if(len(name_parts) > 1):
+            name_parts[-1] = new_ext
+            new_name = '.'.join(part for part in name_parts)
+        else:
+            new_name = name_parts[0] + '.' + new_ext
+            self.download_path = os.path.join(self.path, os.path.join(self.download_path, new_name))
+            # print("New name: {0}".format(new_name))
+            # print("Download path: {0}".format(self.download_path))
+
+        return new_name
 
     def append_ext_to_file(self, to_append, base_name, append_locale):
         name_parts = base_name.split('.')
