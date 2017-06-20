@@ -38,8 +38,18 @@ class DocumentManager:
             locale_folders = config.get('main','locale_folders')
             locale_folders = json.loads(locale_folders)
             #if doc is in the user specified download folder return false
+            download_is_watched = False
             if file_name[:len(download_folder)] == download_folder and download_folder is not "":
-                return False
+                with open(root_path + '/.ltk/folders.json') as json_data:
+                    folders_json = json.load(json_data)
+                folders = folders_json['_default']
+                for folder in folders:
+                    name = folders_json['_default'][folder]['file_name']
+                    if name == download_folder:
+                        download_is_watched = True
+
+                if download_is_watched == False:
+                    return False
             #if doc is in a user specified locale download folder return false
             for k,v in locale_folders.items():
                 if file_name[:len(v)] == v:
@@ -57,7 +67,10 @@ class DocumentManager:
                         file_name_name += name_parts[x]
                     for locale in locales:
                         possible_no_clone_file_name = file_name_name + "." + locale + "." + name_parts[len(name_parts)-1]
-                        possible_file_name = os.path.join(locale, name)
+                        if download_is_watched:
+                            possible_file_name = os.path.join(download_folder, os.path.join(locale, (os.path.basename(file_name_name) + "." + name_parts[len(name_parts)-1])))
+                        else:
+                            possible_file_name = os.path.join(locale, name)
                         possible_file_name = possible_file_name.replace("_","-")
                         if possible_file_name == file_name or possible_no_clone_file_name == file_name:
                             return False
