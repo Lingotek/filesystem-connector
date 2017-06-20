@@ -32,6 +32,7 @@ class RmAction(Action):
             else:
                 useID = False
             if 'all' in kwargs and kwargs['all']:
+                local = False
                 self.folder_manager.clear_all()
                 removed_folder = True
                 logger.info("Removed all folders.")
@@ -40,8 +41,27 @@ class RmAction(Action):
                 else:
                     useID = False
                     matched_files = self.doc_manager.get_file_names()
+            elif 'local' in kwargs and kwargs['local']:
+                local = True
+                if 'name' in kwargs and kwargs['name']:
+                    matched_files = []
+
+                    for pattern in file_patterns:
+                        doc = self.doc_manager.get_doc_by_prop("name",pattern)
+                        if doc:
+                            matched_files.append(doc['file_name'])
+                else:
+                    if len(file_patterns) == 0:
+                        self.folder_manager.clear_all()
+                        removed_folder = True
+                        logger.info("Removed all folders.")
+                        useID = False
+                        matched_files = self.doc_manager.get_file_names()
+                    # else:
+                        # logger.error("Too many agruments, to specify a document to be reomved locally use -l in association with -n")
 
             elif not useID:
+                local = False
                 # use current working directory as root for files instead of project root
                 if 'name' in kwargs and kwargs['name']:
                     matched_files = []
@@ -53,12 +73,15 @@ class RmAction(Action):
                 else:
                     matched_files = self.get_doc_filenames_in_path(file_patterns)
             else:
+                local = False
                 matched_files = file_patterns
             if not matched_files or len(matched_files) == 0:
                 if useID:
                     raise exceptions.ResourceNotFound("No documents to remove with the specified id")
                 elif removed_folder:
                     logger.info("No documents to remove")
+                elif local:
+                    raise exceptions.ResourceNotFound("Too many agruments, to specify a document to be reomved locally use -l in association with -n")
                 elif not 'all' in kwargs or not kwargs['all']:
                     raise exceptions.ResourceNotFound("No documents to remove with the specified file path")
                 else:
@@ -70,7 +93,7 @@ class RmAction(Action):
                     is_directory = True
             for file_name in matched_files:
                 # title = os.path.basename(os.path.normpath(file_name)).split('.')[0]
-                self.rm_document(self.norm_path(file_name).replace(self.path,""), useID, force)
+                self.rm_document(self.norm_path(file_name).replace(self.path,""), useID, force, local)
 
         except Exception as e:
             # Python 3
@@ -102,7 +125,7 @@ class RmAction(Action):
 
         return trans_files
 
-    def rm_document(self, file_name, useID, force, doc_name=None, is_directory=False):
+    def rm_document(self, file_name, useID, force, local=False, doc_name=None, is_directory=False):
         try:
             doc = None
             if not useID:
@@ -121,33 +144,36 @@ class RmAction(Action):
                 doc = self.doc_manager.get_doc_by_prop('id', document_id)
                 if doc:
                     file_name = doc['file_name']
-            response = self.api.document_delete(document_id)
-            #print (response)
-            if response.status_code != 204 and response.status_code != 202:
-                # raise_error(response.json(), "Failed to delete document {0}".format(document_name), True)
-                logger.error("Failed to delete document {0} remotely".format(file_name))
+            if local and not force:
+                self.delete_local(file_name, document_id)
+
             else:
-                if doc_name:
-                    logger.info("{0} ({1}) has been deleted remotely".format(doc_name, file_name))
+                response = self.api.document_delete(document_id)
+                #print (response)
+                if response.status_code != 204 and response.status_code != 202:
+                    # raise_error(response.json(), "Failed to delete document {0}".format(document_name), True)
+                    logger.error("Failed to delete document {0} remotely".format(file_name))
                 else:
-                    logger.info("{0} has been deleted remotely".format(file_name))
-                if doc:
-                    if force:
-                        #delete local translation file(s) for the document being deleted
-                        trans_files = []
-                        if 'clone' in self.download_option:
-                            trans_files = self.rm_clone(file_name)
+                    if doc_name:
+                        logger.info("{0} ({1}) has been deleted remotely".format(doc_name, file_name))
+                    else:
+                        logger.info("{0} has been deleted remotely".format(file_name))
+                    if doc:
+                        if force:
+                            #delete local translation file(s) for the document being deleted
+                            trans_files = []
+                            if 'clone' in self.download_option:
+                                trans_files = self.rm_clone(file_name)
 
-                        elif 'folder' in self.download_option:
-                            trans_files = self.rm_folder(file_name)
+                            elif 'folder' in self.download_option:
+                                trans_files = self.rm_folder(file_name)
 
-                        elif 'same' in self.download_option:
-                            download_path = self.path
-                            trans_files = get_translation_files(file_name, download_path, self.download_option, self.doc_manager)
+                            elif 'same' in self.download_option:
+                                download_path = self.path
+                                trans_files = get_translation_files(file_name, download_path, self.download_option, self.doc_manager)
 
-                        self.delete_local(file_name, document_id)
-
-                    self.doc_manager.remove_element(document_id)
+                            self.delete_local(file_name, document_id)
+            self.doc_manager.remove_element(document_id)
         except json.decoder.JSONDecodeError:
             logger.error("JSON error on removing document")
         except KeyboardInterrupt:
