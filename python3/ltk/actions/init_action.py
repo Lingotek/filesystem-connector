@@ -11,7 +11,7 @@ class InitAction():
     '''def __init__(self, path):
         #Action.__init__(self, path)'''
 
-    def init_action(self, host, access_token, client_id, project_path, folder_name, workflow_id, locale, browserless, delete, reset):
+    def init_action(self, host, access_token, client_id, project_path, folder_name, workflow_id, default_locale, browserless, delete, reset):
         client_id = 'ab33b8b9-4c01-43bd-a209-b59f933e4fc4' if not client_id else client_id
         try:
             # check if Lingotek directory already exists
@@ -30,7 +30,7 @@ class InitAction():
                         access_token = run_oauth(host, client_id)
                         ran_oauth = True
                     else:
-                        api = ApiCalls(host, '')
+                        self.api = ApiCalls(host, '')
                         # Python 2
                         # username = raw_input('Username: ')
                         # End Python 2
@@ -40,8 +40,8 @@ class InitAction():
                         password = getpass.getpass()
                         login_host = 'https://sso.lingotek.com' if 'myaccount' in host else 'https://cmssso.lingotek.com'
 
-                        if api.login(login_host, username, password):
-                            retrieved_token = api.authenticate(login_host)
+                        if self.api.login(login_host, username, password):
+                            retrieved_token = self.api.authenticate(login_host)
                             if retrieved_token:
                                 print('Authentication successful')
                                 access_token = retrieved_token
@@ -54,7 +54,7 @@ class InitAction():
                 # create or overwrite global file
                 self.create_global(access_token, host)
 
-            api = ApiCalls(host, access_token)
+            self.api = ApiCalls(host, access_token)
             # create a directory
             try:
                 if not os.path.isdir(os.path.join(project_path, CONF_DIR)):
@@ -85,18 +85,18 @@ class InitAction():
             config_parser.set('main', 'access_token', access_token)
             config_parser.set('main', 'host', host)
             # config_parser.set('main', 'root_path', project_path)
-            config_parser.set('main', 'workflow_id', workflow_id)
-            config_parser.set('main', 'default_locale', locale)
+            # config_parser.set('main', 'workflow_id', workflow_id)
+            # config_parser.set('main', 'default_locale', locale)
             config_parser.set('main', 'git_autocommit', 'False')
             config_parser.set('main', 'git_username', '')
             config_parser.set('main', 'git_password', '')
             # get community id
-            community_info = api.get_communities_info()
+            community_info = self.api.get_communities_info()
             if not community_info:
                 from ltk.auth import run_oauth
                 access_token = run_oauth(host, client_id)
                 self.create_global(access_token, host)
-                community_info = api.get_communities_info()
+                community_info = self.api.get_communities_info()
                 if not community_info:
                     raise exceptions.RequestFailedError("Unable to get user's list of communities")
 
@@ -110,11 +110,11 @@ class InitAction():
                 #community_id = community_info.iterkeys().next()  --- iterkeys() is not in python 3
             if community_id != None:
                 config_parser.set('main', 'community_id', community_id)
-                response = api.list_projects(community_id)
+                response = self.api.list_projects(community_id)
                 if response.status_code == 204:#no projects in community
                     project_info = []
                 elif response.status_code == 200:
-                    project_info = api.get_project_info(community_id)
+                    project_info = self.api.get_project_info(community_id)
                 else:
                     try:
                         raise_error(response.json(), 'Something went wrong trying to find projects in your community')
@@ -122,6 +122,8 @@ class InitAction():
                         logger.error('Something went wrong trying to find projects in your community')
                         return
                 if len(project_info) > 0:
+                    project_id = None
+                    project_name = None
                     confirm = 'none'
                     try:
                         while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
@@ -138,9 +140,12 @@ class InitAction():
                                 config_parser.set('main', 'project_id', project_id)
                                 if project_name != None:
                                     config_parser.set('main', 'project_name', project_name)
-                                config_parser.write(config_file)
-                                config_file.close()
-                            return
+
+                        if not project_id:
+                            project_id, project_name = self.create_new_project(folder_name, community_id, workflow_id)
+                            config_parser.set('main', 'project_id', project_id)
+                            config_parser.set('main', 'project_name', project_name)
+
                     except KeyboardInterrupt:
                         # Python 2
                         # logger.info("\nInit canceled")
@@ -149,34 +154,32 @@ class InitAction():
                         logger.error("\nInit canceled")
                         # End Python 3
                         return
-                prompt_message = "Please enter a new Lingotek project name: %s" % folder_name + chr(8) * len(folder_name)
-                try:
-                    # Python 2
-                    # project_name = raw_input(prompt_message)
-                    # End Python 2
-                    # Python 3
-                    project_name = input(prompt_message)
-                    # End Python 3
-                except KeyboardInterrupt:
-                    # Python 2
-                    # logger.info("\nInit canceled")
-                    # End Python 2
-                    # Python 3
-                    logger.error("\nInit canceled")
-                    # End Python 3
-                    return
-                if not project_name:
-                    project_name = folder_name
-                response = api.add_project(project_name, community_id, workflow_id)
-                if response.status_code != 201:
-                    try:
-                        raise_error(response.json(), 'Failed to add current project to Lingotek Cloud')
-                    except:
-                        logger.error('Failed to add current project to Lingotek Cloud')
-                        return
-                project_id = response.json()['properties']['id']
-                config_parser.set('main', 'project_id', project_id)
-                config_parser.set('main', 'project_name', project_name)
+
+                print()
+                # get workflow
+                workflow_id, workflow_updated = self.get_workflow(community_id, project_id)
+                if(workflow_updated):
+                    self.api.patch_project(project_id, workflow_id)
+
+                config_parser.set('main', 'workflow_id', workflow_id)
+
+                # print out locale codes
+                self.locale_info = self.print_locale_codes()
+
+                # get source locale
+                selected_source_locale = self.get_source_locale()
+                config_parser.set('main', 'default_locale', selected_source_locale)
+
+                # get target locale(s)
+                target_locales = self.get_target_locales()
+                config_parser.set('main', 'watch_locales', target_locales)
+
+                # get download location
+                download_path = self.get_download_path(project_path)
+                config_parser.set('main', 'download_folder', download_path)
+
+                # ask about advanced settings
+
 
                 config_parser.write(config_file)
                 config_file.close()
@@ -216,6 +219,8 @@ class InitAction():
             prompt_message = 'Which community should this project belong to? '
         elif display_type == 'project':
             prompt_message = 'Which existing project should be used? '
+        elif display_type == 'workflow':
+            prompt_message = 'Which workflow should be used? '
         else:
             raise exceptions.ResourceNotFound("Cannot display info asked for")
         mapper = choice_mapper(info)
@@ -243,7 +248,7 @@ class InitAction():
             except ValueError:
                 print("That's not a valid option!")
         for v in mapper[choice]:
-            logger.info('Selected "{0}" {1}.'.format(mapper[choice][v], display_type))
+            logger.info('\nSelected "{0}" {1}.'.format(mapper[choice][v], display_type))
             return v, mapper[choice][v]
 
     def reinit(self, host, project_path, delete, reset):
@@ -282,8 +287,8 @@ class InitAction():
                     old_config.read(config_file_name)
                     project_id = old_config.get('main', 'project_id')
                     access_token = old_config.get('main', 'access_token')
-                    api = ApiCalls(host, access_token)
-                    response = api.delete_project(project_id)
+                    self.api = ApiCalls(host, access_token)
+                    response = self.api.delete_project(project_id)
                     if response.status_code != 204 and response.status_code != 404:
                         try:
                             error = response.json()['messages'][0]
@@ -308,6 +313,14 @@ class InitAction():
         config_parser = ConfigParser()
         if os.path.isfile(file_name):
             config_parser.read(file_name)
+
+        # if on Windows, temporarily unhide the .lingotek file so we can write to it
+        if os.name == 'nt':
+            try:
+                import subprocess
+                subprocess.call(["attrib", "-H", file_name])
+            except Exception as e:
+                print(e)
         sys_file = open(file_name, 'w')
         if config_parser.has_section('main'):
             if not config_parser.has_option('main', host) and config_parser.has_option('main', 'access_token') and config_parser.get('main', 'access_token') == access_token:
@@ -327,13 +340,246 @@ class InitAction():
         config_parser.write(sys_file)
         sys_file.close()
 
-        # if on Windows system, set file properties to hidden
+        # # if on Windows, set file properties to hidden
         if os.name == 'nt':
+            try:
+                subprocess.call(["attrib", "+H", file_name])
+            except Exception as e:
+                print(e)
+
+    def create_new_project(self, folder_name, community_id, workflow_id):
+        prompt_message = "Please enter a new Lingotek project name: %s" % folder_name + chr(8) * len(folder_name)
+        try:
             # Python 2
-            # ret = ctypes.windll.kernel32.SetFileAttributesW(unicode(file_name), HIDDEN_ATTRIBUTE)
+            # project_name = raw_input(prompt_message)
             # End Python 2
             # Python 3
-            ret = ctypes.windll.kernel32.SetFileAttributesW(file_name, HIDDEN_ATTRIBUTE)
+            project_name = input(prompt_message)
             # End Python 3
-            if(ret != 1):   # return value of 1 signifies success
-                pass
+        except KeyboardInterrupt:
+            # Python 2
+            # logger.info("\nInit canceled")
+            # End Python 2
+            # Python 3
+            logger.error("\nInit canceled")
+            # End Python 3
+            return
+        if not project_name:
+            project_name = folder_name
+        response = self.api.add_project(project_name, community_id, workflow_id)
+        if response.status_code != 201:
+            try:
+                raise_error(response.json(), 'Failed to add current project to Lingotek Cloud')
+            except:
+                logger.error('Failed to add current project to Lingotek Cloud')
+                return
+        project_id = response.json()['properties']['id']
+
+        return project_id, project_name
+
+
+    def get_workflow(self, community_id, project_id):
+        response = self.api.get_project(project_id)
+        workflow_id = response.json()['properties']['workflow_id']
+
+        response = self.api.list_workflows(community_id)
+        workflows = response.json()['entities']
+        workflow_info = {}
+
+        for workflow in workflows:
+            workflow_info[workflow['properties']['id']] = workflow['properties']['title']
+
+        if len(workflow_info) > 0:
+            confirm = 'none'
+            try:
+                while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
+                    prompt_message = 'Use the current project workflow? [Y/n]: '
+                    # Python 2
+                    # confirm = raw_input(prompt_message)
+                    # End Python 2
+                    # Python 3
+                    confirm = input(prompt_message)
+                    # End Python 3
+                if confirm in ['n', 'N', 'no', 'No']:
+                    workflow_id, workflow_name = self.display_choice('workflow', workflow_info)
+                    return workflow_id, True
+                else:
+                    logger.info("Using default workflow\n")
+            except KeyboardInterrupt:
+                # Python 2
+                # logger.info("\nInit canceled")
+                # End Python 2
+                # Python 3
+                logger.error("\nInit canceled")
+                # End Python 3
+                return
+
+        return workflow_id, False
+
+    def print_locale_codes(self):
+        locale_info = []
+        response = self.api.list_locales()
+        if response.status_code != 200:
+            raise exceptions.RequestFailedError("Failed to get locale codes")
+        locale_json = response.json()
+        locale_dict = {}
+        for entry in locale_json:
+            locale_code = locale_json[entry]['locale'].replace('_','-')
+            language = locale_json[entry]['language_name']
+            country = locale_json[entry]['country_name']
+            locale_info.append((locale_code, language, country))
+            locale_dict[locale_code] = (language, country),
+
+        locale_info = sorted(locale_info)
+        for locale in locale_info:
+            if not len(locale[2]):  # Arabic
+                print ("{0} ({1})".format(locale[0], locale[1]))
+            else:
+                print ("{0} ({1}, {2})".format(locale[0], locale[1], locale[2]))
+
+        print()
+        return locale_dict
+
+    def get_source_locale(self):
+        try:
+            selected_locale = ''
+            keep_prompting = True
+            while selected_locale not in self.locale_info.keys():
+                prompt_message = 'What is the default locale for your source content? [en-US]: '
+                # Python 2
+                # confirm = raw_input(prompt_message)
+                # End Python 2
+                # Python 3
+                locale = input(prompt_message)
+                # End Python 3
+                if(locale == ''):
+                    selected_locale = 'en-US'
+                    keep_prompting = False
+                else:
+                    if(selected_locale not in self.locale_info.keys()):
+                        logger.warning('\'{0}\' is not a valid locale\n'.format(locale))
+                    else:
+                        selected_locale = locale
+                        keep_prompting = False
+
+            logger.info("Set source locale to: {0}\n".format(selected_locale))
+            return selected_locale
+
+        except KeyboardInterrupt:
+            # Python 2
+            # logger.info("\nInit canceled")
+            # End Python 2
+            # Python 3
+            logger.error("\nInit canceled")
+            # End Python 3
+            return
+
+    def get_target_locales(self):
+        try:
+            selected_locales = []
+            prompt_for_input = True
+            while prompt_for_input:
+                prompt_message = 'What default target locales would you like to translate into (e.g. fr-FR, ja-JP)? [None]: '
+                # Python 2
+                # confirm = raw_input(prompt_message)
+                # End Python 2
+                # Python 3
+                locales = input(prompt_message)
+                # End Python 3
+                if(locales == ''):
+                    prompt_for_input = False
+                else:
+                    locales = locales.replace(" ", "")
+                    locales = locales.split(",")
+
+                    prompt_for_input = False
+                    # make sure the locales given are valid
+                    for l in locales:
+                        if l not in self.locale_info:
+                            print("Please provide valid locales as a comma seperated list (e.g. fr-FR, ja-JP)\n")
+                            prompt_for_input = True
+
+            if(len(locales) > 0):
+                logger.info("Set target locales to: {0}\n".format(', '.join(locales)))
+                return ','.join(locales)
+            else:
+                logger.info("Set target locales to: None\n")
+                return "None"
+
+        except KeyboardInterrupt:
+            # Python 2
+            # logger.info("\nInit canceled")
+            # End Python 2
+            # Python 3
+            logger.error("\nInit canceled")
+            # End Python 3
+            return
+
+    def get_download_path(self, project_path):
+        try:
+            download_path = ''
+            keep_prompting = True
+            while keep_prompting:
+                prompt_message = 'Where would you like translations to be downloaded? [.]: '
+                # Python 2
+                # confirm = raw_input(prompt_message)
+                # End Python 2
+                # Python 3
+                path = input(prompt_message)
+                # End Python 3
+
+                if(path == '' or path == '.'):
+                    # set download path to the current directory
+                    download_path = self.norm_path(project_path, '.')
+                else:
+                    download_path = self.norm_path(project_path, path)
+
+                if os.path.exists(os.path.join(project_path, download_path)):
+                    if(path == '' or path == '.'):
+                        logger.info("Set download folder to the current working directory")
+                    else:
+                        logger.info("Set download folder to: " + download_path)
+
+                    keep_prompting = False
+                else:
+                    logger.warning('Error: Invalid value for "-d" / "--download_folder": The folder {0} does not exist\n'.format(os.path.join(project_path,download_path)))
+
+            return download_path
+
+        except KeyboardInterrupt:
+            # Python 2
+            # logger.info("\nInit canceled")
+            # End Python 2
+            # Python 3
+            logger.error("\nInit canceled")
+            # End Python 3
+            return
+
+    def norm_path(self, project_path, file_location):
+        project_path = os.path.join(project_path, "\"")
+        # print("original path: "+str(file_location))
+        if file_location:
+            file_location = os.path.normpath(file_location)
+            # abspath=os.path.abspath(file_location)
+            # print("abspath: "+str(os.path.abspath(os.path.expanduser(file_location))))
+            # print("project_path: "+project_path)
+            # print("cwd: "+str(os.getcwd()))
+            norm_path = os.path.abspath(os.path.expanduser(file_location)).replace(project_path, '')
+            # print("normalized path: "+norm_path)
+            # print("joined path: "+str(os.path.join(project_path,file_location)))
+            # if file_location == ".." and project_path.rstrip('/') in norm_path:
+            #     return norm_path.replace(project_path.rstrip('/'), '')
+            if file_location is not "." and ".." not in file_location and os.path.exists(os.path.join(project_path,file_location)):
+                # print("returning original path: "+str(file_location))
+                return file_location.replace(project_path, '')
+            elif ".." in file_location and file_location != "..":
+                # print("returning norm path: "+norm_path)
+                return norm_path.replace(project_path,'')
+            if not os.path.exists(os.path.join(project_path,norm_path)) and os.path.exists(os.path.join(project_path,file_location)):
+                # print("Starting path at project directory: "+file_location.replace(project_path, ''))
+                return os.path.abspath(os.path.expanduser(file_location.replace(project_path, ''))).replace(project_path, '')
+            elif file_location == "..":
+                return os.path.abspath(os.path.expanduser(file_location.replace(project_path, ''))).replace(project_path, '')
+            return norm_path
+        else:
+            return None
