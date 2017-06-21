@@ -302,38 +302,43 @@ class InitAction():
         """
         create a .lingotek file in user's $HOME directory
         """
-        # go to the home dir
-        home_path = os.path.expanduser('~')
-        file_name = os.path.join(home_path, SYSTEM_FILE)
-        config_parser = ConfigParser()
-        if os.path.isfile(file_name):
-            config_parser.read(file_name)
-        sys_file = open(file_name, 'w')
-        if config_parser.has_section('main'):
-            if not config_parser.has_option('main', host) and config_parser.has_option('main', 'access_token') and config_parser.get('main', 'access_token') == access_token:
-                config_parser.set('main', 'host', host)
-            elif config_parser.has_option('main', host) and config_parser.get('main', host) == host:
-                config_parser.set('main', 'access_token', access_token)
+        try:
+            # go to the home dir
+            home_path = os.path.expanduser('~')
+            file_name = os.path.join(home_path, SYSTEM_FILE)
+            config_parser = ConfigParser()
+            if os.path.isfile(file_name):
+                config_parser.read(file_name)
+                #delete .lingotek
+            sys_file = open(file_name, 'w')
+            if config_parser.has_section('main'):
+                if not config_parser.has_option('main', host) and config_parser.has_option('main', 'access_token') and config_parser.get('main', 'access_token') == access_token:
+                    config_parser.set('main', 'host', host)
+                elif config_parser.has_option('main', host) and config_parser.get('main', host) == host:
+                    config_parser.set('main', 'access_token', access_token)
+                else:
+                    if config_parser.has_section('alternative') and config_parser.has_option('alternative', 'host') and config_parser.get('alternative', 'host') == host:
+                        config_parser.set('alternative','access_token', access_token)
+                    config_parser.add_section('alternative')
+                    config_parser.set('alternative', 'access_token', access_token)
+                    config_parser.set('alternative', 'host', host)
             else:
-                if config_parser.has_section('alternative') and config_parser.has_option('alternative', 'host') and config_parser.get('alternative', 'host') == host:
-                    config_parser.set('alternative','access_token', access_token)
-                config_parser.add_section('alternative')
-                config_parser.set('alternative', 'access_token', access_token)
-                config_parser.set('alternative', 'host', host)
-        else:
-            config_parser.add_section('main')
-            config_parser.set('main', 'access_token', access_token)
-            config_parser.set('main', 'host', host)
-        config_parser.write(sys_file)
-        sys_file.close()
+                config_parser.add_section('main')
+                config_parser.set('main', 'access_token', access_token)
+                config_parser.set('main', 'host', host)
+            config_parser.write(sys_file)
+            sys_file.close()
 
-        # if on Windows system, set file properties to hidden
-        if os.name == 'nt':
-            # Python 2
-            # ret = ctypes.windll.kernel32.SetFileAttributesW(unicode(file_name), HIDDEN_ATTRIBUTE)
-            # End Python 2
-            # Python 3
-            ret = ctypes.windll.kernel32.SetFileAttributesW(file_name, HIDDEN_ATTRIBUTE)
-            # End Python 3
-            if(ret != 1):   # return value of 1 signifies success
-                pass
+            # if on Windows system, set file properties to hidden
+            if os.name == 'nt':
+                # Python 2
+                # ret = ctypes.windll.kernel32.SetFileAttributesW(unicode(file_name), HIDDEN_ATTRIBUTE)
+                # End Python 2
+                # Python 3
+                ret = ctypes.windll.kernel32.SetFileAttributesW(file_name, HIDDEN_ATTRIBUTE)
+                # End Python 3
+                if(ret != 1):   # return value of 1 signifies success
+                    pass
+        except IOError as e:
+            print(e.errno)
+            print(e)

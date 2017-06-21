@@ -176,10 +176,13 @@ class ImportAction(Action):
             self.delete_local_path(changed_path, 'Deleting local file {0}'.format(changed_path))
 
         if write_file:
-
-            with open(new_path, 'wb') as fh:
-                for chunk in response.iter_content(1024):
-                    fh.write(chunk)
+            try:
+                with open(new_path, 'wb') as fh:
+                    for chunk in response.iter_content(1024):
+                        fh.write(chunk)
+            except IOError as e:
+                print(e.errno)
+                print(e)
         new_path = self.norm_path(new_path)
         if document_id not in local_ids:
             self._add_document(new_path, title, document_id)
