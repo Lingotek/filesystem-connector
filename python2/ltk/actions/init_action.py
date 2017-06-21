@@ -74,6 +74,9 @@ class InitAction():
             except OSError as e:
                 #logger.info(e)
                 pass
+            except IOError as e:
+                print(e.errno)
+                print(e)
 
             logger.info('Initializing project...')
             config_file_name = os.path.join(project_path, CONF_DIR, CONF_FN)
