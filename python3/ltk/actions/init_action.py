@@ -68,14 +68,18 @@ class InitAction():
 
                 # if on Windows system, set directory properties to hidden
                 if os.name == 'nt':
-                    # Python 2
-                    # ret = ctypes.windll.kernel32.SetFileAttributesW(unicode(os.path.join(project_path, CONF_DIR)), HIDDEN_ATTRIBUTE)
-                    # End Python 2
-                    # Python 3
-                    ret = ctypes.windll.kernel32.SetFileAttributesW(os.path.join(project_path, CONF_DIR), HIDDEN_ATTRIBUTE)
-                    # End Python 3
-                    if(ret != 1):   # return value of 1 signifies success
-                        pass
+                    try:
+                        subprocess.call(["attrib", "+H", os.path.join(project_path, CONF_DIR)])
+                    except Exception as e:
+                        logger.error("Error on init: "+str(e))
+                    # # Python 2
+                    # # ret = ctypes.windll.kernel32.SetFileAttributesW(unicode(os.path.join(project_path, CONF_DIR)), HIDDEN_ATTRIBUTE)
+                    # # End Python 2
+                    # # Python 3
+                    # ret = ctypes.windll.kernel32.SetFileAttributesW(os.path.join(project_path, CONF_DIR), HIDDEN_ATTRIBUTE)
+                    # # End Python 3
+                    # if(ret != 1):   # return value of 1 signifies success
+                    #     pass
 
             except OSError as e:
                 #logger.info(e)
