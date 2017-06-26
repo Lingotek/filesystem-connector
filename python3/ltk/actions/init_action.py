@@ -390,7 +390,8 @@ class InitAction():
                 config_parser.set('main', 'host', host)
             config_parser.write(sys_file)
             sys_file.close()
-
+        except Exception as e:
+            logger.error("Error on init: "+str(e))
         # # if on Windows, set file properties to hidden
         if os.name == 'nt':
             try:

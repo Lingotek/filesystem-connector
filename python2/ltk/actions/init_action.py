@@ -358,28 +358,6 @@ class InitAction():
         """
         create a .lingotek file in user's $HOME directory
         """
-<<<<<<< HEAD
-        # go to the home dir
-        home_path = os.path.expanduser('~')
-        file_name = os.path.join(home_path, SYSTEM_FILE)
-        config_parser = ConfigParser()
-        if os.path.isfile(file_name):
-            config_parser.read(file_name)
-
-            # if on Windows, temporarily unhide the .lingotek file so we can write to it
-            if os.name == 'nt':
-                try:
-                    subprocess.call(["attrib", "-H", file_name])
-                except Exception as e:
-                    logger.error("Error on init: "+str(e))
-
-        sys_file = open(file_name, 'w')
-        if config_parser.has_section('main'):
-            if not config_parser.has_option('main', host) and config_parser.has_option('main', 'access_token') and config_parser.get('main', 'access_token') == access_token:
-                config_parser.set('main', 'host', host)
-            elif config_parser.has_option('main', host) and config_parser.get('main', host) == host:
-                config_parser.set('main', 'access_token', access_token)
-=======
         try:
             # go to the home dir
             home_path = os.path.expanduser('~')
@@ -387,6 +365,12 @@ class InitAction():
             config_parser = ConfigParser()
             if os.path.isfile(file_name):
                 config_parser.read(file_name)
+                # if on Windows, temporarily unhide the .lingotek file so we can write to it
+                if os.name == 'nt':
+                    try:
+                        subprocess.call(["attrib", "-H", file_name])
+                    except Exception as e:
+                        logger.error("Error on init: "+str(e))
                 #delete .lingotek
             sys_file = open(file_name, 'w')
             if config_parser.has_section('main'):
@@ -400,15 +384,14 @@ class InitAction():
                     config_parser.add_section('alternative')
                     config_parser.set('alternative', 'access_token', access_token)
                     config_parser.set('alternative', 'host', host)
->>>>>>> int-2133
             else:
                 config_parser.add_section('main')
                 config_parser.set('main', 'access_token', access_token)
                 config_parser.set('main', 'host', host)
             config_parser.write(sys_file)
             sys_file.close()
-
-<<<<<<< HEAD
+        except Exception as e:
+            logger.error("Error on init: "+str(e))
         # # if on Windows, set file properties to hidden
         if os.name == 'nt':
             try:
@@ -862,18 +845,3 @@ class InitAction():
         else:
             logger.warning('Error: Not a valid option')
             return False
-=======
-            # if on Windows system, set file properties to hidden
-            if os.name == 'nt':
-                # Python 2
-                ret = ctypes.windll.kernel32.SetFileAttributesW(unicode(file_name), HIDDEN_ATTRIBUTE)
-                # End Python 2
-                # Python 3
-#                 ret = ctypes.windll.kernel32.SetFileAttributesW(file_name, HIDDEN_ATTRIBUTE)
-                # End Python 3
-                if(ret != 1):   # return value of 1 signifies success
-                    pass
-        except IOError as e:
-            print(e.errno)
-            print(e)
->>>>>>> int-2133
