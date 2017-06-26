@@ -3,6 +3,7 @@ import click
 import ctypes
 import logging
 import os
+import subprocess
 import sys
 
 ''' Internal Dependencies '''
@@ -42,15 +43,19 @@ def init_logger(path):
 
             # if on Windows system, set directory properties to hidden
             if os.name == 'nt':
-                logger.info("On Windows, make .ltk folder hidden")
-                # Python 2
+                try:
+                    subprocess.call(["attrib", "+H", os.path.join(path, CONF_DIR)])
+                except Exception as e:
+                    logger.error("Error on init: "+str(e))
+                # logger.info("On Windows, make .ltk folder hidden")
+                # # Python 2
                 ret = ctypes.windll.kernel32.SetFileAttributesW(unicode(os.path.join(path, CONF_DIR)), HIDDEN_ATTRIBUTE)
-                # End Python 2
-                # Python 3
-#                 ret = ctypes.windll.kernel32.SetFileAttributesW(os.path.join(path, CONF_DIR), HIDDEN_ATTRIBUTE)
-                # End Python 3
-                if(ret != 1):   # return value of 1 signifies success
-                    pass
+                # # End Python 2
+                # # Python 3
+#                 # ret = ctypes.windll.kernel32.SetFileAttributesW(os.path.join(path, CONF_DIR), HIDDEN_ATTRIBUTE)
+                # # End Python 3
+                # if(ret != 1):   # return value of 1 signifies success
+                #     pass
         except IOError as e:
             #logger.info(e)
             # todo error check when running init without existing conf dir
