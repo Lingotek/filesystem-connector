@@ -149,21 +149,23 @@ class ConfigAction(Action):
             print_config = False
 
     def set_download_folder(self, download_folder):
-        if download_folder == '--none':
-            if self.download_dir == None or self.download_dir == "" or self.download_dir == "null":
-                pass
-            else:
+        folder_is_added = False
+        folders = self.folder_manager.get_file_names()
+        for folder in folders:
+            if os.path.samefile(download_folder, folder):
+                folder_is_added = True
+        if folder_is_added == True:
+            logger.warning("folder \'" + download_folder + "\'" + " is a added folder. Added folders cannot be set as the download folder. To remove folder use the \'ltk rm\' command." )
+            self.print_config = False
+        elif download_folder == '--none':
+            new_download_option = 'same'
+            self.download_option = new_download_option
+            self.update_config_file('download_folder',"", self.conf_parser, self.config_file_name, "")
+            if self.download_option != 'clone':
                 new_download_option = 'same'
                 self.download_option = new_download_option
-                self.update_config_file('download_folder',"", self.conf_parser, self.config_file_name, "")
-                if self.download_option != 'clone':
-                    if self.watch_locales != None and len(self.locale_folders) != 0:
-                        new_download_option = 'folder'
-                    else:
-                        new_download_option = 'same'
-                    self.download_option = new_download_option
-                    log_info = 'Removed download folder'
-                    self.update_config_file('download_option', new_download_option, self.conf_parser, self.config_file_name, log_info)
+                log_info = 'Removed download folder'
+                self.update_config_file('download_option', new_download_option, self.conf_parser, self.config_file_name, log_info)
         else:
             download_path = self.norm_path(download_folder)
             if os.path.exists(os.path.join(self.path,download_path)):
@@ -177,7 +179,7 @@ class ConfigAction(Action):
                     self.update_config_file('download_option', new_download_option, self.conf_parser, self.config_file_name, "")
             else:
                 logger.warning('Error: Invalid value for "-d" / "--download_folder": The folder {0} does not exist'.format(os.path.join(self.path,download_path)))
-                print_config = False
+                self.print_config = False
 
     def set_git_autocommit(self, git_autocommit):
         # if self.git_autocommit == 'True' or self.git_auto.repo_exists(self.path):
