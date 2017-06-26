@@ -506,10 +506,11 @@ def get_files(patterns):
         if os.path.exists(path):
             if os.path.isdir(path):
                 for root, subdirs, files in os.walk(path):
-                    split_path = root.split(os.sep)
+                    # split_path = root.split(os.sep)
+                    # print("split_path: {0}".format(split_path))
                     for file in files:
-                        # print(os.path.join(root, file))
-                        matched_files.append(os.path.join(root, file))
+                        if not (("desktop.ini" in file) or ('Thumbs.db' in file) or ('ehthumbs.db' in file)):   # don't add desktop.ini, Thumbs.db, or ehthumbs.db files
+                            matched_files.append(os.path.join(root, file))
             else:
                 matched_files.append(path)
         # else:
