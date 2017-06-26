@@ -93,15 +93,11 @@ class RequestAction(Action):
             self.document_id = entry['id']
             self.document_name = entry['file_name']
             existing_locales = []
-            print(entry)
             if 'locales' in entry and entry['locales']:
                 existing_locales = entry['locales']
-                print("existing_locales")
-                print(existing_locales)
             for locale in locales:
                 if len(existing_locales) > 0 and locale in existing_locales:
                     # the locale has already been requested, don't request again
-                    print("locale already requested")
                     continue
                 else:
                     locale = locale.replace('_','-')
