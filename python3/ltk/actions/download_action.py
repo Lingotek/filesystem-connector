@@ -31,7 +31,7 @@ class DownloadAction(Action):
                 locale_code = locale_code.replace("_","-")
                 self.download_action(document_id, locale_code, auto_format, xliff, locale_ext)
 
-    def download_action(self, document_id, locale_code, auto_format, xliff, locale_ext=True):
+    def download_action(self, document_id, locale_code, auto_format, xliff=False, locale_ext=True):
         try:
             response = self.api.document_content(document_id, locale_code, auto_format, xliff)
             entry = None
