@@ -597,30 +597,29 @@ class InitAction():
             return
 
     def norm_path(self, project_path, file_location):
-        project_path = os.path.join(project_path, "\"")
         # print("original path: "+str(file_location))
         if file_location:
             file_location = os.path.normpath(file_location)
             # abspath=os.path.abspath(file_location)
             # print("abspath: "+str(os.path.abspath(os.path.expanduser(file_location))))
-            # print("project_path: "+project_path)
+            # print("self.path: "+self.path)
             # print("cwd: "+str(os.getcwd()))
-            norm_path = os.path.abspath(os.path.expanduser(file_location)).replace(project_path, '')
+            norm_path = os.path.abspath(os.path.expanduser(file_location)).replace(self.path, '')
             # print("normalized path: "+norm_path)
-            # print("joined path: "+str(os.path.join(project_path,file_location)))
-            # if file_location == ".." and project_path.rstrip('/') in norm_path:
-            #     return norm_path.replace(project_path.rstrip('/'), '')
-            if file_location is not "." and ".." not in file_location and os.path.exists(os.path.join(project_path,file_location)):
+            # print("joined path: "+str(os.path.join(self.path,file_location)))
+            # if file_location == ".." and self.path.rstrip('/') in norm_path:
+            #     return norm_path.replace(self.path.rstrip('/'), '')
+            if file_location is not "." and ".." not in file_location and os.path.exists(os.path.join(self.path,file_location)):
                 # print("returning original path: "+str(file_location))
-                return file_location.replace(project_path, '')
+                return file_location.replace(self.path, '')
             elif ".." in file_location and file_location != "..":
                 # print("returning norm path: "+norm_path)
-                return norm_path.replace(project_path,'')
-            if not os.path.exists(os.path.join(project_path,norm_path)) and os.path.exists(os.path.join(project_path,file_location)):
-                # print("Starting path at project directory: "+file_location.replace(project_path, ''))
-                return os.path.abspath(os.path.expanduser(file_location.replace(project_path, ''))).replace(project_path, '')
+                return norm_path.replace(self.path,'')
+            if not os.path.exists(os.path.join(self.path,norm_path)) and os.path.exists(os.path.join(self.path,file_location)):
+                # print("Starting path at project directory: "+file_location.replace(self.path, ''))
+                return os.path.abspath(os.path.expanduser(file_location.replace(self.path, ''))).replace(self.path, '')
             elif file_location == "..":
-                return os.path.abspath(os.path.expanduser(file_location.replace(project_path, ''))).replace(project_path, '')
+                return os.path.abspath(os.path.expanduser(file_location.replace(self.path, ''))).replace(self.path, '')
             return norm_path
         else:
             return None
