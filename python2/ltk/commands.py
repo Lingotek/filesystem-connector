@@ -59,18 +59,22 @@ def init_logger(path):
         except IOError as e:
             #logger.info(e)
             # todo error check when running init without existing conf dir
-            os.mkdir(os.path.join(path, CONF_DIR))
-            # if on Windows system, make directory hidden
-            if os.name == 'nt':
-                logger.info("On Windows, make .ltk folder hidden")
-                # Python 2
-                ret = ctypes.windll.kernel32.SetFileAttributesW(unicode(os.path.join(path, CONF_DIR)), HIDDEN_ATTRIBUTE)
-                # End Python 2
-                # Python 3
-#                 ret = ctypes.windll.kernel32.SetFileAttributesW(os.path.join(path, CONF_DIR), HIDDEN_ATTRIBUTE)
-                # End Python 3
-                if(ret != 1):   # return value of 1 signifies success
-                    pass
+            try:
+                os.mkdir(os.path.join(path, CONF_DIR))
+                # if on Windows system, make directory hidden
+                if os.name == 'nt':
+                    logger.info("On Windows, make .ltk folder hidden")
+                    # Python 2
+                    ret = ctypes.windll.kernel32.SetFileAttributesW(unicode(os.path.join(path, CONF_DIR)), HIDDEN_ATTRIBUTE)
+                    # End Python 2
+                    # Python 3
+#                     ret = ctypes.windll.kernel32.SetFileAttributesW(os.path.join(path, CONF_DIR), HIDDEN_ATTRIBUTE)
+                    # End Python 3
+                    if(ret != 1):   # return value of 1 signifies success
+                        pass
+            except IOError as e:
+                print(e.errno)
+                print(e)
 
             file_handler = logging.FileHandler(os.path.join(path, CONF_DIR, LOG_FN))
 

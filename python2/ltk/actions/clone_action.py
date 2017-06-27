@@ -8,39 +8,46 @@ class CloneAction(Action):
         """ Copies subfolders of added folders to a particular destination folder (for a particular locale).
             If there is more than one root folder to copy, each root folder is created inside of the destination folder.
             If there is only one root folder to copy, only the subdirectories are copied."""
-        # print("dest_path: "+str(dest_path))
-        # print("folders to clone: "+str(folders_map))
-        if not folders_map or not len(folders_map):
-            logger.warning("No folders to clone for locale "+str(locale)+".")
-            return
-        folder_created = False
-        prefix_folder = False
-        if not os.path.exists(dest_path):
-            os.mkdir(dest_path)
-            folder_created = True
-        if len(folders_map) > 1 or copy_root:
-            prefix_folder = True
-        for root_folder in folders_map:
-            # print("root folder: "+root_folder)
-            if prefix_folder:
-                new_root_path = dest_path + os.sep + root_folder
-                if not os.path.exists(new_root_path):
-                    os.mkdir(new_root_path)
-                    folder_created = True
-                for folder in folders_map[root_folder]:
-                    new_sub_root_path = dest_path + os.sep + root_folder + os.sep + folder
-                    if not os.path.exists(new_sub_root_path):
-                        os.mkdir(new_sub_root_path)
+
+        try:
+            # print("dest_path: "+str(dest_path))
+            # print("folders to clone: "+str(folders_map))
+            if not folders_map or not len(folders_map):
+                logger.warning("No folders to clone for locale "+str(locale)+".")
+                return
+            folder_created = False
+            prefix_folder = False
+            if not os.path.exists(dest_path):
+                os.mkdir(dest_path)
+                folder_created = True
+            if len(folders_map) > 1 or copy_root:
+                prefix_folder = True
+            for root_folder in folders_map:
+                # print("root folder: "+root_folder)
+                if prefix_folder:
+                    new_root_path = dest_path + os.sep + root_folder
+                    if not os.path.exists(new_root_path):
+                        os.mkdir(new_root_path)
                         folder_created = True
-                        # print("created folder "+new_sub_root_path)
-            else:
-                if folders_map[root_folder]:
                     for folder in folders_map[root_folder]:
-                        new_path = dest_path + os.sep + folder
-                        if not os.path.exists(new_path):
-                            os.mkdir(new_path)
+                        new_sub_root_path = dest_path + os.sep + root_folder + os.sep + folder
+                        if not os.path.exists(new_sub_root_path):
+                            os.mkdir(new_sub_root_path)
                             folder_created = True
-                            # print("created folder "+ new_path)
+                            # print("created folder "+new_sub_root_path)
+                else:
+                    if folders_map[root_folder]:
+                        for folder in folders_map[root_folder]:
+                            new_path = dest_path + os.sep + folder
+                            if not os.path.exists(new_path):
+                                os.mkdir(new_path)
+                                folder_created = True
+        except IOError as e:
+            print(e.errno)
+            print(e)
+            if folder_created != True:
+                folder_created = False
+                                    # print("created folder "+ new_path)
         return folder_created
 
     def clone_action(self, folders, copy_root):

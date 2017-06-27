@@ -135,36 +135,40 @@ class DownloadAction(Action):
                 logger.error("Error on download: "+str(e))
 
     def _clone_download(self, locale_code):
-        locale_folders = {}
-        for key, value in self.locale_folders.items():
-            key = key.replace('_', '-')
-            locale_folders[key] = value
-        if locale_code in locale_folders:
-            self.download_root = locale_folders[locale_code]
-        elif self.download_dir and len(self.download_dir):
-            self.download_root = os.path.join((self.download_dir if self.download_dir and self.download_dir != 'null' else ''),locale_code)
-        else:
-            self.download_root = locale_code
-        self.download_root = os.path.join(self.path, self.download_root)
-        self.download_path = self.download_root
-        target_dirs = self.download_path.split(os.sep)
-        incremental_path = ""
-        if not os.path.exists(self.download_root):
-            os.mkdir(self.download_root)
-            #print("Created directory: "+ download_root)
-        if target_dirs:
-            for target_dir in target_dirs:
-                incremental_path += target_dir + os.sep
-                #print("target_dir: "+str(incremental_path))
-                new_path = os.path.join(self.path,incremental_path)
-                # print("new path: "+str(new_path))
-                if not os.path.exists(new_path):
-                    try:
-                        os.mkdir(new_path)
-                        # print("Created directory "+str(new_path))
-                    except Exception as e:
-                        log_error(self.error_file_name, e)
-                        logger.warning("Could not create cloned directory "+new_path)
+        try:
+            locale_folders = {}
+            for key, value in self.locale_folders.items():
+                key = key.replace('_', '-')
+                locale_folders[key] = value
+            if locale_code in locale_folders:
+                self.download_root = locale_folders[locale_code]
+            elif self.download_dir and len(self.download_dir):
+                self.download_root = os.path.join((self.download_dir if self.download_dir and self.download_dir != 'null' else ''),locale_code)
+            else:
+                self.download_root = locale_code
+            self.download_root = os.path.join(self.path, self.download_root)
+            self.download_path = self.download_root
+            target_dirs = self.download_path.split(os.sep)
+            incremental_path = ""
+            if not os.path.exists(self.download_root):
+                os.mkdir(self.download_root)
+                #print("Created directory: "+ download_root)
+            if target_dirs:
+                for target_dir in target_dirs:
+                    incremental_path += target_dir + os.sep
+                    #print("target_dir: "+str(incremental_path))
+                    new_path = os.path.join(self.path,incremental_path)
+                    # print("new path: "+str(new_path))
+                    if not os.path.exists(new_path):
+                        try:
+                            os.mkdir(new_path)
+                            # print("Created directory "+str(new_path))
+                        except Exception as e:
+                            log_error(self.error_file_name, e)
+                            logger.warning("Could not create cloned directory "+new_path)
+        except IOError as e:
+            print(e.errno)
+            print(e)
 
     def change_file_extension(self, new_ext, base_name):
         name_parts = base_name.split('.')
