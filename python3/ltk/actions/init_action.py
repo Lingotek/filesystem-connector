@@ -364,7 +364,6 @@ class InitAction():
         """
         create a .lingotek file in user's $HOME directory
         """
-<<<<<<< HEAD
         try:
             # go to the home dir
             home_path = os.path.expanduser('~')
