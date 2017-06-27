@@ -144,7 +144,10 @@ class WatchAction(Action):
                         #logger.info('Detected local content modified: {0}'.format(fn))
                         #self.update_document_action(os.path.join(self.path, fn))
                         #logger.info('Updating remote content: {0}'.format(fn))
-                        self.polled_list.remove(fn)
+                        try:
+                            self.polled_list.remove(doc['name'])
+                        except Exception:
+                            pass
                         self.update_content(fn)
                 except KeyboardInterrupt:
                     for observer in self.observers:
