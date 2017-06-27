@@ -294,8 +294,9 @@ class ApiCalls:
             self.handleError()
         return r
 
-    def document_content(self, document_id, locale_code, auto_format):
+    def document_content(self, document_id, locale_code, auto_format, xliff):
         """ downloads the translated document """
+        headers = self.headers
         try:
             uri = (API_URI['document_content'] % locals())
             payload = {}
@@ -303,7 +304,10 @@ class ApiCalls:
                 payload['locale_code'] = locale_code
             if auto_format:
                 payload['auto_format'] = auto_format
-            r = requests.get(self.host + uri, headers=self.headers, params=payload, stream=True)
+            if xliff:
+                headers['Accept'] = 'application/x-xliff+xml'
+
+            r = requests.get(self.host + uri, headers=headers, params=payload, stream=True)
             log_api('GET', uri, r)
         except requests.exceptions.ConnectionError:
             self.handleError()

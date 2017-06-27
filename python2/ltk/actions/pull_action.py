@@ -33,9 +33,9 @@ class PullAction(Action):
                                 locale = locale.replace('_','-')
                                 git_commit_message += ("" if first_locale else ", ") + locale
                                 first_locale = False
-                                self.download.download_action(entry['id'], locale, auto_format, locale_ext)
+                                self.download.download_action(entry['id'], locale, auto_format, locale_ext=locale_ext)
                         except KeyError:
-                            self.download.download_action(entry['id'], None, auto_format, locale_ext)
+                            self.download.download_action(entry['id'], None, auto_format, locale_ext=locale_ext)
                             git_commit_message = git_commit_message[:-1]
                 else:
                     logger.info("No documents have been added")

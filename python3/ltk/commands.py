@@ -348,14 +348,16 @@ def status(**kwargs):
 @click.option('-l', '--locales', help="Specify locales to download (defaults to all target locales for the document). For multiple locales give a list separated by commas and no spaces (ex: en_US,en_GB).")
 @click.option('-e', '--locale_ext', flag_value=True, help="Specifies to add the name of the locale as an extension to the file name (ex: doc1.fr_FR.docx). This is the default unless the clone download option is active.")
 @click.option('-n', '--no_ext', flag_value=True, help="Specifies to not add the name of the locale as an extension to the file name. This is the default if the clone download option is active.")
+@click.option('-x', '--xliff', flag_value=True, help="Download xliff version of the specified translation")
 @click.argument('file_names', type=click.Path(exists=True), required=True, nargs=-1)
-def download(auto_format, locales, locale_ext, no_ext, file_names):
+def download(auto_format, locales, locale_ext, no_ext, xliff, file_names):
     """ Downloads translated content specified by filename for specified locales, or all locales if none are specified. Change download options and folders using ltk config."""
     try:
         action = download_action.DownloadAction(os.getcwd())
         init_logger(action.path)
+
         for name in file_names:
-            action.download_by_path(name, locales, locale_ext, no_ext, auto_format)
+            action.download_by_path(name, locales, locale_ext, no_ext, auto_format, xliff)
 
     except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
         print_log(e)
