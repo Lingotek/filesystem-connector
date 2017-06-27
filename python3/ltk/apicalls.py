@@ -294,7 +294,7 @@ class ApiCalls:
             self.handleError()
         return r
 
-    def document_content(self, document_id, locale_code, auto_format, xliff):
+    def document_content(self, document_id, locale_code, auto_format, xliff=False):
         """ downloads the translated document """
         headers = self.headers
         try:

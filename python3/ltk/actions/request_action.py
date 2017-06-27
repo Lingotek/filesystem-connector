@@ -137,8 +137,6 @@ class RequestAction(Action):
 
                     for locale in locales:
                         if locale not in existing_locales:
-                            print(locales)
-                            print(existing_locales)
                             locales_to_add.append(locale)
                 self._target_action_db(self.to_delete, locales_to_add, self.document_id)
                 is_successful = True
