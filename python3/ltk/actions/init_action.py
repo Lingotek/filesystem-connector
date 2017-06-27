@@ -377,23 +377,16 @@ class InitAction():
                         subprocess.call(["attrib", "-H", file_name])
                     except Exception as e:
                         logger.error("Error on init: "+str(e))
-                #delete .lingotek
             sys_file = open(file_name, 'w')
-            if config_parser.has_section('main'):
-                if not config_parser.has_option('main', host) and config_parser.has_option('main', 'access_token') and config_parser.get('main', 'access_token') == access_token:
-                    config_parser.set('main', 'host', host)
-                elif config_parser.has_option('main', host) and config_parser.get('main', host) == host:
-                    config_parser.set('main', 'access_token', access_token)
-                else:
-                    if config_parser.has_section('alternative') and config_parser.has_option('alternative', 'host') and config_parser.get('alternative', 'host') == host:
-                        config_parser.set('alternative','access_token', access_token)
-                    config_parser.add_section('alternative')
-                    config_parser.set('alternative', 'access_token', access_token)
-                    config_parser.set('alternative', 'host', host)
+
+            if config_parser.has_section(host):
+                config_parser.set(host, 'access_token', access_token)
+                config_parser.set(host, 'host', host)
             else:
-                config_parser.add_section('main')
-                config_parser.set('main', 'access_token', access_token)
-                config_parser.set('main', 'host', host)
+                config_parser.add_section(host)
+                config_parser.set(host, 'access_token', access_token)
+                config_parser.set(host, 'host', host)
+
             config_parser.write(sys_file)
             sys_file.close()
         except Exception as e:
