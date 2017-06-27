@@ -140,6 +140,18 @@ class ApiCalls:
             self.handleError()
         return r
 
+    def get_project(self, project_id):
+        """ Get a project which the active user has access to """
+        try:
+            uri = (API_URI['project_id'] % locals())
+            payload = {}
+            r = requests.get(self.host + uri, headers=self.headers, data=payload)
+            log_api('GET', uri, r)
+        except requests.exceptions.ConnectionError:
+            self.handleError()
+
+        return r
+
     def patch_project(self, project_id, workflow_id):
         """ updates a project """
         try:

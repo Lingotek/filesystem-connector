@@ -3,6 +3,7 @@ import click
 import ctypes
 import logging
 import os
+import subprocess
 import sys
 
 ''' Internal Dependencies '''
@@ -42,15 +43,19 @@ def init_logger(path):
 
             # if on Windows system, set directory properties to hidden
             if os.name == 'nt':
-                logger.info("On Windows, make .ltk folder hidden")
-                # Python 2
+                try:
+                    subprocess.call(["attrib", "+H", os.path.join(path, CONF_DIR)])
+                except Exception as e:
+                    logger.error("Error on init: "+str(e))
+                # logger.info("On Windows, make .ltk folder hidden")
+                # # Python 2
                 ret = ctypes.windll.kernel32.SetFileAttributesW(unicode(os.path.join(path, CONF_DIR)), HIDDEN_ATTRIBUTE)
-                # End Python 2
-                # Python 3
-#                 ret = ctypes.windll.kernel32.SetFileAttributesW(os.path.join(path, CONF_DIR), HIDDEN_ATTRIBUTE)
-                # End Python 3
-                if(ret != 1):   # return value of 1 signifies success
-                    pass
+                # # End Python 2
+                # # Python 3
+#                 # ret = ctypes.windll.kernel32.SetFileAttributesW(os.path.join(path, CONF_DIR), HIDDEN_ATTRIBUTE)
+                # # End Python 3
+                # if(ret != 1):   # return value of 1 signifies success
+                #     pass
         except IOError as e:
             #logger.info(e)
             # todo error check when running init without existing conf dir
@@ -140,8 +145,15 @@ def init(host, access_token, client_id, path, project_name, workflow_id, locale,
         if not project_name:
             project_name = os.path.basename(os.path.normpath(path))
         init_logger(path)
+
         init = init_action.InitAction()
         init.init_action(host, access_token, client_id, path, project_name, workflow_id, locale, browser, delete, reset)
+
+        if(init.turn_clone_on == False):
+            # set the download option in config
+            config = config_action.ConfigAction(os.getcwd())
+            config.set_clone_option('off', print_info=False)
+
     except (ResourceNotFound, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
@@ -165,7 +177,7 @@ def init(host, access_token, client_id, path, project_name, workflow_id, locale,
 @click.option('-g', '--git', help='Toggle Git auto-commit option on and off')
 @click.option('-gu', '--git_credentials', is_flag=True, help='Open prompt for Git credentials for auto-fill (\'none\' to unset); only enabled for Mac and Linux')
 @click.option('-a', '--append_option', help='Change the format of the default name given to documents on the Lingotek system.  Define file information to append to document names as none, full, number:+a number of folders down to include (e.g. number:2), or name:+a name of a directory to start after if found in file path (e.g. name:dir). Default option is none.')
-@click.option('-f', '--auto_format', help='Toggle auto format option \'on\' and \'off\'. Applies formatting during download')
+@click.option('-f', '--auto_format', help='Toggle auto format option \'on\' and \'off\'. Applies formatting during download.')
 
 def config(**kwargs):
     """ View or change local configuration """

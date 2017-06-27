@@ -122,9 +122,12 @@ class ConfigAction(Action):
             logger.warning('Error: Invalid value for "-f" / "--auto_format": Must be either "on" or "off"')
             print_config = False
 
-    def set_clone_option(self, clone_option):
+    def set_clone_option(self, clone_option, print_info=True):
         self.clone_action = clone_option
-        log_info = 'Turned clone '+clone_option
+        if print_info:
+            log_info = 'Turned clone '+clone_option
+        else:
+            log_info = ''
         if clone_option == 'on':
             download_option = 'clone'
             self.download_option = download_option
