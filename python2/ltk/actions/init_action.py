@@ -639,7 +639,6 @@ class InitAction():
             return norm_path
         else:
             return None
-=======
         # go to the home dir
         home_path = os.path.expanduser('~')
         file_name = os.path.join(home_path, SYSTEM_FILE)
@@ -658,7 +657,7 @@ class InitAction():
 
         config_parser.write(sys_file)
         sys_file.close()
->>>>>>> int-2122
+
 
     def prompt_advanced_settings(self):
         try:
