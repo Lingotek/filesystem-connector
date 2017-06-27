@@ -106,10 +106,14 @@ class RequestAction(Action):
                     if response.status_code != self.expected_code:
                         if (response.json() and response.json()['messages']):
                             response_message = response.json()['messages'][0]
-                            print(response_message.replace(self.document_id, self.document_name + ' (' + self.document_id + ')'))
+                            response_message = response_message.replace(self.document_id, self.document_name + ' (' + self.document_id + ')')
+                            response_message = response_message.replace('.', ' ')
+                            response_message = response_message + 'for document ' + self.document_name
+                            print(response_message)
                             if 'not found' in response_message:
                                 return
-                        raise_error(response.json(), '{message} {locale} for document {name}'.format(message=self.failure_message, locale=locale, name=self.document_name), True)
+                        else:
+                            raise_error(response.json(), '{message} {locale} for document {name}'.format(message=self.failure_message, locale=locale, name=self.document_name), True)
                         if not 'already exists' in response_message:
                             self.change_db_entry = False
                         # self.update_doc_locales(document_id)
