@@ -38,8 +38,12 @@ class InitAction():
                         username = input('Username: ')
                         # End Python 3
                         password = getpass.getpass()
-                        login_host = 'https://sso.lingotek.com' if 'myaccount' in host else 'https://cmssso.lingotek.com'
-
+                        if 'myaccount' in host:
+                            login_host = 'https://sso.lingotek.com'
+                        elif 'clone' in host:
+                            login_host = 'https://clonesso.lingotek.com'
+                        else:
+                            login_host = 'https://cmssso.lingotek.com'
                         if api.login(login_host, username, password):
                             retrieved_token = api.authenticate(login_host)
                             if retrieved_token:

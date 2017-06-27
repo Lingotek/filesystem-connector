@@ -30,6 +30,7 @@ class InitAction():
                         access_token = run_oauth(host, client_id)
                         ran_oauth = True
                     else:
+                        print("A")
                         api = ApiCalls(host, '')
                         # Python 2
                         username = raw_input('Username: ')
@@ -38,10 +39,18 @@ class InitAction():
 #                         username = input('Username: ')
                         # End Python 3
                         password = getpass.getpass()
-                        login_host = 'https://sso.lingotek.com' if 'myaccount' in host else 'https://cmssso.lingotek.com'
-
+                        print("B")
+                        if 'myaccount' in host:
+                            login_host = 'https://sso.lingotek.com'
+                        elif 'clone' in host:
+                            login_host = 'https://clonesso.lingotek.com'
+                        else:
+                            login_host = 'https://cmssso.lingotek.com'
+                        print("C")
                         if api.login(login_host, username, password):
+                            print("D")
                             retrieved_token = api.authenticate(login_host)
+                            print("E")
                             if retrieved_token:
                                 print('Authentication successful')
                                 access_token = retrieved_token
