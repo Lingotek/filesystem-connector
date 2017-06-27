@@ -146,7 +146,7 @@ def init(host, access_token, client_id, path, project_name, workflow_id, locale,
             project_name = os.path.basename(os.path.normpath(path))
         init_logger(path)
 
-        init = init_action.InitAction()
+        init = init_action.InitAction(os.getcwd())
         init.init_action(host, access_token, client_id, path, project_name, workflow_id, locale, browser, delete, reset)
 
         if(init.turn_clone_on == False):
