@@ -320,7 +320,7 @@ class WatchAction(Action):
                 # if doc id in queue, not imported yet
                 continue
             file_name = doc['file_name']
-            # Wait for Lingotek's system to no longer show translationas as completed
+            # Wait for Lingotek's system to no longer show translation as as completed
             if file_name in self.updated:
                 if self.updated[file_name] > 3:
                     self.updated.pop(file_name, None)

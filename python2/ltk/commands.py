@@ -147,6 +147,12 @@ def init(host, access_token, client_id, path, project_name, workflow_id, locale,
         init_logger(path)
         init = init_action.InitAction(path)
         init.init_action(host, access_token, client_id, path, project_name, workflow_id, locale, browserless, delete, reset)
+
+        if(init.turn_clone_on == False):
+            # set the download option in config
+            config = config_action.ConfigAction(os.getcwd())
+            config.set_clone_option('off', print_info=False)
+
     except (ResourceNotFound, RequestFailedError) as e:
         print_log(e)
         logger.error(e)

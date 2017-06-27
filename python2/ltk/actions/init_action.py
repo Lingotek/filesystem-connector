@@ -15,6 +15,7 @@ HIDDEN_ATTRIBUTE = 0x02
 class InitAction():
     def __init__(self, path):
         self.path = path
+        self.turn_clone_on = True
         #Action.__init__(self, path)
 
     def init_action(self, host, access_token, client_id, project_path, folder_name, workflow_id, default_locale, browserless, delete, reset):
@@ -200,8 +201,8 @@ class InitAction():
                     print("\n--------------------------------")
                     print("CLONE OPTION:")
                     print("Toggle clone download option \'on\' and \'off\'.\n\nTurning clone \'on\': Translations will be downloaded to a cloned folder structure, where the root folder for each locale is the locale folder specified in config or a locale folder inside of the default download folder. If a default download folder is not set, then translations will be downloaded to the directory where the project was initialized.\n\nTurning clone \'off\': If a download folder is specified, downloaded translations will download to that folder, but not in a cloned folder structure. If no download folder is specified, downloaded translations will go to the same folder as their corresponding source files.")
-                    turn_clone_on = self.set_clone_option()
-                    if turn_clone_on:
+                    self.turn_clone_on = self.set_clone_option()
+                    if self.turn_clone_on:
                         config_parser.set('main', 'clone_option', 'on')
                     else:
                         config_parser.set('main', 'clone_option', 'off')
@@ -587,7 +588,7 @@ class InitAction():
 
                     keep_prompting = False
                 else:
-                    logger.warning('Error: Invalid value for "-d" / "--download_folder": The folder {0} does not exist\n'.format(os.path.join(project_path,download_path)))
+                    logger.warning('Error: The folder {0} does not exist\n'.format(os.path.join(project_path,download_path)))
 
             return download_path
 
