@@ -25,12 +25,13 @@ class InitAction():
             if not access_token:
                 access_token = self.check_global(host)
                 if not access_token or reset:
+                    if 'cms' not in host and 'myaccount' not in host and 'clone' not in host:
+                        logger.info("Warning: Attempting to connect to an endpoint other than myaccount.lingotek.com or cms.lingotek.com")
                     if not browserless:
                         from ltk.auth import run_oauth
                         access_token = run_oauth(host, client_id)
                         ran_oauth = True
                     else:
-                        print("A")
                         api = ApiCalls(host, '')
                         # Python 2
                         username = raw_input('Username: ')
@@ -39,18 +40,17 @@ class InitAction():
 #                         username = input('Username: ')
                         # End Python 3
                         password = getpass.getpass()
-                        print("B")
                         if 'myaccount' in host:
                             login_host = 'https://sso.lingotek.com'
                         elif 'clone' in host:
                             login_host = 'https://clonesso.lingotek.com'
-                        else:
+                        elif 'cms' in host:
                             login_host = 'https://cmssso.lingotek.com'
-                        print("C")
+                        else:
+                            host_env = host.split('.')[0]
+                            login_host = host_env + 'sso.lingotek.com'
                         if api.login(login_host, username, password):
-                            print("D")
                             retrieved_token = api.authenticate(login_host)
-                            print("E")
                             if retrieved_token:
                                 print('Authentication successful')
                                 access_token = retrieved_token
@@ -214,11 +214,8 @@ class InitAction():
             conf_parser.read(sys_file)
             if conf_parser.has_section(host) and conf_parser.get(host, 'host') == host:
                 return conf_parser.get(host, 'access_token')
-            if conf_parser.has_section('main'):
-                if not conf_parser.has_option('main', 'host') or conf_parser.get('main', 'host') == host:
-                    return conf_parser.get('main', 'access_token')
-        else:
-            return None
+
+        return None
 
     def display_choice(self, display_type, info):
         if display_type == 'community':
@@ -318,25 +315,15 @@ class InitAction():
         if os.path.isfile(file_name):
             config_parser.read(file_name)
         sys_file = open(file_name, 'w')
-        if config_parser.has_section('main'):
-            if not config_parser.has_option('main', host) \
-                and config_parser.has_option('main', 'access_token') \
-                and config_parser.get('main', 'access_token') == access_token:
-                config_parser.set('main', 'host', host)
-            elif config_parser.has_option('main', host) and config_parser.get('main', host) == host:
-                config_parser.set('main', 'access_token', access_token)
-            else:
-                if config_parser.has_section(host) \
-                    and config_parser.has_option(host, 'host') \
-                    and config_parser.get(host, 'host') == host:
-                    config_parser.set(host, 'access_token', access_token)
-                config_parser.add_section(host)
-                config_parser.set(host, 'access_token', access_token)
-                config_parser.set(host, 'host', host)
+
+        if config_parser.has_section(host):
+            config_parser.set(host, 'access_token', access_token)
+            config_parser.set(host, 'host', host)
         else:
-            config_parser.add_section('main')
-            config_parser.set('main', 'access_token', access_token)
-            config_parser.set('main', 'host', host)
+            config_parser.add_section(host)
+            config_parser.set(host, 'access_token', access_token)
+            config_parser.set(host, 'host', host)
+
         config_parser.write(sys_file)
         sys_file.close()
 
