@@ -1,5 +1,6 @@
 from tests.test_actions import *
-from ltk.actions import Action
+from ltk.actions.clean_action import *
+from ltk.actions.rm_action import RmAction
 import subprocess
 
 import unittest
@@ -14,7 +15,7 @@ class TestClean(unittest.TestCase):
         cleanup()
 
     def setUp(self):
-        self.action = Action(os.getcwd())
+        self.action = CleanAction(os.getcwd())
         self.action.clean_action(False, False, None)
         self.files = ['sample.txt', 'sample1.txt', 'sample2.txt']
         self.forced = []
@@ -26,10 +27,11 @@ class TestClean(unittest.TestCase):
             assert poll_doc(self.action, entry['id'])
 
     def tearDown(self):
+        self.rm_action = RmAction(os.getcwd())
         for curr_file in self.files:
             if curr_file in self.forced:
                 continue
-            self.action.rm_action(curr_file, force=True)
+            self.rm_action.rm_action(curr_file, force=True)
         self.action.clean_action(True, False, None)
         self.action.close()
 

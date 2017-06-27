@@ -1,4 +1,9 @@
-from ltk import actions, exceptions
+from ltk import exceptions
+from ltk.actions.status_action import *
+from ltk.actions.clean_action import CleanAction
+from ltk.actions.add_action import AddAction
+from ltk.actions.rm_action import RmAction
+from ltk.actions.request_action import RequestAction
 import unittest
 from io import StringIO
 import sys
@@ -9,19 +14,22 @@ import logging
 class TestStatusAction(unittest.TestCase):
     def setUp(self):
         create_config()
-        self.action = actions.Action(os.getcwd())
-        self.action.clean_action(True, False, None)
+        self.action = StatusAction(os.getcwd())
+        self.clean_action = CleanAction(os.getcwd())
+        self.add_action = AddAction(os.getcwd())
+        self.rm_action = RmAction(os.getcwd())
+        self.clean_action.clean_action(True, False, None)
         self.file_name = 'sample.txt'
         self.file_path = create_txt_file(self.file_name)
-        self.action.add_action([self.file_name], overwrite=True)
+        self.add_action.add_action([self.file_name], overwrite=True)
         self.doc_id = self.action.doc_manager.get_doc_ids()[0]
         assert poll_doc(self.action, self.doc_id)
         self.targets = ['ja-JP', 'de-DE']
 
     def tearDown(self):
         # remove the created file
-        self.action.rm_action(self.file_name, force=False)
-        self.action.clean_action(True, False, None)
+        self.rm_action.rm_action(self.file_name, force=False)
+        self.clean_action.clean_action(True, False, None)
         self.action.close()
         cleanup()
 
@@ -30,7 +38,7 @@ class TestStatusAction(unittest.TestCase):
         try:
             out = StringIO()
             sys.stdout = out
-            self.action.status_action(doc_name=self.file_name)
+            self.action.get_status(doc_name=self.file_name)
             status = out.getvalue()
             assert status.startswith('Status of {0}'.format(self.file_name))
         finally:
@@ -39,11 +47,12 @@ class TestStatusAction(unittest.TestCase):
     def test_status_detailed(self):
         # see that there are targets
         # request translations
-        self.action.target_action(None, self.file_name, self.targets, False, None, None)
+        self.request_action = RequestAction(os.getcwd(), None, self.file_name, self.targets, False, None, None)
+        self.request_action.target_action()
         try:
             out = StringIO()
             sys.stdout = out
-            self.action.status_action(detailed=True, doc_name=self.file_name)
+            self.action.get_status(detailed=True, doc_name=self.file_name)
             status = out.getvalue()
             assert 'Status of {0}'.format(self.file_name) in status
             for target in self.targets:
