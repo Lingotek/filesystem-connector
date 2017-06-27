@@ -57,8 +57,8 @@ class InitAction():
                         else:
                             host_env = host.split('.')[0]
                             login_host = host_env + 'sso.lingotek.com'
-                        if api.login(login_host, username, password):
-                            retrieved_token = api.authenticate(login_host)
+                        if self.api.login(login_host, username, password):
+                            retrieved_token = self.api.authenticate(login_host)
                             if retrieved_token:
                                 print('Authentication successful')
                                 access_token = retrieved_token
