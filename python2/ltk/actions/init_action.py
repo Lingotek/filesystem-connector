@@ -224,7 +224,7 @@ class InitAction():
                     if not append_option == None:
                         config_parser.set('main', 'append_option', append_option)
 
-                logger.info("All finished. Use ltk -h to learn more about using Lingotek Filesystem Connector.")
+                logger.info("\nAll finished. Use ltk -h to learn more about using Lingotek Filesystem Connector.")
                 config_parser.write(config_file)
                 config_file.close()
         except KeyboardInterrupt:
@@ -720,22 +720,23 @@ class InitAction():
         turn_clone_on = True
         try:
             confirm = 'none'
-            while confirm != 'on' and confirm != 'On' and confirm != 'off' and confirm != 'Off' and confirm != '':
-                prompt_message = 'Would you like to turn clone on or off? [On/off]: '
+            while confirm != 'on' and confirm != 'On' and confirm != 'ON' and confirm != 'off' and confirm != 'Off' and confirm != '':
+                prompt_message = 'Would you like to turn clone on or off? [ON/off]: '
                 # Python 2
                 confirm = raw_input(prompt_message)
                 # End Python 2
                 # Python 3
 #                 confirm = input(prompt_message)
                 # End Python 3
-                if confirm in ['on', 'On', '']:
-                    logger.info("Clone set to ON\n")
-                    turn_clone_on = True
-                    return turn_clone_on
-                else:
-                    logger.info("Clone set to OFF\n")
-                    turn_clone_on = False
-                    return turn_clone_on
+                if confirm in ['on', 'On', 'ON', 'off', 'Off', '']:
+                    if confirm in ['on', 'On', 'ON', '']:
+                        logger.info("Clone set to ON\n")
+                        turn_clone_on = True
+                        return turn_clone_on
+                    else:
+                        logger.info("Clone set to OFF\n")
+                        turn_clone_on = False
+                        return turn_clone_on
 
         except KeyboardInterrupt:
             # Python 2
@@ -752,22 +753,23 @@ class InitAction():
         turn_auto_format_on = True
         try:
             confirm = 'none'
-            while confirm != 'on' and confirm != 'On' and confirm != 'off' and confirm != 'Off' and confirm != '':
-                prompt_message = 'Would you like to turn auto-format on or off? [On/off]: '
+            while confirm != 'on' and confirm != 'On' and confirm != 'ON' and confirm != 'off' and confirm != 'Off' and confirm != '':
+                prompt_message = 'Would you like to turn auto-format on or off? [ON/off]: '
                 # Python 2
                 confirm = raw_input(prompt_message)
                 # End Python 2
                 # Python 3
 #                 confirm = input(prompt_message)
                 # End Python 3
-                if confirm in ['on', 'On', '']:
-                    logger.info("Auto format set to ON\n")
-                    turn_auto_format_on = True
-                    return turn_auto_format_on
-                else:
-                    logger.info("Auto format set to OFF\n")
-                    turn_auto_format_on = False
-                    return turn_auto_format_on
+                if confirm in ['on', 'On', 'ON', 'off', 'Off', '']:
+                    if confirm in ['on', 'On', 'ON', '']:
+                        logger.info("Auto format set to ON\n")
+                        turn_auto_format_on = True
+                        return turn_auto_format_on
+                    else:
+                        logger.info("Auto format set to OFF\n")
+                        turn_auto_format_on = False
+                        return turn_auto_format_on
 
         except KeyboardInterrupt:
             # Python 2
