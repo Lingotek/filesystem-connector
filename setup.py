@@ -16,7 +16,7 @@ except (IOError, ImportError, OSError):
 
 setup(
     name='ltk',
-    version='1.1.1',
+    version='1.2.0',
     url='https://github.com/Lingotek/filesystem-connector',
     description='The Lingotek Filesystem Connector (ltk) links your files and folders to the Translation Network™',
     long_description=long_description,
