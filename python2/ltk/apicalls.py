@@ -140,6 +140,18 @@ class ApiCalls:
             self.handleError()
         return r
 
+    def get_project(self, project_id):
+        """ Get a project which the active user has access to """
+        try:
+            uri = (API_URI['project_id'] % locals())
+            payload = {}
+            r = requests.get(self.host + uri, headers=self.headers, data=payload)
+            log_api('GET', uri, r)
+        except requests.exceptions.ConnectionError:
+            self.handleError()
+
+        return r
+
     def patch_project(self, project_id, workflow_id):
         """ updates a project """
         try:
@@ -282,8 +294,9 @@ class ApiCalls:
             self.handleError()
         return r
 
-    def document_content(self, document_id, locale_code, auto_format):
+    def document_content(self, document_id, locale_code, auto_format, xliff=False):
         """ downloads the translated document """
+        headers = self.headers
         try:
             uri = (API_URI['document_content'] % locals())
             payload = {}
@@ -291,7 +304,10 @@ class ApiCalls:
                 payload['locale_code'] = locale_code
             if auto_format:
                 payload['auto_format'] = auto_format
-            r = requests.get(self.host + uri, headers=self.headers, params=payload, stream=True)
+            if xliff:
+                headers['Accept'] = 'application/x-xliff+xml'
+
+            r = requests.get(self.host + uri, headers=headers, params=payload, stream=True)
             log_api('GET', uri, r)
         except requests.exceptions.ConnectionError:
             self.handleError()

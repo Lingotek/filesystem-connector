@@ -3,6 +3,7 @@ import click
 import ctypes
 import logging
 import os
+import subprocess
 import sys
 
 ''' Internal Dependencies '''
@@ -42,30 +43,38 @@ def init_logger(path):
 
             # if on Windows system, set directory properties to hidden
             if os.name == 'nt':
-                logger.info("On Windows, make .ltk folder hidden")
-                # Python 2
+                try:
+                    subprocess.call(["attrib", "+H", os.path.join(path, CONF_DIR)])
+                except Exception as e:
+                    logger.error("Error on init: "+str(e))
+                # logger.info("On Windows, make .ltk folder hidden")
+                # # Python 2
                 ret = ctypes.windll.kernel32.SetFileAttributesW(unicode(os.path.join(path, CONF_DIR)), HIDDEN_ATTRIBUTE)
-                # End Python 2
-                # Python 3
-#                 ret = ctypes.windll.kernel32.SetFileAttributesW(os.path.join(path, CONF_DIR), HIDDEN_ATTRIBUTE)
-                # End Python 3
-                if(ret != 1):   # return value of 1 signifies success
-                    pass
+                # # End Python 2
+                # # Python 3
+#                 # ret = ctypes.windll.kernel32.SetFileAttributesW(os.path.join(path, CONF_DIR), HIDDEN_ATTRIBUTE)
+                # # End Python 3
+                # if(ret != 1):   # return value of 1 signifies success
+                #     pass
         except IOError as e:
             #logger.info(e)
             # todo error check when running init without existing conf dir
-            os.mkdir(os.path.join(path, CONF_DIR))
-            # if on Windows system, make directory hidden
-            if os.name == 'nt':
-                logger.info("On Windows, make .ltk folder hidden")
-                # Python 2
-                ret = ctypes.windll.kernel32.SetFileAttributesW(unicode(os.path.join(path, CONF_DIR)), HIDDEN_ATTRIBUTE)
-                # End Python 2
-                # Python 3
-#                 ret = ctypes.windll.kernel32.SetFileAttributesW(os.path.join(path, CONF_DIR), HIDDEN_ATTRIBUTE)
-                # End Python 3
-                if(ret != 1):   # return value of 1 signifies success
-                    pass
+            try:
+                os.mkdir(os.path.join(path, CONF_DIR))
+                # if on Windows system, make directory hidden
+                if os.name == 'nt':
+                    logger.info("On Windows, make .ltk folder hidden")
+                    # Python 2
+                    ret = ctypes.windll.kernel32.SetFileAttributesW(unicode(os.path.join(path, CONF_DIR)), HIDDEN_ATTRIBUTE)
+                    # End Python 2
+                    # Python 3
+#                     ret = ctypes.windll.kernel32.SetFileAttributesW(os.path.join(path, CONF_DIR), HIDDEN_ATTRIBUTE)
+                    # End Python 3
+                    if(ret != 1):   # return value of 1 signifies success
+                        pass
+            except IOError as e:
+                print(e.errno)
+                print(e)
 
             file_handler = logging.FileHandler(os.path.join(path, CONF_DIR, LOG_FN))
 
@@ -114,7 +123,7 @@ def ltk(is_quiet, verbosity_lvl):
 
 @ltk.command()
 @click.option('--access_token', help='Your access token')
-@click.option('--host', type=click.Choice(['myaccount.lingotek.com', 'cms.lingotek.com', 'clone.lingotek.com']), default='myaccount.lingotek.com',
+@click.option('--host', default='myaccount.lingotek.com', # type=click.Choice(['myaccount.lingotek.com', 'cms.lingotek.com', 'clone.lingotek.com']), 
               help='Environment: myaccount for production, cms for sandbox; the default is production')
 @click.option('--client_id', help='This is an advanced option that should only be used for clients that have been issued a specified client_id for analytics')
 @click.option('--path', type=click.Path(exists=True),
@@ -122,7 +131,7 @@ def ltk(is_quiet, verbosity_lvl):
 @click.option('-n', '--project_name', help='The preferred project name, defaults to the current directory name')
 @click.option('-w', '--workflow_id', default='c675bd20-0688-11e2-892e-0800200c9a66',
               help='The id of the workflow to use for this project; defaults to machine translate only')
-@click.option('-b', '--browserless', flag_value=True, help='Authorizes without opening a web browser, requires manual input of username and password')
+@click.option('-b', '--browser', flag_value=True, help='Launches broswer for Authentication')
 @click.option('-l', '--locale', default='en_US', help='The default source locale for the project; defaults to en_US')
 @click.option('-d', '--delete', flag_value=True,  # expose_value=False, callback=abort_if_false,
               # prompt='Are you sure you want to delete the current project remotely and re-initialize? '
@@ -131,7 +140,7 @@ def ltk(is_quiet, verbosity_lvl):
 # todo add a 'change' option so don't delete remote project
 # @click.option('-c', '--change', flag_value=True, help='Change the Lingotek project. ')
 @click.option('--reset', flag_value=True, help='Reauthorize and reset any stored access tokens')
-def init(host, access_token, client_id, path, project_name, workflow_id, locale, browserless, delete, reset):
+def init(host, access_token, client_id, path, project_name, workflow_id, locale, browser, delete, reset):
     """ Connects a local project to Lingotek """
     try:
         host = 'https://' + host
@@ -140,8 +149,15 @@ def init(host, access_token, client_id, path, project_name, workflow_id, locale,
         if not project_name:
             project_name = os.path.basename(os.path.normpath(path))
         init_logger(path)
-        init = init_action.InitAction()
-        init.init_action(host, access_token, client_id, path, project_name, workflow_id, locale, browserless, delete, reset)
+
+        init = init_action.InitAction(os.getcwd())
+        init.init_action(host, access_token, client_id, path, project_name, workflow_id, locale, browser, delete, reset)
+
+        if(init.turn_clone_on == False):
+            # set the download option in config
+            config = config_action.ConfigAction(os.getcwd())
+            config.set_clone_option('off', print_info=False)
+
     except (ResourceNotFound, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
@@ -165,7 +181,7 @@ def init(host, access_token, client_id, path, project_name, workflow_id, locale,
 @click.option('-g', '--git', help='Toggle Git auto-commit option on and off')
 @click.option('-gu', '--git_credentials', is_flag=True, help='Open prompt for Git credentials for auto-fill (\'none\' to unset); only enabled for Mac and Linux')
 @click.option('-a', '--append_option', help='Change the format of the default name given to documents on the Lingotek system.  Define file information to append to document names as none, full, number:+a number of folders down to include (e.g. number:2), or name:+a name of a directory to start after if found in file path (e.g. name:dir). Default option is none.')
-@click.option('-f', '--auto_format', help='Toggle auto format option \'on\' and \'off\'. Applies formatting during download')
+@click.option('-f', '--auto_format', help='Toggle auto format option \'on\' and \'off\'. Applies formatting during download.')
 
 def config(**kwargs):
     """ View or change local configuration """
@@ -336,14 +352,16 @@ def status(**kwargs):
 @click.option('-l', '--locales', help="Specify locales to download (defaults to all target locales for the document). For multiple locales give a list separated by commas and no spaces (ex: en_US,en_GB).")
 @click.option('-e', '--locale_ext', flag_value=True, help="Specifies to add the name of the locale as an extension to the file name (ex: doc1.fr_FR.docx). This is the default unless the clone download option is active.")
 @click.option('-n', '--no_ext', flag_value=True, help="Specifies to not add the name of the locale as an extension to the file name. This is the default if the clone download option is active.")
+@click.option('-x', '--xliff', flag_value=True, help="Download xliff version of the specified translation")
 @click.argument('file_names', type=click.Path(exists=True), required=True, nargs=-1)
-def download(auto_format, locales, locale_ext, no_ext, file_names):
+def download(auto_format, locales, locale_ext, no_ext, xliff, file_names):
     """ Downloads translated content specified by filename for specified locales, or all locales if none are specified. Change download options and folders using ltk config."""
     try:
         action = download_action.DownloadAction(os.getcwd())
         init_logger(action.path)
+
         for name in file_names:
-            action.download_by_path(name, locales, locale_ext, no_ext, auto_format)
+            action.download_by_path(name, locales, locale_ext, no_ext, auto_format, xliff)
 
     except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
         print_log(e)
@@ -379,8 +397,9 @@ def pull(auto_format, locale_ext, no_ext, locales):
 @click.option('-i', '--id', flag_value=True, help='Delete documents with the specified ids (instead of file names) on Lingotek Cloud')
 @click.option('-n', '--name', flag_value=True, help='Delete documents with the specified names (instead of file names or paths) on Lingotek Cloud')
 @click.option('-a', '--all', flag_value=True, help='Delete all documents from Lingotek Cloud that are found locally')
+@click.option('-l', '--local', flag_value=True, help='Delete all documents locally, but not from the Lingotek Cloud. Can be used in association with --name to delete a specified document locally')
 @click.option('-r', '--remote', flag_value=True, help='Deletes specified documents from Lingotek Cloud for the current project')
-@click.option('-f', '--force', flag_value=True, help='Delete both local and remote files, as well as any local translation files')
+@click.option('-f', '--force', flag_value=True, help='Delete both local and remote documents')
 def rm(file_names, **kwargs):
     """
     Disassociates local doc(s) from Lingotek Cloud and deletes the remote copy.
@@ -389,7 +408,7 @@ def rm(file_names, **kwargs):
     try:
         action = rm_action.RmAction(os.getcwd())
         init_logger(action.path)
-        if not file_names and not ('all' in kwargs and kwargs['all']):
+        if not file_names and not (('all' in kwargs and kwargs['all']) or ('local' in kwargs and kwargs['local'])):
             logger.info("Usage: ltk rm [OPTIONS] FILE_NAMES...")
             return
 

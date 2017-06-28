@@ -1,20 +1,25 @@
-from ltk import actions
+from ltk.actions.rm_action import *
+from ltk.actions.clean_action import CleanAction
+from ltk.actions.add_action import AddAction
 from tests.test_actions import *
 import unittest
 
 class TestRm(unittest.TestCase):
     def setUp(self):
         create_config()
-        self.action = actions.Action(os.getcwd())
-        self.action.clean_action(True, False, None)
+        self.action = RmAction(os.getcwd())
+        self.clean_action = CleanAction(os.getcwd())
+        self.add_action = AddAction(os.getcwd())
+        self.clean_action.clean_action(True, False, None)
         self.file_name = 'sample.txt'
         self.file_path = create_txt_file(self.file_name)
-        self.action.add_action([self.file_name], overwrite=True)
+        self.add_action.add_action([self.file_name], overwrite=True)
         self.doc_id = self.action.doc_manager.get_doc_ids()[0]
         assert poll_doc(self.action, self.doc_id)
 
     def tearDown(self):
-        self.action.clean_action(True, False, None)
+        self.clean_action.clean_action(True, False, None)
+        self.clean_action.close()
         self.action.close()
         cleanup()
 

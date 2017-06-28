@@ -1,5 +1,8 @@
 from tests.test_actions import *
-from ltk.actions import Action
+from ltk.actions.list_action import *
+from ltk.actions.clean_action import CleanAction
+from ltk.actions.add_action import AddAction
+from ltk.actions.rm_action import RmAction
 from io import StringIO
 import sys
 import unittest
@@ -14,11 +17,14 @@ class TestList(unittest.TestCase):
         cleanup()
 
     def setUp(self):
-        self.action = Action(os.getcwd())
-        self.action.clean_action(True, False, None)
+        self.action = ListAction(os.getcwd())
+        self.clean_action = CleanAction(os.getcwd())
+        self.add_action = AddAction(os.getcwd())
+        self.clean_action.clean_action(True, False, None)
+        self.rm_action = RmAction(os.getcwd())        
 
     def tearDown(self):
-        self.action.clean_action(True, False, None)
+        self.clean_action.clean_action(True, False, None)
         self.action.close()
 
     def test_list_doc(self):
@@ -26,14 +32,14 @@ class TestList(unittest.TestCase):
         file_paths = []
         for fn in files:
             file_paths.append(create_txt_file(fn))
-        self.action.add_action(['sample*.txt'], overwrite=True)
+        self.add_action.add_action(['sample*.txt'], overwrite=True)
         doc_ids = self.action.doc_manager.get_doc_ids()
         for doc_id in doc_ids:
             assert poll_doc(self.action, doc_id)
         try:
             out = StringIO()
             sys.stdout = out
-            self.action.list_ids_action(False)
+            self.action.list_ids(False)
             info = out.getvalue()
             for doc_id in doc_ids:
                 assert doc_id in info
@@ -41,14 +47,14 @@ class TestList(unittest.TestCase):
             sys.stdout = sys.__stdout__
 
         for fn in files:
-            self.action.rm_action(fn, force=True)
-        self.action.clean_action(False, False, None)
+            self.rm_action.rm_action(fn, force=True)
+        self.clean_action.clean_action(False, False, None)
 
-    def test_list_no_docs(self):
+    def test_list_docs_none(self):
         try:
             out = StringIO()
             sys.stdout = out
-            self.action.list_ids_action(False)
+            self.action.list_ids(False)
             info = out.getvalue()
             assert 'No local documents' in info
         finally:
@@ -58,7 +64,7 @@ class TestList(unittest.TestCase):
         try:
             out = StringIO()
             sys.stdout = out
-            self.action.list_workflow_action()
+            self.action.list_workflows()
             info = out.getvalue()
             assert 'Workflows' in info
             assert 'c675bd20-0688-11e2-892e-0800200c9a66' in info
@@ -70,10 +76,10 @@ class TestList(unittest.TestCase):
         try:
             out = StringIO()
             sys.stdout = out
-            self.action.list_locale_action()
+            self.action.list_locales()
             info = out.getvalue()
-            assert 'ar_AE (Arabic, United Arab Emirates)' in info
-            assert 'zh_TW (Chinese, Taiwan)' in info
+            assert 'ar-AE (Arabic, United Arab Emirates)' in info
+            assert 'zh-TW (Chinese, Taiwan)' in info
         finally:
             sys.stdout = sys.__stdout__
 
@@ -81,7 +87,7 @@ class TestList(unittest.TestCase):
         try:
             out = StringIO()
             sys.stdout = out
-            self.action.list_format_action()
+            self.action.list_formats()
             info = out.getvalue()
             assert info.startswith('Lingotek Cloud accepts content')
             assert 'CSV' in info
@@ -93,7 +99,7 @@ class TestList(unittest.TestCase):
         try:
             out = StringIO()
             sys.stdout = out
-            self.action.list_filter_action()
+            self.action.list_filters()
             info = out.getvalue()
             decoded_info = info
             assert 'Filters:' in info

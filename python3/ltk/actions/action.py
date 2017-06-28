@@ -178,12 +178,16 @@ class Action:
         return config_file_name, conf_parser
 
     def update_config_file(self, option, value, conf_parser, config_file_name, log_info):
-        conf_parser.set('main', option, value)
-        with open(config_file_name, 'w') as new_file:
-            conf_parser.write(new_file)
-        self._initialize_self()
-        if (len(log_info)):
-            logger.info(log_info+"\n")
+        try:
+            conf_parser.set('main', option, value)
+            with open(config_file_name, 'w') as new_file:
+                conf_parser.write(new_file)
+            self._initialize_self()
+            if (len(log_info)):
+                logger.info(log_info+"\n")
+        except IOError as e:
+            print(e.errno)
+            print(e)
 
     def get_relative_path(self, path):
         return get_relative_path(self.path, path)
@@ -506,10 +510,11 @@ def get_files(patterns):
         if os.path.exists(path):
             if os.path.isdir(path):
                 for root, subdirs, files in os.walk(path):
-                    split_path = root.split(os.sep)
+                    # split_path = root.split(os.sep)
+                    # print("split_path: {0}".format(split_path))
                     for file in files:
-                        # print(os.path.join(root, file))
-                        matched_files.append(os.path.join(root, file))
+                        if not (("desktop.ini" in file) or ('Thumbs.db' in file) or ('ehthumbs.db' in file)):   # don't add desktop.ini, Thumbs.db, or ehthumbs.db files
+                            matched_files.append(os.path.join(root, file))
             else:
                 matched_files.append(path)
         # else:

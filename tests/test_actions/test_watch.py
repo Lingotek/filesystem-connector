@@ -1,5 +1,8 @@
 from tests.test_actions import *
 from ltk.watch import WatchAction
+from ltk.actions.clean_action import CleanAction
+from ltk.actions.add_action import AddAction
+from ltk.actions.rm_action import RmAction
 from threading import Thread
 import unittest
 import os
@@ -16,14 +19,17 @@ class TestWatch(unittest.TestCase):
         cleanup()
 
     def setUp(self):
-        self.action = WatchAction(os.getcwd(), 1)
-        self.action.clean_action(False, False, None)
+        self.action = WatchAction(os.getcwd())
+        self.clean_action = CleanAction(os.getcwd())
+        self.add_action = AddAction(os.getcwd())
+        self.rm_action = RmAction(os.getcwd())
+        self.clean_action.clean_action(False, False, None)
         # self.action.open()
         self.downloaded = []
         self.files = []
         self.dir_name = "dir1"
         create_directory(self.dir_name)
-        self.action.add_action([self.dir_name], force=True)
+        self.add_action.add_action([self.dir_name], force=True)
         # todo current problem: watchdog does not seem to detect changes in daemon
         # but not daemonizing watch causes tests to hang..
         watch_thread = Thread(target=self.action.watch_action, args=('.', (), None))
@@ -33,8 +39,8 @@ class TestWatch(unittest.TestCase):
     def tearDown(self):
         #delete files
         for fn in self.files:
-            self.action.rm_action(fn, force=True)
-        self.action.clean_action(False, False, None)
+            self.rm_action.rm_action(fn, force=True)
+        self.clean_action.clean_action(False, False, None)
         #delete downloads
         for fn in self.downloaded:
             os.remove(fn)

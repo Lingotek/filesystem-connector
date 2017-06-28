@@ -301,8 +301,12 @@ def log_traceback(ex, ex_traceback=None):
     # End Python 3
 
 def log_error(error_file_name, e):
-    with open(error_file_name, 'a') as error_file:
-            error_file.write(str(time.strftime("%Y-%m-%d %H:%M:%S") + ": "+str(log_traceback(e))))
+    try:
+        with open(error_file_name, 'a') as error_file:
+                error_file.write(str(time.strftime("%Y-%m-%d %H:%M:%S") + ": "+str(log_traceback(e))))
+    except IOError as e:
+        print(e.errno)
+        print(e)
     return
 
 def remove_powershell_formatting(args):

@@ -1,5 +1,8 @@
 from tests.test_actions import *
-from ltk.actions import Action
+import sys
+from ltk.actions.add_action import *
+from ltk.actions.clean_action import CleanAction
+from ltk.actions.rm_action import RmAction
 import os
 import unittest
 
@@ -13,20 +16,23 @@ class TestAdd(unittest.TestCase):
         cleanup()
 
     def setUp(self):
-        self.action = Action(os.getcwd())
-        self.action.clean_action(False, False, None)
+        self.action = AddAction(os.getcwd())
+        self.clean_action = CleanAction(os.getcwd())
         self.added_files = []
         self.added_directories = []
 
     def tearDown(self):
+        self.rm_action = RmAction(os.getcwd())
         for fn in self.added_files:
-            self.action.rm_action(fn, force=True)
+            self.rm_action.rm_action(fn, force=True)
 
         for d in self.added_directories:
-            self.action.rm_action(d, force=True)
+            self.rm_action.rm_action(d, force=True)
             delete_directory(d)
 
-        self.action.clean_action(False, False, None)
+        self.clean_action.clean_action(False, False, None)
+        self.rm_action.close()
+        self.clean_action.close()
         self.action.close()
 
     def test_add_db(self):

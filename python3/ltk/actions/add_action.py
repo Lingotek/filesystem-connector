@@ -157,6 +157,8 @@ class AddAction(Action):
                 if os.path.isdir(pattern):
                     if self.is_hidden_file(pattern):
                         logger.warning("Folder is hidden")
+                    # elif self.download_dir != None and os.path.samefile(pattern, self.download_dir):
+                    #     logger.warning("The folder " + "\'" + pattern + "\'" + " set as the downlaod folder. You cannot add the download folder. To remove downlaod folder use \'ltk config -d --none\' command.")
                     elif not self._is_folder_added(pattern):
                         self.folder_manager.add_folder(self.norm_path(pattern.rstrip(os.sep)))
                         logger.info("Added folder "+str(pattern))
