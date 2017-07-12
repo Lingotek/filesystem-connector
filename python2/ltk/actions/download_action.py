@@ -83,8 +83,10 @@ class DownloadAction(Action):
                         downloaded_name = self.append_ext_to_file(locale_code, base_name, True)
                     else:
                         downloaded_name = base_name
-                    if 'xliff' in response.headers['Content-Type']:
-                        downloaded_name = self.change_file_extension('xml', downloaded_name)
+                    if 'xliff' in response.headers['Content-Type'] and xliff == True:
+                        print("CHANGING EXTENSION")
+                        downloaded_name = self.change_file_extension('xlf', downloaded_name)
+                        print(downloaded_name)
                     if 'same' in self.download_option:
                         self.download_path = os.path.dirname(file_name)
                         new_path = os.path.join(self.path,os.path.join(self.download_path, downloaded_name))
