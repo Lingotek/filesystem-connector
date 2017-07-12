@@ -84,9 +84,7 @@ class DownloadAction(Action):
                     else:
                         downloaded_name = base_name
                     if 'xliff' in response.headers['Content-Type'] and xliff == True:
-                        print("CHANGING EXTENSION")
                         downloaded_name = self.change_file_extension('xlf', downloaded_name)
-                        print(downloaded_name)
                     if 'same' in self.download_option:
                         self.download_path = os.path.dirname(file_name)
                         new_path = os.path.join(self.path,os.path.join(self.download_path, downloaded_name))
