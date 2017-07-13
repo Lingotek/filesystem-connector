@@ -300,10 +300,9 @@ class ApiCalls:
         try:
             uri = (API_URI['document_content'] % locals())
             payload = {}
+            payload['auto_format'] = auto_format
             if locale_code:
                 payload['locale_code'] = locale_code
-            if auto_format:
-                payload['auto_format'] = auto_format
             if xliff:
                 headers['Accept'] = 'application/x-xliff+xml'
 
