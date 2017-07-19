@@ -124,7 +124,9 @@ class RequestAction(Action):
             locales_to_add = []
             existing_locales = []
             if 'locales' in entry and entry['locales']:
+                print("existing")
                 existing_locales = entry['locales']
+                print(existing_locales)
             if self.change_db_entry:
                 # Make sure that the locales that were just added are added to the database as well as the previous remote locales (since they were only just recently added to Lingotek's system)
                 if self.to_delete and self.entered_locales:
@@ -136,8 +138,10 @@ class RequestAction(Action):
                                 locales_to_add.append(locale)
 
                     for locale in locales:
-                        if locale not in existing_locales:
+                        locale = locale.replace('_', '-')
+                        if locale not in existing_locales and locale not in locales_to_add:
                             locales_to_add.append(locale)
+
                 self._target_action_db(self.to_delete, locales_to_add, self.document_id)
                 is_successful = True
 
