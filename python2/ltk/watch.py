@@ -145,7 +145,7 @@ class WatchAction(Action):
                         #self.update_document_action(os.path.join(self.path, fn))
                         #logger.info('Updating remote content: {0}'.format(fn))
                         try:
-                            self.polled_list.remove(doc['name'])
+                            self.polled_list.remove(fn)
                         except Exception:
                             pass
                         self.update_content(fn)

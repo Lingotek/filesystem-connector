@@ -29,6 +29,7 @@ def detect_format(file_name, get_mapper=False):
         '.dita': 'DITA',
         '.ditamap': 'DITAMAP',
         '.docx': 'DOCX_OKAPI',
+        '.doc' : 'WORD_OKAPI',
         '.dtd': 'DTD',
         '.xlsx': 'XLSX_OKAPI',
         '.idml': 'IDML',
