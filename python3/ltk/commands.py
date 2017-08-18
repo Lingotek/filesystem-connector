@@ -100,9 +100,9 @@ def print_log(error):
     """
     Prints the error before logger is initialized
     """
-    if not len(logger.handlers):
-        print ('Error: {0}'.format(error))
-        sys.exit()
+    # if not len(logger.handlers):
+    print ('Error: {0}'.format(error))
+    sys.exit()
     return
 
 
@@ -123,7 +123,7 @@ def ltk(is_quiet, verbosity_lvl):
 
 @ltk.command()
 @click.option('--access_token', help='Your access token')
-@click.option('--host', default='myaccount.lingotek.com', # type=click.Choice(['myaccount.lingotek.com', 'cms.lingotek.com', 'clone.lingotek.com']), 
+@click.option('--host', default='myaccount.lingotek.com', # type=click.Choice(['myaccount.lingotek.com', 'cms.lingotek.com', 'clone.lingotek.com']),
               help='Environment: myaccount for production, cms for sandbox; the default is production')
 @click.option('--client_id', help='This is an advanced option that should only be used for clients that have been issued a specified client_id for analytics')
 @click.option('--path', type=click.Path(exists=True),
@@ -544,7 +544,7 @@ def watch(ignore, delimiter, timeout, no_folders, force_poll): # path, ignore, d
     except (UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
-
+        return
 
 # Filters (Split into files, see http://bit.ly/2jArTRm)
 
@@ -557,18 +557,28 @@ def filters():
 @click.option('-t', '--type', 'filter_type', type=click.Choice(['FPRM','SRX','ITS']), help="The filter type being added.  Must be one of the following: FPRM, SRX, ITS.  When not explicitly specified, the file extension is used to attempt to detect the type.")
 def filter_add(filename, filter_type):
     """Create filter on Lingotek."""
-    action = filters_action.FiltersAction(os.getcwd())
-    init_logger(action.path)
-    action.filter_add_action(filename, filter_type)
+    try:
+        action = filters_action.FiltersAction(os.getcwd())
+        init_logger(action.path)
+        action.filter_add_action(filename, filter_type)
+    except (UninitializedError, RequestFailedError) as e:
+        print_log(e)
+        logger.error(e)
+        return
 
 @filters.command(name='save',short_help="Update filter on Lingotek.")
 @click.argument('filter_id')
 @click.argument('filename')
 def filter_add(filter_id, filename):
     """Update filter on Lingotek."""
-    action = filters_action.FiltersAction(os.getcwd())
-    init_logger(action.path)
-    action.filter_save_action(filter_id, filename)
+    try:
+        action = filters_action.FiltersAction(os.getcwd())
+        init_logger(action.path)
+        action.filter_save_action(filter_id, filename)
+    except (UninitializedError, RequestFailedError) as e:
+        print_log(e)
+        logger.error(e)
+        return
 
 @filters.command(name="get", short_help="Retrieve filter contents from Lingotek.")
 @click.argument('filter_id')
@@ -577,28 +587,42 @@ def filter_add(filter_id, filename):
 @click.option('--overwrite',flag_value=True, help="Overwrite local file when it already exists.")
 def filter_get(filter_id, filename, info, overwrite):
     """Retrieve the filter specified by FILTER_ID from Lingotek and store it in the current working directly as the title (or as as the optional_filename when specified) of the filter"""
-    action = filters_action.FiltersAction(os.getcwd())
-    init_logger(action.path)
-    if info == True:
-        action.filter_info_action(filter_id)
-    else:
-        action.filter_get_action(filter_id, filename, overwrite)
+    try:
+        action = filters_action.FiltersAction(os.getcwd())
+        init_logger(action.path)
+        if info == True:
+            action.filter_info_action(filter_id)
+        else:
+            action.filter_get_action(filter_id, filename, overwrite)
+    except (UninitializedError, RequestFailedError) as e:
+        print_log(e)
+        logger.error(e)
+        return
 
 @filters.command(name="list")
 def filter_list():
     """List default and custom filters."""
-    action = filters_action.FiltersAction(os.getcwd())
-    init_logger(action.path)
-    action.filter_list_action()
+    try:
+        action = filters_action.FiltersAction(os.getcwd())
+        init_logger(action.path)
+        action.filter_list_action()
+    except (UninitializedError, RequestFailedError) as e:
+        print_log(e)
+        logger.error(e)
+        return
 
 @filters.command(name="rm", short_help="Remove filter from Lingotek.")
 @click.argument('filter_id')
 def filter_rm(filter_id):
     """Remove the filter specified by FILTER_ID."""
-    action = filters_action.FiltersAction(os.getcwd())
-    init_logger(action.path)
-    action.filter_rm_action(filter_id)
-
+    try:
+        action = filters_action.FiltersAction(os.getcwd())
+        init_logger(action.path)
+        action.filter_rm_action(filter_id)
+    except (UninitializedError, RequestFailedError) as e:
+        print_log(e)
+        logger.error(e)
+        return
 
 ltk.add_command(filters)
 
