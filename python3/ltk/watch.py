@@ -384,8 +384,10 @@ class WatchAction(Action):
         config_file_name, conf_parser = self.init_config_file()
         git_autocommit = conf_parser.get('main', 'git_autocommit')
         if git_autocommit in ['True', 'on'] and documents_downloaded == True:
-            self.git_auto.commit(git_commit_message)
-            self.git_auto.push()
+            if self.git_auto.repo_exists(): 
+                self.git_auto.commit(git_commit_message)
+                self.git_auto.push()
+
 
 
     def complete_path(self, file_location):
