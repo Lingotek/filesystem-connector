@@ -109,17 +109,17 @@ class RequestAction(Action):
                             response_message = response_message.replace(self.document_id, self.document_name + ' (' + self.document_id + ')')
                             response_message = response_message.replace('.', ' ')
                             response_message = response_message + 'for document ' + self.document_name
-                            print(response_message)
+                            print(response_message + "\n")
+                            
                             if 'not found' in response_message:
                                 return
                         else:
-                            raise_error(response.json(), '{message} {locale} for document {name}'.format(message=self.failure_message, locale=locale, name=self.document_name), True)
+                            raise_error(response.json(), '{message} {locale} for document {name}\n'.format(message=self.failure_message, locale=locale, name=self.document_name), True)
                         if not 'already exists' in response_message:
                             self.change_db_entry = False
                         # self.update_doc_locales(document_id)
                         continue
-                    logger.info('{message} {locale} for document {name}'.format(message=self.info_message,
-                                                                                locale=locale, name=self.document_name))
+                    logger.info('{message} {locale} for document {name}\n'.format(message=self.info_message, locale=locale, name=self.document_name))
             remote_locales = self.get_doc_locales(self.document_id, self.document_name) # Get locales from Lingotek Cloud
             locales_to_add = []
             existing_locales = []
