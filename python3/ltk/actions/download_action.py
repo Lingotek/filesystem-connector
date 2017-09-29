@@ -8,6 +8,8 @@ class DownloadAction(Action):
         self.DOWNLOAD_NUMBER = 1
         self.default_download_ext = "({0})".format(self.DOWNLOAD_NUMBER)
         self.current_doc = ''
+        self.DEFAULT_COMMIT_MESSAGE  = "Translations updated for "
+        self.documents_downloaded = False
 
     def download_by_path(self, file_path, locale_codes, locale_ext, no_ext, auto_format, xliff):
         docs = self.get_docs_in_path(file_path)
@@ -36,6 +38,7 @@ class DownloadAction(Action):
             response = self.api.document_content(document_id, locale_code, auto_format, xliff)
             entry = None
             entry = self.doc_manager.get_doc_by_prop('id', document_id)
+            git_commit_message = self.DEFAULT_COMMIT_MESSAGE
             if response.status_code == 200:
                 self.download_path = self.path
                 if 'clone' in self.download_option:
@@ -69,6 +72,7 @@ class DownloadAction(Action):
                         return
                     self.download_path = os.path.join(self.download_path, title)
                     logger.info('Downloaded: {0} ({1} - {2})'.format(title, self.get_relative_path(self.download_path), locale_code))
+                    self.documents_downloaded = True
                 else:
                     file_name = entry['file_name']
                     if not file_name == self.current_doc:
@@ -76,7 +80,7 @@ class DownloadAction(Action):
                         self.current_doc = file_name
                     base_name = os.path.basename(self.norm_path(file_name))
                     if not locale_code:
-                        #Don't download source document(s), only download translations
+                        # Don't download source document(s), only download translations
                         logger.info("No target locales for "+file_name+".")
                         return
                     if locale_ext:
@@ -108,17 +112,35 @@ class DownloadAction(Action):
                     with open(self.download_path, 'wb') as fh:
                         for chunk in response.iter_content(1024):
                             fh.write(chunk)
-                    logger.info('Downloaded: {0} ({1} - {2})'.format(downloaded_name, self.get_relative_path(self.download_path), locale_code))
+                    logger.info('Downloaded: {0} ({1} - {2})\n'.format(downloaded_name, self.get_relative_path(self.download_path), locale_code))
+
+                    # configure commit message
+                    if (downloaded_name + ": ") not in git_commit_message:
+                        if self.documents_downloaded:
+                            git_commit_message += '; '
+                        git_commit_message += downloaded_name + ": "
+                        document_added = True
+                        self.documents_downloaded = True
+                    if document_added:
+                        git_commit_message += locale_code
+                    else:
+                        git_commit_message += ', ' + locale_code
+
                 except:
                     logger.warning('Error: Download failed at '+self.download_path)
                     return self.download_path
+
                 git_autocommit = conf_parser.get('main', 'git_autocommit')
                 if git_autocommit in ['True', 'on']:
-                    if not self.git_auto.repo_is_defined:
-                        if self.git_auto.repo_exists(self.download_path) and os.path.isfile(self.download_path):
-                            self.git_auto.add_file(self.download_path)
-                    else:
+                    if self.git_auto.repo_exists(self.download_path) and os.path.isfile(self.download_path):
+                        # add, commit, and push to Github
                         self.git_auto.add_file(self.download_path)
+                        self.git_auto.commit(git_commit_message)
+                        self.git_auto.push()
+                        print()
+
+                        # reset documents downloaded
+                        self.documents_downloaded = False
 
                 return self.download_path
             else:
