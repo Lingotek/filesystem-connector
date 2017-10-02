@@ -365,8 +365,7 @@ class WatchAction(Action):
                         # else:
                         #     git_commit_message += ', ' + locale
                         # documents_downloaded = True
-                        logger.info('Translation completed ({0} - {1})'.format(file_name, locale))
-                        print()
+                        logger.info('Translation completed ({0} - {1})\n'.format(file_name, locale))
                         if self.locale_delimiter:
                             locale = locale.replace('_','-')
                             self.download.download_action(doc_id, locale, autoFormat, xliff=False, locale_ext=False)

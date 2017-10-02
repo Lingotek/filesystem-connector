@@ -134,10 +134,11 @@ class DownloadAction(Action):
                 if git_autocommit in ['True', 'on']:
                     if self.git_auto.repo_exists(self.download_path) and os.path.isfile(self.download_path):
                         # add, commit, and push to Github
+
                         self.git_auto.add_file(self.download_path)
                         self.git_auto.commit(git_commit_message)
                         self.git_auto.push()
-                        print()
+                        print("\n")
 
                         # reset documents downloaded
                         self.documents_downloaded = False
