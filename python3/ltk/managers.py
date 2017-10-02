@@ -33,10 +33,13 @@ class DocumentManager:
     def is_doc_new(self, file_name, root_path=None):
         if root_path != None:
             config = ConfigParser()
-            config.read( root_path + "/.ltk/config")
-            download_folder = config.get('main','download_folder')
-            locale_folders = config.get('main','locale_folders')
-            locale_folders = json.loads(locale_folders)
+            try:
+                config.read( root_path + "/.ltk/config")
+                download_folder = config.get('main','download_folder')
+                locale_folders = config.get('main','locale_folders')
+                locale_folders = json.loads(locale_folders)
+            except NoSectionError as e:
+                return False
             #if doc is in the user specified download folder return false
             download_is_watched = False
             if file_name[:len(download_folder)] == download_folder and download_folder is not "":
