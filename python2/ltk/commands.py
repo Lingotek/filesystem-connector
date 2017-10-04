@@ -362,6 +362,7 @@ def download(auto_format, locales, locale_ext, no_ext, xliff, file_names):
 
         for name in file_names:
             action.download_by_path(name, locales, locale_ext, no_ext, auto_format, xliff)
+            print("\n")
 
     except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
         print_log(e)

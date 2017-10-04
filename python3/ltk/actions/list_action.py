@@ -51,8 +51,7 @@ class ListAction(Action):
                 format_list[key] = []
             format_list[key].append(extension)
 
-        print("Lingotek Cloud accepts content using any of the formats listed below. File formats will be auto-detected for the extensions as specified below. Alternatively, formats may be specified explicitly upon add. Lingotek supports variations and customizations on these formats with filters.")
-        print()
+        print("Lingotek Cloud accepts content using any of the formats listed below. File formats will be auto-detected for the extensions as specified below. Alternatively, formats may be specified explicitly upon add. Lingotek supports variations and customizations on these formats with filters.\n")
         print('%-30s' % "Format" + '%s' % "Auto-detected File Extensions")
         print("-----------------------------------------------------------")
         for k,v in sorted(format_list.items()):

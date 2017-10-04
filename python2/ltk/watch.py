@@ -325,7 +325,7 @@ class WatchAction(Action):
         else:
             autoFormat = False;
         documents = self.doc_manager.get_all_entries()  # todo this gets all documents, not necessarily only ones in watch folder
-        documents_downloaded = False
+        # documents_downloaded = False
         git_commit_message = DEFAULT_COMMIT_MESSAGE
         for doc in documents:
             doc_id = doc['id']
@@ -355,17 +355,17 @@ class WatchAction(Action):
 #                     progress = locale_progress[locale]
                 # End Python 3
                     if progress == 100 and locale not in downloaded:
-                        document_added = False
-                        if (doc['name']+": ") not in git_commit_message:
-                            if documents_downloaded: git_commit_message += '; '
-                            git_commit_message += doc['name'] + ": "
-                            document_added = True
-                        if document_added:
-                            git_commit_message += locale
-                        else:
-                            git_commit_message += ', ' + locale
-                        documents_downloaded = True
-                        logger.info('Translation completed ({0} - {1})'.format(doc_id, locale))
+                        # document_added = False
+                        # if (doc['name']+": ") not in git_commit_message:
+                        #     if documents_downloaded: git_commit_message += '; '
+                        #     git_commit_message += doc['name'] + ": "
+                        #     document_added = True
+                        # if document_added:
+                        #     git_commit_message += locale
+                        # else:
+                        #     git_commit_message += ', ' + locale
+                        # documents_downloaded = True
+                        logger.info('Translation completed ({0} - {1})\n'.format(file_name, locale))
                         if self.locale_delimiter:
                             locale = locale.replace('_','-')
                             self.download.download_action(doc_id, locale, autoFormat, xliff=False, locale_ext=False)
@@ -381,12 +381,15 @@ class WatchAction(Action):
                 if set(locale_progress.keys()) == set(downloaded):
                     if all(value == 100 for value in locale_progress.values()):
                         self.polled_list.add(file_name)
-        config_file_name, conf_parser = self.init_config_file()
-        git_autocommit = conf_parser.get('main', 'git_autocommit')
-        if git_autocommit in ['True', 'on'] and documents_downloaded == True:
-            if self.git_auto.repo_exists(): 
-                self.git_auto.commit(git_commit_message)
-                self.git_auto.push()
+        ###
+        ### Adding, committing, and pushing to Github has been moved to DownloadAction ###
+        ###
+        # config_file_name, conf_parser = self.init_config_file()
+        # git_autocommit = conf_parser.get('main', 'git_autocommit')
+        # if git_autocommit in ['True', 'on'] and documents_downloaded == True:
+        #     if self.git_auto.repo_exists():
+        #         self.git_auto.commit(git_commit_message)
+        #         self.git_auto.push()
 
 
 

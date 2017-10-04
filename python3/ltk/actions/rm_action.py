@@ -213,10 +213,11 @@ class RmAction(Action):
             return
         else:
             matched_files = []
-            for entry in response.json()['entities']:
-                id = entry['properties']['id']
+            entities = response.json()['entities']
+            for entry in entities:
+                doc_id = entry['properties']['id']
                 doc_name = entry['properties']['name']
-
-                doc = self.doc_manager.get_doc_by_prop("id",id)
-                matched_files.append(doc["file_name"])
+                doc = self.doc_manager.get_doc_by_prop("id",doc_id)
+                if doc:
+                    matched_files.append(doc["file_name"])
             return matched_files
