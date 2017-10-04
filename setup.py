@@ -1,3 +1,4 @@
+# coding: utf-8
 from setuptools import setup, find_packages
 import sys
 
@@ -16,7 +17,7 @@ except (IOError, ImportError, OSError):
 
 setup(
     name='ltk',
-    version='1.2.2',
+    version='1.2.3',
     url='https://github.com/Lingotek/filesystem-connector',
     description='The Lingotek Filesystem Connector (ltk) links your files and folders to the Translation Network™',
     long_description=long_description,

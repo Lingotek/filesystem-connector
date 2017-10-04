@@ -52,14 +52,17 @@ class PullAction(Action):
                     logger.info("No documents have been added")
                     documents_added = False
 
-            if documents_added:
-                config_file_name, conf_parser = self.init_config_file()
-                git_autocommit = conf_parser.get('main', 'git_autocommit')
-                if git_autocommit in ['True', 'on']:    #'True' option for back-support of previous layout
-                    if not self.git_auto.repo_is_defined:
-                        if(self.git_auto.repo_exists()):
-                            self.git_auto.commit(git_commit_message)
-                            self.git_auto.push()
+            ###
+            ### Adding, committing, and pushing to Github has been moved to DownloadAction ###
+            ###
+            # if documents_added:
+            #     config_file_name, conf_parser = self.init_config_file()
+            #     git_autocommit = conf_parser.get('main', 'git_autocommit')
+            #     if git_autocommit in ['True', 'on']:    #'True' option for back-support of previous layout
+            #         if not self.git_auto.repo_is_defined:
+            #             if(self.git_auto.repo_exists()):
+            #                 self.git_auto.commit(git_commit_message)
+            #                 self.git_auto.push()
 
         except Exception as e:
             log_error(self.error_file_name, e)

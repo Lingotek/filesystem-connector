@@ -362,6 +362,7 @@ def download(auto_format, locales, locale_ext, no_ext, xliff, file_names):
 
         for name in file_names:
             action.download_by_path(name, locales, locale_ext, no_ext, auto_format, xliff)
+            print("\n")
 
     except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
         print_log(e)
@@ -399,7 +400,7 @@ def pull(auto_format, locale_ext, no_ext, locales):
 @click.option('-a', '--all', flag_value=True, help='Delete all documents from Lingotek Cloud that are found locally')
 @click.option('-l', '--local', flag_value=True, help='Delete all documents locally, but not from the Lingotek Cloud. Can be used in association with --name to delete a specified document locally')
 @click.option('-r', '--remote', flag_value=True, help='Deletes specified documents from Lingotek Cloud for the current project')
-@click.option('-f', '--force', flag_value=True, help='Delete both local and remote documents')
+@click.option('-f', '--force', flag_value=True, help='Delete both local and remote source documents')
 def rm(file_names, **kwargs):
     """
     Disassociates local doc(s) from Lingotek Cloud and deletes the remote copy.

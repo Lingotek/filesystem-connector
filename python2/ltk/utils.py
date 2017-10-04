@@ -212,6 +212,9 @@ def underline(text):
         # print("Recommended to install blessings module for better formatting")
         print(text)
 
+def format_commit_message():
+    pass
+
 def check_response(response):
     try:
         if response and response.text:
