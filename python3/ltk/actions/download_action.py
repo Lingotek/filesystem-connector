@@ -1,4 +1,5 @@
 from ltk.actions.action import *
+import json
 
 class DownloadAction(Action):
     def __init__(self, path):
@@ -210,6 +211,9 @@ class DownloadAction(Action):
     def append_ext_to_file(self, to_append, base_name, append_locale):
         name_parts = base_name.split('.')
         if len(name_parts) > 1:
+            for p in name_parts:
+                if p == self.locale:
+                    name_parts.remove(p)
             if append_locale:
                 name_parts.insert(-1, to_append)
             else:
