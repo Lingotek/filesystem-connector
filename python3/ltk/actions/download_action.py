@@ -1,5 +1,6 @@
 from ltk.actions.action import *
 import json
+import re
 
 class DownloadAction(Action):
     def __init__(self, path):
@@ -153,6 +154,7 @@ class DownloadAction(Action):
                     raise_error(response.json(), 'Failed to download content for id: {0}'.format(document_id), True)
         except Exception as e:
             log_error(self.error_file_name, e)
+            print(self.error_file_name)
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
                 logger.error("Error connecting to Lingotek's TMS")
             else:
@@ -211,25 +213,47 @@ class DownloadAction(Action):
     def append_ext_to_file(self, to_append, base_name, append_locale):
         name_parts = base_name.split('.')
         base_locale = None
+        loc_check = None
+        joined_target = None
         if len(name_parts) > 1:
             for p in name_parts:
-                if p == self.locale:
+                if p.lower() == self.locale.lower():
+                    loc_check = self.locale_check(p)
                     name_parts.remove(p)
-                elif p.replace('_', '-') == self.locale:
+                elif p.replace('_', '-').lower() == self.locale.lower():
+                    loc_check = self.locale_check(p)
                     base_locale = p
                     name_parts.remove(p)
             if append_locale:
-                if base_locale:   
-                    name_parts.insert(-1, to_append.replace('-', '_'))
+                if base_locale:  
+                    new_target = self.source_to_target(loc_check, to_append.split('-'))
+                    joined_target = '_'.join(new_target)
+                    name_parts.insert(-1, joined_target)
                 else:
-                    name_parts.insert(-1, to_append)
+                    new_target = self.source_to_target(loc_check, to_append.split('-'))
+                    joined_target = '-'.join(new_target)
+                    name_parts.insert(-1, joined_target)
             else:
                 name_parts[0] = name_parts[0] + to_append
-
             downloaded_name = '.'.join(part for part in name_parts)
-
             return downloaded_name
         else:
             downloaded_name = name_parts[0] + '.' + to_append
             self.download_path = os.path.join(self.path,os.path.join(self.download_path, downloaded_name))
             return downloaded_name
+
+    def locale_check(self, loc):
+        parts = re.split('[^a-zA-Z]', loc)
+        original_locale = []
+        for p in parts:
+            original_locale.append(p)
+        return original_locale
+    def source_to_target(self, source, target):
+        new_target = []
+        for x in range(0, 2):
+            if source[x].isupper():
+                new_target.append(target[x].upper())
+            else:
+                new_target.append(target[x].lower())
+        return new_target
+            
