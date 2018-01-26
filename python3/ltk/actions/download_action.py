@@ -94,7 +94,9 @@ class DownloadAction(Action):
                     if 'same' in self.download_option:
                         self.download_path = os.path.dirname(file_name)
                         new_path = os.path.join(self.path,os.path.join(self.download_path, downloaded_name))
-                        if not os.path.isfile(new_path) or (locale_code in new_path):
+                        new_locale = downloaded_name.split('.')[1].lower()
+                        new_locale = new_locale.replace('_', '-')
+                        if not os.path.isfile(new_path) or (locale_code in new_path) or (locale_code.lower() == new_locale):
                             self.download_path = new_path
                         else:
                             self.default_download_ext = "({0})".format(self.DOWNLOAD_NUMBER)
@@ -154,7 +156,6 @@ class DownloadAction(Action):
                     raise_error(response.json(), 'Failed to download content for id: {0}'.format(document_id), True)
         except Exception as e:
             log_error(self.error_file_name, e)
-            print(self.error_file_name)
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
                 logger.error("Error connecting to Lingotek's TMS")
             else:
@@ -217,9 +218,11 @@ class DownloadAction(Action):
         joined_target = None
         if len(name_parts) > 1:
             for p in name_parts:
+                # check locale against global locale
                 if p.lower() == self.locale.lower():
                     loc_check = self.locale_check(p)
                     name_parts.remove(p)
+                # replace locale '_' with '-' and check against global locale
                 elif p.replace('_', '-').lower() == self.locale.lower():
                     loc_check = self.locale_check(p)
                     base_locale = p
@@ -244,13 +247,13 @@ class DownloadAction(Action):
             downloaded_name = name_parts[0] + '.' + to_append
             self.download_path = os.path.join(self.path,os.path.join(self.download_path, downloaded_name))
             return downloaded_name
-
+    
+    ''' Splits locale into two parts, i.e. ['en', 'US'] '''
     def locale_check(self, loc):
         parts = re.split('[^a-zA-Z]', loc)
-        original_locale = []
-        for p in parts:
-            original_locale.append(p)
-        return original_locale
+        return parts
+
+    ''' Create new target to match client input '''
     def source_to_target(self, source, target):
         new_target = []
         for x in range(0, 2):
