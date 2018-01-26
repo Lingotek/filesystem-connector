@@ -230,9 +230,12 @@ class DownloadAction(Action):
                     joined_target = '_'.join(new_target)
                     name_parts.insert(-1, joined_target)
                 else:
-                    new_target = self.source_to_target(loc_check, to_append.split('-'))
-                    joined_target = '-'.join(new_target)
-                    name_parts.insert(-1, joined_target)
+                    if loc_check:
+                        new_target = self.source_to_target(loc_check, to_append.split('-'))
+                        joined_target = '-'.join(new_target)
+                        name_parts.insert(-1, joined_target)
+                    else:
+                        name_parts.insert(-1, to_append)
             else:
                 name_parts[0] = name_parts[0] + to_append
             downloaded_name = '.'.join(part for part in name_parts)
