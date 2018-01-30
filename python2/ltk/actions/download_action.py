@@ -256,7 +256,7 @@ class DownloadAction(Action):
     ''' Create new target to match client input '''
     def source_to_target(self, source, target):
         new_target = []
-        for x in range(0, 2):
+        for x in range(0, 1):
             if source[x].isupper():
                 new_target.append(target[x].upper())
             else:
