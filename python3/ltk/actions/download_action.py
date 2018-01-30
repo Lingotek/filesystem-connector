@@ -229,12 +229,12 @@ class DownloadAction(Action):
                     name_parts.remove(p)
             if append_locale:
                 if base_locale:  
-                    new_target = self.source_to_target(loc_check, to_append.split('_'))
+                    new_target = self.source_to_target(loc_check, to_append.split('-'))
                     joined_target = '_'.join(new_target)
                     name_parts.insert(-1, joined_target)
                 else:
                     if loc_check:
-                        new_target = self.source_to_target(loc_check, to_append.split('_'))
+                        new_target = self.source_to_target(loc_check, to_append.split('-'))
                         joined_target = '-'.join(new_target)
                         name_parts.insert(-1, joined_target)
                     else:
@@ -256,7 +256,7 @@ class DownloadAction(Action):
     ''' Create new target to match client input '''
     def source_to_target(self, source, target):
         new_target = []
-        for x in range(0, 1):
+        for x in range(0, 2):
             if source[x].isupper():
                 new_target.append(target[x].upper())
             else:
