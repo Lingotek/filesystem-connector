@@ -225,16 +225,16 @@ class DownloadAction(Action):
                 # replace locale '_' with '-' and check against global locale
                 elif p.replace('_', '-').lower() == self.locale.lower():
                     loc_check = self.locale_check(p)
-                    base_locale = p
+                    base_locale = p.replace('_','-')
                     name_parts.remove(p)
             if append_locale:
                 if base_locale:  
-                    new_target = self.source_to_target(loc_check, to_append.split('-'))
+                    new_target = self.source_to_target(loc_check, to_append.split('_'))
                     joined_target = '_'.join(new_target)
                     name_parts.insert(-1, joined_target)
                 else:
                     if loc_check:
-                        new_target = self.source_to_target(loc_check, to_append.split('-'))
+                        new_target = self.source_to_target(loc_check, to_append.split('_'))
                         joined_target = '-'.join(new_target)
                         name_parts.insert(-1, joined_target)
                     else:
