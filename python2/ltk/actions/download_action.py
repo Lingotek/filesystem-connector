@@ -1,4 +1,6 @@
 from ltk.actions.action import *
+import json
+import re
 
 class DownloadAction(Action):
     def __init__(self, path):
@@ -92,7 +94,9 @@ class DownloadAction(Action):
                     if 'same' in self.download_option:
                         self.download_path = os.path.dirname(file_name)
                         new_path = os.path.join(self.path,os.path.join(self.download_path, downloaded_name))
-                        if not os.path.isfile(new_path) or (locale_code in new_path):
+                        new_locale = downloaded_name.split('.')[1].lower()
+                        new_locale = new_locale.replace('_', '-')
+                        if not os.path.isfile(new_path) or (locale_code in new_path) or (locale_code.lower() == new_locale):
                             self.download_path = new_path
                         else:
                             self.default_download_ext = "({0})".format(self.DOWNLOAD_NUMBER)
@@ -209,16 +213,53 @@ class DownloadAction(Action):
 
     def append_ext_to_file(self, to_append, base_name, append_locale):
         name_parts = base_name.split('.')
+        base_locale = None
+        loc_check = None
+        joined_target = None
         if len(name_parts) > 1:
+            for p in name_parts:
+                # check locale against global locale
+                if p.lower() == self.locale.lower():
+                    loc_check = self.locale_check(p)
+                    name_parts.remove(p)
+                # replace locale '_' with '-' and check against global locale
+                elif p.replace('_', '-').lower() == self.locale.lower():
+                    loc_check = self.locale_check(p)
+                    base_locale = p.replace('_','-')
+                    name_parts.remove(p)
             if append_locale:
-                name_parts.insert(-1, to_append)
+                if base_locale:  
+                    new_target = self.source_to_target(loc_check, to_append.split(to_append[2:3]))
+                    joined_target = '_'.join(new_target)
+                    name_parts.insert(-1, joined_target)
+                else:
+                    if loc_check:
+                        new_target = self.source_to_target(loc_check, to_append.split(to_append[2:3]))
+                        joined_target = '-'.join(new_target)
+                        name_parts.insert(-1, joined_target)
+                    else:
+                        name_parts.insert(-1, to_append)
             else:
                 name_parts[0] = name_parts[0] + to_append
-
             downloaded_name = '.'.join(part for part in name_parts)
-
             return downloaded_name
         else:
             downloaded_name = name_parts[0] + '.' + to_append
             self.download_path = os.path.join(self.path,os.path.join(self.download_path, downloaded_name))
             return downloaded_name
+    
+    ''' Splits locale into two parts, i.e. ['en', 'US'] '''
+    def locale_check(self, loc):
+        parts = re.split('[^a-zA-Z]', loc)
+        return parts
+
+    ''' Create new target to match client input '''
+    def source_to_target(self, source, target):
+        new_target = []
+        for x in range(0, len(source)):
+            if source[x].isupper():
+                new_target.append(target[x].upper())
+            else:
+                new_target.append(target[x].lower())
+        return new_target
+            
