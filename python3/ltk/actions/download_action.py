@@ -227,10 +227,6 @@ class DownloadAction(Action):
                     loc_check = self.locale_check(p)
                     base_locale = p.replace('_','-')
                     name_parts.remove(p)
-                elif p.lower() == self.locale.lower()[0:2]:
-                    loc_check = self.locale_check(p)
-                    base_locale = p.replace('_','-')
-                    name_parts.remove(p)
             if append_locale:
                 if base_locale:  
                     new_target = self.source_to_target(loc_check, to_append.split(to_append[2:3]))
