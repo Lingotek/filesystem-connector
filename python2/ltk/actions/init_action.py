@@ -33,8 +33,8 @@ class InitAction():
             if not access_token:
                 access_token = self.check_global(host)
                 if not access_token or reset:
-                    if 'cms' not in host and 'myaccount' not in host and 'clone' not in host:
-                        logger.info("Warning: Attempting to connect to an endpoint other than myaccount.lingotek.com or cms.lingotek.com")
+                    if 'myaccount' not in host and 'clone' not in host:
+                        logger.info("Connecting to " + host)
                     if browser:
                         from ltk.auth import run_oauth
                         access_token = run_oauth(host, client_id)
@@ -48,15 +48,18 @@ class InitAction():
 #                         username = input('Username: ')
                         # End Python 3
                         password = getpass.getpass()
-                        if 'myaccount' in host:
+                        if 'myaccount.lingotek.com' in host:
                             login_host = 'https://sso.lingotek.com'
-                        elif 'clone' in host:
+                        elif 'clone.lingotek.com' in host:
                             login_host = 'https://clonesso.lingotek.com'
-                        elif 'cms' in host:
-                            login_host = 'https://cmssso.lingotek.com'
                         else:
-                            host_env = host.split('.')[0]
-                            login_host = host_env + 'sso.lingotek.com'
+                            if (host.find('sso') != -1):
+                                host_env = host.split('sso')[0]
+                                login_host = host_env + 'sso.lingotek.com'
+                            else:
+                                host_env = host.split('.')[0]
+                                login_host = host_env + 'sso.lingotek.com'
+                            print(login_host)
                         if self.api.login(login_host, username, password):
                             retrieved_token = self.api.authenticate(login_host)
                             if retrieved_token:
