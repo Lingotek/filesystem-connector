@@ -23,7 +23,7 @@ class TestConfig(unittest.TestCase):
             self.action.config_action(locale=None, target_locales=None, remove_locales=False, append_option=None, git=False, git_credentials=False,
                 clone_option=None, locale_folder=None, workflow_id = None, download_folder=None)
             info = out.getvalue()
-            key_words = ['Host: https://cms.lingotek.com', 'Community ID', 'Locale', 'Workflow ID']
+            key_words = ['Host: https://myaccount.lingotek.com', 'Community ID', 'Locale', 'Workflow ID']
 
             assert all(word in info for word in key_words)
         finally:

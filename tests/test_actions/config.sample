@@ -1,6 +1,6 @@
 [main]
 access_token = [your access token]
-host = https://cms.lingotek.com
+host = https://myaccount.lingotek.com
 workflow_id = [your workflow id]
 default_locale = en_US
 community_id = [your community id]
