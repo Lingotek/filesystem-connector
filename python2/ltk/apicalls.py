@@ -71,7 +71,7 @@ class ApiCalls:
             if 'client_id' in query.keys(): cid = query['client_id']
             else: return None
             uri = '/dialog/authorize'
-            payload = {'redirect_uri':'https://cms.lingotek.com/tms-ui/html/portal/sso_redirect.html','response_type':'token','client_id':cid}
+            payload = {'redirect_uri':'https://myaccount.lingotek.com/tms-ui/html/portal/sso_redirect.html','response_type':'token','client_id':cid}
             # r = requests.get(host + uri, headers={'Host': 'cmssso.lingotek.com', 'Referer': 'https://cmssso.lingotek.com/login', 'Cache-Control':'max-age=0', 'Upgrade-Insecure-Requests':'1', 'Cookie':'__ctmid=58220c510010e8c8dc704410; _gat=1; _ga=GA1.2.831256021.1467748163; connect.sid=s%3AxU6QRRV9jDVSX3SeYAOElBOI1Y5HdMRK.yU%2FTgKno2PqlKGljl50dJ8HarhRUT71zT0rF6aniDvw'}, data=payload)
             # r = requests.get(host + uri, headers={'Cookie':'connect.sid=s%3Aq4dTUpbJVb8uIgbM7s2T0txtHR6qpkhE.5dFEBdjsPtlcDGgG9MO9yNQMhyrkMpJVjhLH84J2mKI'}, params=payload)
             r = requests.get(host + uri, headers={'Cookie': self.cookie}, params=payload)
@@ -89,7 +89,7 @@ class ApiCalls:
     def startup(self, host):
         try:
             uri = '/lingopoint/portal/startup.action'
-            r = requests.get(host + uri, headers={'Host':'cms.lingotek.com'})
+            r = requests.get(host + uri, headers={'Host':'myaccount.lingotek.com'})
             log_api('GET', uri, r)
         except Exception as e:
             print("startup", e)
