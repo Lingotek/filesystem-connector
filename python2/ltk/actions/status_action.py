@@ -110,11 +110,22 @@ class StatusAction(Action):
         if response.status_code != 200:
             raise_error(response.json(), 'Failed to get detailed status of document', True, doc_id, doc_name)
         try:
+            # print(response.json())
             if 'entities' in response.json():
                 for entry in response.json()['entities']:
                     curr_locale = entry['properties']['locale_code']
                     curr_progress = entry['properties']['percent_complete']
                     print ('\tlocale: {0} \t percent complete: {1}%'.format(curr_locale, curr_progress))
+                    if 'entities' in entry:
+                        for entity in entry['entities']:
+                            if entity['rel'][0] == 'phases':
+                                if 'entities' in entity:
+                                    for phase in entity['entities']:
+                                        phase_name = phase['properties']['name']
+                                        phase_order = phase['properties']['order']
+                                        phase_percent_complete = phase['properties']['percent_completed']
+                                        phase_status = phase['properties']['status']
+                                        print('\t\tPhase Name: {0} \t Phase Order: {1} \t Phase Status: {2} \t Percent Complete: {3}'.format(phase_name, phase_order, phase_status, phase_percent_complete))
                     # detailed_status[doc_id] = (curr_locale, curr_progress)
         except KeyError as e:
             log_error(self.error_file_name, e)
