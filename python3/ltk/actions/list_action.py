@@ -143,6 +143,7 @@ class ListAction(Action):
 
     def list_locales(self):
         locale_info = []
+        table = []
         response = self.api.list_locales()
         if response.status_code != 200:
             raise exceptions.RequestFailedError("Failed to get locale codes")
@@ -154,10 +155,15 @@ class ListAction(Action):
             locale_info.append((locale_code, language, country))
         for locale in sorted(locale_info):
             if not len(locale[2]):  # Arabic
-                print ("{0} ({1})".format(locale[0], locale[1]))
+                # print ("{0} ({1})".format(locale[0], locale[1]))
+                # table.append(["{0} ({1})".format(locale[0], locale[1])])
+                table.append(["{0}".format(locale[0]), "({0})".format(locale[1])])
+                # print(tabulate(["{0} ({1})".format(locale[0], locale[1])]))
             else:
-                print ("{0} ({1}, {2})".format(locale[0], locale[1], locale[2]))
-
+                # print ("{0} ({1}, {2})".format(locale[0], locale[1], locale[2]))
+                table.append(["{0}".format(locale[0]), "({0}, {1})".format(locale[1], locale[2])])
+                # print(tabulate("{0} ({1}, {2})".format(locale[0], locale[1], locale[2])))
+        print(tabulate(table))
     def list_remote(self):
         """ lists ids of all remote documents """
         response = self.api.list_documents(self.project_id)
