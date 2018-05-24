@@ -116,7 +116,7 @@ class StatusAction(Action):
                 for entry in response.json()['entities']:
                     curr_locale = entry['properties']['locale_code']
                     curr_progress = entry['properties']['percent_complete']
-                    print ('\tlocale: {0} \t percent complete: {1}%'.format(curr_locale, curr_progress))
+                    # print ('\tlocale: {0} \t percent complete: {1}%'.format(curr_locale, curr_progress))
                     if 'entities' in entry:
                         for entity in entry['entities']:
                             if entity['rel'][0] == 'phases':
@@ -127,10 +127,13 @@ class StatusAction(Action):
                                         phase_order = phase['properties']['order']
                                         phase_percent_complete = phase['properties']['percent_completed']
                                         phase_status = phase['properties']['status']
-                                        table.append({"Phase": str(phase_order), "Name": phase_name, "Status": phase_status, "Percent Complete": str(phase_percent_complete) + '%'})
+                                        table.append({"Phase": str(phase_order), "Name": phase_name, "Status": phase_status, "Phase Percent Complete": str(phase_percent_complete) + '%'})
                                     table.sort(key=lambda x: x['Phase'])
                                     print('\n')
+                                    print('Locale: {0} \t Total Percent Complete: {1}% \n'.format(curr_locale, curr_progress))
+                                    # print('Locale: {0} \n'.format(curr_locale))
                                     print(tabulate(table, headers="keys"))
+                                    
                     # detailed_status[doc_id] = (curr_locale, curr_progress)
         except KeyError as e:
             log_error(self.error_file_name, e)

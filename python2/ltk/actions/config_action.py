@@ -1,4 +1,5 @@
 from ltk.actions.action import *
+from tabulate import tabulate
 
 class ConfigAction(Action):
     def __init__(self, path):
@@ -76,10 +77,27 @@ class ConfigAction(Action):
             if str(watch_locales) == "[]" or not watch_locales:
                 watch_locales = "None"
 
-            print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity ID: {4}\nWorkflow ID: {5}\n'
+            """ print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity ID: {4}\nWorkflow ID: {5}\n'
                 'Default Source Locale: {6}\nClone Option: {7}\nAuto Format: {8}\nDownload Folder: {9}\nTarget Locales: {10}\nTarget Locale Folders: {11}\nGit Auto-commit: {12}\nAppend Option: {13}'.format(
                 self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.clone_option, self.auto_format_option,
-                download_dir, watch_locales, locale_folders_str, git_output, self.append_option))
+                download_dir, watch_locales, locale_folders_str, git_output, self.append_option)) """
+            table = [
+                ["Host", self.host], 
+                ["Lingotek Project", '{0} ({1})'.format(self.project_id, self.project_name)],
+                ["Local Project Path", self.path],
+                ["Community ID", self.community_id],
+                ["Workflow ID", self.workflow_id],
+                ["Default Source Locale", self.locale],
+                ["Clone Option", self.clone_option],
+                ["Auto Format", self.auto_format_option],
+                ["Download Folder", self.download_dir],
+                ["Target Locales", self.watch_locales],
+                ["Target Locale Folders", locale_folders_str],
+                ["Git Auto-commit", git_output],
+                ["Append Option", self.append_option]
+            ]
+            print("Configuration Options")
+            print(tabulate(table))
         self.print_config = True
 
     def remove_locales(self, clear_locales):
