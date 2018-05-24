@@ -73,12 +73,16 @@ class ListAction(Action):
             """ lists ids of list_type specified """
             folders = self.folder_manager.get_file_names()
             if len(folders):
-                underline("Folder path")
+                # underline("Folder path")
+                table = []
                 for folder in folders:
                     if title:
-                        print(folder)
+                        table.append({"Folder Path": folder})
+                        # print(folder)
                     else:
-                        print(self.get_relative_path(folder))
+                        # print(self.get_relative_path(folder))
+                        table.append({"Folder Path": self.get_relative_path(folder)})
+                print(tabulate(table, headers="keys"))
                 if hide_docs:
                     return
                 print("")
