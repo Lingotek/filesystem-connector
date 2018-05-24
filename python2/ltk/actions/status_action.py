@@ -1,4 +1,5 @@
 from ltk.actions.action import *
+from tabulate import tabulate
 
 class StatusAction(Action):
     def __init__(self, path):
@@ -120,12 +121,16 @@ class StatusAction(Action):
                         for entity in entry['entities']:
                             if entity['rel'][0] == 'phases':
                                 if 'entities' in entity:
+                                    table = []
                                     for phase in entity['entities']:
                                         phase_name = phase['properties']['name']
                                         phase_order = phase['properties']['order']
                                         phase_percent_complete = phase['properties']['percent_completed']
                                         phase_status = phase['properties']['status']
-                                        print('\t\tPhase Name: {0} \t Phase Order: {1} \t Phase Status: {2} \t Percent Complete: {3}'.format(phase_name, phase_order, phase_status, phase_percent_complete))
+                                        table.append({"Phase": str(phase_order), "Name": phase_name, "Status": phase_status, "Percent Complete": str(phase_percent_complete) + '%'})
+                                    table.sort(key=lambda x: x['Phase'])
+                                    print('\n')
+                                    print(tabulate(table, headers="keys"))
                     # detailed_status[doc_id] = (curr_locale, curr_progress)
         except KeyError as e:
             log_error(self.error_file_name, e)
