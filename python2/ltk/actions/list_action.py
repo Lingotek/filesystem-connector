@@ -130,7 +130,7 @@ class ListAction(Action):
                 table.append({
                     "Filename": title,
                     "Lingotek ID": str(ids[i]),
-                    "Locales": ', '.join([str(x) for x in locales[i]])
+                    "Locales": ', '.join([str(x).replace('_', '-') for x in locales[i]])
                 })
             print(tabulate(table, headers="keys"))
                 # print (info)

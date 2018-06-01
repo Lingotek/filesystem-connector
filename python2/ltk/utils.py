@@ -108,8 +108,8 @@ def is_valid_locale(api, locale):
     for entry in locale_json:
         valid_locales.append(locale_json[entry]['locale'])
     locales = []
-    locale = locale.replace("-","_")
-    if remote_check and locale not in valid_locales or not remote_check and not locale in locale_list:
+    check_locale = locale.replace("-","_")
+    if remote_check and check_locale not in valid_locales or not remote_check and not check_locale in locale_list:
         return False
     else:
         return True
