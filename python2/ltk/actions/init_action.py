@@ -604,7 +604,7 @@ class InitAction():
 
             if(user_input == 'none' or user_input == ''):
                 logger.info("Set target locales to: None\n")
-                return "None"
+                return ""
             elif(len(locales) > 0):
                 logger.info("Set target locales to: {0}\n".format(', '.join(locales)))
                 return ','.join(locales)
