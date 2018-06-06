@@ -92,7 +92,7 @@ class ConfigAction(Action):
                 ["Target Locales", list(self.watch_locales)],
                 ["Target Locale Folders", locale_folders_str],
                 ["Git Auto-commit", git_output],
-                ["Append Option", self.append_option]
+                ["Append Option", self.append_option.title()]
             ]
             print("Configuration Options")
             print(tabulate(table))
