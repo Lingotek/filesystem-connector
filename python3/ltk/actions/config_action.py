@@ -1,4 +1,5 @@
 from ltk.actions.action import *
+from tabulate import tabulate
 
 class ConfigAction(Action):
     def __init__(self, path):
@@ -72,14 +73,29 @@ class ConfigAction(Action):
             for locale in self.watch_locales:
                 watch_locales.add(locale.replace('_','-'))
             watch_locales = ','.join(target for target in watch_locales)
-
             if str(watch_locales) == "[]" or not watch_locales:
                 watch_locales = "None"
-
-            print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity ID: {4}\nWorkflow ID: {5}\n'
+            """ print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity ID: {4}\nWorkflow ID: {5}\n'
                 'Default Source Locale: {6}\nClone Option: {7}\nAuto Format: {8}\nDownload Folder: {9}\nTarget Locales: {10}\nTarget Locale Folders: {11}\nGit Auto-commit: {12}\nAppend Option: {13}'.format(
                 self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.clone_option, self.auto_format_option,
-                download_dir, watch_locales, locale_folders_str, git_output, self.append_option))
+                download_dir, watch_locales, locale_folders_str, git_output, self.append_option)) """
+            table = [
+                ["Host", self.host], 
+                ["Lingotek Project", '{0} ({1})'.format(self.project_id, self.project_name)],
+                ["Local Project Path", self.path],
+                ["Community ID", self.community_id],
+                ["Workflow ID", self.workflow_id],
+                ["Default Source Locale", self.locale],
+                ["Clone Option", self.clone_option],
+                ["Auto Format", self.auto_format_option],
+                ["Download Folder", self.download_dir],
+                ["Target Locales", list(self.watch_locales)],
+                ["Target Locale Folders", locale_folders_str],
+                ["Git Auto-commit", git_output],
+                ["Append Option", self.append_option.title()]
+            ]
+            print("Configuration Options")
+            print(tabulate(table))
         self.print_config = True
 
     def remove_locales(self, clear_locales):
@@ -285,6 +301,7 @@ class ConfigAction(Action):
 
     def set_target_locales(self, target_locales):
         locales = []
+        print(target_locales)
         for locale in target_locales:
             locales.extend(locale.split(','))
         if len(locales) > 0 and (locales[0].lower() == 'none' or locales[0].lower() == '--none'):
@@ -294,7 +311,7 @@ class ConfigAction(Action):
             target_locales = get_valid_locales(self.api,locales)
             target_locales_str = ','.join(target for target in target_locales)
             if len(target_locales_str) > 0:
-                log_info = 'Set target locales to {}'.format(target_locales_str)
+                log_info = 'Set target locales to {0}'.format(target_locales_str)
                 self.update_config_file('watch_locales', target_locales_str, self.conf_parser, self.config_file_name, log_info)
                 self.watch_locales = target_locales
 

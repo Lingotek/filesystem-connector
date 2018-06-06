@@ -20,6 +20,7 @@ from ltk.constants import CONF_DIR, CONF_FN, SYSTEM_FILE, ERROR_FN
 import json
 from ltk.logger import logger
 from ltk.git_auto import Git_Auto
+from tabulate import tabulate
 
 class Action:
     def __init__(self, path, watch=False, timeout=60):
@@ -457,12 +458,18 @@ def choice_mapper(info):
         if entry[0] and entry[1]:
             mapper[index] = {entry[0]: entry[1]}
             index += 1
+    table = []
     for k,v in mapper.items():
         try:
             for values in v:
-                print ('({0}) {1} ({2})'.format(k, v[values], values))
+                table.append({
+                    "ID": k,
+                    "Name": v[values],
+                    "UUID": values
+                })
         except UnicodeEncodeError:
             continue
+    print(tabulate(table, headers="keys"))
     return mapper
 
 def find_conf(curr_path):
