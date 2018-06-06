@@ -43,7 +43,6 @@ class ListAction(Action):
                 "Title": title
             })
         print(tabulate(table, headers="keys"))
-            # print ('{0}  {1}  {2}{3}'.format(filter_id, upload_date, title, is_public))
 
     def list_formats(self):
         format_info = self.api.get_document_formats()
@@ -60,11 +59,8 @@ class ListAction(Action):
             format_list[key].append(extension)
 
         print("Lingotek Cloud accepts content using any of the formats listed below. File formats will be auto-detected for the extensions as specified below. Alternatively, formats may be specified explicitly upon add. Lingotek supports variations and customizations on these formats with filters.\n")
-        # print('%-30s' % "Format" + '%s' % "Auto-detected File Extensions")
-        # print("-----------------------------------------------------------")
         table = []
         for k,v in sorted(format_list.items()):
-            # print('%-30s' % k + '%s' % ' '.join(v))
             table.append({"Format": k, "Auto-detected File Extensions": ' | '.join([str(x) for x in v])})
         print(tabulate(table, headers="keys"))
         
@@ -78,9 +74,7 @@ class ListAction(Action):
                 for folder in folders:
                     if title:
                         table.append({"Folder Path": folder})
-                        # print(folder)
                     else:
-                        # print(self.get_relative_path(folder))
                         table.append({"Folder Path": self.get_relative_path(folder)})
                 print(tabulate(table, headers="keys"))
                 if hide_docs:
@@ -102,7 +96,6 @@ class ListAction(Action):
                         name = entry['name']
                     else:
                         name = self.get_relative_path(self.norm_path(entry['file_name']))
-                        # print("relative path: "+name)
                     if len(name) > max_length:
                         max_length = len(name)
                     titles.append(name)
@@ -118,13 +111,11 @@ class ListAction(Action):
                 return
             if max_length > 90:
                 max_length = 90
-            # underline('%-*s' % (max_length,'Filename') + ' %-38s' % 'Lingotek ID' + 'Locales')
             table = []
             for i in range(len(ids)):
                 title = titles[i]
                 if len(title) > max_length:
                     title = title[(len(titles[i])-30):]
-                # info = '%-*s' % (max_length,title) + ' %-38s' % ids[i] + ', '.join(locale.replace('_','-') for locale in locales[i])
                 for locale in locales[i]:
                     locale.replace('_', '-')
                 table.append({
@@ -133,7 +124,6 @@ class ListAction(Action):
                     "Locales": ', '.join([str(x).replace('_', '-') for x in locales[i]])
                 })
             print(tabulate(table, headers="keys"))
-                # print (info)
         except Exception as e:
             log_error(self.error_file_name, e)
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
@@ -155,14 +145,9 @@ class ListAction(Action):
             locale_info.append((locale_code, language, country))
         for locale in sorted(locale_info):
             if not len(locale[2]):  # Arabic
-                # print ("{0} ({1})".format(locale[0], locale[1]))
-                # table.append(["{0} ({1})".format(locale[0], locale[1])])
                 table.append(["{0}".format(locale[0]), "({0})".format(locale[1])])
-                # print(tabulate(["{0} ({1})".format(locale[0], locale[1])]))
             else:
-                # print ("{0} ({1}, {2})".format(locale[0], locale[1], locale[2]))
                 table.append(["{0}".format(locale[0]), "({0}, {1})".format(locale[1], locale[2])])
-                # print(tabulate("{0} ({1}, {2})".format(locale[0], locale[1], locale[2])))
         print(tabulate(table))
     def list_remote(self):
         """ lists ids of all remote documents """
@@ -176,15 +161,12 @@ class ListAction(Action):
             else:
                 raise_error("", "Failed to get status of documents", True)
         else:
-            # print ('Remote documents:\nID \t \t \t \t \t Document name')
             table = []
             for entry in response.json()['entities']:
                 title = entry['properties']['title']
                 id = entry['properties']['id']
                 table.append({"ID": id, "Document Name": title})
             print(tabulate(table, headers="keys"))
-                # info = '{id} \t {title}'.format(id=id, title=title)
-                # print (info)
 
     def list_workflows(self):
         try:
@@ -195,10 +177,6 @@ class ListAction(Action):
             if not ids:
                 print ('No workflows')
                 return
-            # print ('Workflows: id, title')
             print(tabulate({"ID": ids, "Workflow Name": titles}, headers="keys"))
-            # for i in range(len(ids)):
-            #     info = '{id} \t {title}'.format(id=ids[i], title=titles[i])
-            #     print (info)
         except:
             logger.error("An error occurred while attempting to connect to remote.")

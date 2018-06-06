@@ -163,26 +163,6 @@ class InitAction():
                             project_id, project_name = self.create_new_project(folder_name, community_id, workflow_id)
                             config_parser.set('main', 'project_id', project_id)
                             config_parser.set('main', 'project_name', project_name)
-                        
-                        # while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-                        #     prompt_message = 'Select Project ID [create new]: '
-                        #     # Python 2
-                            confirm = raw_input(prompt_message)
-                        #     # End Python 2
-                        #     # Python 3
-#                         #     confirm = input(prompt_message)
-                        #     # End Python 3
-                        # if not confirm or not confirm in ['n', 'N', 'no', 'No']:
-                        #     project_id, project_name = self.display_choice('project', project_info)
-                        #     if project_id != None:
-                        #         config_parser.set('main', 'project_id', project_id)
-                        #         if project_name != None:
-                        #             config_parser.set('main', 'project_name', project_name)
-
-                        # if not project_id:
-                        #     project_id, project_name = self.create_new_project(folder_name, community_id, workflow_id)
-                        #     config_parser.set('main', 'project_id', project_id)
-                        #     config_parser.set('main', 'project_name', project_name)
 
                     except KeyboardInterrupt:
                         # Python 2
@@ -297,8 +277,6 @@ class InitAction():
             prompt_message = 'Select Lingotek Community ID: '
         elif display_type == 'project':
             prompt_message = 'Select Project ID [create new]: '
-        # elif display_type == 'workflow':
-        #     prompt_message = ''
         elif display_type == 'append option':
             prompt_message = 'Which append option should be used? '
         else:

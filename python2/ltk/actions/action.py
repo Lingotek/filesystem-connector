@@ -467,7 +467,6 @@ def choice_mapper(info):
                     "Name": v[values],
                     "UUID": values
                 })
-                # print ('({0}) {1} ({2})'.format(k, v[values], values))
         except UnicodeEncodeError:
             continue
     print(tabulate(table, headers="keys"))
