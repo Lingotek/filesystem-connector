@@ -40,7 +40,7 @@ class Action:
         self.git_autocommit = None
         self.git_username = ''
         self.git_password = ''
-        self.append_option = 'none'
+        self.append_option = 'None'
         self.locale_folders = {}
         if not self._is_initialized():
             raise exceptions.UninitializedError("This project is not initialized. Please run init command.")
@@ -134,7 +134,7 @@ class Action:
             if conf_parser.has_option('main', 'append_option'):
                 self.append_option = conf_parser.get('main', 'append_option')
             else:
-                self.append_option = 'none'
+                self.append_option = 'None'
                 self.update_config_file('append_option', self.append_option, conf_parser, config_file_name, "")
         except NoOptionError as e:
             if not self.project_name:
