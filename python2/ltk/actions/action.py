@@ -469,7 +469,7 @@ def choice_mapper(info):
                 })
         except UnicodeEncodeError:
             continue
-    print(tabulate(table, headers="keys"))
+    print(tabulate(table, headers="keys"), "\n")
     return mapper
 
 def find_conf(curr_path):
