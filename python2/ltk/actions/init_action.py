@@ -19,7 +19,7 @@ class InitAction():
         #Action.__init__(self, path)
 
     def init_action(self, host, access_token, client_id, project_path, folder_name, workflow_id, default_locale, browser, delete, reset):
-
+        # Tabulate is used to help create the tables on the init
         client_id = 'ab33b8b9-4c01-43bd-a209-b59f933e4fc4' if not client_id else client_id
         try:
             # check if Lingotek directory already exists
