@@ -80,17 +80,17 @@ class AddAction(Action):
 
                             # confirm if would like to overwrite existing document in Lingotek Cloud
                             if not confirm or confirm in ['n', 'N']:
-                                logger.info('Will not overwrite document \'{0}\' in Lingotek Cloud'.format(title))
+                                logger.info('Will not overwrite document \'{0}\' in Lingotek Cloud\n'.format(title))
                                 continue
                             else:
-                                logger.info('Overwriting document \'{0}\' in Lingotek Cloud...'.format(title))
+                                logger.info('Overwriting document \'{0}\' in Lingotek Cloud...\n'.format(title))
                                 self.update_document_action(file_name, title, **kwargs)
                                 continue
                         except KeyboardInterrupt:
                             logger.error("Canceled adding the document")
                             return
                     else:
-                        logger.error("This document has already been added: {0}".format(title))
+                        logger.error("This document has already been added: {0}\n".format(title))
                         continue
             except json.decoder.JSONDecodeError:
                 logger.error("JSON error on adding document.")
@@ -116,24 +116,24 @@ class AddAction(Action):
             # add document to Lingotek cloud
             response = self.api.add_document(locale, file_name, self.project_id, self.append_location(title, file_name), **kwargs)
             if response.status_code != 202:
-                raise_error(response.json(), "Failed to add document {0}".format(title), True)
+                raise_error(response.json(), "Failed to add document {0}\n".format(title), True)
             else:
                 title = self.append_location(title, file_name)
-                logger.info('Added document {0} with ID {1}'.format(title,response.json()['properties']['id']))
+                logger.info('Added document {0} with ID {1}\n'.format(title,response.json()['properties']['id']))
                 relative_path = self.norm_path(file_name)
 
                 # add document to the db
                 self._add_document(relative_path, title, response.json()['properties']['id'])
 
         except KeyboardInterrupt:
-            raise_error("", "Canceled adding document")
+            raise_error("", "Canceled adding document\n")
 
         except Exception as e:
             log_error(self.error_file_name, e)
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
-                logger.error("Error connecting to Lingotek's TMS")
+                logger.error("Error connecting to Lingotek's TMS\n")
             else:
-                logger.error("Error on adding document "+str(file_name)+": "+str(e))
+                logger.error("Error on adding document \n"+str(file_name)+": "+str(e))
 
     def is_hidden_file(self, file_path):
         # todo more robust checking for OSX files that doesn't start with '.'
@@ -163,10 +163,10 @@ class AddAction(Action):
                         self.folder_manager.add_folder(self.norm_path(pattern.rstrip(os.sep)))
                         logger.info("Added folder "+str(pattern))
                     else:
-                        logger.warning("Folder "+str(pattern)+" has already been added.")
+                        logger.warning("Folder "+str(pattern)+" has already been added.\n")
                     added_folder = True
             else:
-                logger.warning("Path \""+str(pattern)+"\" doesn't exist.")
+                logger.warning("Path \""+str(pattern)+"\" doesn't exist.\n")
 
         return added_folder
 

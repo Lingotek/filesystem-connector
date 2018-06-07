@@ -51,12 +51,12 @@ class Git_Auto:
 		self.repo_is_defined = True
 
 	def add_file(self, file_name):
-		if not self.repo_is_defined:
+		if self.repo_is_defined:
 			if(self.repo_exists()):
 				self.repo.git.add(file_name)
 
 	def commit(self, message):
-		if not self.repo_is_defined:
+		if self.repo_is_defined:
 			if(self.repo_exists()):
 				message.rstrip(' ')
 				self.repo.index.commit(message)

@@ -124,7 +124,7 @@ def ltk(is_quiet, verbosity_lvl):
 @ltk.command()
 @click.option('--access_token', help='Your access token')
 @click.option('--host', default='myaccount.lingotek.com', # type=click.Choice(['myaccount.lingotek.com', 'cms.lingotek.com', 'clone.lingotek.com']),
-              help='Environment: myaccount for production, cms for sandbox; the default is production')
+              help='Default environment: myaccount.lingotek.com')
 @click.option('--client_id', help='This is an advanced option that should only be used for clients that have been issued a specified client_id for analytics')
 @click.option('--path', type=click.Path(exists=True),
               help='The path to the project directory to be initialized; defaults to the current directory')
@@ -362,6 +362,7 @@ def download(auto_format, locales, locale_ext, no_ext, xliff, file_names):
 
         for name in file_names:
             action.download_by_path(name, locales, locale_ext, no_ext, auto_format, xliff)
+            print("\n")
 
     except (UninitializedError, ResourceNotFound, RequestFailedError) as e:
         print_log(e)
@@ -399,7 +400,7 @@ def pull(auto_format, locale_ext, no_ext, locales):
 @click.option('-a', '--all', flag_value=True, help='Delete all documents from Lingotek Cloud that are found locally')
 @click.option('-l', '--local', flag_value=True, help='Delete all documents locally, but not from the Lingotek Cloud. Can be used in association with --name to delete a specified document locally')
 @click.option('-r', '--remote', flag_value=True, help='Deletes specified documents from Lingotek Cloud for the current project')
-@click.option('-f', '--force', flag_value=True, help='Delete both local and remote documents')
+@click.option('-f', '--force', flag_value=True, help='Delete both local and remote source documents')
 def rm(file_names, **kwargs):
     """
     Disassociates local doc(s) from Lingotek Cloud and deletes the remote copy.

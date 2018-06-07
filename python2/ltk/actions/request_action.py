@@ -109,24 +109,22 @@ class RequestAction(Action):
                             response_message = response_message.replace(self.document_id, self.document_name + ' (' + self.document_id + ')')
                             response_message = response_message.replace('.', ' ')
                             response_message = response_message + 'for document ' + self.document_name
-                            print(response_message)
+                            print(response_message + "\n")
+                            
                             if 'not found' in response_message:
                                 return
                         else:
-                            raise_error(response.json(), '{message} {locale} for document {name}'.format(message=self.failure_message, locale=locale, name=self.document_name), True)
+                            raise_error(response.json(), '{message} {locale} for document {name}\n'.format(message=self.failure_message, locale=locale, name=self.document_name), True)
                         if not 'already exists' in response_message:
                             self.change_db_entry = False
                         # self.update_doc_locales(document_id)
                         continue
-                    logger.info('{message} {locale} for document {name}'.format(message=self.info_message,
-                                                                                locale=locale, name=self.document_name))
+                    logger.info('{message} {locale} for document {name}\n'.format(message=self.info_message, locale=locale, name=self.document_name))
             remote_locales = self.get_doc_locales(self.document_id, self.document_name) # Get locales from Lingotek Cloud
             locales_to_add = []
             existing_locales = []
             if 'locales' in entry and entry['locales']:
-                print("existing")
                 existing_locales = entry['locales']
-                print(existing_locales)
             if self.change_db_entry:
                 # Make sure that the locales that were just added are added to the database as well as the previous remote locales (since they were only just recently added to Lingotek's system)
                 if self.to_delete and self.entered_locales:

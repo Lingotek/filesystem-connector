@@ -33,13 +33,22 @@ class DocumentManager:
     def is_doc_new(self, file_name, root_path=None):
         if root_path != None:
             config = ConfigParser()
-            config.read( root_path + "/.ltk/config")
-            download_folder = config.get('main','download_folder')
-            locale_folders = config.get('main','locale_folders')
-            locale_folders = json.loads(locale_folders)
+            try:
+                config.read( root_path + "/.ltk/config")
+                download_folder = config.get('main','download_folder')
+                locale_folders = config.get('main','locale_folders')
+                locale_folders = json.loads(locale_folders)
+            except NoSectionError as e:
+                return False
             #if doc is in the user specified download folder return false
             download_is_watched = False
-            if file_name[:len(download_folder)] == download_folder and download_folder is not "":
+
+            ### Conditions the if statement is checking:
+            #       Is the file_name and download folder the same location? (Not good)
+            #       Make sure download folder is not the empty string in the case that the first check passes
+            #       Is the file name inside of the download folder (it's in a sub-folder of the download folder)? (That's okay)
+            ###
+            if file_name[:len(download_folder)] == download_folder and download_folder is not "" and len(file_name) < len(download_folder) :
                 with open(root_path + '/.ltk/folders.json') as json_data:
                     folders_json = json.load(json_data)
                 folders = folders_json['_default']

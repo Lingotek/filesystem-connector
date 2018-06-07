@@ -19,7 +19,7 @@ class InitAction():
         #Action.__init__(self, path)
 
     def init_action(self, host, access_token, client_id, project_path, folder_name, workflow_id, default_locale, browser, delete, reset):
-
+        # Tabulate is used to help create the tables on the init
         client_id = 'ab33b8b9-4c01-43bd-a209-b59f933e4fc4' if not client_id else client_id
         try:
             # check if Lingotek directory already exists
@@ -33,34 +33,40 @@ class InitAction():
             if not access_token:
                 access_token = self.check_global(host)
                 if not access_token or reset:
-                    if 'cms' not in host and 'myaccount' not in host and 'clone' not in host:
-                        logger.info("Warning: Attempting to connect to an endpoint other than myaccount.lingotek.com or cms.lingotek.com")
+                    if 'myaccount' not in host and 'clone' not in host:
+                        logger.info("Connecting to " + host)
                     if browser:
                         from ltk.auth import run_oauth
                         access_token = run_oauth(host, client_id)
                         ran_oauth = True
                     else:
+                        logger.info('---------------------------')
+                        logger.info('CONNECT TO LINGOTEK')
+                        logger.info('---------------------------')
                         self.api = ApiCalls(host, '')
                         # Python 2
                         # username = raw_input('Username: ')
                         # End Python 2
                         # Python 3
-                        username = input('Username: ')
+                        username = input('Lingotek Username: ')
                         # End Python 3
                         password = getpass.getpass()
-                        if 'myaccount' in host:
+                        if 'myaccount.lingotek.com' in host:
                             login_host = 'https://sso.lingotek.com'
-                        elif 'clone' in host:
+                        elif 'clone.lingotek.com' in host:
                             login_host = 'https://clonesso.lingotek.com'
-                        elif 'cms' in host:
-                            login_host = 'https://cmssso.lingotek.com'
                         else:
-                            host_env = host.split('.')[0]
-                            login_host = host_env + 'sso.lingotek.com'
+                            if (host.find('sso') != -1):
+                                host_env = host.split('sso')[0]
+                                login_host = host_env + 'sso.lingotek.com'
+                            else:
+                                host_env = host.split('.')[0]
+                                login_host = host_env + 'sso.lingotek.com'
+                            print(login_host)
                         if self.api.login(login_host, username, password):
                             retrieved_token = self.api.authenticate(login_host)
                             if retrieved_token:
-                                print('Authentication successful')
+                                print('\nAuthentication successful\n')
                                 access_token = retrieved_token
                                 ran_oauth = True
                         if not ran_oauth:
@@ -99,7 +105,7 @@ class InitAction():
                 print(e.errno)
                 print(e)
 
-            logger.info('Initializing project...')
+            logger.info('Initializing project...\n')
             config_file_name = os.path.join(project_path, CONF_DIR, CONF_FN)
             # create the config file and add info
             config_file = open(config_file_name, 'w')
@@ -109,7 +115,9 @@ class InitAction():
             config_parser.set('main', 'access_token', access_token)
             config_parser.set('main', 'host', host)
             # config_parser.set('main', 'root_path', project_path)
-
+            logger.info('---------------------------')
+            logger.info('SELECT LINGOTEK COMMUNITY')
+            logger.info('---------------------------')
             # get community id
             community_info = self.api.get_communities_info()
             if not community_info:
@@ -146,21 +154,11 @@ class InitAction():
                     project_name = None
                     confirm = 'none'
                     try:
-                        while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-                            prompt_message = 'Would you like to use an existing Lingotek project? [Y/n]: '
-                            # Python 2
-                            # confirm = raw_input(prompt_message)
-                            # End Python 2
-                            # Python 3
-                            confirm = input(prompt_message)
-                            # End Python 3
-                        if not confirm or not confirm in ['n', 'N', 'no', 'No']:
-                            project_id, project_name = self.display_choice('project', project_info)
-                            if project_id != None:
-                                config_parser.set('main', 'project_id', project_id)
-                                if project_name != None:
-                                    config_parser.set('main', 'project_name', project_name)
-
+                        project_id, project_name = self.display_choice('project', project_info)
+                        if project_id != None:
+                            config_parser.set('main', 'project_id', project_id)
+                            if project_name != None:
+                                config_parser.set('main', 'project_name', project_name)
                         if not project_id:
                             project_id, project_name = self.create_new_project(folder_name, community_id, workflow_id)
                             config_parser.set('main', 'project_id', project_id)
@@ -176,13 +174,18 @@ class InitAction():
                         return
 
                 # get workflow
+                logger.info('---------------------------')
+                logger.info('SELECT TRANSLATION WORKFLOW')
+                logger.info('---------------------------')
                 workflow_id, workflow_updated = self.set_workflow(community_id, project_id)
                 if(workflow_updated):
                     self.api.patch_project(project_id, workflow_id)
-
                 config_parser.set('main', 'workflow_id', workflow_id)
 
                 # print out locale codes
+                logger.info('---------------------------')
+                logger.info('SET SOURCE LANGUAGE')
+                logger.info('---------------------------')
                 self.locale_info = self.print_locale_codes()
 
                 # get source locale
@@ -269,42 +272,48 @@ class InitAction():
 
         return None
 
-    def display_choice(self, display_type, info):
+    def display_choice(self, display_type, info, w_id='Project Default'):
         if display_type == 'community':
-            prompt_message = 'Which community should this project belong to? '
+            prompt_message = 'Select Lingotek Community ID: '
         elif display_type == 'project':
-            prompt_message = 'Which existing project should be used? '
-        elif display_type == 'workflow':
-            prompt_message = 'Which workflow should be used? '
+            prompt_message = 'Select Project ID [create new]: '
         elif display_type == 'append option':
             prompt_message = 'Which append option should be used? '
         else:
             raise exceptions.ResourceNotFound("Cannot display info asked for")
         mapper = choice_mapper(info)
         choice = 'none-chosen'
-        while choice not in mapper:
-            try:
-                # Python 2
-                # choice = raw_input(prompt_message)
-                # End Python 2
-                # Python 3
-                choice = input(prompt_message)
-                # End Python 3
-            except KeyboardInterrupt:
-                # Python 2
-                # logger.info("\nInit canceled")
-                # End Python 2
-                # Python 3
-                logger.error("\nInit canceled")
-                # End Python 3
-                #testing
-                return None, None
-                #end testing
-            try:
-                choice = int(choice)
-            except ValueError:
-                print("That's not a valid option!")
+        if display_type != 'workflow':
+            while choice not in mapper:
+                try:
+                    # Python 2
+                    # choice = raw_input(prompt_message)
+                    # End Python 2
+                    # Python 3
+                    choice = input(prompt_message)
+                    # End Python 3
+                except KeyboardInterrupt:
+                    # Python 2
+                    # logger.info("\nInit canceled")
+                    # End Python 2
+                    # Python 3
+                    logger.error("\nInit canceled")
+                    # End Python 3
+                    #testing
+                    return None, None
+                    #end testing
+                try:
+                    if display_type == 'project':
+                        if choice == '':
+                            return None, None
+                        else:
+                            choice = int(choice)
+                    else:
+                        choice = int(choice)
+                except ValueError:
+                    print("That's not a valid option!")
         for v in mapper[choice]:
+            print(v)
             logger.info('\nSelected "{0}" {1}.\n'.format(mapper[choice][v], display_type))
             return v, mapper[choice][v]
 
@@ -432,7 +441,6 @@ class InitAction():
     def set_workflow(self, community_id, project_id):
         response = self.api.get_project(project_id)
         workflow_id = response.json()['properties']['workflow_id']
-
         response = self.api.list_workflows(community_id)
         workflows = response.json()['entities']
         workflow_info = {}
@@ -443,19 +451,41 @@ class InitAction():
         if len(workflow_info) > 0:
             confirm = 'none'
             try:
-                while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-                    prompt_message = 'Use the current project workflow? [Y/n]: '
+
+                workflow_info[workflow_id] = 'Project Default'
+                mapper = choice_mapper(workflow_info)
+                choice = 'none-chosen'
+                prompt_message = 'Select workflow ID [Project Default]: '
+                try:
                     # Python 2
-                    # confirm = raw_input(prompt_message)
+                    # choice = raw_input(prompt_message)
                     # End Python 2
                     # Python 3
-                    confirm = input(prompt_message)
+                    choice = input(prompt_message)
                     # End Python 3
-                if confirm in ['n', 'N', 'no', 'No']:
-                    workflow_id, workflow_name = self.display_choice('workflow', workflow_info)
-                    return workflow_id, True
-                else:
-                    logger.info("Using default workflow\n")
+                except KeyboardInterrupt:
+                    # Python 2
+                    # logger.info("\nInit canceled")
+                    # End Python 2
+                    # Python 3
+                    logger.error("\nInit canceled")
+                    # End Python 3
+                try:
+                    if choice == '':
+                        for x in workflow_info:
+                            if x == workflow_id:
+                                workflow_id, workflow_name = x, 'Project Default'
+                        logger.info('\nSelected "{0}" {1}.\n'.format(workflow_name, 'workflow'))
+                        return workflow_id, False 
+                    else:
+                        choice = int(choice)
+                        for v in mapper[choice]:
+                            print(v)
+                            logger.info('\nSelected "{0}" {1}.\n'.format(mapper[choice][v], 'workflow'))   
+                            workflow_id, workflow_name = v, mapper[choice][v]
+                            return workflow_id, True
+                except ValueError:
+                    print('Not a valid option') 
             except KeyboardInterrupt:
                 # Python 2
                 # logger.info("\nInit canceled")
@@ -463,9 +493,7 @@ class InitAction():
                 # Python 3
                 logger.error("\nInit canceled")
                 # End Python 3
-                return
-
-        return workflow_id, False
+                return         
 
     def print_locale_codes(self):
         locale_info = []
@@ -482,12 +510,15 @@ class InitAction():
             locale_dict[locale_code] = (language, country),
 
         locale_info = sorted(locale_info)
+        table = []
         for locale in locale_info:
             if not len(locale[2]):  # Arabic
-                print ("{0} ({1})".format(locale[0], locale[1]))
+                # print ("{0} ({1})".format(locale[0], locale[1]))
+                table.append(["{0}".format(locale[0]), "{0}".format(locale[1])])
             else:
-                print ("{0} ({1}, {2})".format(locale[0], locale[1], locale[2]))
-
+                # print ("{0} ({1}, {2})".format(locale[0], locale[1], locale[2]))
+                table.append(["{0}".format(locale[0]), "{0}, {1}".format(locale[1], locale[2])])
+        print(tabulate(table, headers=["Code", "Locale Name"]))
         return locale_dict
 
     def set_source_locale(self):
@@ -551,7 +582,7 @@ class InitAction():
 
             if(user_input == 'none' or user_input == ''):
                 logger.info("Set target locales to: None\n")
-                return "None"
+                return ""
             elif(len(locales) > 0):
                 logger.info("Set target locales to: {0}\n".format(', '.join(locales)))
                 return ','.join(locales)

@@ -108,8 +108,8 @@ def is_valid_locale(api, locale):
     for entry in locale_json:
         valid_locales.append(locale_json[entry]['locale'])
     locales = []
-    locale = locale.replace("-","_")
-    if remote_check and locale not in valid_locales or not remote_check and not locale in locale_list:
+    check_locale = locale.replace("-","_")
+    if remote_check and check_locale not in valid_locales or not remote_check and not check_locale in locale_list:
         return False
     else:
         return True
@@ -129,8 +129,8 @@ def get_valid_locales(api, entered_locales):
         logger.warning('No locales have been assigned to this document.  Please add them using \'ltk request\'.')
     else:
         for locale in entered_locales:
-            locale = locale.replace("-","_")
-            if remote_check and locale not in valid_locales or not remote_check and not locale in locale_list:
+            check_locale = locale.replace("-","_")
+            if remote_check and check_locale not in valid_locales or not remote_check and not check_locale in locale_list:
                 logger.warning('The locale code "'+str(locale)+'" failed to be added since it is invalid (see "ltk list -l" for the list of valid codes).')
             else:
                 locales.append(locale)
@@ -211,6 +211,9 @@ def underline(text):
     else:
         # print("Recommended to install blessings module for better formatting")
         print(text)
+
+def format_commit_message():
+    pass
 
 def check_response(response):
     try:
