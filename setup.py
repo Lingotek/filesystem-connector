@@ -36,7 +36,8 @@ setup(
         'watchdog',
         'gitpython',
         'pexpect',
-        'blessings'
+        'blessings',
+        'tabulate'
     ],
     extras_require={
         'security': ['pyOpenSSL', 'ndg-httpsclient', 'pyasn1'],
