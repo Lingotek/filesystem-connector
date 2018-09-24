@@ -202,44 +202,7 @@ class InitAction():
 
                 # ask about advanced settings
                 if(self.prompt_advanced_settings() == True):
-                    # git auto-commit
-                    username, encrypted_password = self.set_git_autocommit()
-                    if not username == None and not encrypted_password == None:
-                        config_parser.set('main', 'git_autocommit', 'on')
-                        config_parser.set('main', 'git_username', username)
-                        config_parser.set('main', 'git_password', encrypted_password)
-                    else:
-                        config_parser.set('main', 'git_autocommit', 'off')
-                        config_parser.set('main', 'git_username', '')
-                        config_parser.set('main', 'git_password', '')
-
-                    # toggle clone on/off
-                    print("\n--------------------------------")
-                    print("CLONE OPTION:")
-                    print("Toggle clone download option \'on\' and \'off\'.\n\nTurning clone \'on\': Translations will be downloaded to a cloned folder structure, where the root folder for each locale is the locale folder specified in config or a locale folder inside of the default download folder. If a default download folder is not set, then translations will be downloaded to the directory where the project was initialized.\n\nTurning clone \'off\': If a download folder is specified, downloaded translations will download to that folder, but not in a cloned folder structure. If no download folder is specified, downloaded translations will go to the same folder as their corresponding source files.")
-                    self.turn_clone_on = self.set_clone_option()
-                    if self.turn_clone_on:
-                        config_parser.set('main', 'clone_option', 'on')
-                    else:
-                        config_parser.set('main', 'clone_option', 'off')
-
-                    # toggle auto-format on/off
-                    print("--------------------------------")
-                    print("AUTO-FORMAT:")
-                    print("Toggle auto format option \'on\' and \'off\'. Applies formatting during download.")
-                    turn_auto_format_on = self.set_auto_format_option()
-                    if turn_auto_format_on:
-                        config_parser.set('main', 'auto_format', 'on')
-                    else:
-                        config_parser.set('main', 'auto_format', 'off')
-
-                    # change append options
-                    print("--------------------------------")
-                    print("APPEND OPTION:")
-                    print('Change the format of the default name given to documents on the Lingotek system.\nDefine file information to append to document names as none, full, number:+a number of folders down to include (e.g. number:2), or name:+a name of a directory to start after if found in file path (e.g. name:dir). Default option is none.')
-                    append_option = self.set_append_option()
-                    if not append_option == None:
-                        config_parser.set('main', 'append_option', append_option)
+                    self.show_advanced_settings()
 
                 logger.info("\nAll finished. Use ltk -h to learn more about using Lingotek Filesystem Connector.")
                 config_parser.write(config_file)
@@ -257,6 +220,46 @@ class InitAction():
                 logger.error("Error connecting to Lingotek's TMS")
             else:
                 logger.error("Error on init: "+str(e))
+
+    def show_advanced_settings(self):
+        # git auto-commit
+        username, encrypted_password = self.set_git_autocommit()
+        if not username == None and not encrypted_password == None:
+            config_parser.set('main', 'git_autocommit', 'on')
+            config_parser.set('main', 'git_username', username)
+            config_parser.set('main', 'git_password', encrypted_password)
+        else:
+            config_parser.set('main', 'git_autocommit', 'off')
+            config_parser.set('main', 'git_username', '')
+            config_parser.set('main', 'git_password', '')
+
+        # toggle clone on/off
+        print("\n--------------------------------")
+        print("CLONE OPTION:")
+        print("Toggle clone download option \'on\' and \'off\'.\n\nTurning clone \'on\': Translations will be downloaded to a cloned folder structure, where the root folder for each locale is the locale folder specified in config or a locale folder inside of the default download folder. If a default download folder is not set, then translations will be downloaded to the directory where the project was initialized.\n\nTurning clone \'off\': If a download folder is specified, downloaded translations will download to that folder, but not in a cloned folder structure. If no download folder is specified, downloaded translations will go to the same folder as their corresponding source files.")
+        self.turn_clone_on = self.set_clone_option()
+        if self.turn_clone_on:
+            config_parser.set('main', 'clone_option', 'on')
+        else:
+            config_parser.set('main', 'clone_option', 'off')
+
+        # toggle auto-format on/off
+        print("--------------------------------")
+        print("AUTO-FORMAT:")
+        print("Toggle auto format option \'on\' and \'off\'. Applies formatting during download.")
+        turn_auto_format_on = self.set_auto_format_option()
+        if turn_auto_format_on:
+            config_parser.set('main', 'auto_format', 'on')
+        else:
+            config_parser.set('main', 'auto_format', 'off')
+
+        # change append options
+        print("--------------------------------")
+        print("APPEND OPTION:")
+        print('Change the format of the default name given to documents on the Lingotek system.\nDefine file information to append to document names as none, full, number:+a number of folders down to include (e.g. number:2), or name:+a name of a directory to start after if found in file path (e.g. name:dir). Default option is none.')
+        append_option = self.set_append_option()
+        if not append_option == None:
+            config_parser.set('main', 'append_option', append_option)
 
     def check_global(self, host):
         # check for a global config file and return the access token
