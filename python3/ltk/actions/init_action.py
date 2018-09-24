@@ -261,6 +261,17 @@ class InitAction():
         if not append_option == None:
             config_parser.set('main', 'append_option', append_option)
 
+        # Toggle finalized file download option
+        print("--------------------------------")
+        print("DOWNLOAD FINALIZED FILE:")
+        print("Toggle finalized file download option 'on' or 'off'. Turning this option on downloads the finalized file instaed of the raw translation. \
+              A finalized file is typically a file that has undergone some sort of post editing like Desktop Publishing after the translation has completed. ")
+        turn_finalized_download_on = self.set_append_option()
+        if turn_finalized_download_on:
+            config_parser.set('main', 'finalized_file_download', 'on')
+        else:
+            config_parser.set('main', 'finalized_file_download', 'off')
+
     def check_global(self, host):
         # check for a global config file and return the access token
         home_path = os.path.expanduser('~')
