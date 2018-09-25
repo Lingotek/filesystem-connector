@@ -271,6 +271,17 @@ class InitAction():
         else:
             config_parser.set('main', 'clone_option', 'off')
 
+        # Toggle finalized file download option
+        print("--------------------------------")
+        print("DOWNLOAD FINALIZED FILE:")
+        print("Toggle finalized file download option 'on' or 'off'. Turning this option on downloads the finalized file instaed of the raw translation. \
+              A finalized file is typically a file that has undergone some sort of post editing like Desktop Publishing after the translation has completed.")
+        turn_finalized_download_on = self.set_finalized_file_option()
+        if turn_finalized_download_on:
+            config_parser.set('main', 'finalized_file_download', 'on')
+        else:
+            config_parser.set('main', 'finalized_file_download', 'off')
+
     def check_global(self, host):
         # check for a global config file and return the access token
         home_path = os.path.expanduser('~')
@@ -907,3 +918,36 @@ class InitAction():
         else:
             logger.warning('Error: Not a valid option')
             return False
+
+    def set_finalized_file_option(self):
+        turn_finalized_download_on = True
+        try:
+            confirm = 'none'
+            while confirm != 'on' and confirm != 'On' and confirm != 'ON' and confirm != 'off' and confirm != 'Off' and confirm != '':
+                prompt_message = 'Would you like to turn finalized file download on or off? [ON/off]: '
+                # Python 2
+                confirm = raw_input(prompt_message)
+                # End Python 2
+                # Python 3
+                # confirm = input(prompt_message)
+                # End Python 3
+                if confirm in ['on', 'On', 'ON', 'off', 'Off', '']:
+                    if confirm in ['on', 'On', 'ON', '']:
+                        logger.info("Finalized file download set to ON\n")
+                        turn_finalized_download_on = True
+                        return turn_finalized_download_on
+                    else:
+                        logger.info("Finalized file download to OFF\n")
+                        turn_finalized_download_on = False
+                        return turn_finalized_download_on
+
+        except KeyboardInterrupt:
+            # Python 2
+            logger.info("\nInit canceled")
+            # End Python 2
+            # Python 3
+            # logger.error("\nInit canceled")
+            # End Python 3
+            return
+
+        return turn_finalized_download_on
