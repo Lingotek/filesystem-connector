@@ -202,7 +202,7 @@ class InitAction():
 
                 # ask about advanced settings
                 if(self.prompt_advanced_settings() == True):
-                    self.show_advanced_settings()
+                    self.show_advanced_settings(config_parser)
 
                 logger.info("\nAll finished. Use ltk -h to learn more about using Lingotek Filesystem Connector.")
                 config_parser.write(config_file)
@@ -221,7 +221,7 @@ class InitAction():
             else:
                 logger.error("Error on init: "+str(e))
 
-    def show_advanced_settings(self):
+    def show_advanced_settings(self, config_parser):
         # git auto-commit
         username, encrypted_password = self.set_git_autocommit()
         if not username == None and not encrypted_password == None:
