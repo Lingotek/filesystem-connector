@@ -76,8 +76,8 @@ class ConfigAction(Action):
             if str(watch_locales) == "[]" or not watch_locales:
                 watch_locales = "None"
             """ print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity ID: {4}\nWorkflow ID: {5}\n'
-                'Default Source Locale: {6}\nClone Option: {7}\nAuto Format: {8}\nDownload Folder: {9}\nTarget Locales: {10}\nTarget Locale Folders: {11}\nGit Auto-commit: {12}\nAppend Option: {13}'.format(
-                self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.clone_option, self.auto_format_option,
+                'Default Source Locale: {6}\nClone Option: {7}\nDownload Finalized Files: {8}\nAuto Format: {9}\nDownload Folder: {10}\nTarget Locales: {11}\nTarget Locale Folders: {12}\nGit Auto-commit: {13}\nAppend Option: {14}'.format(
+                self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.clone_option, self.finalized_file, self.auto_format_option,
                 download_dir, watch_locales, locale_folders_str, git_output, self.append_option)) """
             table = [
                 ["Host", self.host], 
@@ -87,6 +87,7 @@ class ConfigAction(Action):
                 ["Workflow ID", self.workflow_id],
                 ["Default Source Locale", self.locale],
                 ["Clone Option", self.clone_option],
+                ["Download Finalized Files", self.finalized_file],
                 ["Auto Format", self.auto_format_option],
                 ["Download Folder", self.download_dir],
                 ["Target Locales", list(self.watch_locales)],

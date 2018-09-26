@@ -170,6 +170,8 @@ def init(host, access_token, client_id, path, project_name, workflow_id, locale,
 @click.option('-w', '--workflow_id', help='Change the default workflow id for the project')
 @click.option('-c', '--clone_option', help='Toggle clone download option \'on\' and \'off\'. Turning clone \'on\': Translations will be downloaded to a cloned folder structure, where the root folder for each locale is the locale folder specified in config or a locale folder inside of the default download folder. If a default download folder is not set, then translations will be downloaded to the directory where the project was initialized.' +
                                                 'Turning clone \'off\': If a download folder is specified, downloaded translations will download to that folder, but not in a cloned folder structure. If no download folder is specified, downloaded translations will go to the same folder as their corresponding source files.')
+@click.option('-f', '--finalized_file', help='Toggle finalized file download option \'on\' and \'off\'. Turning finalized file on downloads the finalized file instead of the raw translation.\
+                                                A finalized file is typically a file that has undergone some sort of post editing like Desktop Publishing after the translation has compeleted.')
 @click.option('-d', '--download_folder',
               help='Specify a default folder for where downloaded translations should go. Use --none to remove the download folder. Using --none will cause downloaded translations to download to the same folder as their corresponding source files.')
 @click.option('-t', '--target_locales', multiple=True,
