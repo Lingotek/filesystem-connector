@@ -927,7 +927,7 @@ class InitAction():
                         turn_finalized_download_on = True
                         return turn_finalized_download_on
                     else:
-                        logger.info("Finalized file download to OFF\n")
+                        logger.info("Finalized file download set to OFF\n")
                         turn_finalized_download_on = False
                         return turn_finalized_download_on
 
