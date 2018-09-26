@@ -37,7 +37,7 @@ class DownloadAction(Action):
 
     def download_action(self, document_id, locale_code, auto_format, xliff=False, locale_ext=True):
         try:
-            response = self.api.document_content(document_id, locale_code, auto_format, xliff)
+            response = self.api.document_content(document_id, locale_code, auto_format, xliff, self.finalized_file)
             entry = None
             entry = self.doc_manager.get_doc_by_prop('id', document_id)
             git_commit_message = self.DEFAULT_COMMIT_MESSAGE
