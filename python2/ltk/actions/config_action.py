@@ -172,12 +172,14 @@ class ConfigAction(Action):
             print_config = False
 
     def set_finalized_file_option(self, finalized_file, print_info=True):
+        if finalized_file:
+            finalized_file = finalized_file.lower()
         if print_info:
             log_info = 'Turned finalized file download ' + finalized_file
         else:
             log_info = ''
-        if finalized_file.lower() == 'on' or finalized_file.lower() == 'off':
-            self.update_config_file('finalized_file', finalized_file.lower(), self.conf_parser, self.config_file_name, log_info)
+        if finalized_file == 'on' or finalized_file == 'off':
+            self.update_config_file('finalized_file', finalized_file, self.conf_parser, self.config_file_name, log_info)
         else:
             logger.warning('Error: Invalid value for "-f" / "--finalized_file": Must be either "on" or "off"')
             self.print_config = False
