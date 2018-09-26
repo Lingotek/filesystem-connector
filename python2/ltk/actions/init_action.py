@@ -278,9 +278,9 @@ class InitAction():
               A finalized file is typically a file that has undergone some sort of post editing like Desktop Publishing after the translation has completed.")
         turn_finalized_download_on = self.set_finalized_file_option()
         if turn_finalized_download_on:
-            config_parser.set('main', 'finalized_file_download', 'on')
+            config_parser.set('main', 'finalized_file', 'on')
         else:
-            config_parser.set('main', 'finalized_file_download', 'off')
+            config_parser.set('main', 'finalized_file', 'off')
 
     def check_global(self, host):
         # check for a global config file and return the access token
