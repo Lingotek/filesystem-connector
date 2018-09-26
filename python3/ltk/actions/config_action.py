@@ -21,6 +21,9 @@ class ConfigAction(Action):
             if 'clone_option' in kwargs and kwargs['clone_option']:
                 self.set_clone_option(kwargs['clone_option'])
 
+            if 'finalized_file' in kwargs and kwargs['finalized_file']:
+                self.set_finalized_file_option(kwargs['finalized_file'])
+
             if 'target_locales' in kwargs and kwargs['target_locales']:
                 self.set_target_locales(kwargs['target_locales'])
 
@@ -167,6 +170,17 @@ class ConfigAction(Action):
         else:
             logger.warning('Error: Invalid value for "-c" / "--clone_option": Must be either "on" or "off"')
             print_config = False
+
+    def set_finalized_file_option(self, finalized_file, print_info=True):
+        if print_info:
+            log_info = 'Turned finalized file download ' + finalized_file
+        else:
+            log_info = ''
+        if finalized_file.lower() == 'on' or finalized_file.lower() == 'off':
+            self.update_config_file('finalized_file', finalized_file.lower(), self.conf_parser, self.config_file_name, log_info)
+        else:
+            logger.warning('Error: Invalid value for "-f" / "--finalized_file": Must be either "on" or "off"')
+            self.print_config = False
 
     def set_download_folder(self, download_folder):
         if download_folder == '--none':

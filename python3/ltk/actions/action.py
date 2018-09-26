@@ -33,6 +33,7 @@ class Action:
         self.workflow_id = ''  # default workflow id; MT phase only
         self.locale = ''
         self.clone_option = 'on'
+        self.finalized_file = 'on'
         self.auto_format_option = ''
         self.download_option = 'clone'
         self.download_dir = None  # directory where downloaded translation will be stored
@@ -79,6 +80,10 @@ class Action:
                 self.auto_format_option = conf_parser.get('main', 'auto_format')
             else:
                 self.update_config_file('auto_format', 'on', conf_parser, config_file_name, "")
+            if conf_parser.has_option('main', 'finalized_file'):
+                self.finalized_file = conf_parser.get('main', 'finalized_file')
+            else:
+                self.update_config_file('finalized_file', 'on', conf_parser, config_file_name, "")
             if conf_parser.has_option('main', 'project_name'):
                 self.project_name = conf_parser.get('main', 'project_name')
             if conf_parser.has_option('main', 'download_folder'):
