@@ -274,13 +274,9 @@ class InitAction():
         # Toggle finalized file download option
         print("\n--------------------------------")
         print("DOWNLOAD FINALIZED FILE:")
-        print("Toggle finalized file download option 'on' or 'off'. Turning this option on downloads the finalized file instaed of the raw translation. \
-              A finalized file is typically a file that has undergone some sort of post editing like Desktop Publishing after the translation has completed.")
-        turn_finalized_download_on = self.set_finalized_file_option()
-        if turn_finalized_download_on:
-            config_parser.set('main', 'finalized_file', 'on')
-        else:
-            config_parser.set('main', 'finalized_file', 'off')
+        print("Toggle finalized file download option 'on' or 'off'. Turning this option on downloads the finalized file instaed of the raw translation. " +
+              "A finalized file is typically a file that has undergone some sort of post editing like Desktop Publishing after the translation has completed.")        self.finalized_file = self.set_finalized_file_option()
+        config_parser.set('main', 'finalized_file', self.finalized_file)
 
     def check_global(self, host):
         # check for a global config file and return the access token
