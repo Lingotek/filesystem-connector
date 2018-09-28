@@ -306,7 +306,7 @@ class ApiCalls:
             if xliff:
                 headers['Accept'] = 'application/x-xliff+xml'
             if finalized_file == 'on':
-                payload['finalized_file'] = 1
+                payload['finalized_file'] = 'true'
 
             r = requests.get(self.host + uri, headers=headers, params=payload, stream=True)
             log_api('GET', uri, r)
