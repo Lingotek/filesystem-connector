@@ -24,6 +24,9 @@ class ConfigAction(Action):
             if 'finalized_file' in kwargs and kwargs['finalized_file']:
                 self.set_finalized_file_option(kwargs['finalized_file'])
 
+            if 'unzip_file' in kwargs and kwargs['unzip_file']:
+                self.set_unzip_file_option(kwargs['unzip_file'])
+
             if 'target_locales' in kwargs and kwargs['target_locales']:
                 self.set_target_locales(kwargs['target_locales'])
 
@@ -98,6 +101,8 @@ class ConfigAction(Action):
                 ["Git Auto-commit", git_output],
                 ["Append Option", self.append_option.title()]
             ]
+            if self.finalized_file == 'on':
+                table.append(["Unzip Finalized File", self.unzip_file])
             print("Configuration Options")
             print(tabulate(table))
         self.print_config = True
@@ -179,9 +184,56 @@ class ConfigAction(Action):
         else:
             log_info = ''
         if finalized_file == 'on' or finalized_file == 'off':
+            self.finalized_file = finalized_file
             self.update_config_file('finalized_file', finalized_file, self.conf_parser, self.config_file_name, log_info)
+            if self.finalized_file == 'on':
+                unzip_file = self.prompt_unzip_file_option()
+                self.set_unzip_file_option(unzip_file)
         else:
-            logger.warning('Error: Invalid value for "-f" / "--finalized_file": Must be either "on" or "off"')
+            logger.warning('Error: Invalid value for "-ff" / "--finalized_file": Must be either "on" or "off"')
+            self.print_config = False
+
+    def prompt_unzip_file_option(self):
+        unzip_file = 'on'
+        try:
+            confirm = 'none'
+            while confirm != 'on' and confirm != 'On' and confirm != 'ON' and confirm != 'off' and confirm != 'Off' and confirm != '':
+                prompt_message = 'Would you like to turn finalized file UNZIP on or off? [ON/off]: '
+                # Python 2
+                # confirm = raw_input(prompt_message)
+                # End Python 2
+                # Python 3
+                confirm = input(prompt_message)
+                # End Python 3
+                if confirm in ['on', 'On', 'ON', 'off', 'Off', '']:
+                    if confirm in ['on', 'On', 'ON', '']:
+                        unzip_file = 'on'
+                    else:
+                        unzip_file = 'off'
+
+        except KeyboardInterrupt:
+            # Python 2
+            # logger.info("\nInit canceled")
+            # End Python 2
+            # Python 3
+            logger.error("\nInit canceled")
+            # End Python 3
+            return
+
+        return unzip_file
+
+    def set_unzip_file_option(self, unzip_file, print_info=True):
+        if unzip_file:
+            unzip_file = unzip_file.lower()
+        if print_info:
+            log_info = 'Turned finalized file unzip ' + unzip_file
+        else:
+            log_info = ''
+        if unzip_file == 'on' or unzip_file == 'off':
+            self.unzip_file = unzip_file
+            self.update_config_file('unzip_file', unzip_file, self.conf_parser, self.config_file_name, log_info)
+        else:
+            logger.warning('Error: Invalid value for "-u" / "--unzip_file": Must be either "on" or "off"')
             self.print_config = False
 
     def set_download_folder(self, download_folder):

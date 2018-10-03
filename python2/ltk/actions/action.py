@@ -34,6 +34,7 @@ class Action:
         self.locale = ''
         self.clone_option = 'on'
         self.finalized_file = 'on'
+        self.unzip_file = 'on'
         self.auto_format_option = ''
         self.download_option = 'clone'
         self.download_dir = None  # directory where downloaded translation will be stored
@@ -84,6 +85,10 @@ class Action:
                 self.finalized_file = conf_parser.get('main', 'finalized_file')
             else:
                 self.update_config_file('finalized_file', 'on', conf_parser, config_file_name, "")
+            if conf_parser.has_option('main', 'unzip_file'):
+                self.unzip_file = conf_parser.get('main', 'unzip_file')
+            else:
+                self.update_config_file('unzip_file', 'on', conf_parser, config_file_name, "")
             if conf_parser.has_option('main', 'project_name'):
                 self.project_name = conf_parser.get('main', 'project_name')
             if conf_parser.has_option('main', 'download_folder'):

@@ -279,6 +279,13 @@ class InitAction():
         self.finalized_file = self.set_finalized_file_option()
         config_parser.set('main', 'finalized_file', self.finalized_file)
 
+        if self.finalized_file == 'on':
+            print("\n--------------------------------")
+            print("UNZIP FINALIZED FILE:")
+            print("Toggle UNZIP finalized file option 'on' or 'off'. Turning this option on unzips the file from TMS. Turning it off leaves the file unzipped.")
+            self.unzip_file = self.prompt_unzip_file_option()
+            config_parser.set('main', 'unzip_file', self.unzip_file)
+
     def check_global(self, host):
         # check for a global config file and return the access token
         home_path = os.path.expanduser('~')
@@ -946,3 +953,34 @@ class InitAction():
             return
 
         return finalized_file
+
+    def prompt_unzip_file_option(self):
+        unzip_file = 'on'
+        try:
+            confirm = 'none'
+            while confirm != 'on' and confirm != 'On' and confirm != 'ON' and confirm != 'off' and confirm != 'Off' and confirm != '':
+                prompt_message = 'Would you like to turn finalized file UNZIP on or off? [ON/off]: '
+                # Python 2
+                confirm = raw_input(prompt_message)
+                # End Python 2
+                # Python 3
+                # confirm = input(prompt_message)
+                # End Python 3
+                if confirm in ['on', 'On', 'ON', 'off', 'Off', '']:
+                    if confirm in ['on', 'On', 'ON', '']:
+                        logger.info("Finalized file UNZIP set to ON\n")
+                        unzip_file = 'on'
+                    else:
+                        logger.info("Finalized file UNZIP set to OFF\n")
+                        unzip_file = 'off'
+
+        except KeyboardInterrupt:
+            # Python 2
+            logger.info("\nInit canceled")
+            # End Python 2
+            # Python 3
+            # logger.error("\nInit canceled")
+            # End Python 3
+            return
+
+        return unzip_file

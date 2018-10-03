@@ -1,6 +1,8 @@
 from ltk.actions.action import *
 import json
 import re
+import tempfile
+import zipfile
 
 class DownloadAction(Action):
     def __init__(self, path):
@@ -113,9 +115,19 @@ class DownloadAction(Action):
 
                 # create new file and write contents
                 try:
-                    with open(self.download_path, 'wb') as fh:
-                        for chunk in response.iter_content(1024):
-                            fh.write(chunk)
+                    if response.headers['Content-Type'] == 'application/zip':
+                        if self.unzip_file == 'on':
+                            self.unzip_finalized_file(response, base_name, locale_code)
+                        else:
+                            self.download_path = self.download_path + ".zip"
+                            downloaded_name = downloaded_name + '.zip'
+                            with open(self.download_path, 'wb') as fh:
+                                for chunk in response.iter_content(1024):
+                                    fh.write(chunk)
+                    else:
+                        with open(self.download_path, 'wb') as fh:
+                            for chunk in response.iter_content(1024):
+                                fh.write(chunk)
                     logger.info('Downloaded: {0} ({1} - {2})\n'.format(downloaded_name, self.get_relative_path(self.download_path), locale_code))
 
                     # configure commit message
@@ -263,3 +275,13 @@ class DownloadAction(Action):
                 new_target.append(target[x].lower())
         return new_target
             
+    def unzip_finalized_file(self, response, base_name, locale_code):
+        with tempfile.SpooledTemporaryFile(mode='w+b') as temp_zip:
+            for chunk in response.iter_content(1024):
+                temp_zip.write(chunk)
+            temp_zip.seek(0)
+            zip_ref = zipfile.ZipFile(temp_zip)
+            with open(self.download_path, 'wb') as fh:
+                zip_path = locale_code + "/" + self.append_ext_to_file(locale_code, base_name, True)
+                fh.write(zip_ref.open(zip_path).read())
+            zip_ref.close()

@@ -503,4 +503,7 @@ def log_api(method, uri, response):
             response_info = 'No json response available'
         logger.api_response(response_info)
     elif 'content-length' in response.headers and response.headers['content-length'] != '0':
-        logger.api_response(response.content.decode('UTF-8'))
+        if response.headers['content-type'] == 'application/zip':
+            logger.api_response('Zip file')
+        else:
+            logger.api_response(response.content.decode('UTF-8'))

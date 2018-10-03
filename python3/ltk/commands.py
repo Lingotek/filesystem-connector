@@ -172,6 +172,7 @@ def init(host, access_token, client_id, path, project_name, workflow_id, locale,
                                                 'Turning clone \'off\': If a download folder is specified, downloaded translations will download to that folder, but not in a cloned folder structure. If no download folder is specified, downloaded translations will go to the same folder as their corresponding source files.')
 @click.option('-ff', '--finalized_file', help='Toggle finalized file download option \'on\' and \'off\'. Turning finalized file on downloads the finalized file instead of the raw translation.\
                                                 A finalized file is typically a file that has undergone some sort of post editing like Desktop Publishing after the translation has compeleted.')
+@click.option('-u', '--unzip_file', help='Toggle finalized file UNZIP option \'on\' and \'off\'. With this option \'on\' contents of the finalized file will be placed in the expected directory.')
 @click.option('-d', '--download_folder',
               help='Specify a default folder for where downloaded translations should go. Use --none to remove the download folder. Using --none will cause downloaded translations to download to the same folder as their corresponding source files.')
 @click.option('-t', '--target_locales', multiple=True,
