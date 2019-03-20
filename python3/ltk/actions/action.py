@@ -460,7 +460,6 @@ def choice_mapper(info):
     mapper = {}
     import operator
 
-    #sorted_info = sorted(info.iteritems(), key=operator.itemgetter(1))
     sorted_info = sorted(info.items(), key = operator.itemgetter(1))
 
     index = 0
@@ -472,14 +471,14 @@ def choice_mapper(info):
     for k,v in mapper.items():
         try:
             for values in v:
-                table.append({
-                    "ID": k,
-                    "Name": v[values],
-                    "UUID": values
-                })
+                table.append([
+                    k, #ID
+                    v[values], #Name
+                    values #UUID
+                ])
         except UnicodeEncodeError:
             continue
-    print(tabulate(table, headers="keys"), "\n")
+    print(tabulate(table, headers=["ID","Name","UUID"]), "\n")
     return mapper
 
 def find_conf(curr_path):

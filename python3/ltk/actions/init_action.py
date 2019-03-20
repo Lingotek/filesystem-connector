@@ -154,6 +154,9 @@ class InitAction():
                     project_name = None
                     confirm = 'none'
                     try:
+                        logger.info('---------------------------')
+                        logger.info('SELECT LINGOTEK PROJECT')
+                        logger.info('---------------------------')
                         project_id, project_name = self.display_choice('project', project_info)
                         if project_id != None:
                             config_parser.set('main', 'project_id', project_id)

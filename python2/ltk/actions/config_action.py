@@ -203,7 +203,7 @@ class ConfigAction(Action):
                 confirm = raw_input(prompt_message)
                 # End Python 2
                 # Python 3
-                # confirm = input(prompt_message)
+#                 confirm = input(prompt_message)
                 # End Python 3
                 if confirm in ['on', 'On', 'ON', 'off', 'Off', '']:
                     if confirm in ['on', 'On', 'ON', '']:
@@ -216,7 +216,7 @@ class ConfigAction(Action):
             logger.info("\nInit canceled")
             # End Python 2
             # Python 3
-            # logger.error("\nInit canceled")
+#             logger.error("\nInit canceled")
             # End Python 3
             return
 

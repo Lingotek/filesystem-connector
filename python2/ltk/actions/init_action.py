@@ -261,16 +261,6 @@ class InitAction():
         if not append_option == None:
             config_parser.set('main', 'append_option', append_option)
 
-        # toggle clone on/off
-        print("\n--------------------------------")
-        print("CLONE OPTION:")
-        print("Toggle clone download option \'on\' and \'off\'.\n\nTurning clone \'on\': Translations will be downloaded to a cloned folder structure, where the root folder for each locale is the locale folder specified in config or a locale folder inside of the default download folder. If a default download folder is not set, then translations will be downloaded to the directory where the project was initialized.\n\nTurning clone \'off\': If a download folder is specified, downloaded translations will download to that folder, but not in a cloned folder structure. If no download folder is specified, downloaded translations will go to the same folder as their corresponding source files.")
-        self.turn_clone_on = self.set_clone_option()
-        if self.turn_clone_on:
-            config_parser.set('main', 'clone_option', 'on')
-        else:
-            config_parser.set('main', 'clone_option', 'off')
-
         # Toggle finalized file download option
         print("\n--------------------------------")
         print("DOWNLOAD FINALIZED FILE:")
@@ -933,7 +923,7 @@ class InitAction():
                 confirm = raw_input(prompt_message)
                 # End Python 2
                 # Python 3
-                # confirm = input(prompt_message)
+#                 confirm = input(prompt_message)
                 # End Python 3
                 if confirm in ['on', 'On', 'ON', 'off', 'Off', '']:
                     if confirm in ['on', 'On', 'ON', '']:
@@ -948,7 +938,7 @@ class InitAction():
             logger.info("\nInit canceled")
             # End Python 2
             # Python 3
-            # logger.error("\nInit canceled")
+#             logger.error("\nInit canceled")
             # End Python 3
             return
 
@@ -964,7 +954,7 @@ class InitAction():
                 confirm = raw_input(prompt_message)
                 # End Python 2
                 # Python 3
-                # confirm = input(prompt_message)
+#                 confirm = input(prompt_message)
                 # End Python 3
                 if confirm in ['on', 'On', 'ON', 'off', 'Off', '']:
                     if confirm in ['on', 'On', 'ON', '']:
@@ -979,7 +969,7 @@ class InitAction():
             logger.info("\nInit canceled")
             # End Python 2
             # Python 3
-            # logger.error("\nInit canceled")
+#             logger.error("\nInit canceled")
             # End Python 3
             return
 
