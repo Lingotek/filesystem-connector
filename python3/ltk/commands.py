@@ -268,11 +268,13 @@ def add(file_names, **kwargs):
         return
 
 @ltk.command(short_help="Sends updated content to Lingotek for documents that have been added")
-def push():
+@click.option('-n', '--test', 'test', flag_value=True, help='Shows which files will be added or updated without actually uploading any content')
+@click.option('-t', '--title', 'title', flag_value=True, help='Display document titles rather than file paths')
+def push(test, title):
     """ Sends updated content to Lingotek for documents that have been added """
     try:
         add = add_action.AddAction(os.getcwd())
-        action = push_action.PushAction(add, os.getcwd())
+        action = push_action.PushAction(add, os.getcwd(), test, title)
         init_logger(action.path)
         action.push_action()
     except UninitializedError as e:

@@ -154,6 +154,9 @@ class InitAction():
                     project_name = None
                     confirm = 'none'
                     try:
+                        logger.info('---------------------------')
+                        logger.info('SELECT LINGOTEK PROJECT')
+                        logger.info('---------------------------')
                         project_id, project_name = self.display_choice('project', project_info)
                         if project_id != None:
                             config_parser.set('main', 'project_id', project_id)
@@ -531,10 +534,8 @@ class InitAction():
         table = []
         for locale in locale_info:
             if not len(locale[2]):  # Arabic
-                # print ("{0} ({1})".format(locale[0], locale[1]))
                 table.append(["{0}".format(locale[0]), "{0}".format(locale[1])])
             else:
-                # print ("{0} ({1}, {2})".format(locale[0], locale[1], locale[2]))
                 table.append(["{0}".format(locale[0]), "{0}, {1}".format(locale[1], locale[2])])
         print(tabulate(table, headers=["Code", "Locale Name"]))
         return locale_dict

@@ -84,7 +84,7 @@ class Action:
             if conf_parser.has_option('main', 'finalized_file'):
                 self.finalized_file = conf_parser.get('main', 'finalized_file')
             else:
-                self.update_config_file('finalized_file', 'on', conf_parser, config_file_name, "")
+                self.update_config_file('finalized_file', 'off', conf_parser, config_file_name, "")
             if conf_parser.has_option('main', 'unzip_file'):
                 self.unzip_file = conf_parser.get('main', 'unzip_file')
             else:
@@ -470,15 +470,12 @@ def choice_mapper(info):
     table = []
     for k,v in mapper.items():
         try:
+            headers=["ID","Name","UUID"]
             for values in v:
-                table.append([
-                    k, #ID
-                    v[values], #Name
-                    values #UUID
-                ])
+                table.append([ k, v[values], values ])
         except UnicodeEncodeError:
             continue
-    print(tabulate(table, headers=["ID","Name","UUID"]), "\n")
+    print(tabulate(table, headers=headers))
     return mapper
 
 def find_conf(curr_path):
@@ -569,14 +566,3 @@ def getRegexFiles(pattern,path):
             matched_files.append(os.path.join(path, fn))
     # print("matched files: "+str(matched_files))
     return matched_files
-
-def log_id_names(json):
-    """
-    logs the id and titles from a json object
-    """
-    ids = []
-    titles = []
-    for entity in json['entities']:
-        ids.append(entity['properties']['id'])
-        titles.append(entity['properties']['title'])
-    return ids, titles

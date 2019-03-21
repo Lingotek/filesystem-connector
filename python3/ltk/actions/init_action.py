@@ -534,10 +534,8 @@ class InitAction():
         table = []
         for locale in locale_info:
             if not len(locale[2]):  # Arabic
-                # print ("{0} ({1})".format(locale[0], locale[1]))
                 table.append(["{0}".format(locale[0]), "{0}".format(locale[1])])
             else:
-                # print ("{0} ({1}, {2})".format(locale[0], locale[1], locale[2]))
                 table.append(["{0}".format(locale[0]), "{0}, {1}".format(locale[1], locale[2])])
         print(tabulate(table, headers=["Code", "Locale Name"]))
         return locale_dict
