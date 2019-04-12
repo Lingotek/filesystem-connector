@@ -197,7 +197,7 @@ class ConfigAction(Action):
         unzip_file = 'on'
         try:
             confirm = 'none'
-            while confirm != 'on' and confirm != 'On' and confirm != 'ON' and confirm != 'off' and confirm != 'Off' and confirm != '':
+            while confirm not in ['on', 'On', 'ON', 'off', 'Off', '']:
                 prompt_message = 'Would you like to turn finalized file UNZIP on or off? [ON/off]: '
                 # Python 2
                 # confirm = raw_input(prompt_message)
