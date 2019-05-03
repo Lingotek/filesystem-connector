@@ -115,9 +115,6 @@ class InitAction():
             config_parser.set('main', 'access_token', access_token)
             config_parser.set('main', 'host', host)
             # config_parser.set('main', 'root_path', project_path)
-            logger.info('---------------------------')
-            logger.info('SELECT LINGOTEK COMMUNITY')
-            logger.info('---------------------------')
             # get community id
             community_info = self.api.get_communities_info()
             if not community_info:
@@ -131,6 +128,9 @@ class InitAction():
             if len(community_info) == 0:
                 raise exceptions.ResourceNotFound('You are not part of any communities in Lingotek Cloud')
             if len(community_info) > 1:
+                logger.info('---------------------------')
+                logger.info('SELECT LINGOTEK COMMUNITY')
+                logger.info('---------------------------')
                 community_id, community_name = self.display_choice('community', community_info)
             else:
                 for id in community_info:
@@ -429,7 +429,7 @@ class InitAction():
                 logger.error("Error on init: "+str(e))
 
     def create_new_project(self, folder_name, community_id, workflow_id):
-        prompt_message = "Please enter a new Lingotek project name: %s" % folder_name + chr(8) * len(folder_name)
+        prompt_message = "Please enter a new Lingotek project name [%s]: " % folder_name
         try:
             # Python 2
             # project_name = raw_input(prompt_message)
