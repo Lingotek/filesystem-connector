@@ -149,32 +149,34 @@ class InitAction():
                     except:
                         logger.error('Something went wrong trying to find projects in your community')
                         return
-                if len(project_info) > 0:
-                    project_id = None
-                    project_name = None
-                    confirm = 'none'
-                    try:
-                        logger.info('---------------------------')
-                        logger.info('SELECT LINGOTEK PROJECT')
-                        logger.info('---------------------------')
+                project_id = None
+                project_name = None
+                confirm = 'none'
+                try:
+                    logger.info('---------------------------')
+                    logger.info('SELECT LINGOTEK PROJECT')
+                    logger.info('---------------------------')
+                    if len(project_info) > 0:
                         project_id, project_name = self.display_choice('project', project_info)
-                        if project_id != None:
-                            config_parser.set('main', 'project_id', project_id)
-                            if project_name != None:
-                                config_parser.set('main', 'project_name', project_name)
-                        if not project_id:
-                            project_id, project_name = self.create_new_project(folder_name, community_id, workflow_id)
-                            config_parser.set('main', 'project_id', project_id)
+                    else:
+                        logger.info('There are no projects')
+                    if project_id != None:
+                        config_parser.set('main', 'project_id', project_id)
+                        if project_name != None:
                             config_parser.set('main', 'project_name', project_name)
+                    if not project_id:
+                        project_id, project_name = self.create_new_project(folder_name, community_id, workflow_id)
+                        config_parser.set('main', 'project_id', project_id)
+                        config_parser.set('main', 'project_name', project_name)
 
-                    except KeyboardInterrupt:
-                        # Python 2
-                        # logger.info("\nInit canceled")
-                        # End Python 2
-                        # Python 3
-                        logger.error("\nInit canceled")
-                        # End Python 3
-                        return
+                except KeyboardInterrupt:
+                    # Python 2
+                    # logger.info("\nInit canceled")
+                    # End Python 2
+                    # Python 3
+                    logger.error("\nInit canceled")
+                    # End Python 3
+                    return
 
                 # get workflow
                 logger.info('---------------------------')
