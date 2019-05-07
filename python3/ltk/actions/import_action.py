@@ -130,7 +130,7 @@ class ImportAction(Action):
 
     def import_document(self, document_id, document_info, force=False, path=False):
         local_ids = self.doc_manager.get_doc_ids()
-        response = self.api.document_content(document_id, None, None, None, self.finalized_file)
+        response = self.api.document_content(document_id, None, None, finalized_file=self.finalized_file)
         if(response.status_code == 400):
             if document_info and document_info['title']:
                 title = document_info['title']
