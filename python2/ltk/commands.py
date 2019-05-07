@@ -375,7 +375,7 @@ def download(auto_format, locales, locale_ext, no_ext, xliff, file_names):
         return
 
 
-@ltk.command()
+@ltk.command(short_help='Pulls translations for all added documents for all locales or by specified locales')
 @click.option('-a', '--auto_format', flag_value=True, help='Flag to auto apply formatting during download')
 @click.option('-e', '--locale_ext', flag_value=True, help="Specifies to add the name of the locale as an extension to the file name (ex: doc1.fr_FR.docx). This is the default unless the clone download option is active.")
 @click.option('-n', '--no_ext', flag_value=True, help="Specifies to not add the name of the locale as an extension to the file name. This is the default if the clone download option is active.")

@@ -33,7 +33,7 @@ class Action:
         self.workflow_id = ''  # default workflow id; MT phase only
         self.locale = ''
         self.clone_option = 'on'
-        self.finalized_file = 'on'
+        self.finalized_file = 'off'
         self.unzip_file = 'on'
         self.auto_format_option = ''
         self.download_option = 'clone'
