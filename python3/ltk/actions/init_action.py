@@ -917,24 +917,23 @@ class InitAction():
             return False
 
     def set_finalized_file_option(self):
-        finalized_file = 'on'
+        finalized_file = 'off'
         try:
             confirm = 'none'
-            while confirm != 'on' and confirm != 'On' and confirm != 'ON' and confirm != 'off' and confirm != 'Off' and confirm != '':
-                prompt_message = 'Would you like to turn finalized file download on or off? [ON/off]: '
+            while confirm.lower() not in ['on', 'off', '']:
+                prompt_message = 'Would you like to turn finalized file download on or off? [on/OFF]: '
                 # Python 2
                 # confirm = raw_input(prompt_message)
                 # End Python 2
                 # Python 3
                 confirm = input(prompt_message)
                 # End Python 3
-                if confirm in ['on', 'On', 'ON', 'off', 'Off', '']:
-                    if confirm in ['on', 'On', 'ON', '']:
-                        logger.info("Finalized file download set to ON\n")
-                        finalized_file = 'on'
-                    else:
-                        logger.info("Finalized file download set to OFF\n")
-                        finalized_file = 'off'
+            if confirm.lower() == 'on':
+                logger.info("Finalized file download set to ON\n")
+                finalized_file = 'on'
+            else:
+                logger.info("Finalized file download set to OFF\n")
+                finalized_file = 'off'
 
         except KeyboardInterrupt:
             # Python 2

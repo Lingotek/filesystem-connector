@@ -115,9 +115,6 @@ class InitAction():
             config_parser.set('main', 'access_token', access_token)
             config_parser.set('main', 'host', host)
             # config_parser.set('main', 'root_path', project_path)
-            logger.info('---------------------------')
-            logger.info('SELECT LINGOTEK COMMUNITY')
-            logger.info('---------------------------')
             # get community id
             community_info = self.api.get_communities_info()
             if not community_info:
@@ -131,6 +128,9 @@ class InitAction():
             if len(community_info) == 0:
                 raise exceptions.ResourceNotFound('You are not part of any communities in Lingotek Cloud')
             if len(community_info) > 1:
+                logger.info('---------------------------')
+                logger.info('SELECT LINGOTEK COMMUNITY')
+                logger.info('---------------------------')
                 community_id, community_name = self.display_choice('community', community_info)
             else:
                 for id in community_info:
@@ -149,32 +149,34 @@ class InitAction():
                     except:
                         logger.error('Something went wrong trying to find projects in your community')
                         return
-                if len(project_info) > 0:
-                    project_id = None
-                    project_name = None
-                    confirm = 'none'
-                    try:
-                        logger.info('---------------------------')
-                        logger.info('SELECT LINGOTEK PROJECT')
-                        logger.info('---------------------------')
+                project_id = None
+                project_name = None
+                confirm = 'none'
+                try:
+                    logger.info('---------------------------')
+                    logger.info('SELECT LINGOTEK PROJECT')
+                    logger.info('---------------------------')
+                    if len(project_info) > 0:
                         project_id, project_name = self.display_choice('project', project_info)
-                        if project_id != None:
-                            config_parser.set('main', 'project_id', project_id)
-                            if project_name != None:
-                                config_parser.set('main', 'project_name', project_name)
-                        if not project_id:
-                            project_id, project_name = self.create_new_project(folder_name, community_id, workflow_id)
-                            config_parser.set('main', 'project_id', project_id)
+                    else:
+                        logger.info('There are no projects')
+                    if project_id != None:
+                        config_parser.set('main', 'project_id', project_id)
+                        if project_name != None:
                             config_parser.set('main', 'project_name', project_name)
+                    if not project_id:
+                        project_id, project_name = self.create_new_project(folder_name, community_id, workflow_id)
+                        config_parser.set('main', 'project_id', project_id)
+                        config_parser.set('main', 'project_name', project_name)
 
-                    except KeyboardInterrupt:
-                        # Python 2
-                        logger.info("\nInit canceled")
-                        # End Python 2
-                        # Python 3
-#                         logger.error("\nInit canceled")
-                        # End Python 3
-                        return
+                except KeyboardInterrupt:
+                    # Python 2
+                    logger.info("\nInit canceled")
+                    # End Python 2
+                    # Python 3
+#                     logger.error("\nInit canceled")
+                    # End Python 3
+                    return
 
                 # get workflow
                 logger.info('---------------------------')
@@ -429,7 +431,7 @@ class InitAction():
                 logger.error("Error on init: "+str(e))
 
     def create_new_project(self, folder_name, community_id, workflow_id):
-        prompt_message = "Please enter a new Lingotek project name: %s" % folder_name + chr(8) * len(folder_name)
+        prompt_message = "Please enter a new Lingotek project name [%s]: " % folder_name
         try:
             # Python 2
             project_name = raw_input(prompt_message)
@@ -915,24 +917,23 @@ class InitAction():
             return False
 
     def set_finalized_file_option(self):
-        finalized_file = 'on'
+        finalized_file = 'off'
         try:
             confirm = 'none'
-            while confirm != 'on' and confirm != 'On' and confirm != 'ON' and confirm != 'off' and confirm != 'Off' and confirm != '':
-                prompt_message = 'Would you like to turn finalized file download on or off? [ON/off]: '
+            while confirm.lower() not in ['on', 'off', '']:
+                prompt_message = 'Would you like to turn finalized file download on or off? [on/OFF]: '
                 # Python 2
                 confirm = raw_input(prompt_message)
                 # End Python 2
                 # Python 3
 #                 confirm = input(prompt_message)
                 # End Python 3
-                if confirm in ['on', 'On', 'ON', 'off', 'Off', '']:
-                    if confirm in ['on', 'On', 'ON', '']:
-                        logger.info("Finalized file download set to ON\n")
-                        finalized_file = 'on'
-                    else:
-                        logger.info("Finalized file download set to OFF\n")
-                        finalized_file = 'off'
+            if confirm.lower() == 'on':
+                logger.info("Finalized file download set to ON\n")
+                finalized_file = 'on'
+            else:
+                logger.info("Finalized file download set to OFF\n")
+                finalized_file = 'off'
 
         except KeyboardInterrupt:
             # Python 2
