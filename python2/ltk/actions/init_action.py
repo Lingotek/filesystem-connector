@@ -115,9 +115,6 @@ class InitAction():
             config_parser.set('main', 'access_token', access_token)
             config_parser.set('main', 'host', host)
             # config_parser.set('main', 'root_path', project_path)
-            logger.info('---------------------------')
-            logger.info('SELECT LINGOTEK COMMUNITY')
-            logger.info('---------------------------')
             # get community id
             community_info = self.api.get_communities_info()
             if not community_info:
@@ -131,6 +128,9 @@ class InitAction():
             if len(community_info) == 0:
                 raise exceptions.ResourceNotFound('You are not part of any communities in Lingotek Cloud')
             if len(community_info) > 1:
+                logger.info('---------------------------')
+                logger.info('SELECT LINGOTEK COMMUNITY')
+                logger.info('---------------------------')
                 community_id, community_name = self.display_choice('community', community_info)
             else:
                 for id in community_info:
@@ -149,29 +149,34 @@ class InitAction():
                     except:
                         logger.error('Something went wrong trying to find projects in your community')
                         return
-                if len(project_info) > 0:
-                    project_id = None
-                    project_name = None
-                    confirm = 'none'
-                    try:
+                project_id = None
+                project_name = None
+                confirm = 'none'
+                try:
+                    logger.info('---------------------------')
+                    logger.info('SELECT LINGOTEK PROJECT')
+                    logger.info('---------------------------')
+                    if len(project_info) > 0:
                         project_id, project_name = self.display_choice('project', project_info)
-                        if project_id != None:
-                            config_parser.set('main', 'project_id', project_id)
-                            if project_name != None:
-                                config_parser.set('main', 'project_name', project_name)
-                        if not project_id:
-                            project_id, project_name = self.create_new_project(folder_name, community_id, workflow_id)
-                            config_parser.set('main', 'project_id', project_id)
+                    else:
+                        logger.info('There are no projects')
+                    if project_id != None:
+                        config_parser.set('main', 'project_id', project_id)
+                        if project_name != None:
                             config_parser.set('main', 'project_name', project_name)
+                    if not project_id:
+                        project_id, project_name = self.create_new_project(folder_name, community_id, workflow_id)
+                        config_parser.set('main', 'project_id', project_id)
+                        config_parser.set('main', 'project_name', project_name)
 
-                    except KeyboardInterrupt:
-                        # Python 2
-                        logger.info("\nInit canceled")
-                        # End Python 2
-                        # Python 3
-#                         logger.error("\nInit canceled")
-                        # End Python 3
-                        return
+                except KeyboardInterrupt:
+                    # Python 2
+                    logger.info("\nInit canceled")
+                    # End Python 2
+                    # Python 3
+#                     logger.error("\nInit canceled")
+                    # End Python 3
+                    return
 
                 # get workflow
                 logger.info('---------------------------')
@@ -202,44 +207,7 @@ class InitAction():
 
                 # ask about advanced settings
                 if(self.prompt_advanced_settings() == True):
-                    # git auto-commit
-                    username, encrypted_password = self.set_git_autocommit()
-                    if not username == None and not encrypted_password == None:
-                        config_parser.set('main', 'git_autocommit', 'on')
-                        config_parser.set('main', 'git_username', username)
-                        config_parser.set('main', 'git_password', encrypted_password)
-                    else:
-                        config_parser.set('main', 'git_autocommit', 'off')
-                        config_parser.set('main', 'git_username', '')
-                        config_parser.set('main', 'git_password', '')
-
-                    # toggle clone on/off
-                    print("\n--------------------------------")
-                    print("CLONE OPTION:")
-                    print("Toggle clone download option \'on\' and \'off\'.\n\nTurning clone \'on\': Translations will be downloaded to a cloned folder structure, where the root folder for each locale is the locale folder specified in config or a locale folder inside of the default download folder. If a default download folder is not set, then translations will be downloaded to the directory where the project was initialized.\n\nTurning clone \'off\': If a download folder is specified, downloaded translations will download to that folder, but not in a cloned folder structure. If no download folder is specified, downloaded translations will go to the same folder as their corresponding source files.")
-                    self.turn_clone_on = self.set_clone_option()
-                    if self.turn_clone_on:
-                        config_parser.set('main', 'clone_option', 'on')
-                    else:
-                        config_parser.set('main', 'clone_option', 'off')
-
-                    # toggle auto-format on/off
-                    print("--------------------------------")
-                    print("AUTO-FORMAT:")
-                    print("Toggle auto format option \'on\' and \'off\'. Applies formatting during download.")
-                    turn_auto_format_on = self.set_auto_format_option()
-                    if turn_auto_format_on:
-                        config_parser.set('main', 'auto_format', 'on')
-                    else:
-                        config_parser.set('main', 'auto_format', 'off')
-
-                    # change append options
-                    print("--------------------------------")
-                    print("APPEND OPTION:")
-                    print('Change the format of the default name given to documents on the Lingotek system.\nDefine file information to append to document names as none, full, number:+a number of folders down to include (e.g. number:2), or name:+a name of a directory to start after if found in file path (e.g. name:dir). Default option is none.')
-                    append_option = self.set_append_option()
-                    if not append_option == None:
-                        config_parser.set('main', 'append_option', append_option)
+                    self.show_advanced_settings(config_parser)
 
                 logger.info("\nAll finished. Use ltk -h to learn more about using Lingotek Filesystem Connector.")
                 config_parser.write(config_file)
@@ -257,6 +225,61 @@ class InitAction():
                 logger.error("Error connecting to Lingotek's TMS")
             else:
                 logger.error("Error on init: "+str(e))
+
+    def show_advanced_settings(self, config_parser):
+        # git auto-commit
+        username, encrypted_password = self.set_git_autocommit()
+        if not username == None and not encrypted_password == None:
+            config_parser.set('main', 'git_autocommit', 'on')
+            config_parser.set('main', 'git_username', username)
+            config_parser.set('main', 'git_password', encrypted_password)
+        else:
+            config_parser.set('main', 'git_autocommit', 'off')
+            config_parser.set('main', 'git_username', '')
+            config_parser.set('main', 'git_password', '')
+
+        # toggle clone on/off
+        print("\n--------------------------------")
+        print("CLONE OPTION:")
+        print("Toggle clone download option \'on\' and \'off\'.\n\nTurning clone \'on\': Translations will be downloaded to a cloned folder structure, where the root folder for each locale is the locale folder specified in config or a locale folder inside of the default download folder. If a default download folder is not set, then translations will be downloaded to the directory where the project was initialized.\n\nTurning clone \'off\': If a download folder is specified, downloaded translations will download to that folder, but not in a cloned folder structure. If no download folder is specified, downloaded translations will go to the same folder as their corresponding source files.")
+        self.turn_clone_on = self.set_clone_option()
+        if self.turn_clone_on:
+            config_parser.set('main', 'clone_option', 'on')
+        else:
+            config_parser.set('main', 'clone_option', 'off')
+
+        # toggle auto-format on/off
+        print("--------------------------------")
+        print("AUTO-FORMAT:")
+        print("Toggle auto format option \'on\' and \'off\'. Applies formatting during download.")
+        turn_auto_format_on = self.set_auto_format_option()
+        if turn_auto_format_on:
+            config_parser.set('main', 'auto_format', 'on')
+        else:
+            config_parser.set('main', 'auto_format', 'off')
+
+        # change append options
+        print("--------------------------------")
+        print("APPEND OPTION:")
+        print('Change the format of the default name given to documents on the Lingotek system.\nDefine file information to append to document names as none, full, number:+a number of folders down to include (e.g. number:2), or name:+a name of a directory to start after if found in file path (e.g. name:dir). Default option is none.')
+        append_option = self.set_append_option()
+        if not append_option == None:
+            config_parser.set('main', 'append_option', append_option)
+
+        # Toggle finalized file download option
+        print("\n--------------------------------")
+        print("DOWNLOAD FINALIZED FILE:")
+        print("Toggle finalized file download option 'on' or 'off'. Turning this option on downloads the finalized file instaed of the raw translation. " +
+              "A finalized file is typically a file that has undergone some sort of post editing like Desktop Publishing after the translation has completed.")
+        self.finalized_file = self.set_finalized_file_option()
+        config_parser.set('main', 'finalized_file', self.finalized_file)
+
+        if self.finalized_file == 'on':
+            print("\n--------------------------------")
+            print("UNZIP FINALIZED FILE:")
+            print("Toggle UNZIP finalized file option 'on' or 'off'. Turning this option on unzips the file from TMS. Turning it off leaves the file unzipped.")
+            self.unzip_file = self.prompt_unzip_file_option()
+            config_parser.set('main', 'unzip_file', self.unzip_file)
 
     def check_global(self, host):
         # check for a global config file and return the access token
@@ -408,7 +431,7 @@ class InitAction():
                 logger.error("Error on init: "+str(e))
 
     def create_new_project(self, folder_name, community_id, workflow_id):
-        prompt_message = "Please enter a new Lingotek project name: %s" % folder_name + chr(8) * len(folder_name)
+        prompt_message = "Please enter a new Lingotek project name [%s]: " % folder_name
         try:
             # Python 2
             project_name = raw_input(prompt_message)
@@ -513,10 +536,8 @@ class InitAction():
         table = []
         for locale in locale_info:
             if not len(locale[2]):  # Arabic
-                # print ("{0} ({1})".format(locale[0], locale[1]))
                 table.append(["{0}".format(locale[0]), "{0}".format(locale[1])])
             else:
-                # print ("{0} ({1}, {2})".format(locale[0], locale[1], locale[2]))
                 table.append(["{0}".format(locale[0]), "{0}, {1}".format(locale[1], locale[2])])
         print(tabulate(table, headers=["Code", "Locale Name"]))
         return locale_dict
@@ -894,3 +915,64 @@ class InitAction():
         else:
             logger.warning('Error: Not a valid option')
             return False
+
+    def set_finalized_file_option(self):
+        finalized_file = 'off'
+        try:
+            confirm = 'none'
+            while confirm.lower() not in ['on', 'off', '']:
+                prompt_message = 'Would you like to turn finalized file download on or off? [on/OFF]: '
+                # Python 2
+                confirm = raw_input(prompt_message)
+                # End Python 2
+                # Python 3
+#                 confirm = input(prompt_message)
+                # End Python 3
+            if confirm.lower() == 'on':
+                logger.info("Finalized file download set to ON\n")
+                finalized_file = 'on'
+            else:
+                logger.info("Finalized file download set to OFF\n")
+                finalized_file = 'off'
+
+        except KeyboardInterrupt:
+            # Python 2
+            logger.info("\nInit canceled")
+            # End Python 2
+            # Python 3
+#             logger.error("\nInit canceled")
+            # End Python 3
+            return
+
+        return finalized_file
+
+    def prompt_unzip_file_option(self):
+        unzip_file = 'on'
+        try:
+            confirm = 'none'
+            while confirm != 'on' and confirm != 'On' and confirm != 'ON' and confirm != 'off' and confirm != 'Off' and confirm != '':
+                prompt_message = 'Would you like to turn finalized file UNZIP on or off? [ON/off]: '
+                # Python 2
+                confirm = raw_input(prompt_message)
+                # End Python 2
+                # Python 3
+#                 confirm = input(prompt_message)
+                # End Python 3
+                if confirm in ['on', 'On', 'ON', 'off', 'Off', '']:
+                    if confirm in ['on', 'On', 'ON', '']:
+                        logger.info("Finalized file UNZIP set to ON\n")
+                        unzip_file = 'on'
+                    else:
+                        logger.info("Finalized file UNZIP set to OFF\n")
+                        unzip_file = 'off'
+
+        except KeyboardInterrupt:
+            # Python 2
+            logger.info("\nInit canceled")
+            # End Python 2
+            # Python 3
+#             logger.error("\nInit canceled")
+            # End Python 3
+            return
+
+        return unzip_file

@@ -1,6 +1,8 @@
 from ltk.actions.action import *
 import json
 import re
+import tempfile
+import zipfile
 
 class DownloadAction(Action):
     def __init__(self, path):
@@ -37,7 +39,7 @@ class DownloadAction(Action):
 
     def download_action(self, document_id, locale_code, auto_format, xliff=False, locale_ext=True):
         try:
-            response = self.api.document_content(document_id, locale_code, auto_format, xliff)
+            response = self.api.document_content(document_id, locale_code, auto_format, xliff, self.finalized_file)
             entry = None
             entry = self.doc_manager.get_doc_by_prop('id', document_id)
             git_commit_message = self.DEFAULT_COMMIT_MESSAGE
@@ -49,7 +51,7 @@ class DownloadAction(Action):
                         return
                     self._clone_download(locale_code)
                 elif 'folder' in self.download_option:
-                    locale_code = locale_code.replace("-","_")
+                    locale_code = locale_code.replace("-","_")#change to be _ to - to be consistent with the other cases.  Currently the default is xx-XX in all cases except this one (clone off, download folder specified) 
                     if locale_code in self.locale_folders:
                         if self.locale_folders[locale_code] == 'null':
                             logger.warning("Download failed: folder not specified for "+locale_code)
@@ -113,9 +115,19 @@ class DownloadAction(Action):
 
                 # create new file and write contents
                 try:
-                    with open(self.download_path, 'wb') as fh:
-                        for chunk in response.iter_content(1024):
-                            fh.write(chunk)
+                    if response.headers['Content-Type'] == 'application/zip':
+                        if self.unzip_file == 'on':
+                            self.unzip_finalized_file(response, base_name, locale_code)
+                        else:
+                            self.download_path = self.download_path + ".zip"
+                            downloaded_name = downloaded_name + '.zip'
+                            with open(self.download_path, 'wb') as fh:
+                                for chunk in response.iter_content(1024):
+                                    fh.write(chunk)
+                    else:
+                        with open(self.download_path, 'wb') as fh:
+                            for chunk in response.iter_content(1024):
+                                fh.write(chunk)
                     logger.info('Downloaded: {0} ({1} - {2})\n'.format(downloaded_name, self.get_relative_path(self.download_path), locale_code))
 
                     # configure commit message
@@ -263,3 +275,13 @@ class DownloadAction(Action):
                 new_target.append(target[x].lower())
         return new_target
             
+    def unzip_finalized_file(self, response, base_name, locale_code):
+        with tempfile.SpooledTemporaryFile(mode='w+b') as temp_zip:
+            for chunk in response.iter_content(1024):
+                temp_zip.write(chunk)
+            temp_zip.seek(0)
+            zip_ref = zipfile.ZipFile(temp_zip)
+            with open(self.download_path, 'w+b') as fh:
+                filenames = zip_ref.namelist()
+                fh.write(zip_ref.open(filenames[0]).read())
+            zip_ref.close()

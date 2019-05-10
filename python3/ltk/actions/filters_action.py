@@ -9,14 +9,16 @@ class FiltersAction(Action):
         if response.status_code != 200:
             raise_error(response.json(), 'Failed to get filters')
         filter_entities = response.json()['entities']
-        print ('Filters: id, created, title')
+        table = []
+        headers = ["Title","Created","ID"]
         for entry in sorted(filter_entities, key=lambda entry: entry['properties']['upload_date'], reverse=True):
             properties = entry['properties']
-            title = properties['title']
             filter_id = properties['id']
             upload_date = time.strftime("%Y-%m-%d", time.localtime(int(properties['upload_date']/1000)))
             is_public = " (public)" if properties['is_public'] else ""
-            print ('{0}  {1}  {2}{3}'.format(filter_id, upload_date, title, is_public))
+            title = "{0}{1}".format(properties['title'], is_public)
+            table.append([title,upload_date,filter_id])
+        print(tabulate(table,headers=headers))
 
     def filter_rm_action(self, filter_id):
         response = self.api.delete_filter(filter_id)

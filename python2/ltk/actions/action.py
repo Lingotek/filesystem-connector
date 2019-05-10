@@ -33,6 +33,8 @@ class Action:
         self.workflow_id = ''  # default workflow id; MT phase only
         self.locale = ''
         self.clone_option = 'on'
+        self.finalized_file = 'off'
+        self.unzip_file = 'on'
         self.auto_format_option = ''
         self.download_option = 'clone'
         self.download_dir = None  # directory where downloaded translation will be stored
@@ -79,6 +81,14 @@ class Action:
                 self.auto_format_option = conf_parser.get('main', 'auto_format')
             else:
                 self.update_config_file('auto_format', 'on', conf_parser, config_file_name, "")
+            if conf_parser.has_option('main', 'finalized_file'):
+                self.finalized_file = conf_parser.get('main', 'finalized_file')
+            else:
+                self.update_config_file('finalized_file', 'off', conf_parser, config_file_name, "")
+            if conf_parser.has_option('main', 'unzip_file'):
+                self.unzip_file = conf_parser.get('main', 'unzip_file')
+            else:
+                self.update_config_file('unzip_file', 'on', conf_parser, config_file_name, "")
             if conf_parser.has_option('main', 'project_name'):
                 self.project_name = conf_parser.get('main', 'project_name')
             if conf_parser.has_option('main', 'download_folder'):
@@ -450,7 +460,6 @@ def choice_mapper(info):
     mapper = {}
     import operator
 
-    #sorted_info = sorted(info.iteritems(), key=operator.itemgetter(1))
     sorted_info = sorted(info.items(), key = operator.itemgetter(1))
 
     index = 0
@@ -461,15 +470,12 @@ def choice_mapper(info):
     table = []
     for k,v in mapper.items():
         try:
+            headers=["ID","Name","UUID"]
             for values in v:
-                table.append({
-                    "ID": k,
-                    "Name": v[values],
-                    "UUID": values
-                })
+                table.append([ k, v[values], values ])
         except UnicodeEncodeError:
             continue
-    print(tabulate(table, headers="keys"), "\n")
+    print(tabulate(table, headers=headers))
     return mapper
 
 def find_conf(curr_path):
@@ -560,14 +566,3 @@ def getRegexFiles(pattern,path):
             matched_files.append(os.path.join(path, fn))
     # print("matched files: "+str(matched_files))
     return matched_files
-
-def log_id_names(json):
-    """
-    logs the id and titles from a json object
-    """
-    ids = []
-    titles = []
-    for entity in json['entities']:
-        ids.append(entity['properties']['id'])
-        titles.append(entity['properties']['title'])
-    return ids, titles

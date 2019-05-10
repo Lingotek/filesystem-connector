@@ -294,7 +294,7 @@ class ApiCalls:
             self.handleError()
         return r
 
-    def document_content(self, document_id, locale_code, auto_format, xliff=False):
+    def document_content(self, document_id, locale_code, auto_format, xliff=False, finalized_file='off'):
         """ downloads the translated document """
         headers = self.headers
         try:
@@ -305,6 +305,8 @@ class ApiCalls:
                 payload['locale_code'] = locale_code
             if xliff:
                 headers['Accept'] = 'application/x-xliff+xml'
+            if finalized_file == 'on':
+                payload['finalized_file'] = 'true'
 
             r = requests.get(self.host + uri, headers=headers, params=payload, stream=True)
             log_api('GET', uri, r)
@@ -501,4 +503,7 @@ def log_api(method, uri, response):
             response_info = 'No json response available'
         logger.api_response(response_info)
     elif 'content-length' in response.headers and response.headers['content-length'] != '0':
-        logger.api_response(response.content.decode('UTF-8'))
+        if response.headers['content-type'] == 'application/zip':
+            logger.api_response('Zip file')
+        else:
+            logger.api_response(response.content.decode('UTF-8'))

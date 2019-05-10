@@ -31,18 +31,19 @@ class ListAction(Action):
         filter_entities = response.json()['entities']
         # print ('Filters: id, created, title')
         table = []
+        headers=["ID","Created","Title"]
         for entry in sorted(filter_entities, key=lambda entry: entry['properties']['upload_date'], reverse=True):
             properties = entry['properties']
             title = properties['title']
             filter_id = properties['id']
             upload_date = time.strftime("%Y-%m-%d", time.localtime(int(properties['upload_date']/1000)))
             is_public = " (public)" if properties['is_public'] else ""
-            table.append({
-                "ID": str(filter_id),
-                "Created": str(upload_date),
-                "Title": title
-            })
-        print(tabulate(table, headers="keys"))
+            table.append([
+                str(filter_id), #ID
+                str(upload_date), #Created
+                title #Title
+            ])
+        print(tabulate(table, headers=headers))
 
     def list_formats(self):
         format_info = self.api.get_document_formats()
@@ -61,8 +62,11 @@ class ListAction(Action):
         print("Lingotek Cloud accepts content using any of the formats listed below. File formats will be auto-detected for the extensions as specified below. Alternatively, formats may be specified explicitly upon add. Lingotek supports variations and customizations on these formats with filters.\n")
         table = []
         for k,v in sorted(format_list.items()):
-            table.append({"Format": k, "Auto-detected File Extensions": ' | '.join([str(x) for x in v])})
-        print(tabulate(table, headers="keys"))
+            table.append([
+                k, # Format
+                ' | '.join([str(x) for x in v]) # Auto-detected File Extensions
+            ])
+        print(tabulate(table, headers=["Format","Auto-detected File Extensions"]))
         
     def list_ids(self, hide_docs, title=False):
         try:
@@ -73,10 +77,10 @@ class ListAction(Action):
                 table = []
                 for folder in folders:
                     if title:
-                        table.append({"Folder Path": folder})
+                        table.append([folder])
                     else:
-                        table.append({"Folder Path": self.get_relative_path(folder)})
-                print(tabulate(table, headers="keys"))
+                        table.append([self.get_relative_path(folder)])
+                print(tabulate(table, headers=["Folder Path"]))
                 if hide_docs:
                     return
                 print("")
@@ -118,12 +122,13 @@ class ListAction(Action):
                     title = title[(len(titles[i])-30):]
                 for locale in locales[i]:
                     locale.replace('_', '-')
-                table.append({
-                    "Filename": title,
-                    "Lingotek ID": str(ids[i]),
-                    "Locales": ', '.join([str(x).replace('_', '-') for x in locales[i]])
-                })
-            print(tabulate(table, headers="keys"))
+                headers = ["Filename","Lingotek ID","Locales"]
+                table.append([
+                    title,
+                    str(ids[i]),
+                    ', '.join([str(x).replace('_', '-') for x in locales[i]])
+                ])
+            print(tabulate(table, headers=headers))
         except Exception as e:
             log_error(self.error_file_name, e)
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
@@ -162,21 +167,26 @@ class ListAction(Action):
                 raise_error("", "Failed to get status of documents", True)
         else:
             table = []
+            headers=["Name", "Lingotek ID"]
             for entry in response.json()['entities']:
                 title = entry['properties']['title']
                 id = entry['properties']['id']
-                table.append({"ID": id, "Document Name": title})
-            print(tabulate(table, headers="keys"))
+                table.append([title, id])
+            print(tabulate(table, headers=headers))
 
     def list_workflows(self):
         try:
             response = self.api.list_workflows(self.community_id)
             if response.status_code != 200:
                 raise_error(response.json(), "Failed to list workflows")
-            ids, titles = log_id_names(response.json())
-            if not ids:
-                print ('No workflows')
-                return
-            print(tabulate({"ID": ids, "Workflow Name": titles}, headers="keys"))
+
+            table = []
+            headers=["Workflow Name", "ID"]
+            for entry in response.json()['entities']:
+                title = entry['properties']['title']
+                id = entry['properties']['id']
+                table.append([title, id])
+            print(tabulate(table, headers=headers))
+
         except:
             logger.error("An error occurred while attempting to connect to remote.")

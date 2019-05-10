@@ -170,6 +170,9 @@ def init(host, access_token, client_id, path, project_name, workflow_id, locale,
 @click.option('-w', '--workflow_id', help='Change the default workflow id for the project')
 @click.option('-c', '--clone_option', help='Toggle clone download option \'on\' and \'off\'. Turning clone \'on\': Translations will be downloaded to a cloned folder structure, where the root folder for each locale is the locale folder specified in config or a locale folder inside of the default download folder. If a default download folder is not set, then translations will be downloaded to the directory where the project was initialized.' +
                                                 'Turning clone \'off\': If a download folder is specified, downloaded translations will download to that folder, but not in a cloned folder structure. If no download folder is specified, downloaded translations will go to the same folder as their corresponding source files.')
+@click.option('-ff', '--finalized_file', help='Toggle finalized file download option \'on\' and \'off\'. Turning finalized file on downloads the finalized file instead of the raw translation.\
+                                                A finalized file is typically a file that has undergone some sort of post editing like Desktop Publishing after the translation has compeleted.')
+@click.option('-u', '--unzip_file', help='Toggle finalized file UNZIP option \'on\' and \'off\'. With this option \'on\' contents of the finalized file will be placed in the expected directory.')
 @click.option('-d', '--download_folder',
               help='Specify a default folder for where downloaded translations should go. Use --none to remove the download folder. Using --none will cause downloaded translations to download to the same folder as their corresponding source files.')
 @click.option('-t', '--target_locales', multiple=True,
@@ -265,11 +268,13 @@ def add(file_names, **kwargs):
         return
 
 @ltk.command(short_help="Sends updated content to Lingotek for documents that have been added")
-def push():
+@click.option('-n', '--test', 'test', flag_value=True, help='Shows which files will be added or updated without actually uploading any content')
+@click.option('-t', '--title', 'title', flag_value=True, help='Display document titles rather than file paths')
+def push(test, title):
     """ Sends updated content to Lingotek for documents that have been added """
     try:
         add = add_action.AddAction(os.getcwd())
-        action = push_action.PushAction(add, os.getcwd())
+        action = push_action.PushAction(add, os.getcwd(), test, title)
         init_logger(action.path)
         action.push_action()
     except UninitializedError as e:
@@ -370,7 +375,7 @@ def download(auto_format, locales, locale_ext, no_ext, xliff, file_names):
         return
 
 
-@ltk.command()
+@ltk.command(short_help='Pulls translations for all added documents for all locales or by specified locales')
 @click.option('-a', '--auto_format', flag_value=True, help='Flag to auto apply formatting during download')
 @click.option('-e', '--locale_ext', flag_value=True, help="Specifies to add the name of the locale as an extension to the file name (ex: doc1.fr_FR.docx). This is the default unless the clone download option is active.")
 @click.option('-n', '--no_ext', flag_value=True, help="Specifies to not add the name of the locale as an extension to the file name. This is the default if the clone download option is active.")

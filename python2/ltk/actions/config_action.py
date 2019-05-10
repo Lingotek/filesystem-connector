@@ -21,6 +21,12 @@ class ConfigAction(Action):
             if 'clone_option' in kwargs and kwargs['clone_option']:
                 self.set_clone_option(kwargs['clone_option'])
 
+            if 'finalized_file' in kwargs and kwargs['finalized_file']:
+                self.set_finalized_file_option(kwargs['finalized_file'])
+
+            if 'unzip_file' in kwargs and kwargs['unzip_file']:
+                self.set_unzip_file_option(kwargs['unzip_file'])
+
             if 'target_locales' in kwargs and kwargs['target_locales']:
                 self.set_target_locales(kwargs['target_locales'])
 
@@ -76,8 +82,8 @@ class ConfigAction(Action):
             if str(watch_locales) == "[]" or not watch_locales:
                 watch_locales = "None"
             """ print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity ID: {4}\nWorkflow ID: {5}\n'
-                'Default Source Locale: {6}\nClone Option: {7}\nAuto Format: {8}\nDownload Folder: {9}\nTarget Locales: {10}\nTarget Locale Folders: {11}\nGit Auto-commit: {12}\nAppend Option: {13}'.format(
-                self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.clone_option, self.auto_format_option,
+                'Default Source Locale: {6}\nClone Option: {7}\nDownload Finalized Files: {8}\nAuto Format: {9}\nDownload Folder: {10}\nTarget Locales: {11}\nTarget Locale Folders: {12}\nGit Auto-commit: {13}\nAppend Option: {14}'.format(
+                self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.clone_option, self.finalized_file, self.auto_format_option,
                 download_dir, watch_locales, locale_folders_str, git_output, self.append_option)) """
             table = [
                 ["Host", self.host], 
@@ -87,6 +93,7 @@ class ConfigAction(Action):
                 ["Workflow ID", self.workflow_id],
                 ["Default Source Locale", self.locale],
                 ["Clone Option", self.clone_option],
+                ["Download Finalized Files", self.finalized_file],
                 ["Auto Format", self.auto_format_option],
                 ["Download Folder", self.download_dir],
                 ["Target Locales", list(self.watch_locales)],
@@ -94,6 +101,8 @@ class ConfigAction(Action):
                 ["Git Auto-commit", git_output],
                 ["Append Option", self.append_option.title()]
             ]
+            if self.finalized_file == 'on':
+                table.append(["Unzip Finalized File", self.unzip_file])
             print("Configuration Options")
             print(tabulate(table))
         self.print_config = True
@@ -167,9 +176,69 @@ class ConfigAction(Action):
             logger.warning('Error: Invalid value for "-c" / "--clone_option": Must be either "on" or "off"')
             print_config = False
 
+    def set_finalized_file_option(self, finalized_file, print_info=True):
+        if finalized_file:
+            finalized_file = finalized_file.lower()
+        if print_info:
+            log_info = 'Turned finalized file download ' + finalized_file
+        else:
+            log_info = ''
+        if finalized_file == 'on' or finalized_file == 'off':
+            self.finalized_file = finalized_file
+            self.update_config_file('finalized_file', finalized_file, self.conf_parser, self.config_file_name, log_info)
+            if self.finalized_file == 'on':
+                unzip_file = self.prompt_unzip_file_option()
+                self.set_unzip_file_option(unzip_file)
+        else:
+            logger.warning('Error: Invalid value for "-ff" / "--finalized_file": Must be either "on" or "off"')
+            self.print_config = False
+
+    def prompt_unzip_file_option(self):
+        unzip_file = 'on'
+        try:
+            confirm = 'none'
+            while confirm not in ['on', 'On', 'ON', 'off', 'Off', '']:
+                prompt_message = 'Would you like to turn finalized file UNZIP on or off? [ON/off]: '
+                # Python 2
+                confirm = raw_input(prompt_message)
+                # End Python 2
+                # Python 3
+#                 confirm = input(prompt_message)
+                # End Python 3
+                if confirm in ['on', 'On', 'ON', 'off', 'Off', '']:
+                    if confirm in ['on', 'On', 'ON', '']:
+                        unzip_file = 'on'
+                    else:
+                        unzip_file = 'off'
+
+        except KeyboardInterrupt:
+            # Python 2
+            logger.info("\nInit canceled")
+            # End Python 2
+            # Python 3
+#             logger.error("\nInit canceled")
+            # End Python 3
+            return
+
+        return unzip_file
+
+    def set_unzip_file_option(self, unzip_file, print_info=True):
+        if unzip_file:
+            unzip_file = unzip_file.lower()
+        if print_info:
+            log_info = 'Turned finalized file unzip ' + unzip_file
+        else:
+            log_info = ''
+        if unzip_file == 'on' or unzip_file == 'off':
+            self.unzip_file = unzip_file
+            self.update_config_file('unzip_file', unzip_file, self.conf_parser, self.config_file_name, log_info)
+        else:
+            logger.warning('Error: Invalid value for "-u" / "--unzip_file": Must be either "on" or "off"')
+            self.print_config = False
+
     def set_download_folder(self, download_folder):
         if download_folder == '--none':
-            if self.download_dir == None or self.download_dir == "" or self.download_dir == "null":
+            if self.download_dir == "":
                 pass
             else:
                 new_download_option = 'same'
