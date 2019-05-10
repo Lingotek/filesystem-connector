@@ -51,7 +51,7 @@ class DownloadAction(Action):
                         return
                     self._clone_download(locale_code)
                 elif 'folder' in self.download_option:
-                    locale_code = locale_code.replace("-","_")
+                    locale_code = locale_code.replace("-","_")#change to be _ to - to be consistent with the other cases.  Currently the default is xx-XX in all cases except this one (clone off, download folder specified) 
                     if locale_code in self.locale_folders:
                         if self.locale_folders[locale_code] == 'null':
                             logger.warning("Download failed: folder not specified for "+locale_code)
@@ -281,7 +281,7 @@ class DownloadAction(Action):
                 temp_zip.write(chunk)
             temp_zip.seek(0)
             zip_ref = zipfile.ZipFile(temp_zip)
-            with open(self.download_path, 'wb') as fh:
-                zip_path = locale_code + "/" + self.append_ext_to_file(locale_code, base_name, True)
-                fh.write(zip_ref.open(zip_path).read())
+            with open(self.download_path, 'w+b') as fh:
+                filenames = zip_ref.namelist()
+                fh.write(zip_ref.open(filenames[0]).read())
             zip_ref.close()

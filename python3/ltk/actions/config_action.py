@@ -238,7 +238,7 @@ class ConfigAction(Action):
 
     def set_download_folder(self, download_folder):
         if download_folder == '--none':
-            if self.download_dir == None or self.download_dir == "" or self.download_dir == "null":
+            if self.download_dir == "":
                 pass
             else:
                 new_download_option = 'same'
