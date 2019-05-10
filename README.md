@@ -8,7 +8,7 @@ Content can be sent up in any a variety of formats including: `csv`, `dita`, `di
 
 Developers love how easily it can be used to interact with the Translation Network™.  Using the `-v` and `-vv` switches shows exactly which API calls are being used to help developers code custom connectors.
 
-For release notes, see [here](https://github.com/Lingotek/filesystem-connector/releases) or [here](https://github.com/Lingotek/filesystem-connector/blobl/master/HISTORY.md)
+For release notes, see [here](https://github.com/Lingotek/filesystem-connector/releases) or [here](https://github.com/Lingotek/filesystem-connector/blob/master/HISTORY.md)
 
 ## Installation ##
 ```bash
