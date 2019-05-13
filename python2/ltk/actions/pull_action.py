@@ -47,7 +47,7 @@ class PullAction(Action):
                         git_commit_message += ("" if first_in_message else "; ") + self.doc_manager.get_doc_by_prop("id", document_id)["name"] + ": " + locale_code
                         first_in_message = False
                         first_locale = True
-                        self.download.download_action(document_id, locale_code, auto_format, locale_ext)
+                        self.download.download_action(document_id, locale_code, auto_format, locale_ext=locale_ext)
                 else:
                     logger.info("No documents have been added")
                     documents_added = False
