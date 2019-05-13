@@ -52,6 +52,7 @@ class TestWatch(unittest.TestCase):
         self.files.append(self.dir_name+"/"+file_name)
         if os.path.exists(self.dir_name+file_name):
             delete_file(file_name)
+        time.sleep(10) #Gives watch enough time to start up before creating the document
         create_txt_file(file_name, self.dir_name)
 
         # check if watch detected file and added it to db
@@ -69,6 +70,7 @@ class TestWatch(unittest.TestCase):
         self.files.append(self.dir_name+'/'+file_name)
         if os.path.exists(self.dir_name+file_name):
             delete_file(file_name)
+        time.sleep(10) #Gives watch enough time to start up before creating the document
         create_txt_file(file_name, self.dir_name)
 
         doc = None

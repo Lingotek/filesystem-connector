@@ -56,7 +56,7 @@ class TestStatusAction(unittest.TestCase):
             status = out.getvalue()
             assert 'Status of {0}'.format(self.file_name) in status
             for target in self.targets:
-                assert 'locale: {0}'.format(target) in status
+                assert 'Locale: {0}'.format(target) in status
         finally:
             sys.stdout = sys.__stdout__
 

@@ -23,8 +23,9 @@ class TestConfig(unittest.TestCase):
             self.action.config_action(locale=None, target_locales=None, remove_locales=False, append_option=None, git=False, git_credentials=False,
                 clone_option=None, locale_folder=None, workflow_id = None, download_folder=None)
             info = out.getvalue()
-            key_words = ['Host: https://myaccount.lingotek.com', 'Community ID', 'Locale', 'Workflow ID']
-
+            key_words = ['Community ID', 'Locale', 'Workflow ID']
+            import re
+            assert re.search('Host\s*https://myaccount.lingotek.com', info) #changed to regex because display uses tabulate, which has an indeterminate amount of whitespace to create the columns
             assert all(word in info for word in key_words)
         finally:
             sys.stdout = sys.__stdout__
