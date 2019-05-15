@@ -124,10 +124,10 @@ class DocumentManager:
             return True
         return False
 
-    def add_document(self, title, create_date, doc_id, sys_mtime, last_mod, file_name):
+    def add_document(self, title, create_date, doc_id, sys_mtime, last_mod, file_name, download_folder=''):
         entry = {'name': title, 'added': create_date, 'id': doc_id,
                  'sys_last_mod': sys_mtime, 'last_mod': last_mod, 'file_name': file_name,
-                 'downloaded': []}
+                 'downloaded': [], 'download_folder': download_folder}
         self._db.insert(entry)
 
     def update_document(self, field, new_val, doc_id):
@@ -190,6 +190,14 @@ class DocumentManager:
         if entry:
             downloads = entry['downloaded']
             return downloads
+
+    def get_doc_target_folder(self, file_name):
+        """ returns the target download folder for a given file """
+        folder = ''
+        entry = self._db.get(where("file_name") == file_name)
+        if entry:
+            folder = entry['download_folder']
+        return folder
 
     def remove_element(self, doc_id):
         self._db.remove(where('id') == doc_id)

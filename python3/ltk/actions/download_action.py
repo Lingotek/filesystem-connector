@@ -42,10 +42,16 @@ class DownloadAction(Action):
             response = self.api.document_content(document_id, locale_code, auto_format, xliff, self.finalized_file)
             entry = None
             entry = self.doc_manager.get_doc_by_prop('id', document_id)
+            specific_folder = False
+            if entry:
+                if self.doc_manager.get_doc_target_folder(entry['file_name']):
+                    specific_folder = True
             git_commit_message = self.DEFAULT_COMMIT_MESSAGE
             if response.status_code == 200:
                 self.download_path = self.path
-                if 'clone' in self.download_option:
+                if specific_folder:
+                    self.download_path = self.doc_manager.get_doc_target_folder(entry['file_name'])
+                elif 'clone' in self.download_option:
                     if not locale_code:
                         print("Cannot download "+str(entry['file_name']+" with no target locale."))
                         return
@@ -87,13 +93,13 @@ class DownloadAction(Action):
                         # Don't download source document(s), only download translations
                         logger.info("No target locales for "+file_name+".")
                         return
-                    if locale_ext:
+                    if locale_ext or specific_folder:
                         downloaded_name = self.append_ext_to_file(locale_code, base_name, True)
                     else:
                         downloaded_name = base_name
                     if 'xliff' in response.headers['Content-Type'] and xliff == True:
                         downloaded_name = self.change_file_extension('xlf', downloaded_name)
-                    if 'same' in self.download_option:
+                    if 'same' in self.download_option and not specific_folder:
                         self.download_path = os.path.dirname(file_name)
                         new_path = os.path.join(self.path,os.path.join(self.download_path, downloaded_name))
                         new_locale = downloaded_name.split('.')[1].lower()
