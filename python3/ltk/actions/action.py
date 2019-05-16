@@ -161,7 +161,8 @@ class Action:
         # doc_id = json['properties']['id']
         full_path = os.path.join(self.path, file_name)
         last_modified = os.stat(full_path).st_mtime
-        dl_folder = os.path.relpath(dl_folder, self.path)
+        if dl_folder:
+            dl_folder = os.path.relpath(dl_folder, self.path)
         self.doc_manager.add_document(title, now, doc_id, last_modified, now, file_name, dl_folder)
 
     def _update_document(self, file_name):
