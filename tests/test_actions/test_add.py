@@ -132,4 +132,68 @@ class TestAdd(unittest.TestCase):
         doc_id = self.action.doc_manager.get_doc_ids()[0]
         assert poll_doc(self.action, doc_id)
 
-    # todo test all those other args
+    def test_add_target_folders(self):
+        #create and add files
+        directory1 = os.path.join(os.getcwd(), 'test_dir_1')
+        self.added_directories.append(directory1)
+        create_directory(directory1)
+        directory2 = os.path.join(os.getcwd(), 'test_dir_2')
+        self.added_directories.append(directory2)
+        create_directory(directory2)
+        directory3 = os.path.join(os.getcwd(), 'test_dir_1/test_dir_3')
+        self.added_directories.append(directory3)
+        create_directory(directory3)
+        file1 = 'testfile1.txt'#root to root
+        file2 = 'testfile2.txt'#root to sub (dir1)
+        file3 = 'test_dir_1/test_dir_3/testfile3.txt'#sub to root
+        file4 = 'test_dir_2/testfile4.txt'#sub to sub (dir2 to dir3)
+        file5 = 'test_dir_2/testfile5.txt'#sub to same
+        file6 = 'testfile6.txt'#root to none
+        file7 = 'test_dir_1/testfile7.txt'#sub to none
+        self.added_files.append(file1)
+        create_txt_file(file1)
+        self.added_files.append(file2)
+        create_txt_file(file2)
+        self.added_files.append(file3)
+        create_txt_file(file3)
+        self.added_files.append(file4)
+        create_txt_file(file4)
+        self.added_files.append(file5)
+        create_txt_file(file5)
+        self.added_files.append(file6)
+        create_txt_file(file6)
+        self.added_files.append(file7)
+        create_txt_file(file7)
+        os.system('ltk add '+file1+' -D .')
+        os.system('ltk add '+file2+' -D test_dir_1')
+        os.system('ltk add '+file3+' -D .')
+        os.system('ltk add '+file4+' -D test_dir_1/test_dir_3')
+        os.system('ltk add '+file5+' -D test_dir_2')
+        os.system('ltk add '+file6)
+        os.system('ltk add '+file7)
+
+        #check that they were added correctly
+        doc1 = self.action.doc_manager.get_doc_by_prop('file_name', file1)
+        assert doc1
+        assert doc1['download_folder'] == '.'
+        doc2 = self.action.doc_manager.get_doc_by_prop('file_name', file2)
+        assert doc2
+        assert doc2['download_folder'] == 'test_dir_1'
+        doc3 = self.action.doc_manager.get_doc_by_prop('file_name', file3)
+        assert doc3
+        assert doc3['download_folder'] == '.'
+        doc4 = self.action.doc_manager.get_doc_by_prop('file_name', file4)
+        assert doc4
+        assert doc4['download_folder'] == 'test_dir_1/test_dir_3'
+        doc5 = self.action.doc_manager.get_doc_by_prop('file_name', file5)
+        assert doc5
+        assert doc5['download_folder'] == 'test_dir_2'
+        doc6 = self.action.doc_manager.get_doc_by_prop('file_name', file6)
+        assert doc6
+        assert doc6['download_folder'] == ''
+        doc7 = self.action.doc_manager.get_doc_by_prop('file_name', file7)
+        assert doc7
+        assert doc7['download_folder'] == ''
+
+    # todo test all those other args (except API args, because those are the responsibility of the API)
+    # I think directory removal was fixed and refactored in LP-29119, but if not, I'll add it here after merging
