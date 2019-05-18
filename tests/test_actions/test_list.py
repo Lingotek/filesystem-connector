@@ -114,3 +114,37 @@ class TestList(unittest.TestCase):
         # list
         # check
         pass
+    
+    def test_list_doc_remote(self):
+        files = ['sample.txt', 'sample1.txt', 'sample2.txt']
+        file_paths = []
+        for fn in files:
+            file_paths.append(create_txt_file(fn))
+        self.add_action.add_action(['sample*.txt'], overwrite=True)
+        doc_ids = self.action.doc_manager.get_doc_ids()
+        for doc_id in doc_ids:
+            assert poll_doc(self.action, doc_id)
+        try:
+            out = StringIO()
+            sys.stdout = out
+            self.action.list_remote()
+            info = out.getvalue()
+            for doc_id in doc_ids:
+                assert doc_id in info
+        finally:
+            sys.stdout = sys.__stdout__
+
+        for fn in files:
+            self.rm_action.rm_action(fn, force=True)
+        self.clean_action.clean_action(False, False, None)
+
+    #can't test a remote list of none because there is no guarantee that the project used in the config file for the test is empty, and we don't want to clear the project remotely in case it is one that has stuff unrelated to testing that needs to stay
+    #def test_list_docs_remote_none(self):
+    #    try:
+    #        out = StringIO()
+    #        sys.stdout = out
+    #        self.action.list_remote()
+    #        info = out.getvalue()
+    #        assert 'No documents to report' in info
+    #    finally:
+    #        sys.stdout = sys.__stdout__
