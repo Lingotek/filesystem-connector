@@ -190,5 +190,4 @@ class TestPush(unittest.TestCase):
 
         self.rm_action.rm_action(nestedfile, force=True)
         delete_directory("nested")
-        print(info)
         

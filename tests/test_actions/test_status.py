@@ -128,16 +128,16 @@ class TestStatusAction(unittest.TestCase):
             #test that where the name is the same as the path
             self.action.get_status(doc_name = self.file_name)
             status = out.getvalue()
-            assert status.startswith('Status of {0}'.format(self.file_name)), "status is:\n"+status
-            assert 'Status of {0}'.format(self.file_name2_short) not in status, "status is:\n"+status
+            assert status.startswith('Status of {0}'.format(self.file_name))
+            assert 'Status of {0}'.format(self.file_name2_short) not in status
             #test where the name is different than the path
             #reset output capture
             out = StringIO()
             sys.stdout = out
             self.action.get_status(doc_name = self.file_name2_short)
             status = out.getvalue()
-            assert status.startswith('Status of {0}'.format(self.file_name2_short)), "status is:\n"+status
-            assert 'Status of {0}'.format(self.file_name) not in status, "status is:\n"+status
+            assert status.startswith('Status of {0}'.format(self.file_name2_short))
+            assert 'Status of {0}'.format(self.file_name) not in status
         finally:
             sys.stdout = sys.__stdout__
 

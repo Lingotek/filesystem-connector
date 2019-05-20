@@ -48,6 +48,7 @@ class TestClone(unittest.TestCase):
         self.action.close()
 
     def test_clone_single_locale(self):
+        #currently doesn't work, clone needs to be fixed
         os.system('ltk config -t ja-JP')
         self.add_action.add_action([self.dir_path1])
         self.add_action.add_action([self.dir_path2])
@@ -59,6 +60,7 @@ class TestClone(unittest.TestCase):
         assert os.path.isdir(os.path.join(os.getcwd(), 'ja-JP/dir2'))
         
     def test_clone_multi_locale(self):
+        #currently doesn't work, clone needs to be fixed
         os.system('ltk config -t ja-JP,es-MX')
         self.add_action.add_action([self.dir_path1])
         self.add_action.add_action([self.dir_path2])
@@ -83,6 +85,7 @@ class TestClone(unittest.TestCase):
         assert True
 
     def test_clone_single_folder(self):
+        #currently doesn't work, clone needs to be fixed
         os.system('ltk config -t ja-JP')
         self.add_action.add_action([self.dir_path2])
         os.system('ltk clone')
@@ -93,6 +96,7 @@ class TestClone(unittest.TestCase):
         assert not os.path.isdir(os.path.join(os.getcwd(), 'ja-JP/dir2')) #because it was only one folder, the locale folder is used instead of dir2
 
     def test_clone_with_download_folder(self):
+        #currently doesn't work, clone needs to be fixed
         self.download_path = os.path.join(os.getcwd(), 'downloads')
         self.added_directories.append(self.download_path)
         create_directory(self.download_path)
@@ -115,11 +119,12 @@ class TestClone(unittest.TestCase):
                 else:
                     self.delete_directory(dir_path+os.sep+subdir)
             print("disassociating directory: "+dir_path.replace(os.getcwd()+os.sep, ''))
-            self.rm_action.rm_action([dir_path.replace(os.getcwd()+os.sep, '')], force=True) #possibly a problem with filepath instead of title
+            self.rm_action.rm_action([dir_path.replace(os.getcwd()+os.sep, '')], force=True)
             print("deleting directory: "+dir_path)
             os.rmdir(dir_path)
 
+#See ticket LP-28910
 #part of clone fix:
 #126                if os.path.isdir(path):
-#127                    matched_dirs.append('')
+#127!                    matched_dirs.append('')
 #128                    for root, subdirs, files in os.walk(path):
