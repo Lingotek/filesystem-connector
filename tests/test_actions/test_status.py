@@ -40,7 +40,7 @@ class TestStatusAction(unittest.TestCase):
             sys.stdout = out
             self.action.get_status()
             status = out.getvalue()
-            assert status.startswith('Status of {0}'.format(self.file_name))
+            assert 'Status of {0}'.format(self.file_name) in status
         finally:
             sys.stdout = sys.__stdout__
 
