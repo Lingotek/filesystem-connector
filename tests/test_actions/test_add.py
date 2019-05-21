@@ -45,7 +45,6 @@ class TestAdd(unittest.TestCase):
         poll_doc(self.action, doc_id)
 
         assert self.action.doc_manager.get_doc_by_prop('name', file_name)
-        delete_file(file_name)
 
     def test_add_remote(self):
         # check that document is added to Lingotek
@@ -111,12 +110,6 @@ class TestAdd(unittest.TestCase):
         for fn in files:
             assert self.action.doc_manager.get_doc_by_prop('name', fn)
 
-        #delete the files and directories created
-        for fn in files:
-            delete_file(fn, dir_path)
-
-        delete_directory(dir_path)
-
     ''' Test adding a directory with a document inside gets added to Lingotek '''
     def test_add_remote_directory(self):
 
@@ -161,11 +154,10 @@ class TestAdd(unittest.TestCase):
         for fn in files:
             assert not self.action.doc_manager.get_doc_by_prop('name', fn)
 
-        #delete the files and directories created
+        #delete the files here because they are untracked and won't be picked up in teardown
         for fn in files:
             delete_file(fn, dir_path)
-
-        delete_directory(dir_path)
+        self.added_files.clear()
 
 #create tests for other add flags
 

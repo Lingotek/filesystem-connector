@@ -39,6 +39,12 @@ class TestRm(unittest.TestCase):
         #delete file in folder manually to be sure the folder is empty so it can be deleted in cleanup
         if(os.path.isfile(self.file_path3)):
             delete_file(self.file_path3)
+        if(os.path.isfile(self.file_path2)):
+            delete_file(self.file_path2)
+        if(os.path.isfile(self.file_path1)):
+            delete_file(self.file_path1)
+        if(os.path.isdir(self.dir_path)):
+            delete_directory(self.dir_path)
         cleanup()
 
     def test_rm(self):
@@ -191,5 +197,8 @@ class TestRm(unittest.TestCase):
         assert not os.path.isfile(self.file_path2)
         assert not os.path.isfile(self.file_path3)
         assert os.path.isdir(self.dir_path)
+
+        #clean up files remotely
+        self.action.rm_action([self.doc_id1, self.doc_id2, self.doc_id3], id=True)
 
     #rm remote(?) - currently remote behaves the same as normal.  A ticket (LP-29305) has been opened to figure out what to do about this.  If ltk -r ends up being removed, this test case won't be needed
