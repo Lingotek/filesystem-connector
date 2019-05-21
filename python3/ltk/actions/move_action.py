@@ -55,7 +55,7 @@ class MoveAction(Action):
         try:
             if self.rename and self.source_type == 'file' and self.path_to_source.rstrip(self.path_sep).rstrip(self.doc['name']) != self.path_to_source.rstrip(self.path_sep):
                 new_name = os.path.basename(self.path_to_destination)
-                self.doc_manager.update_document('name', new_name, doc['id'])
+                self.doc_manager.update_document('name', new_name, self.doc['id'])
                 self.api.document_update(self.doc['id'], title=new_name)
             elif not self.rename:
                 file_name = os.path.basename(self.path_to_source)
