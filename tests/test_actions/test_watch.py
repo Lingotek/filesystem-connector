@@ -70,7 +70,7 @@ class TestWatch(unittest.TestCase):
 
     def test_watch_update(self):
         file_name = "test_watch_sample_1.txt"
-        self.files.append(self.dir_name+'/'+file_name)
+        self.files.append(self.dir_name+os.sep+file_name)
         if os.path.exists(self.dir_name+file_name):
             delete_file(file_name)
         create_txt_file(file_name, self.dir_name)
@@ -93,15 +93,15 @@ class TestWatch(unittest.TestCase):
     @unittest.skip("skipping until watch is fully functional")
     def test_watch_ignore(self):#currently not working because watch is broken
         file_name1 = "test_watch_text.txt"
-        self.files.append(self.dir_name+'/'+file_name1)
+        self.files.append(self.dir_name+os.sep+file_name1)
         if os.path.exists(self.dir_name+file_name1):
             delete_file(file_name2)
         file_name2 = "test_watch_html.html"
-        self.files.append(self.dir_name+'/'+file_name2)
+        self.files.append(self.dir_name+os.sep+file_name2)
         if os.path.exists(self.dir_name+file_name2):
             delete_file(file_name2)
         file_name3 = "test_watch_pdf.pdf"
-        self.files.append(self.dir_name+'/'+file_name3)
+        self.files.append(self.dir_name+os.sep+file_name3)
         if os.path.exists(self.dir_name+file_name3):
             delete_file(file_name3)
         #create and add a file to ignore for append testing
@@ -144,11 +144,11 @@ class TestWatch(unittest.TestCase):
     @unittest.skip("skipping until watch is fully functional")
     def test_watch_no_folders(self):
         file_name1 = "test_watch_text_1.txt"
-        self.files.append(self.dir_name+'/'+file_name1)
+        self.files.append(self.dir_name+os.sep+file_name1)
         if os.path.exists(self.dir_name+file_name1):
             delete_file(file_name2)
         file_name2 = "test_watch_text_2.txt"
-        self.files.append(self.dir_name+'/'+file_name2)
+        self.files.append(self.dir_name+os.sep+file_name2)
         if os.path.exists(self.dir_name+file_name2):
             delete_file(file_name2)
         #create and add a file that won't be ignored

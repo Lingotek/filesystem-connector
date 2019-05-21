@@ -25,7 +25,7 @@ class MoveAction(Action):
             else:
                 self.path_to_destination = self.path_to_source.rstrip(os.path.basename(self.path_to_source))+destination
             repo_directory = self.path_to_source
-            while repo_directory and repo_directory != "" and not (os.path.isdir(repo_directory + "/.ltk")):
+            while repo_directory and repo_directory != "" and not (os.path.isdir(repo_directory + os.sep+".ltk")):
                 repo_directory = repo_directory.split(self.path_sep)[:-1]
                 repo_directory = self.path_sep.join(repo_directory)
             if repo_directory not in self.path_to_source or repo_directory not in self.path_to_destination:

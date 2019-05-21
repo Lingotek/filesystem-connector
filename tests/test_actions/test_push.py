@@ -145,10 +145,10 @@ class TestPush(unittest.TestCase):
 
     def test_push_title(self):
         dir_path = os.path.join(os.getcwd(), 'nested')
-        nestedfile = 'nested/nestedfile.txt'
+        nestedfile = 'nested'+os.sep+'nestedfile.txt'
         create_directory(dir_path)
         create_txt_file(nestedfile)
-        os.system('ltk add nested/nestedfile.txt -o')
+        os.system('ltk add nested'+os.sep+'nestedfile.txt -o')
         append_file(self.files[0])
         append_file(nestedfile)
         locales = ['es-AR']
