@@ -89,13 +89,16 @@ class TestWatch(unittest.TestCase):
         assert 'Appended text.' in newcontent
 
 
+    def watch_ignore_thread(self):
+        os.system('ltk watch -t 5 --ignore .pdf --ignore .html')
+
 #test watch new file when a download directory is in the config file (currently broken)
     @unittest.skip("skipping until watch is fully functional")
     def test_watch_ignore(self):#currently not working because watch is broken
         file_name1 = "test_watch_text.txt"
         self.files.append(self.dir_name+os.sep+file_name1)
         if os.path.exists(self.dir_name+file_name1):
-            delete_file(file_name2)
+            delete_file(file_name1)
         file_name2 = "test_watch_html.html"
         self.files.append(self.dir_name+os.sep+file_name2)
         if os.path.exists(self.dir_name+file_name2):
@@ -108,8 +111,7 @@ class TestWatch(unittest.TestCase):
         create_txt_file(file_name2, self.dir_name)
         self.add_action.add_action([self.dir_name+os.sep+file_name2], overwrite=True)
         #start the watch
-        self.action.timeout = 5 #set poll to 5 seconds instead of a minute for testing
-        watch_thread = Thread(target=self.action.watch_action, args=(['.html', '.pdf'], None, False, False))
+        watch_thread = Thread(target=self.watch_ignore_thread)#if not done with an os.system call, something happens to the document database when new documents are added and they somehow overwrite ignored documents.
         watch_thread.daemon = True
         watch_thread.start()
         time.sleep(10) #Gives watch enough time to start up before creating the document

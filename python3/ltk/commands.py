@@ -532,7 +532,7 @@ def clone(folders, copy_root):
 
 @ltk.command(short_help="Watches local and remote files")
 # @click.option('-p', '--path', type=click.Path(exists=True), multiple=True, help='Specify a folder to watch. Use option multiple times to specify multiple folders.')
-@click.option('--ignore', multiple=True, help='Specify types of files to ignore')
+@click.option('--ignore', multiple=True, help='Specify types of files to ignore.  For multiple types, specify this flag multiple times.  For example, to ignore pdf and html files, use "ltk watch --ignore .pdf --ignore .html"')
 @click.option('--auto', 'delimiter', help='Automatically detects locale from the file name; specify locale delimiter')
 @click.option('-t', '--timeout', type=click.INT, default=60,
               help='The amount of time watch will sleep between polls, in seconds. Defaults to 1 minute')
