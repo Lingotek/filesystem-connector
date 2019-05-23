@@ -319,7 +319,7 @@ def request(doc_name, path, locales, to_delete, due_date, workflow):
 @click.option('-f', '--formats', 'id_type', flag_value='format', help='List supported formats')
 @click.option('-r', '--remote', 'id_type', flag_value='remote', help='List all project documents on Lingotek Cloud')
 @click.option('--filters', 'id_type', flag_value='filter', help='List default and custom filters')
-@click.option('-d', '--download_folder', 'show_dests', flag_value=True, help="Show target download folders for files")
+@click.option('-d', '--download_folder', 'show_dests', flag_value=True, help="Show target download folders for files that have had them set")
 def list(**kwargs):
     """ Shows docs, workflows, locales, formats, or filters. By default lists added folders and docs. """
     try:
