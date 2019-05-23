@@ -196,6 +196,8 @@ class DocumentManager:
         folder = ''
         entry = self._db.get(where("file_name") == file_name)
         if entry:
+            if 'download_folder' not in entry:
+                entry['download_folder'] = ''
             folder = entry['download_folder']
         return folder
 
