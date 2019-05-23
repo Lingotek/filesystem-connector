@@ -56,15 +56,16 @@ class DownloadAction(Action):
                         print("Cannot download "+str(entry['file_name']+" with no target locale."))
                         return
                     self._clone_download(locale_code)
-                elif 'folder' in self.download_option:
-                    locale_code = locale_code.replace("-","_")#change to be _ to - to be consistent with the other cases.  Currently the default is xx-XX in all cases except this one (clone off, download folder specified) 
+                else:
+                    locale_code = locale_code.replace("-","_")#needed for locale lookup, but should be changed back to xx-XX before forming the download path.  Currently this branch (clone off, download folder specified) breaks the default and appends xx_XX instead of xx-XX 
                     if locale_code in self.locale_folders:
                         if self.locale_folders[locale_code] == 'null':
                             logger.warning("Download failed: folder not specified for "+locale_code)
                         else:
                             self.download_path = self.locale_folders[locale_code]
                     else:
-                        self.download_path = self.download_dir
+                        if 'folder' in self.download_option:
+                            self.download_path = self.download_dir
                 if not entry:
                     doc_info = self.api.get_document(document_id)
                     try:
@@ -100,7 +101,10 @@ class DownloadAction(Action):
                     if 'xliff' in response.headers['Content-Type'] and xliff == True:
                         downloaded_name = self.change_file_extension('xlf', downloaded_name)
                     if 'same' in self.download_option and not specific_folder:
-                        self.download_path = os.path.dirname(file_name)
+                        print("One: "+self.download_path)
+                        if self.download_path == self.path:
+                            self.download_path = os.path.dirname(file_name)
+                        print("Two: "+self.download_path)
                         new_path = os.path.join(self.path,os.path.join(self.download_path, downloaded_name))
                         new_locale = downloaded_name.split('.')[1].lower()
                         new_locale = new_locale.replace('_', '-')
