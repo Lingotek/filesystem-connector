@@ -19,8 +19,8 @@ class ListAction(Action):
             elif id_type == 'remote':
                 self.list_remote()
 
-        elif 'hide_docs' in kwargs and 'title' in kwargs and 'show_dests' in kwargs:
-            self.list_ids(kwargs['hide_docs'], kwargs['title'], kwargs['show_dests'])
+        elif 'hide_docs' in kwargs and 'title' in kwargs:
+            self.list_ids(kwargs['hide_docs'], kwargs['title'])
 
         else: logger.error("Error on command line input for 'ltk list'")
 
@@ -68,7 +68,7 @@ class ListAction(Action):
             ])
         print(tabulate(table, headers=["Format","Auto-detected File Extensions"]))
         
-    def list_ids(self, hide_docs, title=False, downloads=False):
+    def list_ids(self, hide_docs, title=False):
         try:
             """ lists ids of list_type specified """
             folders = self.folder_manager.get_file_names()
@@ -90,7 +90,6 @@ class ListAction(Action):
             ids = []
             titles = []
             locales = []
-            dests = []
             max_length = 0
             entries = self.doc_manager.get_all_entries()
             for entry in entries:
@@ -111,12 +110,6 @@ class ListAction(Action):
                     locales.append(entry['locales'])
                 except KeyError:
                     locales.append([])
-                if downloads:
-                    try:
-                        folder = entry['download_folder']
-                        dests.append(folder)
-                    except KeyError:
-                        dests.append('')
             if not ids:
                 print ('No local documents')
                 return
@@ -124,29 +117,17 @@ class ListAction(Action):
                 max_length = 90
             table = []
             for i in range(len(ids)):
-                filetitle = titles[i]
-                if len(filetitle) > max_length:
-                    filetitle = filetitle[(len(titles[i])-30):]
+                title = titles[i]
+                if len(title) > max_length:
+                    title = title[(len(titles[i])-30):]
                 for locale in locales[i]:
                     locale.replace('_', '-')
-                if title:
-                    headers = ["Title","Lingotek ID","Locales"]
-                else:
-                    headers = ["Filename","Lingotek ID","Locales"]
-                if downloads:
-                    headers.append("Target Download Folder")
-                    table.append([
-                        filetitle,
-                        str(ids[i]),
-                        ', '.join([str(x).replace('_', '-') for x in locales[i]]),
-                        str(dests[i])
-                    ])
-                else:
-                    table.append([
-                        filetitle,
-                        str(ids[i]),
-                        ', '.join([str(x).replace('_', '-') for x in locales[i]])
-                    ])
+                headers = ["Filename","Lingotek ID","Locales"]
+                table.append([
+                    title,
+                    str(ids[i]),
+                    ', '.join([str(x).replace('_', '-') for x in locales[i]])
+                ])
             print(tabulate(table, headers=headers))
         except Exception as e:
             log_error(self.error_file_name, e)
