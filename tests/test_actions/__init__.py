@@ -74,7 +74,7 @@ def poll_doc(action, doc_id):
         :returns True if document is imported within 3 min, else False
     """
     time_passed = 0
-    while time_passed < 180:
+    while time_passed < 36: #36 loops x 5 second sleep = 180 seconds = 3 minutes
         response = action.api.get_document(doc_id)
         if response.status_code == 200:
             return True
@@ -95,10 +95,7 @@ def poll_rm(action, doc_id):
         time_passed += 1
     return False
 
-def check_updated_ids(action, doc_ids):
-    """polls Lingotek for the modification of multiple documents by id
-        :returns True if documents are modified within 3 min, else False
-    """
+def get_orig_dates(action, doc_ids):
     orig_dates = {}
     for doc_id in doc_ids:
         response = action.api.get_document(doc_id)
@@ -109,7 +106,13 @@ def check_updated_ids(action, doc_ids):
         else:
             print("Document id not found on Lingotek Cloud: "+str(doc_id))
             return False
-    for doc_id in doc_ids:
+    return orig_dates
+
+def check_updated_ids(action, orig_dates):
+    """polls Lingotek for the modification of multiple documents by id
+        :returns True if documents are modified within 3 min, else False
+    """
+    for doc_id in orig_dates:
         if not check_updated(action, doc_id, orig_dates[doc_id]):
             return False
     return True
@@ -119,7 +122,7 @@ def check_updated(action, doc_id, orig_date):
         :returns True if document is modified within 3 min, else False
     """
     time_passed = 0
-    while time_passed < 180:
+    while time_passed < 36: #36 loops x 5 second sleep = 180 seconds = 3 minutes
         response = action.api.get_document(doc_id)
         if response.status_code == 200:
             mod_date = response.json()['properties']['modified_date']

@@ -17,7 +17,7 @@ class PushAction(Action):
             else:
                 report = "Added {0}, Updated {1} (Total {2})".format(added, updated, total)
             if self.test:
-                print("TEST RUN: " + report)
+                logger.info("TEST RUN: " + report)
             else:
                 logger.info(report)
 
