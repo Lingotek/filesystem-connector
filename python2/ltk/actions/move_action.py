@@ -25,7 +25,7 @@ class MoveAction(Action):
             else:
                 self.path_to_destination = self.path_to_source.rstrip(os.path.basename(self.path_to_source))+destination
             repo_directory = self.path_to_source
-            while repo_directory and repo_directory != "" and not (os.path.isdir(repo_directory + os.sep+".ltk")):
+            while repo_directory and repo_directory != "" and not (os.path.isdir(repo_directory + "/.ltk")):
                 repo_directory = repo_directory.split(self.path_sep)[:-1]
                 repo_directory = self.path_sep.join(repo_directory)
             if repo_directory not in self.path_to_source or repo_directory not in self.path_to_destination:
@@ -55,7 +55,7 @@ class MoveAction(Action):
         try:
             if self.rename and self.source_type == 'file' and self.path_to_source.rstrip(self.path_sep).rstrip(self.doc['name']) != self.path_to_source.rstrip(self.path_sep):
                 new_name = os.path.basename(self.path_to_destination)
-                self.doc_manager.update_document('name', new_name, self.doc['id'])
+                self.doc_manager.update_document('name', new_name, doc['id'])
                 self.api.document_update(self.doc['id'], title=new_name)
             elif not self.rename:
                 file_name = os.path.basename(self.path_to_source)

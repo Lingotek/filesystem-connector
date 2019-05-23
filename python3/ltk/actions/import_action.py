@@ -21,7 +21,7 @@ class ImportAction(Action):
                 print ('Some unexpected, non-integer value was included')
         return chosen_ids
 
-    def import_action(self, import_all, force, path, track, ids_to_import=None):
+    def import_action(self, import_all, force, path, ids_to_import=None):
         try:
             path = self.norm_path(path)
             response = self.api.list_documents(self.project_id)
@@ -58,7 +58,7 @@ class ImportAction(Action):
             else:
                 ids_to_import = [ids_to_import]
             for curr_id in ids_to_import:
-                self.import_document(curr_id, tms_doc_info[curr_id], force, path, track)
+                self.import_document(curr_id, tms_doc_info[curr_id], force, path)
         except Exception as e:
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
                 logger.error("Error connecting to Lingotek's TMS")
@@ -128,7 +128,7 @@ class ImportAction(Action):
         # print(str(path_changed)+" "+str(new_path)+" "+str(write_file)+" "+str(delete_file))
         return path_changed, new_path, write_file, delete_file
 
-    def import_document(self, document_id, document_info, force=False, path=False, track=False):
+    def import_document(self, document_id, document_info, force=False, path=False):
         local_ids = self.doc_manager.get_doc_ids()
         response = self.api.document_content(document_id, None, None, finalized_file=self.finalized_file)
         if(response.status_code == 400):
@@ -184,11 +184,10 @@ class ImportAction(Action):
                 print(e.errno)
                 print(e)
         new_path = self.norm_path(new_path)
-        if track:
-            if document_id not in local_ids:
-                self._add_document(new_path, title, document_id)
-                self.doc_manager.update_document('locales', locale_info, document_id)
-            elif changed_path:
-                # update the document's path
-                logger.info('Moved local file {0} to {1}'.format(changed_path, new_path))
-                self.doc_manager.update_document('file_name', new_path, document_id)
+        if document_id not in local_ids:
+            self._add_document(new_path, title, document_id)
+            self.doc_manager.update_document('locales', locale_info, document_id)
+        elif changed_path:
+            # update the document's path
+            logger.info('Moved local file {0} to {1}'.format(changed_path, new_path))
+            self.doc_manager.update_document('file_name', new_path, document_id)
