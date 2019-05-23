@@ -40,19 +40,18 @@ class TestAdd(unittest.TestCase):
         file_name = 'sample.txt'
         self.added_files.append(file_name)
         create_txt_file(file_name)
-        self.action.add_action([file_name], force=True)
+        self.action.add_action([file_name])
         doc_id = self.action.doc_manager.get_doc_ids()[0]
         poll_doc(self.action, doc_id)
 
         assert self.action.doc_manager.get_doc_by_prop('name', file_name)
-        delete_file(file_name)
 
     def test_add_remote(self):
         # check that document is added to Lingotek
         file_name = 'sample.txt'
         self.added_files.append(file_name)
         create_txt_file(file_name)
-        self.action.add_action([file_name], force=True)
+        self.action.add_action([file_name])
         doc_id = self.action.doc_manager.get_doc_ids()[0]
         assert poll_doc(self.action, doc_id)
 
@@ -89,7 +88,7 @@ class TestAdd(unittest.TestCase):
         dir_path = os.path.join(os.getcwd(), directory)
         self.added_directories.append(dir_path)
         create_directory(dir_path)
-        self.action.add_action([dir_path], force=True)
+        self.action.add_action([dir_path])
 
         assert self.action._is_folder_added(dir_path)
         delete_directory(dir_path)
@@ -105,17 +104,11 @@ class TestAdd(unittest.TestCase):
         for fn in files:
             create_txt_file(fn, dir_path)
 
-        self.action.add_action([dir_path], force=True)
+        self.action.add_action([dir_path])
 
         assert self.action._is_folder_added(dir_path)
         for fn in files:
             assert self.action.doc_manager.get_doc_by_prop('name', fn)
-
-        #delete the files and directories created
-        for fn in files:
-            delete_file(fn, dir_path)
-
-        delete_directory(dir_path)
 
     ''' Test adding a directory with a document inside gets added to Lingotek '''
     def test_add_remote_directory(self):
@@ -127,9 +120,44 @@ class TestAdd(unittest.TestCase):
         create_directory(dir_path)
         self.added_files.append(file_name)
         create_txt_file(file_name, dir_path)
-        self.action.add_action([dir_path], force=True)
+        self.action.add_action([dir_path])
 
         doc_id = self.action.doc_manager.get_doc_ids()[0]
         assert poll_doc(self.action, doc_id)
 
-    # todo test all those other args
+    ''' Test adding a directory with the -d flag so it only adds the directory and not the files '''
+    def test_add_directory_only(self):
+        #test add an empty directory
+        directory = 'test_add_empty_directory'
+        dir_path = os.path.join(os.getcwd(), directory)
+        self.added_directories.append(dir_path)
+        create_directory(dir_path)
+        self.action.add_action([dir_path])
+
+        assert self.action._is_folder_added(dir_path)
+        delete_directory(dir_path)
+
+        #test add a directory with documents inside
+        directory = 'test_add_full_directory'
+        dir_path = os.path.join(os.getcwd(), directory)
+        self.added_directories.append(dir_path)
+        create_directory(dir_path)
+
+        files = ['sample.txt', 'sample1.txt', 'sample2.txt']
+        self.added_files = files
+        for fn in files:
+            create_txt_file(fn, dir_path)
+
+        self.action.add_action([dir_path], directory=True)
+
+        assert self.action._is_folder_added(dir_path)
+        for fn in files:
+            assert not self.action.doc_manager.get_doc_by_prop('name', fn)
+
+        #delete the files here because they are untracked and won't be picked up in teardown
+        for fn in files:
+            delete_file(fn, dir_path)
+        self.added_files.clear()
+
+#create tests for other add flags
+

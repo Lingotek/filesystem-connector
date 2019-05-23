@@ -187,7 +187,7 @@ class AddAction(Action):
         if not conf_parser.has_option('main', 'append_option'): self.update_config_file('append_option', 'none', conf_parser, config_file_name, 'Update: Added optional file location appending (ltk config --help)')
         append_option = conf_parser.get('main', 'append_option')
         if not in_directory:
-            while repo_directory and repo_directory != "" and not (os.path.isdir(repo_directory + "/.ltk")):
+            while repo_directory and repo_directory != "" and not (os.path.isdir(repo_directory + os.sep+".ltk")):
                 repo_directory = repo_directory.split(path_sep)[:-1]
                 repo_directory = path_sep.join(repo_directory)
             if repo_directory == "" and append_option != 'none':

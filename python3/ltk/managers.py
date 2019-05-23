@@ -34,7 +34,7 @@ class DocumentManager:
         if root_path != None:
             config = ConfigParser()
             try:
-                config.read( root_path + "/.ltk/config")
+                config.read( root_path + os.sep+".ltk"+os.sep+"config")
                 download_folder = config.get('main','download_folder')
                 locale_folders = config.get('main','locale_folders')
                 locale_folders = json.loads(locale_folders)
@@ -49,7 +49,7 @@ class DocumentManager:
             #       Is the file name inside of the download folder (it's in a sub-folder of the download folder)? (That's okay)
             ###
             if file_name[:len(download_folder)] == download_folder and download_folder is not "" and len(file_name) < len(download_folder) :
-                with open(root_path + '/.ltk/folders.json') as json_data:
+                with open(root_path + os.sep+'.ltk'+os.sep+'folders.json') as json_data:
                     folders_json = json.load(json_data)
                 folders = folders_json['_default']
                 for folder in folders:
