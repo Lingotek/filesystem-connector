@@ -28,7 +28,7 @@ class TestStatusAction(unittest.TestCase):
 
     def tearDown(self):
         # remove the created file
-        self.rm_action.rm_action(self.file_name, force=False)
+        self.rm_action.rm_action(self.file_name, force=True)
         self.clean_action.clean_action(True, False, None)
         self.action.close()
         cleanup()
@@ -38,9 +38,9 @@ class TestStatusAction(unittest.TestCase):
         try:
             out = StringIO()
             sys.stdout = out
-            self.action.get_status(doc_name=self.file_name)
+            self.action.get_status()
             status = out.getvalue()
-            assert status.startswith('Status of {0}'.format(self.file_name))
+            assert 'Status of {0}'.format(self.file_name) in status
         finally:
             sys.stdout = sys.__stdout__
 
@@ -52,26 +52,95 @@ class TestStatusAction(unittest.TestCase):
         try:
             out = StringIO()
             sys.stdout = out
-            self.action.get_status(detailed=True, doc_name=self.file_name)
+            self.action.get_status(detailed=True)
             status = out.getvalue()
             assert 'Status of {0}'.format(self.file_name) in status
             for target in self.targets:
-                assert 'locale: {0}'.format(target) in status
+                assert 'Locale: {0}'.format(target) in status
         finally:
             sys.stdout = sys.__stdout__
 
-    # def test_status_no_target(self):
-    #     # when no targets have been added
-    #     try:
-    #         from ltk.logger import logger
-    #         logger.setLevel(logging.DEBUG)
-    #         out = StringIO()
-    #         ch = logging.StreamHandler(out)
-    #         ch.setLevel(logging.DEBUG)
-    #         logger.addHandler(ch)
-    #         self.action.status_action(detailed=True, doc_name=self.file_name)
-    #         status = out.getvalue()
-    #         # todo this test fails because the error comes from logger not stdout
-    #         assert 'ERROR: No translations exist for document {0}'.format(self.doc_id) in status
-    #     finally:
-    #         sys.stdout = sys.__stdout__
+    def test_status_no_target(self):
+        # when no targets have been added
+        try:
+            out = StringIO()
+            sys.stdout = out
+            handler = logging.StreamHandler(sys.stdout)
+            handler.setLevel(logging.INFO)
+            formatter = logging.Formatter('%(message)s')
+            handler.setFormatter(formatter)
+            logger.addHandler(handler)
+            self.action.get_status(detailed=True)
+            info = out.getvalue()
+            assert 'No translations exist for document {0}'.format(self.file_name) in info
+            logger.removeHandler(handler)
+        finally:
+            sys.stdout = sys.__stdout__
+    
+    def test_status_all(self):
+        #add a second file
+        self.file_name2 = 'sample2.txt'
+        self.file_path2 = create_txt_file(self.file_name2)
+        self.add_action.add_action([self.file_name2], overwrite=True)
+        self.doc_id2 = self.action.doc_manager.get_doc_ids()[1]
+        assert poll_doc(self.action, self.doc_id2)
+        #remove second file from local tracking
+        self.clean_action.clean_action(False, False, [self.file_name2])
+
+        try:
+            out = StringIO()
+            sys.stdout = out
+            #test that a normal status call doesn't see the new file
+            self.action.get_status()
+            status = out.getvalue()
+            assert 'Status of {0}'.format(self.file_name) in status
+            assert 'Status of {0}'.format(self.file_name2) not in status
+            #test that a status all call sees both files
+            #reset output capture
+            out = StringIO()
+            sys.stdout = out
+            self.action.get_status(all=True)
+            status = out.getvalue()
+            assert 'Status of {0}'.format(self.file_name) in status
+            assert 'Status of {0}'.format(self.file_name2) in status
+        finally:
+            sys.stdout = sys.__stdout__
+
+        #remove second file
+        self.rm_action.rm_action(self.doc_id2, id=True)
+        delete_file(self.file_path2)
+
+    def test_status_name(self):
+        #add a second file in a directory
+        self.dir_name = 'folder'
+        self.dir_path = os.path.join(os.getcwd(), self.dir_name)
+        create_directory(self.dir_path)
+        self.file_name2 = self.dir_name+os.sep+'sample2.txt'
+        self.file_name2_short = 'sample2.txt'
+        self.file_path2 = create_txt_file(self.file_name2)
+        self.add_action.add_action([self.file_name2], overwrite=True)
+        self.doc_id2 = self.action.doc_manager.get_doc_ids()[1]
+        assert poll_doc(self.action, self.doc_id2)
+
+        try:
+            out = StringIO()
+            sys.stdout = out
+            #test that where the name is the same as the path
+            self.action.get_status(doc_name = self.file_name)
+            status = out.getvalue()
+            assert 'Status of {0}'.format(self.file_name) in status
+            assert 'Status of {0}'.format(self.file_name2_short) not in status
+            #test where the name is different than the path
+            #reset output capture
+            out = StringIO()
+            sys.stdout = out
+            self.action.get_status(doc_name = self.file_name2_short)
+            status = out.getvalue()
+            assert 'Status of {0}'.format(self.file_name2_short) in status
+            assert 'Status of {0}'.format(self.file_name) not in status
+        finally:
+            sys.stdout = sys.__stdout__
+
+        #remove second file
+        self.rm_action.rm_action(self.file_name2, force=True)
+        delete_directory(self.dir_path)

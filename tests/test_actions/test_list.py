@@ -66,7 +66,7 @@ class TestList(unittest.TestCase):
             sys.stdout = out
             self.action.list_workflows()
             info = out.getvalue()
-            assert 'Workflows' in info
+            assert all(header in info for header in ['Workflow Name', 'ID'])
             assert 'c675bd20-0688-11e2-892e-0800200c9a66' in info
             assert 'Machine Translation' in info
         finally:
@@ -78,8 +78,9 @@ class TestList(unittest.TestCase):
             sys.stdout = out
             self.action.list_locales()
             info = out.getvalue()
-            assert 'ar-AE (Arabic, United Arab Emirates)' in info
-            assert 'zh-TW (Chinese, Taiwan)' in info
+            import re
+            assert re.search('ar-AE\s*\(Arabic, United Arab Emirates\)', info) #changed to regex because display uses tabulate, which has an indeterminate amount of whitespace to create the columns
+            assert re.search('zh-TW\s*\(Chinese, Taiwan\)', info) #changed to regex because display uses tabulate, which has an indeterminate amount of whitespace to create the columns
         finally:
             sys.stdout = sys.__stdout__
 
@@ -102,7 +103,7 @@ class TestList(unittest.TestCase):
             self.action.list_filters()
             info = out.getvalue()
             decoded_info = info
-            assert 'Filters:' in info
+            assert all(header in info for header in ['ID', 'Created', 'Title'])
             assert 'okf_html@drupal8-subfilter.fprm' in info
             assert '0e79f34d-f27b-4a0c-880e-cd9181a5d265' in info
         finally:
@@ -113,6 +114,40 @@ class TestList(unittest.TestCase):
         # list
         # check
         pass
+    
+    def test_list_doc_remote(self):
+        files = ['sample.txt', 'sample1.txt', 'sample2.txt']
+        file_paths = []
+        for fn in files:
+            file_paths.append(create_txt_file(fn))
+        self.add_action.add_action(['sample*.txt'], overwrite=True)
+        doc_ids = self.action.doc_manager.get_doc_ids()
+        for doc_id in doc_ids:
+            assert poll_doc(self.action, doc_id)
+        try:
+            out = StringIO()
+            sys.stdout = out
+            self.action.list_remote()
+            info = out.getvalue()
+            for doc_id in doc_ids:
+                assert doc_id in info
+        finally:
+            sys.stdout = sys.__stdout__
+
+        for fn in files:
+            self.rm_action.rm_action(fn, force=True)
+        self.clean_action.clean_action(False, False, None)
+
+    #can't test a remote list of none because there is no guarantee that the project used in the config file for the test is empty, and we don't want to clear the project remotely in case it is one that has stuff unrelated to testing that needs to stay
+    #def test_list_docs_remote_none(self):
+    #    try:
+    #        out = StringIO()
+    #        sys.stdout = out
+    #        self.action.list_remote()
+    #        info = out.getvalue()
+    #        assert 'No documents to report' in info
+    #    finally:
+    #        sys.stdout = sys.__stdout__
 
     def test_target_download_folder(self):
         files = ['sample.txt', 'sample1.txt', 'sample2.txt']

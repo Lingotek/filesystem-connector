@@ -32,7 +32,7 @@ class Git_Auto:
 		return config_file_name, conf_parser
 
 	def repo_exists(self, repo_directory=os.getcwd()):
-		while repo_directory and repo_directory != "" and not (os.path.isdir(repo_directory + "/.git")):
+		while repo_directory and repo_directory != "" and not (os.path.isdir(repo_directory + os.sep+".git")):
 			repo_directory = repo_directory.split(os.sep)[:-1]
 			repo_directory = (os.sep).join(repo_directory)
 		if not repo_directory or repo_directory == "":
