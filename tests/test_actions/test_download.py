@@ -28,7 +28,7 @@ class TestDownload(unittest.TestCase):
         self.locales = ['ja-JP', 'zh-CN']
         self.action = DownloadAction(os.getcwd())
         self.clean_action = CleanAction(os.getcwd())
-        self.request_action = RequestAction(os.getcwd(), None, None, self.locales, False, None, None)
+        self.request_action = RequestAction(os.getcwd(), None, None, self.locales, False, False, None, None)
         self.pull_action = PullAction(os.getcwd(), self.action)
         self.clean_action.clean_action(False, False, None)
         self.files = ['sample.txt', 'sample1.txt']

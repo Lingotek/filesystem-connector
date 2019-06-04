@@ -44,42 +44,44 @@ class TestRequest(unittest.TestCase):
 
     def test_request_one_locale_doc(self):
         locales = ['ja_JP']
-        self.action = RequestAction(os.getcwd(), self.first_doc, None, locales, False, None, None)
+        self.action = RequestAction(os.getcwd(), self.first_doc, None, locales, False, False, None, None)
         self.action.target_action()
         assert self.check_locales_exist([self.first_doc], locales)
 
     def test_request_mult_locale_doc(self):
         locales = ['ja_JP', 'zh_CN', 'es_MX']
-        self.action = RequestAction(os.getcwd(), self.first_doc, None, locales, False, None, None)
+        self.action = RequestAction(os.getcwd(), self.first_doc, None, locales, False, False, None, None)
         self.action.target_action()
         assert self.check_locales_exist([self.first_doc], locales)
 
     def test_request_one_locale_proj(self):
         locales = ['ja_JP']
-        self.action = RequestAction(os.getcwd(), None, None, locales, False, None, None)
+        self.action = RequestAction(os.getcwd(), None, None, locales, False, False, None, None)
         self.action.target_action()
         assert self.check_locales_exist(self.files, locales)
 
     def test_request_mult_locale_proj(self):
         locales = ['ja_JP', 'zh_CN', 'es_MX']
-        self.action = RequestAction(os.getcwd(), None, None, locales, False, None, None)
+        self.action = RequestAction(os.getcwd(), None, None, locales, False, False, None, None)
         self.action.target_action()
         assert self.check_locales_exist(self.files, locales)
 
     def test_delete_locale_doc(self):
         locales = ['ja_JP']
-        self.action = RequestAction(os.getcwd(), self.first_doc, None, locales, False, None, None)
+        self.action = RequestAction(os.getcwd(), self.first_doc, None, locales, False, False, None, None)
         self.action.target_action()
         assert self.check_locales_exist([self.first_doc], locales)
-        self.action = RequestAction(os.getcwd(), self.first_doc, None, locales, True, None, None)
+        self.action = RequestAction(os.getcwd(), self.first_doc, None, locales, False, True, None, None)
         self.action.target_action()
         assert not self.check_locales_exist([self.first_doc], locales)
 
     def test_delete_locale_proj(self):
         locales = ['ja_JP']
-        self.action = RequestAction(os.getcwd(), None, None, locales, False, None, None)
+        self.action = RequestAction(os.getcwd(), None, None, locales, False, False, None, None)
         self.action.target_action()
         assert self.check_locales_exist([self.first_doc], locales)
-        self.action = RequestAction(os.getcwd(), None, None, locales, True, None, None)
+        self.action = RequestAction(os.getcwd(), None, None, locales, False, True, None, None)
         self.action.target_action()
         assert not self.check_locales_exist(self.files, locales)
+
+    #add cancel tests

@@ -49,7 +49,7 @@ class TestPush(unittest.TestCase):
         append_file(self.files[0])
         locales = ['es-AR']
         test_doc_id = self.action.doc_manager.get_doc_by_prop('file_name',self.files[0])['id']
-        self.request_action = RequestAction(os.getcwd(), self.files[0], None, locales, False, None, None, test_doc_id)
+        self.request_action = RequestAction(os.getcwd(), self.files[0], None, locales, False, False, None, None, test_doc_id)
         self.request_action.target_action()
         with open(self.files[0]) as f:
             downloaded = f.read()
@@ -73,9 +73,9 @@ class TestPush(unittest.TestCase):
         locales = ['es-AR']
         test_doc_id_0 = self.action.doc_manager.get_doc_by_prop('file_name',self.files[0])['id']
         test_doc_id_1 = self.action.doc_manager.get_doc_by_prop('file_name',self.files[1])['id']
-        self.request_action = RequestAction(os.getcwd(), self.files[0], None, locales, False, None, None, test_doc_id_0)
+        self.request_action = RequestAction(os.getcwd(), self.files[0], None, locales, False, False, None, None, test_doc_id_0)
         target1 = self.request_action.target_action()
-        self.request_action = RequestAction(os.getcwd(), self.files[1], None, locales, False, None, None, test_doc_id_1)
+        self.request_action = RequestAction(os.getcwd(), self.files[1], None, locales, False, False, None, None, test_doc_id_1)
         target2 = self.request_action.target_action()
         orig_dates = get_orig_dates(self.action, [test_doc_id_0, test_doc_id_1]) #get the initial timestamp before modifying the document on the cloud
         assert orig_dates
@@ -108,9 +108,9 @@ class TestPush(unittest.TestCase):
         locales = ['es-AR']
         test_doc_id_0 = self.action.doc_manager.get_doc_by_prop('file_name',self.files[0])['id']
         test_doc_id_1 = self.action.doc_manager.get_doc_by_prop('file_name',self.files[1])['id']
-        self.request_action = RequestAction(os.getcwd(), self.files[0], None, locales, False, None, None, test_doc_id_0)
+        self.request_action = RequestAction(os.getcwd(), self.files[0], None, locales, False, False, None, None, test_doc_id_0)
         target1 = self.request_action.target_action()
-        self.request_action = RequestAction(os.getcwd(), self.files[1], None, locales, False, None, None, test_doc_id_1)
+        self.request_action = RequestAction(os.getcwd(), self.files[1], None, locales, False, False, None, None, test_doc_id_1)
         target2 = self.request_action.target_action()
         orig_dates = get_orig_dates(self.action, [test_doc_id_0, test_doc_id_1]) #get the initial timestamp before modifying the document on the cloud
         assert orig_dates
@@ -154,9 +154,9 @@ class TestPush(unittest.TestCase):
         locales = ['es-AR']
         test_doc_id_0 = self.action.doc_manager.get_doc_by_prop('file_name',self.files[0])['id']
         test_doc_id_1 = self.action.doc_manager.get_doc_by_prop('file_name',nestedfile)['id']
-        self.request_action = RequestAction(os.getcwd(), self.files[0], None, locales, False, None, None, test_doc_id_0)
+        self.request_action = RequestAction(os.getcwd(), self.files[0], None, locales, False, False, None, None, test_doc_id_0)
         target1 = self.request_action.target_action()
-        self.request_action = RequestAction(os.getcwd(), nestedfile, None, locales, False, None, None, test_doc_id_1)
+        self.request_action = RequestAction(os.getcwd(), nestedfile, None, locales, False, False, None, None, test_doc_id_1)
         target2 = self.request_action.target_action()
         orig_dates = get_orig_dates(self.action, [test_doc_id_0, test_doc_id_1]) #get the initial timestamp before modifying the document on the cloud
         assert orig_dates

@@ -339,9 +339,12 @@ class Action:
                 logger.error("Error on updating document"+str(file_name)+": "+str(e))
 
     def _target_action_db(self, to_delete, locales, document_id):
+        locale_set = set()
+        for locale in locales:
+            locale_set.add(locale.replace("-", "_"))
         if to_delete:
             curr_locales = self.doc_manager.get_doc_by_prop('id', document_id)['locales']
-            updated_locales = set(curr_locales) - set(locales)
+            updated_locales = set(curr_locales) - locale_set
             self.doc_manager.update_document('locales', updated_locales, document_id)
         else:
             self.doc_manager.update_document('locales', list(locales), document_id)

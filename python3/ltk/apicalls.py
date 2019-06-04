@@ -350,11 +350,31 @@ class ApiCalls:
             self.handleError()
         return r
 
+    def document_cancel_target(self, document_id, locale):
+        try:
+            uri = (API_URI['document_cancel_locale'] % locals())
+            payload = {'id': document_id, 'locale': locale, 'cancelled_reason': 'CANCELLED_BY_AUTHOR', 'mark_invoiceable': 'true'}
+            r = requests.post(self.host + uri, headers=self.headers, data=payload)
+            log_api('POST', uri, r)
+        except requests.exceptions.ConnectionError:
+            self.handleError()
+        return r
+
     def document_delete(self, document_id):
         try:
             uri = (API_URI['document_id'] % locals())
             r = requests.delete(self.host + uri, headers=self.headers)
             log_api('DELETE', uri, r)
+        except requests.exceptions.ConnectionError:
+            self.handleError()
+        return r
+
+    def document_cancel(self, document_id):
+        try:
+            uri = (API_URI['document_cancel'] % locals())
+            payload = {'id': document_id, 'cancelled_reason': 'CANCELLED_BY_AUTHOR'}
+            r = requests.post(self.host + uri, headers=self.headers, data=payload)
+            log_api('POST', uri, r)
         except requests.exceptions.ConnectionError:
             self.handleError()
         return r

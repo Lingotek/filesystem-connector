@@ -287,7 +287,7 @@ class WatchAction(Action):
             #         printStr += target+","
             # print(printStr)
             if self.api.get_document(document_id):
-                request = request_action.RequestAction(self.path, title, file_name, locales_to_add, None, None, None, document_id, True)
+                request = request_action.RequestAction(self.path, title, file_name, locales_to_add, None, None, None, None, document_id, True)
                 if request.target_action() and document_id in self.watch_queue:
                     self.watch_queue.remove(document_id)
 

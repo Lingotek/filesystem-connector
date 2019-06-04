@@ -288,15 +288,16 @@ def push(test, title):
 @ltk.command(short_help="Add targets to document(s) to start translation; defaults to the entire project. Use ltk list -l to see possible locales")
 @click.option('-n', '--doc_name', help='The name of the document for which to request target locale(s)')
 @click.option('-p', '--path', type=click.Path(exists=True), help='The file name or directory for which to request target locale(s)')
+@click.option('-c', '--cancel', 'to_cancel', flag_value=True, help='Cancels a specified target locale')
 @click.option('-d', '--delete', 'to_delete', flag_value=True, help='Deletes a specified target locale')
 @click.option('--due_date', help='The due date of the translation')
 @click.option('-w', '--workflow', help='The workflow of the translation (Use "ltk list -w" to see available workflows)')
 @click.argument('locales', required=False, nargs=-1)  # can have unlimited number of locales
-def request(doc_name, path, locales, to_delete, due_date, workflow):
+def request(doc_name, path, locales, to_cancel, to_delete, due_date, workflow):
     """ Add targets to document(s) to start translation; defaults to the entire project. If no locales are specified, Filesystem Connector
         will look for target watch locales set in ltk config. Use ltk list -l to see possible locales. """
     try:
-        action = request_action.RequestAction(os.getcwd(), doc_name, path, locales, to_delete, due_date, workflow)
+        action = request_action.RequestAction(os.getcwd(), doc_name, path, locales, to_cancel, to_delete, due_date, workflow)
         init_logger(action.path)
         if locales and isinstance(locales,str):
             locales = [locales]

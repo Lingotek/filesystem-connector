@@ -71,7 +71,7 @@ class StatusAction(Action):
                 progress = entry['entities'][0]['properties']['progress']
                 self._print_status(title, progress)
                 if detailed:
-                    self.print_detailed(entry['properties']['id'], title)
+                    self._print_detailed_status(entry['properties']['id'], title)
 
     def _get_status_of_doc(self, doc_id, detailed):
         response = self.api.document_status(doc_id)
