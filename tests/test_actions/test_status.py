@@ -28,7 +28,7 @@ class TestStatusAction(unittest.TestCase):
 
     def tearDown(self):
         # remove the created file
-        self.rm_action.rm_action(self.file_name, force=True)
+        self.rm_action.rm_action(self.file_name, remote=True, force=True)
         self.clean_action.clean_action(True, False, None)
         self.action.close()
         cleanup()
@@ -107,7 +107,7 @@ class TestStatusAction(unittest.TestCase):
             sys.stdout = sys.__stdout__
 
         #remove second file
-        self.rm_action.rm_action(self.doc_id2, id=True)
+        self.rm_action.rm_action(self.doc_id2, id=True, remote=True)
         delete_file(self.file_path2)
 
     def test_status_name(self):
@@ -142,5 +142,5 @@ class TestStatusAction(unittest.TestCase):
             sys.stdout = sys.__stdout__
 
         #remove second file
-        self.rm_action.rm_action(self.file_name2, force=True)
+        self.rm_action.rm_action(self.file_name2, remote=True, force=True)
         delete_directory(self.dir_path)

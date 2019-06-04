@@ -47,7 +47,7 @@ class TestList(unittest.TestCase):
             sys.stdout = sys.__stdout__
 
         for fn in files:
-            self.rm_action.rm_action(fn, force=True)
+            self.rm_action.rm_action(fn, remote=True, force=True)
         self.clean_action.clean_action(False, False, None)
 
     def test_list_docs_none(self):
@@ -135,7 +135,7 @@ class TestList(unittest.TestCase):
             sys.stdout = sys.__stdout__
 
         for fn in files:
-            self.rm_action.rm_action(fn, force=True)
+            self.rm_action.rm_action(fn, remote=True, force=True)
         self.clean_action.clean_action(False, False, None)
 
     #can't test a remote list of none because there is no guarantee that the project used in the config file for the test is empty, and we don't want to clear the project remotely in case it is one that has stuff unrelated to testing that needs to stay
@@ -178,6 +178,6 @@ class TestList(unittest.TestCase):
             sys.stdout = sys.__stdout__
 
         for fn in files:
-            self.rm_action.rm_action(fn, force=True)
+            self.rm_action.rm_action(fn, remote=True, force=True)
         self.clean_action.clean_action(False, False, None)
         delete_directory(directory)

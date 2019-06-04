@@ -401,15 +401,15 @@ def pull(auto_format, locale_ext, no_ext, locales):
         return
 
 
-@ltk.command(name="rm", short_help="Disassociates local doc(s) from Lingotek Cloud and deletes the remote copy")
+@ltk.command(name="rm", short_help="Disassociates local doc(s) from Lingotek Cloud and cancels the remote copy")
 @click.argument('file_names', required=False, nargs=-1)
 @click.option('-d', '--directory', flag_value=True, help='Only remove directories, not files inside directories')
-@click.option('-i', '--id', flag_value=True, help='Delete documents with the specified ids (instead of file names) on Lingotek Cloud')
-@click.option('-n', '--name', flag_value=True, help='Delete documents with the specified names (instead of file names or paths) on Lingotek Cloud')
-@click.option('-a', '--all', flag_value=True, help='Delete all documents from Lingotek Cloud that are found locally')
-@click.option('-l', '--local', flag_value=True, help='Delete all documents locally, but not from the Lingotek Cloud. Can be used in association with --name to delete a specified document locally')
-@click.option('-r', '--remote', flag_value=True, help='Deletes specified documents from Lingotek Cloud for the current project')
-@click.option('-f', '--force', flag_value=True, help='Delete both local and remote source documents')
+@click.option('-i', '--id', flag_value=True, help='Cancels documents with the specified ids (instead of file names) on Lingotek Cloud.  Can be used to cancel documents that are not locally tracked.')
+@click.option('-n', '--name', flag_value=True, help='Cancels documents with the specified names (instead of file names or paths) on Lingotek Cloud')
+@click.option('-a', '--all', flag_value=True, help='Cancels all documents from Lingotek Cloud that are found locally')
+@click.option('-l', '--local', flag_value=True, help='Delete all documents locally without cancelling them in the Lingotek Cloud. Can be used in association with --name to delete a specified document locally')
+@click.option('-r', '--remote', flag_value=True, help='Deletes specified documents from Lingotek Cloud instead of cancelling them')
+@click.option('-f', '--force', flag_value=True, help='Delete local copy when cancelling remote source documents')
 def rm(file_names, **kwargs):
     """
     Disassociates local doc(s) from Lingotek Cloud and deletes the remote copy.

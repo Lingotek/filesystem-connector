@@ -24,7 +24,7 @@ class TestAdd(unittest.TestCase):
     def tearDown(self):
         self.rm_action = RmAction(os.getcwd())
         for fn in self.added_files:
-            self.rm_action.rm_action(fn, force=True)
+            self.rm_action.rm_action(fn, remote=True, force=True)
 
         not_empty = True
         while not_empty:
@@ -34,7 +34,7 @@ class TestAdd(unittest.TestCase):
                     if len(os.listdir(d)):
                         not_empty = True
                     else:
-                        self.rm_action.rm_action(d, force=True)
+                        self.rm_action.rm_action(d, remote=True, force=True)
                         delete_directory(d)
 
         self.clean_action.clean_action(False, False, None)

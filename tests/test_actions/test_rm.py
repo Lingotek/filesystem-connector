@@ -48,7 +48,7 @@ class TestRm(unittest.TestCase):
         cleanup()
 
     def test_rm(self):
-        self.action.rm_action([self.file_name1])
+        self.action.rm_action([self.file_name1], remote=True)
         assert poll_rm(self.action, self.doc_id1)
         assert poll_doc(self.action, self.doc_id2)
         assert poll_doc(self.action, self.doc_id3)
@@ -56,13 +56,13 @@ class TestRm(unittest.TestCase):
         assert self.doc_id2 in self.action.doc_manager.get_doc_ids()
         assert self.doc_id3 in self.action.doc_manager.get_doc_ids()
         assert self.action.folder_manager.folder_exists(self.dir_name)
-        self.action.rm_action([self.file_name2])
+        self.action.rm_action([self.file_name2], remote=True)
         assert poll_rm(self.action, self.doc_id2)
         assert poll_doc(self.action, self.doc_id3)
         assert self.doc_id2 not in self.action.doc_manager.get_doc_ids()
         assert self.doc_id3 in self.action.doc_manager.get_doc_ids()
         assert self.action.folder_manager.folder_exists(self.dir_name)
-        self.action.rm_action([self.dir_name])
+        self.action.rm_action([self.dir_name], remote=True)
         assert poll_rm(self.action, self.doc_id3)
         assert self.doc_id3 not in self.action.doc_manager.get_doc_ids()
         assert not self.action.folder_manager.folder_exists(self.dir_name)
@@ -72,7 +72,7 @@ class TestRm(unittest.TestCase):
         assert os.path.isdir(self.dir_path)
 
     def test_rm_force(self):
-        self.action.rm_action([self.file_name1], force=True)
+        self.action.rm_action([self.file_name1], remote=True, force=True)
         assert poll_rm(self.action, self.doc_id1)
         assert poll_doc(self.action, self.doc_id2)
         assert poll_doc(self.action, self.doc_id3)
@@ -84,7 +84,7 @@ class TestRm(unittest.TestCase):
         assert os.path.isfile(self.file_path2)
         assert os.path.isfile(self.file_path3)
         assert os.path.isdir(self.dir_path)
-        self.action.rm_action([self.file_name2], force=True)
+        self.action.rm_action([self.file_name2], remote=True, force=True)
         assert poll_rm(self.action, self.doc_id2)
         assert poll_doc(self.action, self.doc_id3)
         assert self.doc_id2 not in self.action.doc_manager.get_doc_ids()
@@ -93,7 +93,7 @@ class TestRm(unittest.TestCase):
         assert not os.path.isfile(self.file_path2)
         assert os.path.isfile(self.file_path3)
         assert os.path.isdir(self.dir_path)
-        self.action.rm_action([self.dir_name], force=True)
+        self.action.rm_action([self.dir_name], remote=True, force=True)
         assert poll_rm(self.action, self.doc_id3)
         assert self.doc_id3 not in self.action.doc_manager.get_doc_ids()
         assert not self.action.folder_manager.folder_exists(self.dir_name)
@@ -102,7 +102,7 @@ class TestRm(unittest.TestCase):
 
     #rm directory
     def test_rm_directory(self):
-        self.action.rm_action([self.dir_name], directory=True)
+        self.action.rm_action([self.dir_name], remote=True, directory=True)
         assert poll_doc(self.action, self.doc_id1)
         assert poll_doc(self.action, self.doc_id2)
         assert poll_doc(self.action, self.doc_id3)
@@ -110,9 +110,9 @@ class TestRm(unittest.TestCase):
         assert self.doc_id2 in self.action.doc_manager.get_doc_ids()
         assert self.doc_id3 in self.action.doc_manager.get_doc_ids()
         assert not self.action.folder_manager.folder_exists(self.dir_name)
-        self.action.rm_action([self.file_name1])#cleanup, does not need to be tested in this unit test
-        self.action.rm_action([self.file_name2])#cleanup, does not need to be tested in this unit test
-        self.action.rm_action([self.file_name3])#cleanup, does not need to be tested in this unit test
+        self.action.rm_action([self.file_name1], remote=True)#cleanup, does not need to be tested in this unit test
+        self.action.rm_action([self.file_name2], remote=True)#cleanup, does not need to be tested in this unit test
+        self.action.rm_action([self.file_name3], remote=True)#cleanup, does not need to be tested in this unit test
         assert os.path.isfile(self.file_path1)
         assert os.path.isfile(self.file_path2)
         assert os.path.isfile(self.file_path3)
@@ -120,7 +120,7 @@ class TestRm(unittest.TestCase):
 
     #rm by id
     def test_rm_id(self):
-        self.action.rm_action([self.doc_id1], id=True)
+        self.action.rm_action([self.doc_id1], id=True, remote=True)
         assert poll_rm(self.action, self.doc_id1)
         assert poll_doc(self.action, self.doc_id2)
         assert poll_doc(self.action, self.doc_id3)
@@ -128,13 +128,13 @@ class TestRm(unittest.TestCase):
         assert self.doc_id2 in self.action.doc_manager.get_doc_ids()
         assert self.doc_id3 in self.action.doc_manager.get_doc_ids()
         assert self.action.folder_manager.folder_exists(self.dir_name)
-        self.action.rm_action([self.doc_id2], id=True)
+        self.action.rm_action([self.doc_id2], id=True, remote=True)
         assert poll_rm(self.action, self.doc_id2)
         assert poll_doc(self.action, self.doc_id3)
         assert self.doc_id2 not in self.action.doc_manager.get_doc_ids()
         assert self.doc_id3 in self.action.doc_manager.get_doc_ids()
         assert self.action.folder_manager.folder_exists(self.dir_name)
-        self.action.rm_action([self.doc_id3], id=True)
+        self.action.rm_action([self.doc_id3], id=True, remote=True)
         assert poll_rm(self.action, self.doc_id3)
         assert self.doc_id3 not in self.action.doc_manager.get_doc_ids()
         assert self.action.folder_manager.folder_exists(self.dir_name)
@@ -145,7 +145,7 @@ class TestRm(unittest.TestCase):
 
     #rm by name
     def test_rm_name(self):
-        self.action.rm_action([self.file_name1], name=True)
+        self.action.rm_action([self.file_name1], name=True, remote=True)
         assert poll_rm(self.action, self.doc_id1)
         assert poll_doc(self.action, self.doc_id2)
         assert poll_doc(self.action, self.doc_id3)
@@ -153,13 +153,13 @@ class TestRm(unittest.TestCase):
         assert self.doc_id2 in self.action.doc_manager.get_doc_ids()
         assert self.doc_id3 in self.action.doc_manager.get_doc_ids()
         assert self.action.folder_manager.folder_exists(self.dir_name)
-        self.action.rm_action([self.file_name2], name=True)
+        self.action.rm_action([self.file_name2], name=True, remote=True)
         assert poll_rm(self.action, self.doc_id2)
         assert poll_doc(self.action, self.doc_id3)
         assert self.doc_id2 not in self.action.doc_manager.get_doc_ids()
         assert self.doc_id3 in self.action.doc_manager.get_doc_ids()
         assert self.action.folder_manager.folder_exists(self.dir_name)
-        self.action.rm_action([self.file_name3_short], name=True)
+        self.action.rm_action([self.file_name3_short], name=True, remote=True)
         assert poll_rm(self.action, self.doc_id3)
         assert self.doc_id3 not in self.action.doc_manager.get_doc_ids()
         assert self.action.folder_manager.folder_exists(self.dir_name)
@@ -170,7 +170,7 @@ class TestRm(unittest.TestCase):
 
     #rm all
     def test_rm_all(self):
-        self.action.rm_action([], all=True)
+        self.action.rm_action([], all=True, remote=True)
         assert poll_rm(self.action, self.doc_id1)
         assert poll_rm(self.action, self.doc_id2)
         assert poll_rm(self.action, self.doc_id3)
@@ -185,7 +185,7 @@ class TestRm(unittest.TestCase):
 
     #rm local
     def test_rm_local(self):
-        self.action.rm_action([], local=True)
+        self.action.rm_action([], remote=True, local=True)
         assert poll_doc(self.action, self.doc_id1)
         assert poll_doc(self.action, self.doc_id2)
         assert poll_doc(self.action, self.doc_id3)
@@ -199,6 +199,6 @@ class TestRm(unittest.TestCase):
         assert os.path.isdir(self.dir_path)
 
         #clean up files remotely
-        self.action.rm_action([self.doc_id1, self.doc_id2, self.doc_id3], id=True)
+        self.action.rm_action([self.doc_id1, self.doc_id2, self.doc_id3], id=True, remote=True)
 
-    #rm remote(?) - currently remote behaves the same as normal.  A ticket (LP-29305) has been opened to figure out what to do about this.  If ltk -r ends up being removed, this test case won't be needed
+    #test cancelling

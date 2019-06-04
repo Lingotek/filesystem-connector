@@ -44,7 +44,7 @@ class TestDownload(unittest.TestCase):
     def tearDown(self):
         self.rm_action = RmAction(os.getcwd())
         for curr_file in self.files:
-            self.rm_action.rm_action([curr_file], force=True)
+            self.rm_action.rm_action([curr_file], remote=True, force=True)
         self.clean_action.clean_action(False, False, None)
         for dl_file in self.downloaded_files:
             if os.path.exists(dl_file):

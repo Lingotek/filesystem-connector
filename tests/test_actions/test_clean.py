@@ -31,7 +31,7 @@ class TestClean(unittest.TestCase):
         for curr_file in self.files:
             if curr_file in self.forced:
                 continue
-            self.rm_action.rm_action(curr_file, force=True)
+            self.rm_action.rm_action(curr_file, remote=True, force=True)
         self.action.clean_action(True, False, None)
         self.action.close()
 

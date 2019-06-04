@@ -119,7 +119,7 @@ class TestClone(unittest.TestCase):
                 else:
                     self.delete_directory(dir_path+os.sep+subdir)
             print("disassociating directory: "+dir_path.replace(os.getcwd()+os.sep, ''))
-            self.rm_action.rm_action([dir_path.replace(os.getcwd()+os.sep, '')], force=True)
+            self.rm_action.rm_action([dir_path.replace(os.getcwd()+os.sep, '')], remote=True, force=True)
             print("deleting directory: "+dir_path)
             os.rmdir(dir_path)
 

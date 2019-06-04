@@ -32,7 +32,7 @@ class TestPush(unittest.TestCase):
     def tearDown(self):
         # delete files added to lingotek cloud
         for curr_file in self.files:
-            self.rm_action.rm_action(curr_file, force=True)
+            self.rm_action.rm_action(curr_file, remote=True, force=True)
 
         # delete downloaded translations
         for df in self.downloaded:
@@ -188,6 +188,6 @@ class TestPush(unittest.TestCase):
             assert "Texto agregado." in downloaded_text
             assert "Este es un ejemplo de archivo de texto." in downloaded_text
 
-        self.rm_action.rm_action(nestedfile, force=True)
+        self.rm_action.rm_action(nestedfile, remote=True, force=True)
         delete_directory("nested")
         

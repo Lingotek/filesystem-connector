@@ -36,9 +36,9 @@ class TestImport(unittest.TestCase):
     def tearDown(self):
         self.rm_action = RmAction(os.getcwd())
         for doc_id in self.doc_ids:
-            self.rm_action.rm_action(doc_id, id=True)
+            self.rm_action.rm_action(doc_id, id=True, remote=True)
         for doc_id in self.imported:
-            self.rm_action.rm_action(doc_id, id=True)
+            self.rm_action.rm_action(doc_id, id=True, remote=True)
         self.clean_action.clean_action(True, False, None)
         self.rm_action.close()
         self.action.close()
