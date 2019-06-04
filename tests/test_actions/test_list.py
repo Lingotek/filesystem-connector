@@ -181,3 +181,5 @@ class TestList(unittest.TestCase):
             self.rm_action.rm_action(fn, remote=True, force=True)
         self.clean_action.clean_action(False, False, None)
         delete_directory(directory)
+
+#create test for ltk -r when documents have been cancelled

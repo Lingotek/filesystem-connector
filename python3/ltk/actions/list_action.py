@@ -190,8 +190,18 @@ class ListAction(Action):
             for entry in response.json()['entities']:
                 title = entry['properties']['title']
                 id = entry['properties']['id']
-                table.append([title, id])
-            print(tabulate(table, headers=headers))
+#if API is changed or we decide not to filter out cancelled documents to reduce the number of calls, replace the code below with the following:
+                #table.append([title, id])
+            #print(tabulate(table, headers=headers))
+#replace from here...
+                secondcall = self.api.document_status(id)
+                if secondcall.json()['properties']['status'] and secondcall.json()['properties']['status'] != "Cancelled":
+                    table.append([title, id])
+            if len(table) > 0:
+                print(tabulate(table, headers=headers))
+            else:
+                print("No documents to report")
+#...to here
 
     def list_workflows(self):
         try:
