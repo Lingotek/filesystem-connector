@@ -133,7 +133,7 @@ class StatusAction(Action):
                                         table.append({"Phase": str(phase_order), "Name": phase_name, "Status": phase_status, "Phase Percent Complete": str(phase_percent_complete) + '%'})
                                     table.sort(key=lambda x: x['Phase'])
                                     print('\n')
-                                    print('Locale: {0} \t Total Percent Complete: {1}% \n'.format(curr_locale, curr_progress, curr_statustext))
+                                    print('Locale: {0} \t Total Percent Complete: {1}% ({2})\n'.format(curr_locale, curr_progress, curr_statustext))
                                     # print('Locale: {0} \n'.format(curr_locale))
                                     print(tabulate(table, headers="keys"))
                                     
