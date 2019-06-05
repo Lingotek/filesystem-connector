@@ -407,7 +407,7 @@ def pull(auto_format, locale_ext, no_ext, locales):
 @click.option('-i', '--id', flag_value=True, help='Cancels documents with the specified ids (instead of file names) on Lingotek Cloud.  Can be used to cancel documents that are not locally tracked.')
 @click.option('-n', '--name', flag_value=True, help='Cancels documents with the specified names (instead of file names or paths) on Lingotek Cloud')
 @click.option('-a', '--all', flag_value=True, help='Cancels all documents from Lingotek Cloud that are found locally')
-@click.option('-l', '--local', flag_value=True, help='Delete all documents locally without cancelling them in the Lingotek Cloud. Can be used in association with --name to delete a specified document locally')
+@click.option('-l', '--local', flag_value=True, help='Deprecated.  Use \'ltk rm -f -a\' for all documents or \'ltk rm --f\' for specific documents.  (Legacy Usage: deletes all documents locally and cancels them in the Lingotek Cloud. Can be used in association with --name to delete a specified document locally.)')
 @click.option('-r', '--remote', flag_value=True, help='Deletes specified documents from Lingotek Cloud instead of cancelling them')
 @click.option('-f', '--force', flag_value=True, help='Delete local copy when cancelling remote source documents')
 def rm(file_names, **kwargs):
