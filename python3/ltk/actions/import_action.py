@@ -33,7 +33,7 @@ class ImportAction(Action):
                     doc_info = {'title': entity['properties']['title'], 'extension': entity['properties']['extension']}
                     if no_cancel or track:
                         statuscheck = self.api.document_status(entity['properties']['id'])
-                        if statuscheck.json()['properties']['status'] == 'Cancelled':
+                        if statuscheck.json()['properties']['status'].upper() == 'CANCELLED':
                             if no_cancel:
                                 continue
                             self.skip_ids.append(entity['properties']['id'])

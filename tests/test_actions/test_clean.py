@@ -72,3 +72,5 @@ class TestClean(unittest.TestCase):
         self.action.api.document_delete(delete_id)
         self.forced.append(doc_name)
         assert not self.action.doc_manager.get_doc_by_prop('id', delete_id)
+
+#account for cancelled document cleaning
