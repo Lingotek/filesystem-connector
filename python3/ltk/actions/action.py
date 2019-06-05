@@ -349,9 +349,9 @@ class Action:
         else:
             self.doc_manager.update_document('locales', list(locales), document_id)
 
-    def update_doc_locales(self, document_id):
+    def update_doc_locales(self, document_id, include_cancelled=False):
         try:
-            locale_map = self.import_locale_info(document_id)
+            locale_map = self.import_locale_info(document_id, include_cancelled)
             locale_info = list(iter(locale_map))
         except exceptions.RequestFailedError as e:
             log_error(self.error_file_name, e)
@@ -378,7 +378,7 @@ class Action:
             i += 1
         return file_path
 
-    def import_locale_info(self, document_id, poll=False):
+    def import_locale_info(self, document_id, poll=False, include_cancelled=False):
         locale_progress = {}
         response = self.api.document_translation_status(document_id)
         if response.status_code != 200:
@@ -391,8 +391,10 @@ class Action:
             for entry in response.json()['entities']:
                 curr_locale = entry['properties']['locale_code']
                 curr_progress = int(entry['properties']['percent_complete'])
+                curr_status = entry['properties']['status']
                 curr_locale = curr_locale.replace('-', '_')
-                locale_progress[curr_locale] = curr_progress
+                if include_cancelled or curr_status != 'CANCELLED':
+                    locale_progress[curr_locale] = curr_progress
         except KeyError:
             pass
         return locale_progress

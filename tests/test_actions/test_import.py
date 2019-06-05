@@ -69,3 +69,5 @@ class TestImport(unittest.TestCase):
         entry = self.action.doc_manager.get_doc_by_prop("id", self.doc_ids[0])
         assert not entry.get("locales")
         self.imported.append(entry['id'])
+
+#change tests to account for cancelled documents

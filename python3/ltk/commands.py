@@ -459,8 +459,9 @@ def mv(source_path, destination_path):
 @click.option('-a', '--all', 'import_all', flag_value=True, help='Import all documents from Lingotek Cloud')
 @click.option('-f', '--force', flag_value=True, help='Overwrites existing documents without prompt')
 @click.option('-p', '--path', type=click.Path(exists=True), help='Import documents to a specified path')
-@click.option('-t', '--track', flag_value=True, help='Automatically add the imported documents to local tracking if they were not already being tracked.  Note: They will be added without extra options (no srx id, no download folder, etc.)')
-def import_command(import_all, force, path, track):
+@click.option('-t', '--track', flag_value=True, help='Automatically add the imported documents to local tracking if they were not already being tracked.  Will not track cancelled documents.  Note: They will be added without extra options (no srx id, no download folder, etc.)')
+@click.option('-c', '--no-cancel', flag_value=True, help='Don\'t include documents that have been cancelled.')
+def import_command(import_all, force, path, track, no_cancel):
     """
     Import documents from Lingotek Cloud, by default downloading to the project's root folder
     """
@@ -478,7 +479,7 @@ def import_command(import_all, force, path, track):
         if path != None:
             path = remove_powershell_formatting(path)
 
-        action.import_action(import_all, force, path, track)
+        action.import_action(import_all, force, path, track, no_cancel)
     except(UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
