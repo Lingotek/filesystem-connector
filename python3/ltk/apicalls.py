@@ -296,6 +296,16 @@ class ApiCalls:
             self.handleError()
         return r
 
+    def document_translation_locale_status(self, document_id, locale):
+        """ gets the status of a specific target for a document translation """
+        try:
+            uri = (API_URI['document_translation_locale'] % locals())
+            r = requests.get(self.host + uri, headers=self.headers)
+            log_api('GET', uri, r)
+        except requests.exceptions.ConnectionError:
+            self.handleError()
+        return r
+
     def document_content(self, document_id, locale_code, auto_format, xliff=False, finalized_file='off'):
         """ downloads the translated document """
         headers = self.headers

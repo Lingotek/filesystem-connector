@@ -31,43 +31,82 @@ class TestImport(unittest.TestCase):
             assert poll_doc(self.action, doc_id)
         for fn in self.files:
             delete_file(fn)
+        self.action.doc_manager.clear_all()
         self.imported = []
 
     def tearDown(self):
         self.rm_action = RmAction(os.getcwd())
         for doc_id in self.doc_ids:
-            self.rm_action.rm_action(doc_id, id=True, remote=True)
-        for doc_id in self.imported:
-            self.rm_action.rm_action(doc_id, id=True, remote=True)
+            self.rm_action.rm_action(doc_id, id=True, remote=True, force=True)
+        for file_name in self.imported:
+            if os.path.isfile(os.path.join(os.getcwd(), file_name)):
+                delete_file(file_name)
         self.clean_action.clean_action(True, False, None)
         self.rm_action.close()
         self.action.close()
 
-    def test_import_all(self):
-        files = os.listdir()
-        self.action.import_action(True, True, None, True)
-        for doc_id in self.doc_ids:
-            doc = self.action.doc_manager.get_doc_by_prop('id', doc_id)
-            assert doc
-            self.imported.append(doc['id'])
-        added_files = list(set(os.listdir()) - set(files))
-        for file in added_files:
-            os.remove(file)
+    def test_import_single_untracked(self):
+        self.action.api.document_cancel(self.doc_ids[0])
+        assert poll_rm(self.action, self.doc_ids[0], cancelled=True)
+        self.action.import_action(False, False, False, False, False, self.doc_ids[0])
+        assert os.path.isfile(os.path.join(os.getcwd(), self.files[0]))
+        self.imported.append(self.files[0])
+        self.action.import_action(False, False, False, False, False, self.doc_ids[1])
+        assert os.path.isfile(os.path.join(os.getcwd(), self.files[1]))
+        self.imported.append(self.files[1])
+    
+    def test_import_single_tracked(self):
+        self.action.api.document_cancel(self.doc_ids[0])
+        assert poll_rm(self.action, self.doc_ids[0], cancelled=True)
+        self.action.import_action(False, False, False, True, False, self.doc_ids[0])
+        assert os.path.isfile(os.path.join(os.getcwd(), self.files[0]))
+        self.imported.append(self.files[0])
+        self.action.import_action(False, False, False, True, False, self.doc_ids[1])
+        assert os.path.isfile(os.path.join(os.getcwd(), self.files[1]))
+        ids_to_check = self.action.doc_manager.get_doc_ids()
+        assert self.doc_ids[1] in ids_to_check
+        assert self.doc_ids[0] not in ids_to_check
 
-    def test_import_locale(self):
-        locale = "ja_JP"
-        doc_id = self.doc_ids[0]
-        response = self.action.api.document_add_target(doc_id, locale)
-        assert response.status_code == 201
-        self.action.import_action(False, True, None, True, doc_id)
-        entry = self.action.doc_manager.get_doc_by_prop("id", doc_id)
-        assert locale in entry["locales"]
-        self.imported.append(entry['id'])
+    def test_import_all_untracked(self):
+        self.action.api.document_cancel(self.doc_ids[0])
+        assert poll_rm(self.action, self.doc_ids[0], cancelled=True)
+        self.action.import_action(True, False, False, False, False)
+        assert os.path.isfile(os.path.join(os.getcwd(), self.files[0]))
+        self.imported.append(self.files[0])
+        assert os.path.isfile(os.path.join(os.getcwd(), self.files[1]))
+        self.imported.append(self.files[1])
+        assert os.path.isfile(os.path.join(os.getcwd(), self.files[2]))
+        self.imported.append(self.files[2])
+    
+    def test_import_all_tracked(self):
+        self.action.api.document_cancel(self.doc_ids[0])
+        assert poll_rm(self.action, self.doc_ids[0], cancelled=True)
+        self.action.import_action(True, False, False, True, False)
+        assert os.path.isfile(os.path.join(os.getcwd(), self.files[0]))
+        self.imported.append(self.files[0])
+        assert os.path.isfile(os.path.join(os.getcwd(), self.files[1]))
+        self.imported.append(self.files[1])
+        assert os.path.isfile(os.path.join(os.getcwd(), self.files[2]))
+        self.imported.append(self.files[2])
+        ids_to_check = self.action.doc_manager.get_doc_ids()
+        assert self.doc_ids[1] in ids_to_check
+        assert self.doc_ids[2] in ids_to_check
+        assert self.doc_ids[0] not in ids_to_check
 
-    def test_import_no_locale(self):
-        self.action.import_action(False, True, None, True, self.doc_ids[0])
-        entry = self.action.doc_manager.get_doc_by_prop("id", self.doc_ids[0])
-        assert not entry.get("locales")
-        self.imported.append(entry['id'])
+    def test_import_path(self):
+        dirpath = os.path.join(os.getcwd(), "subdir")
+        create_directory(dirpath)
+        self.action.import_action(False, False, "subdir", False, False, self.doc_ids[0])
+        assert os.path.isfile(os.path.join(dirpath, self.files[0]))
+        delete_file(os.path.join("subdir", self.files[0]))
+        delete_directory(dirpath)
 
-#change tests to account for cancelled documents
+    def test_import_no_cancel(self):
+        self.action.api.document_cancel(self.doc_ids[0])
+        assert poll_rm(self.action, self.doc_ids[0], cancelled=True)
+        self.action.import_action(True, False, False, False, True)
+        assert not os.path.isfile(os.path.join(os.getcwd(), self.files[0]))
+        assert os.path.isfile(os.path.join(os.getcwd(), self.files[1]))
+        self.imported.append(self.files[1])
+        assert os.path.isfile(os.path.join(os.getcwd(), self.files[2]))
+        self.imported.append(self.files[2])

@@ -181,3 +181,28 @@ class TestList(unittest.TestCase):
             self.rm_action.rm_action(fn, remote=True, force=True)
         self.clean_action.clean_action(False, False, None)
         delete_directory(directory)
+
+    def test_list_cancelled(self):
+        files = ['sample.txt', 'sample1.txt', 'sample2.txt']
+        file_paths = []
+        for fn in files:
+            file_paths.append(create_txt_file(fn))
+        self.add_action.add_action(['sample*.txt'], overwrite=True)
+        doc_ids = self.action.doc_manager.get_doc_ids()
+        for doc_id in doc_ids:
+            assert poll_doc(self.action, doc_id)
+        self.action.api.document_cancel(doc_ids[0])
+        assert poll_rm(self.action, doc_ids[0], cancelled=True)
+        try:
+            out = StringIO()
+            sys.stdout = out
+            self.action.list_ids(False)
+            info = out.getvalue()
+            for doc_id in doc_ids:
+                assert doc_id in info
+        finally:
+            sys.stdout = sys.__stdout__
+
+        for fn in files:
+            self.rm_action.rm_action(fn, remote=True, force=True)
+        self.clean_action.clean_action(False, False, None)

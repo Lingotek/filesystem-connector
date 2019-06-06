@@ -69,29 +69,34 @@ def append_file(file_name, path=None):
 
     return file_path
 
-def poll_doc(action, doc_id):
+def poll_doc(action, doc_id, fail_cancelled=True):
     """polls Lingotek for the status of a document given an id
         :returns True if document is imported within 3 min, else False
     """
     time_passed = 0
-    while time_passed < 36: #36 loops x 5 second sleep = 180 seconds = 3 minutes
+    while time_passed < 60: #60 loops x 3 second sleep = 180 seconds = 3 minutes
         response = action.api.get_document(doc_id)
         if response.status_code == 200:
+            if fail_cancelled:
+                return (response.json()['properties']['status'].upper() != 'CANCELLED')
             return True
-        time.sleep(5)
+        time.sleep(3)
         time_passed += 1
     return False
 
-def poll_rm(action, doc_id):
+def poll_rm(action, doc_id, cancelled=False):
     """polls Lingotek for the status of a document given an id
         :returns True if document is deleted within 3 min, else False
     """
     time_passed = 0
-    while time_passed < 180:
-        response = action.api.get_document(doc_id)
-        if response.status_code == 404:
+    while time_passed < 60: #60 loops x 3 second sleep = 180 seconds = 3 minutes
+        response = action.api.document_status(doc_id)
+        if cancelled:
+            if response.status_code == 200 and response.json()['properties']['status'].upper() == 'CANCELLED':
+                return True
+        elif response.status_code == 404:
             return True
-        time.sleep(1)
+        time.sleep(3)
         time_passed += 1
     return False
 

@@ -6,7 +6,7 @@ from ltk.actions.rm_action import RmAction
 from ltk.actions.request_action import RequestAction
 from ltk.actions.download_action import DownloadAction
 from io import StringIO
-import os # Delete later
+import os
 import sys
 import unittest
 import time
@@ -131,6 +131,7 @@ class TestPush(unittest.TestCase):
             logger.removeHandler(handler)
         finally:
             sys.stdout = sys.__stdout__
+        print("polling to check that file wasn't modified.  This will take 3 minutes if successful.")
         assert not check_updated_ids(self.action, orig_dates) # Poll and wait to make sure the modification didn't occur on the cloud
         dl_path_0 = self.download_action.download_action(test_doc_id_0, locales[0], False)
         dl_path_1 = self.download_action.download_action(test_doc_id_1, locales[0], False)
@@ -191,3 +192,4 @@ class TestPush(unittest.TestCase):
         self.rm_action.rm_action(nestedfile, remote=True, force=True)
         delete_directory("nested")
         
+#don't need tests for pushing to cancelled documents, because push only works for tracked documents and cancelled documents are never tracked.  Someone would have to intentionally try and break this by editing the docs.json file, at which point they're asking for errors.

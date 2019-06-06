@@ -144,5 +144,3 @@ class TestStatusAction(unittest.TestCase):
         #remove second file
         self.rm_action.rm_action(self.file_name2, remote=True, force=True)
         delete_directory(self.dir_path)
-
-#add extra fields into status tests

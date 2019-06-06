@@ -41,8 +41,9 @@ class TestClean(unittest.TestCase):
         self.forced.append(self.entries[0]['file_name'])
         assert r.status_code == 204
         assert self.action.doc_manager.get_doc_by_prop('id', delete_id)
+        assert poll_rm(self.action, delete_id), "The file is in the process queue to be deleted but hasn't been deleted yet"
         self.action.clean_action(False, False, None)
-        assert not self.action.doc_manager.get_doc_by_prop('id', delete_id)
+        assert not self.action.doc_manager.get_doc_by_prop('id', delete_id), "doc is "+str(self.action.doc_manager.get_doc_by_prop('id', delete_id))
 
     def test_clean_force(self):
         delete_id = self.entries[0]['id']
@@ -50,6 +51,7 @@ class TestClean(unittest.TestCase):
         r = self.action.api.document_delete(delete_id)
         assert r.status_code == 204
         assert self.action.doc_manager.get_doc_by_prop('id', delete_id)
+        assert poll_rm(self.action, delete_id), "The file is in the process queue to be deleted but hasn't been deleted yet"
         self.action.clean_action(True, False, None)
         self.forced.append(self.entries[0]['file_name'])
         assert not self.action.doc_manager.get_doc_by_prop('id', delete_id)
@@ -59,6 +61,7 @@ class TestClean(unittest.TestCase):
         self.action.clean_action(False, True, None)
         for entry in self.entries:
             assert not self.action.doc_manager.get_doc_by_prop('id', entry['id'])
+            assert poll_rm(self.action, entry['id'], cancelled=True)
             delete_file(entry['file_name'])
             self.action.api.document_delete(entry['id'])
             self.forced.append(entry['file_name'])
@@ -68,9 +71,8 @@ class TestClean(unittest.TestCase):
         delete_id = self.entries[0]['id']
         doc_name = self.entries[0]['file_name']
         self.action.clean_action(False, False, doc_name)
+        assert poll_rm(self.action, delete_id, cancelled=True)
+        assert not self.action.doc_manager.get_doc_by_prop('id', delete_id)
         delete_file(doc_name)
         self.action.api.document_delete(delete_id)
         self.forced.append(doc_name)
-        assert not self.action.doc_manager.get_doc_by_prop('id', delete_id)
-
-#account for cancelled document cleaning

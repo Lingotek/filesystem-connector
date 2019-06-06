@@ -32,6 +32,7 @@ class TestAdd(unittest.TestCase):
             for d in self.added_directories:
                 if os.path.exists(d) and os.path.isdir(d):
                     if len(os.listdir(d)):
+                        self.rm_action.rm_action(d, remote=True, force=True)
                         not_empty = True
                     else:
                         self.rm_action.rm_action(d, remote=True, force=True)
