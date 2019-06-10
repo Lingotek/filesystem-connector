@@ -3,6 +3,7 @@ from ltk.actions.action import *
 class RmAction(Action):
     def __init__(self, path):
         Action.__init__(self, path)
+        self.use_delete = False
 
     def rm_action(self, file_patterns, **kwargs):
         try:
@@ -31,16 +32,17 @@ class RmAction(Action):
                 useID = True
             else:
                 useID = False
+            if 'remote' in kwargs and kwargs['remote']:
+                self.use_delete = True
+            else:
+                self.use_delete = False
             if 'all' in kwargs and kwargs['all']:
                 local = False
                 self.folder_manager.clear_all()
                 removed_folder = True
                 logger.info("Removed all folders.")
-                if 'remote' in kwargs and kwargs['remote']:
-                    matched_files = self.rm_remote(force)
-                else:
-                    useID = False
-                    matched_files = self.doc_manager.get_file_names()
+                useID = False
+                matched_files = self.doc_manager.get_file_names()
             elif 'local' in kwargs and kwargs['local']:
                 local = True
                 if 'name' in kwargs and kwargs['name']:
@@ -91,7 +93,7 @@ class RmAction(Action):
                     is_directory = True
             for file_name in matched_files:
                 # title = os.path.basename(os.path.normpath(file_name)).split('.')[0]
-                self.rm_document(self.norm_path(file_name).replace(self.path,""), useID, force, local)
+                self._rm_document(self.norm_path(file_name).replace(self.path,""), useID, force, local)
 
         except Exception as e:
             # Python 3
@@ -102,7 +104,7 @@ class RmAction(Action):
             else:
                 logger.error("Error on remove: "+str(e))
 
-    def rm_clone(self, file_name):
+    def _rm_clone(self, file_name):
         trans_files = []
         entry = self.doc_manager.get_doc_by_prop("file_name", file_name)
         if entry:
@@ -123,7 +125,7 @@ class RmAction(Action):
 
         return trans_files
 
-    def rm_document(self, file_name, useID, force, local=False, doc_name=None, is_directory=False):
+    def _rm_document(self, file_name, useID, force, local=False, doc_name=None, is_directory=False):
         try:
             doc = None
             if not useID:
@@ -142,35 +144,37 @@ class RmAction(Action):
                 doc = self.doc_manager.get_doc_by_prop('id', document_id)
                 if doc:
                     file_name = doc['file_name']
-            if local and not force:
-                self.delete_local(file_name, document_id)
+            if local:
+                force = True#currently the local argument is redundant and behaves like force all.  
 
-            else:
+            if self.use_delete:
                 response = self.api.document_delete(document_id)
-                #print (response)
-                if response.status_code != 204 and response.status_code != 202:
-                    # raise_error(response.json(), "Failed to delete document {0}".format(document_name), True)
-                    logger.error("Failed to delete document {0} remotely".format(file_name))
+            else:
+                response = self.api.document_cancel(document_id)
+            #print (response)
+            if response.status_code != 204 and response.status_code != 202:
+                # raise_error(response.json(), "Failed to delete document {0}".format(document_name), True)
+                logger.error("Failed to {0} {1} remotely".format('delete' if self.use_delete else 'cancel', file_name))
+            else:
+                if doc_name:
+                    logger.info("{0} ({1}) has been {2} remotely".format(doc_name, file_name, 'deleted' if self.use_delete else 'cancelled'))
                 else:
-                    if doc_name:
-                        logger.info("{0} ({1}) has been deleted remotely".format(doc_name, file_name))
-                    else:
-                        logger.info("{0} has been deleted remotely".format(file_name))
-                    if doc:
-                        if force:
-                            #delete local translation file(s) for the document being deleted
-                            trans_files = []
-                            if 'clone' in self.download_option:
-                                trans_files = self.rm_clone(file_name)
+                    logger.info("{0} has been {1} remotely".format(file_name, 'deleted' if self.use_delete else 'cancelled'))
+                if doc:
+                    if force:
+                        #delete local translation file(s) for the document being deleted
+                        trans_files = []
+                        if 'clone' in self.download_option:
+                            trans_files = self._rm_clone(file_name)
 
-                            elif 'folder' in self.download_option:
-                                trans_files = self.rm_folder(file_name)
+                        elif 'folder' in self.download_option:
+                            trans_files = self._rm_folder(file_name)
 
-                            elif 'same' in self.download_option:
-                                download_path = self.path
-                                trans_files = get_translation_files(file_name, download_path, self.download_option, self.doc_manager)
+                        elif 'same' in self.download_option:
+                            download_path = self.path
+                            trans_files = get_translation_files(file_name, download_path, self.download_option, self.doc_manager)
 
-                            self.delete_local(file_name, document_id)
+                        self.delete_local(file_name, document_id)
             self.doc_manager.remove_element(document_id)
         except json.decoder.JSONDecodeError:
             logger.error("JSON error on removing document")
@@ -181,7 +185,7 @@ class RmAction(Action):
             log_error(self.error_file_name, e)
             logger.error("Error on removing document "+str(file_name)+": "+str(e))
 
-    def rm_folder(self, file_name):
+    def _rm_folder(self, file_name):
         trans_files = []
         entry = self.doc_manager.get_doc_by_prop("file_name", file_name)
         if entry:
@@ -199,25 +203,3 @@ class RmAction(Action):
                     download_path = os.path.join(self.path,download_path)
                     trans_files.extend(get_translation_files(file_name, download_path, self.download_option, self.doc_manager))
         return trans_files
-
-    def rm_remote(self, force):
-        response = self.api.list_documents(self.project_id)
-        if response.status_code == 204:
-            print("No remote documents to remove.")
-            return
-        elif response.status_code != 200:
-            if check_response(response):
-                raise_error(response.json(), "Failed to get status of documents", True)
-            else:
-                raise_error("", "Failed to get status of documents", True)
-            return
-        else:
-            matched_files = []
-            entities = response.json()['entities']
-            for entry in entities:
-                doc_id = entry['properties']['id']
-                doc_name = entry['properties']['name']
-                doc = self.doc_manager.get_doc_by_prop("id",doc_id)
-                if doc:
-                    matched_files.append(doc["file_name"])
-            return matched_files

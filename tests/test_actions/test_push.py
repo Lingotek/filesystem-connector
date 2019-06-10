@@ -6,7 +6,7 @@ from ltk.actions.rm_action import RmAction
 from ltk.actions.request_action import RequestAction
 from ltk.actions.download_action import DownloadAction
 from io import StringIO
-import os # Delete later
+import os
 import sys
 import unittest
 import time
@@ -32,7 +32,7 @@ class TestPush(unittest.TestCase):
     def tearDown(self):
         # delete files added to lingotek cloud
         for curr_file in self.files:
-            self.rm_action.rm_action(curr_file, force=True)
+            self.rm_action.rm_action(curr_file, remote=True, force=True)
 
         # delete downloaded translations
         for df in self.downloaded:
@@ -49,7 +49,7 @@ class TestPush(unittest.TestCase):
         append_file(self.files[0])
         locales = ['es-AR']
         test_doc_id = self.action.doc_manager.get_doc_by_prop('file_name',self.files[0])['id']
-        self.request_action = RequestAction(os.getcwd(), self.files[0], None, locales, False, None, None, test_doc_id)
+        self.request_action = RequestAction(os.getcwd(), self.files[0], None, locales, False, False, None, None, test_doc_id)
         self.request_action.target_action()
         with open(self.files[0]) as f:
             downloaded = f.read()
@@ -73,9 +73,9 @@ class TestPush(unittest.TestCase):
         locales = ['es-AR']
         test_doc_id_0 = self.action.doc_manager.get_doc_by_prop('file_name',self.files[0])['id']
         test_doc_id_1 = self.action.doc_manager.get_doc_by_prop('file_name',self.files[1])['id']
-        self.request_action = RequestAction(os.getcwd(), self.files[0], None, locales, False, None, None, test_doc_id_0)
+        self.request_action = RequestAction(os.getcwd(), self.files[0], None, locales, False, False, None, None, test_doc_id_0)
         target1 = self.request_action.target_action()
-        self.request_action = RequestAction(os.getcwd(), self.files[1], None, locales, False, None, None, test_doc_id_1)
+        self.request_action = RequestAction(os.getcwd(), self.files[1], None, locales, False, False, None, None, test_doc_id_1)
         target2 = self.request_action.target_action()
         orig_dates = get_orig_dates(self.action, [test_doc_id_0, test_doc_id_1]) #get the initial timestamp before modifying the document on the cloud
         assert orig_dates
@@ -108,9 +108,9 @@ class TestPush(unittest.TestCase):
         locales = ['es-AR']
         test_doc_id_0 = self.action.doc_manager.get_doc_by_prop('file_name',self.files[0])['id']
         test_doc_id_1 = self.action.doc_manager.get_doc_by_prop('file_name',self.files[1])['id']
-        self.request_action = RequestAction(os.getcwd(), self.files[0], None, locales, False, None, None, test_doc_id_0)
+        self.request_action = RequestAction(os.getcwd(), self.files[0], None, locales, False, False, None, None, test_doc_id_0)
         target1 = self.request_action.target_action()
-        self.request_action = RequestAction(os.getcwd(), self.files[1], None, locales, False, None, None, test_doc_id_1)
+        self.request_action = RequestAction(os.getcwd(), self.files[1], None, locales, False, False, None, None, test_doc_id_1)
         target2 = self.request_action.target_action()
         orig_dates = get_orig_dates(self.action, [test_doc_id_0, test_doc_id_1]) #get the initial timestamp before modifying the document on the cloud
         assert orig_dates
@@ -131,6 +131,7 @@ class TestPush(unittest.TestCase):
             logger.removeHandler(handler)
         finally:
             sys.stdout = sys.__stdout__
+        print("polling to check that file wasn't modified.  This will take 3 minutes if successful.")
         assert not check_updated_ids(self.action, orig_dates) # Poll and wait to make sure the modification didn't occur on the cloud
         dl_path_0 = self.download_action.download_action(test_doc_id_0, locales[0], False)
         dl_path_1 = self.download_action.download_action(test_doc_id_1, locales[0], False)
@@ -154,9 +155,9 @@ class TestPush(unittest.TestCase):
         locales = ['es-AR']
         test_doc_id_0 = self.action.doc_manager.get_doc_by_prop('file_name',self.files[0])['id']
         test_doc_id_1 = self.action.doc_manager.get_doc_by_prop('file_name',nestedfile)['id']
-        self.request_action = RequestAction(os.getcwd(), self.files[0], None, locales, False, None, None, test_doc_id_0)
+        self.request_action = RequestAction(os.getcwd(), self.files[0], None, locales, False, False, None, None, test_doc_id_0)
         target1 = self.request_action.target_action()
-        self.request_action = RequestAction(os.getcwd(), nestedfile, None, locales, False, None, None, test_doc_id_1)
+        self.request_action = RequestAction(os.getcwd(), nestedfile, None, locales, False, False, None, None, test_doc_id_1)
         target2 = self.request_action.target_action()
         orig_dates = get_orig_dates(self.action, [test_doc_id_0, test_doc_id_1]) #get the initial timestamp before modifying the document on the cloud
         assert orig_dates
@@ -188,6 +189,7 @@ class TestPush(unittest.TestCase):
             assert "Texto agregado." in downloaded_text
             assert "Este es un ejemplo de archivo de texto." in downloaded_text
 
-        self.rm_action.rm_action(nestedfile, force=True)
+        self.rm_action.rm_action(nestedfile, remote=True, force=True)
         delete_directory("nested")
         
+#don't need tests for pushing to cancelled documents, because push only works for tracked documents and cancelled documents are never tracked.  Someone would have to intentionally try and break this by editing the docs.json file, at which point they're asking for errors.

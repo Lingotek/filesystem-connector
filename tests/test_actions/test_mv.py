@@ -45,7 +45,7 @@ class TestMv(unittest.TestCase):
             self.add_action.add_action([self.added_files[filename]])
 
     def tearDown(self):
-        self.rm_action.rm_action((), all=True)
+        self.rm_action.rm_action((), all=True, remote=True)
         for file in self.added_files.values():
             delete_file(file, os.getcwd())
         allCleared = False

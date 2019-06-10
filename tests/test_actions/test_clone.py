@@ -4,7 +4,6 @@ from ltk.actions.clone_action import *
 from ltk.actions.add_action import AddAction
 from ltk.actions.rm_action import RmAction
 from ltk.actions.config_action import ConfigAction
-from ltk.actions.clean_action import CleanAction
 import os
 import unittest
 
@@ -23,7 +22,6 @@ class TestClone(unittest.TestCase):
         self.add_action = AddAction(os.getcwd())
         self.added_directories = []
         self.config_action = ConfigAction(os.getcwd())
-        self.clean_action = CleanAction(os.getcwd())
         self.rm_action = RmAction(os.getcwd())
         
         self.dir_path1 = os.path.join(os.getcwd(), 'dir1')
@@ -119,7 +117,7 @@ class TestClone(unittest.TestCase):
                 else:
                     self.delete_directory(dir_path+os.sep+subdir)
             print("disassociating directory: "+dir_path.replace(os.getcwd()+os.sep, ''))
-            self.rm_action.rm_action([dir_path.replace(os.getcwd()+os.sep, '')], force=True)
+            self.rm_action.rm_action([dir_path.replace(os.getcwd()+os.sep, '')], remote=True, force=True)
             print("deleting directory: "+dir_path)
             os.rmdir(dir_path)
 

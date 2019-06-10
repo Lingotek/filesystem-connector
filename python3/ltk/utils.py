@@ -114,7 +114,7 @@ def is_valid_locale(api, locale):
     else:
         return True
 
-def get_valid_locales(api, entered_locales):
+def get_valid_locales(api, entered_locales, operation_text):
     """Return the list of valid locales, checking locales either remotely or using a local list of locales."""
     valid_locales = []
     response = api.list_locales()
@@ -131,7 +131,7 @@ def get_valid_locales(api, entered_locales):
         for locale in entered_locales:
             check_locale = locale.replace("-","_")
             if remote_check and check_locale not in valid_locales or not remote_check and not check_locale in locale_list:
-                logger.warning('The locale code "'+str(locale)+'" failed to be added since it is invalid (see "ltk list -l" for the list of valid codes).')
+                logger.warning('The locale code "'+str(locale)+'" failed to be '+operation_text+' since it is invalid (see "ltk list -l" for the list of valid codes).')
             else:
                 locales.append(locale)
     return locales
