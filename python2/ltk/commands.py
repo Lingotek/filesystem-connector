@@ -412,8 +412,7 @@ def pull(auto_format, locale_ext, no_ext, locales):
 @click.option('-f', '--force', flag_value=True, help='Delete local copy when cancelling remote source documents')
 def rm(file_names, **kwargs):
     """
-    Disassociates local doc(s) from Lingotek Cloud and deletes the remote copy.
-    If the remote copy should be kept, please use ltk clean.
+    Disassociates local doc(s) from Lingotek Cloud and removes them from the project by cancelling them.  If the remote copy should be deleted, use the -r flag.
     """
     try:
         action = rm_action.RmAction(os.getcwd())
