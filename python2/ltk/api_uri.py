@@ -16,5 +16,7 @@ API_URI = {
     'workflow': '/api/workflow',
     'filter': '/api/filter',
     'filter_id': '/api/filter/%(filter_id)s',
-    'filter_content': '/api/filter/%(filter_id)s/content'
+    'filter_content': '/api/filter/%(filter_id)s/content',
+    'document_cancel': '/api/document/%(document_id)s/cancel',
+    'document_cancel_locale': '/api/document/%(document_id)s/translation/%(locale)s/cancel',
 }

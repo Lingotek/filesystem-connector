@@ -287,7 +287,7 @@ class WatchAction(Action):
             #         printStr += target+","
             # print(printStr)
             if self.api.get_document(document_id):
-                request = request_action.RequestAction(self.path, title, file_name, locales_to_add, None, None, None, document_id, True)
+                request = request_action.RequestAction(self.path, title, file_name, locales_to_add, None, None, None, None, document_id, True)
                 if request.target_action() and document_id in self.watch_queue:
                     self.watch_queue.remove(document_id)
 
@@ -346,7 +346,7 @@ class WatchAction(Action):
                 downloaded = []
                 self.doc_manager.update_document('downloaded', downloaded, doc_id)
             if file_name not in self.polled_list or self.force_poll:
-                locale_progress = self.import_locale_info(doc_id, True)
+                locale_progress = self.import_locale_info(doc_id, poll=True)
                 # Python 2
                 for locale, progress in locale_progress.iteritems():
                 # End Python 2

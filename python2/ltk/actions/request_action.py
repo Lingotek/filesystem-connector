@@ -1,12 +1,13 @@
 from ltk.actions.action import *
 
 class RequestAction(Action):
-    def __init__(self, actionPath, doc_name, requestPath, entered_locales, to_delete, due_date, workflow, document_id=None, surpressMessage=False):
+    def __init__(self, actionPath, doc_name, requestPath, entered_locales, to_cancel, to_delete, due_date, workflow, document_id=None, surpressMessage=False):
         Action.__init__(self, actionPath)
 
         self.document_name = doc_name
         self.requestPath = requestPath
         self.entered_locales = entered_locales
+        self.to_cancel = to_cancel
         self.to_delete = to_delete
         self.workflow = workflow
         self.due_date = due_date
@@ -26,7 +27,12 @@ class RequestAction(Action):
             if self.entered_locales:
                 for locale in self.entered_locales:
                     locales.extend(locale.split(','))
-                locales = get_valid_locales(self.api, locales)
+                if self.to_delete:
+                    locales = get_valid_locales(self.api, locales, 'deleted')
+                elif self.to_cancel:
+                    locales = get_valid_locales(self.api, locales, 'cancelled')
+                else:
+                    locales = get_valid_locales(self.api, locales, 'added')
             elif self.watch_locales:
                 locales = self.watch_locales
             elif self.surpressMessage:
@@ -46,6 +52,13 @@ class RequestAction(Action):
                 self.expected_code = 204
                 self.failure_message = 'Failed to delete target'
                 self.info_message = 'Deleted locale'
+            elif self.to_cancel:
+                if not self.entered_locales:
+                    logger.error("Please enter a target locale to cancel")
+                    return
+                self.expected_code = 204
+                self.failure_message = 'Failed to cancel target'
+                self.info_message = 'Cancelled locale'
             else:
                 self.expected_code = 201
                 self.failure_message = 'Failed to add target'
@@ -96,30 +109,30 @@ class RequestAction(Action):
             if 'locales' in entry and entry['locales']:
                 existing_locales = entry['locales']
             for locale in locales:
-                if len(existing_locales) > 0 and locale in existing_locales:
-                    # the locale has already been requested, don't request again
-                    continue
+                locale = locale.replace('_','-')
+                if self.to_delete:
+                    response = self.api.document_delete_target(self.document_id, locale)
+                elif self.to_cancel:
+                    response = self.api.document_cancel_target(self.document_id, locale)
                 else:
-                    locale = locale.replace('_','-')
-                    response = self.api.document_add_target(self.document_id, locale, self.workflow, self.due_date) if not self.to_delete \
-                        else self.api.document_delete_target(self.document_id, locale)
-                    if response.status_code != self.expected_code:
-                        if (response.json() and response.json()['messages']):
-                            response_message = response.json()['messages'][0]
-                            response_message = response_message.replace(self.document_id, self.document_name + ' (' + self.document_id + ')')
-                            response_message = response_message.replace('.', ' ')
-                            response_message = response_message + 'for document ' + self.document_name
-                            print(response_message + "\n")
-                            
-                            if 'not found' in response_message:
-                                return
-                        else:
-                            raise_error(response.json(), '{message} {locale} for document {name}\n'.format(message=self.failure_message, locale=locale, name=self.document_name), True)
-                        if not 'already exists' in response_message:
-                            self.change_db_entry = False
-                        # self.update_doc_locales(document_id)
-                        continue
-                    logger.info('{message} {locale} for document {name}\n'.format(message=self.info_message, locale=locale, name=self.document_name))
+                    response = self.api.document_add_target(self.document_id, locale, self.workflow, self.due_date)
+                if response.status_code != self.expected_code:
+                    if (response.json() and response.json()['messages']):
+                        response_message = response.json()['messages'][0]
+                        response_message = response_message.replace(self.document_id, self.document_name + ' (' + self.document_id + ')')
+                        response_message = response_message.replace('.', ' ')
+                        response_message = response_message + 'for document ' + self.document_name
+                        print(response_message + "\n")
+                        
+                        #if 'not found' in response_message:
+                            #return
+                    else:
+                        raise_error(response.json(), '{message} {locale} for document {name}\n'.format(message=self.failure_message, locale=locale, name=self.document_name), True)
+                    if not 'already exists' in response_message:
+                        self.change_db_entry = False
+                    # self.update_doc_locales(document_id)
+                    continue
+                logger.info('{message} {locale} for document {name}\n'.format(message=self.info_message, locale=locale, name=self.document_name))
             remote_locales = self.get_doc_locales(self.document_id, self.document_name) # Get locales from Lingotek Cloud
             locales_to_add = []
             existing_locales = []
@@ -127,7 +140,7 @@ class RequestAction(Action):
                 existing_locales = entry['locales']
             if self.change_db_entry:
                 # Make sure that the locales that were just added are added to the database as well as the previous remote locales (since they were only just recently added to Lingotek's system)
-                if self.to_delete and self.entered_locales:
+                if (self.to_delete or self.to_cancel) and self.entered_locales:
                     locales_to_add = locales
                 else:
                     if remote_locales:
@@ -139,8 +152,11 @@ class RequestAction(Action):
                         locale = locale.replace('_', '-')
                         if locale not in existing_locales and locale not in locales_to_add:
                             locales_to_add.append(locale)
-
-                self._target_action_db(self.to_delete, locales_to_add, self.document_id)
+                if self.to_delete:
+                    self._target_action_db(self.to_delete, locales_to_add, self.document_id)
+                else:
+                    self._target_action_db(self.to_cancel, locales_to_add, self.document_id)
+                #self._target_action_db((self.to_delete or self.to_cancel), locales_to_add, self.document_id)
                 is_successful = True
 
         return is_successful
