@@ -66,6 +66,7 @@ class DownloadAction(Action):
                     else:
                         if 'folder' in self.download_option:
                             self.download_path = self.download_dir
+                    locale_code = locale_code.replace("_","-")#changing locale code back to xx-XX form
                 if not entry:
                     doc_info = self.api.get_document(document_id)
                     try:
