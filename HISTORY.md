@@ -1,7 +1,7 @@
 # Changelog #
 # 1.3.5
 ## NEW FEATURES
-* added ability to specify different target download folders for translations of different files using ltk -D
+* added ability to specify different target download folders for translations of different files using ltk add -D
 * added option to see target download folders for files, if set, by using ltk pull -d
 * implemented API calls to cancel documents instead of disassociate
 * added ability to cancel locales for documents with ltk request -c
