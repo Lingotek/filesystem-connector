@@ -286,15 +286,16 @@ def push(test, title):
 @ltk.command(short_help="Add targets to document(s) to start translation; defaults to the entire project. Use ltk list -l to see possible locales")
 @click.option('-n', '--doc_name', help='The name of the document for which to request target locale(s)')
 @click.option('-p', '--path', type=click.Path(exists=True), help='The file name or directory for which to request target locale(s)')
+@click.option('-c', '--cancel', 'to_cancel', flag_value=True, help='Cancels a specified target locale')
 @click.option('-d', '--delete', 'to_delete', flag_value=True, help='Deletes a specified target locale')
 @click.option('--due_date', help='The due date of the translation')
 @click.option('-w', '--workflow', help='The workflow of the translation (Use "ltk list -w" to see available workflows)')
 @click.argument('locales', required=False, nargs=-1)  # can have unlimited number of locales
-def request(doc_name, path, locales, to_delete, due_date, workflow):
+def request(doc_name, path, locales, to_cancel, to_delete, due_date, workflow):
     """ Add targets to document(s) to start translation; defaults to the entire project. If no locales are specified, Filesystem Connector
         will look for target watch locales set in ltk config. Use ltk list -l to see possible locales. """
     try:
-        action = request_action.RequestAction(os.getcwd(), doc_name, path, locales, to_delete, due_date, workflow)
+        action = request_action.RequestAction(os.getcwd(), doc_name, path, locales, to_cancel, to_delete, due_date, workflow)
         init_logger(action.path)
         if locales and isinstance(locales,str):
             locales = [locales]
@@ -397,19 +398,18 @@ def pull(auto_format, locale_ext, no_ext, locales):
         return
 
 
-@ltk.command(name="rm", short_help="Disassociates local doc(s) from Lingotek Cloud and deletes the remote copy")
+@ltk.command(name="rm", short_help="Disassociates local doc(s) from Lingotek Cloud and cancels the remote copy")
 @click.argument('file_names', required=False, nargs=-1)
 @click.option('-d', '--directory', flag_value=True, help='Only remove directories, not files inside directories')
-@click.option('-i', '--id', flag_value=True, help='Delete documents with the specified ids (instead of file names) on Lingotek Cloud')
-@click.option('-n', '--name', flag_value=True, help='Delete documents with the specified names (instead of file names or paths) on Lingotek Cloud')
-@click.option('-a', '--all', flag_value=True, help='Delete all documents from Lingotek Cloud that are found locally')
-@click.option('-l', '--local', flag_value=True, help='Delete all documents locally, but not from the Lingotek Cloud. Can be used in association with --name to delete a specified document locally')
-@click.option('-r', '--remote', flag_value=True, help='Deletes specified documents from Lingotek Cloud for the current project')
-@click.option('-f', '--force', flag_value=True, help='Delete both local and remote source documents')
+@click.option('-i', '--id', flag_value=True, help='Cancels documents with the specified ids (instead of file names) on Lingotek Cloud.  Can be used to cancel documents that are not locally tracked.')
+@click.option('-n', '--name', flag_value=True, help='Cancels documents with the specified names (instead of file names or paths) on Lingotek Cloud')
+@click.option('-a', '--all', flag_value=True, help='Cancels all documents from Lingotek Cloud that are found locally')
+@click.option('-l', '--local', flag_value=True, help='Deprecated.  Use \'ltk rm -f -a\' for all documents or \'ltk rm -f\' for specific documents.  (Legacy Usage: deletes all documents locally and cancels them in the Lingotek Cloud. Can be used in association with --name to delete a specified document locally.)')
+@click.option('-r', '--remote', flag_value=True, help='Deletes specified documents from Lingotek Cloud instead of cancelling them')
+@click.option('-f', '--force', flag_value=True, help='Delete local copy when cancelling remote source documents')
 def rm(file_names, **kwargs):
     """
-    Disassociates local doc(s) from Lingotek Cloud and deletes the remote copy.
-    If the remote copy should be kept, please use ltk clean.
+    Disassociates local doc(s) from Lingotek Cloud and removes them from the project by cancelling them.  If the remote copy should be deleted, use the -r flag.
     """
     try:
         action = rm_action.RmAction(os.getcwd())
@@ -455,7 +455,9 @@ def mv(source_path, destination_path):
 @click.option('-a', '--all', 'import_all', flag_value=True, help='Import all documents from Lingotek Cloud')
 @click.option('-f', '--force', flag_value=True, help='Overwrites existing documents without prompt')
 @click.option('-p', '--path', type=click.Path(exists=True), help='Import documents to a specified path')
-def import_command(import_all, force, path):
+@click.option('-t', '--track', flag_value=True, help='Automatically add the imported documents to local tracking if they were not already being tracked.  Will not track cancelled documents.  Note: They will be added without extra options (no srx id, no download folder, etc.)')
+@click.option('-c', '--no-cancel', flag_value=True, help='Don\'t include documents that have been cancelled.')
+def import_command(import_all, force, path, track, no_cancel):
     """
     Import documents from Lingotek Cloud, by default downloading to the project's root folder
     """
@@ -473,7 +475,7 @@ def import_command(import_all, force, path):
         if path != None:
             path = remove_powershell_formatting(path)
 
-        action.import_action(import_all, force, path)
+        action.import_action(import_all, force, path, track, no_cancel)
     except(UninitializedError, RequestFailedError) as e:
         print_log(e)
         logger.error(e)
@@ -481,14 +483,14 @@ def import_command(import_all, force, path):
 
 
 @ltk.command(short_help="Cleans up the associations between local documents and documents in Lingotek")
-@click.option('-a', '--all', 'dis_all', flag_value=True, help='Removes all associations between local and remote documents')
+@click.option('-a', '--all', 'dis_all', flag_value=True, help='Removes all associations between local and remote documents and cancels those documents')
 @click.argument('file_paths', required=False, nargs=-1)
-@click.option('-f', '--force', flag_value=True, help='Deletes local documents that no longer exist in Lingotek')
+@click.option('-f', '--force', flag_value=True, help='Deletes locally tracked documents that have been cancelled or no longer exist in Lingotek')
 def clean(force, dis_all, file_paths):
     """
     Cleans up the associations between local documents and documents in Lingotek.
-    By default, checks that local documents and remote documents match up.
-    Enter file or directory names to remove local associations of specific files or directories.
+    By default, removes documents from local tracking that have been cancelled or no longer exist locally or in the Lingotek Cloud.
+    Enter file or directory names to cancel those documents and remove local associations of specific files or directories.
     """
     try:
         action = clean_action.CleanAction(os.getcwd())

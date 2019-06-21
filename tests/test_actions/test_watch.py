@@ -39,7 +39,7 @@ class TestWatch(unittest.TestCase):
     def tearDown(self):
         #delete files
         for fn in self.files:
-            self.rm_action.rm_action(fn, force=True)
+            self.rm_action.rm_action(fn, remote=True, force=True)
         self.clean_action.clean_action(False, False, None)
         #delete downloads
         for fn in self.downloaded:

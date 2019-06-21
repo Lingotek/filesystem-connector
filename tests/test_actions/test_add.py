@@ -24,11 +24,19 @@ class TestAdd(unittest.TestCase):
     def tearDown(self):
         self.rm_action = RmAction(os.getcwd())
         for fn in self.added_files:
-            self.rm_action.rm_action(fn, force=True)
+            self.rm_action.rm_action(fn, remote=True, force=True)
 
-        for d in self.added_directories:
-            self.rm_action.rm_action(d, force=True)
-            delete_directory(d)
+        not_empty = True
+        while not_empty:
+            not_empty = False
+            for d in self.added_directories:
+                if os.path.exists(d) and os.path.isdir(d):
+                    if len(os.listdir(d)):
+                        self.rm_action.rm_action(d, remote=True, force=True)
+                        not_empty = True
+                    else:
+                        self.rm_action.rm_action(d, remote=True, force=True)
+                        delete_directory(d)
 
         self.clean_action.clean_action(False, False, None)
         self.rm_action.close()

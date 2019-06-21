@@ -66,12 +66,12 @@ class StatusAction(Action):
                 raise_error("", "Failed to get status of documents", True)
         else:
             for entry in response.json()['entities']:
-                title = entry['entities'][0]['properties']['title']
-
-                progress = entry['entities'][0]['properties']['progress']
-                self._print_status(title, progress)
-                if detailed:
-                    self.print_detailed(entry['properties']['id'], title)
+                #title = entry['entities'][0]['properties']['title']
+                #progress = entry['entities'][0]['properties']['progress']
+                #self._print_status(title, progress)
+                #if detailed:
+                #    self._print_detailed_status(entry['properties']['id'], title)
+                self._get_status_of_doc(entry['properties']['id'], detailed)
 
     def _get_status_of_doc(self, doc_id, detailed):
         response = self.api.document_status(doc_id)
@@ -97,12 +97,14 @@ class StatusAction(Action):
         else:
             title = response.json()['properties']['title']
             progress = response.json()['properties']['progress']
-            self._print_status(title, progress)
+            statustext = response.json()['properties']['status'].upper()
+            self._print_status(title, doc_id, progress, statustext)
             if detailed:
                 self._print_detailed_status(doc_id, title)
+                
 
-    def _print_status(self, title, progress):
-        print ('{0}: {1}%'.format(title, progress))
+    def _print_status(self, title, doc_id, progress, statustext):
+        print ('{0} ({1}): {2}% ({3})'.format(title, doc_id, progress, statustext))
         # print title + ': ' + str(progress) + '%'
         # for each doc id, also call /document/id/translation and get % of each locale
 
@@ -116,6 +118,7 @@ class StatusAction(Action):
                 for entry in response.json()['entities']:
                     curr_locale = entry['properties']['locale_code']
                     curr_progress = entry['properties']['percent_complete']
+                    curr_statustext = entry['properties']['status']
                     # print ('\tlocale: {0} \t percent complete: {1}%'.format(curr_locale, curr_progress))
                     if 'entities' in entry:
                         for entity in entry['entities']:
@@ -130,7 +133,7 @@ class StatusAction(Action):
                                         table.append({"Phase": str(phase_order), "Name": phase_name, "Status": phase_status, "Phase Percent Complete": str(phase_percent_complete) + '%'})
                                     table.sort(key=lambda x: x['Phase'])
                                     print('\n')
-                                    print('Locale: {0} \t Total Percent Complete: {1}% \n'.format(curr_locale, curr_progress))
+                                    print('Locale: {0} \t Total Percent Complete: {1}% ({2})\n'.format(curr_locale, curr_progress, curr_statustext))
                                     # print('Locale: {0} \n'.format(curr_locale))
                                     print(tabulate(table, headers="keys"))
                                     

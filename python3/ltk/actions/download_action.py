@@ -58,7 +58,9 @@ class DownloadAction(Action):
                         else:
                             self.download_path = self.locale_folders[locale_code]
                     else:
-                        self.download_path = self.download_dir
+                        if 'folder' in self.download_option:
+                            self.download_path = self.download_dir
+                    locale_code = locale_code.replace("_","-")#changing locale code back to xx-XX form
                 if not entry:
                     doc_info = self.api.get_document(document_id)
                     try:
@@ -93,8 +95,9 @@ class DownloadAction(Action):
                         downloaded_name = base_name
                     if 'xliff' in response.headers['Content-Type'] and xliff == True:
                         downloaded_name = self.change_file_extension('xlf', downloaded_name)
-                    if 'same' in self.download_option:
-                        self.download_path = os.path.dirname(file_name)
+                    if 'same' in self.download_option and not specific_folder:
+                        if self.download_path == self.path:
+                            self.download_path = os.path.dirname(file_name)
                         new_path = os.path.join(self.path,os.path.join(self.download_path, downloaded_name))
                         new_locale = downloaded_name.split('.')[1].lower()
                         new_locale = new_locale.replace('_', '-')

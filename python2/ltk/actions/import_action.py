@@ -3,8 +3,9 @@ from ltk.actions.action import *
 class ImportAction(Action):
     def __init__(self, path):
         Action.__init__(self, path)
+        self.skip_ids = []
 
-    def get_import_ids(self,info):
+    def _get_import_ids(self,info):
         mapper = choice_mapper(info)
         chosen_ids = []
         while not len(chosen_ids) > 0:
@@ -21,7 +22,7 @@ class ImportAction(Action):
                 print ('Some unexpected, non-integer value was included')
         return chosen_ids
 
-    def import_action(self, import_all, force, path, ids_to_import=None):
+    def import_action(self, import_all, force, path, track, no_cancel, ids_to_import=None):
         try:
             path = self.norm_path(path)
             response = self.api.list_documents(self.project_id)
@@ -30,12 +31,21 @@ class ImportAction(Action):
                 tms_documents = response.json()['entities']
                 for entity in tms_documents:
                     doc_info = {'title': entity['properties']['title'], 'extension': entity['properties']['extension']}
+                    if no_cancel or track:
+                        statuscheck = self.api.document_status(entity['properties']['id'])
+                        if statuscheck.json()['properties']['status'].upper() == 'CANCELLED':
+                            if no_cancel:
+                                continue
+                            self.skip_ids.append(entity['properties']['id'])
                     tms_doc_info[entity['properties']['id']] = doc_info
             elif response.status_code == 204:
                 logger.error('No documents to import!')
                 return
             else:
                 raise_error(response.json(), 'Error finding current documents in Lingotek Cloud')
+            if len(tms_doc_info) == 0:
+                logger.error('No documents to import!')
+                return
 
             if not ids_to_import:
                 if import_all:
@@ -54,7 +64,7 @@ class ImportAction(Action):
 #                     for k, v in tms_doc_info.items():
                     # End Python 3
                         import_doc_info[k] = v['title']
-                    ids_to_import = self.get_import_ids(import_doc_info)
+                    ids_to_import = self._get_import_ids(import_doc_info)
             else:
                 ids_to_import = [ids_to_import]
             for curr_id in ids_to_import:
@@ -184,10 +194,13 @@ class ImportAction(Action):
                 print(e.errno)
                 print(e)
         new_path = self.norm_path(new_path)
-        if document_id not in local_ids:
-            self._add_document(new_path, title, document_id)
-            self.doc_manager.update_document('locales', locale_info, document_id)
-        elif changed_path:
-            # update the document's path
-            logger.info('Moved local file {0} to {1}'.format(changed_path, new_path))
-            self.doc_manager.update_document('file_name', new_path, document_id)
+        if track:
+            if document_id in self.skip_ids:
+                return
+            if document_id not in local_ids:
+                self._add_document(new_path, title, document_id)
+                self.doc_manager.update_document('locales', locale_info, document_id)
+            elif changed_path:
+                # update the document's path
+                logger.info('Moved local file {0} to {1}'.format(changed_path, new_path))
+                self.doc_manager.update_document('file_name', new_path, document_id)

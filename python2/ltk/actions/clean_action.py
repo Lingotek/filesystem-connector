@@ -8,8 +8,7 @@ class CleanAction(Action):
         try:
             if dis_all:
                 # disassociate everything
-                self.doc_manager.clear_all()
-                logger.info("Removed all associations between local and remote documents.")
+                self._clean_all()
                 return
             if path:
                 locals_to_delete = self._clean_by_path(path)
@@ -37,7 +36,6 @@ class CleanAction(Action):
         if not removed_doc:
             return
         removed_title = removed_doc['name']
-        # todo somehow this line^ doc is null... after delete files remotely, then delete locally
         if force:
             self.delete_local(removed_title, doc_id)
         self.doc_manager.remove_element(doc_id)
@@ -56,28 +54,28 @@ class CleanAction(Action):
                         entry = self.doc_manager.get_doc_by_prop('file_name', self.norm_path(file_name))
                         if entry:
                             locals_to_delete.append(entry['id'])
+                            self._cancel_document(entry['id'])
         elif files != None:
             for file_name in files:
                 entry = self.doc_manager.get_doc_by_prop('file_name', self.norm_path(file_name))
                 if entry:
                     locals_to_delete.append(entry['id'])
+                    self._cancel_document(entry['id'])
 
         return locals_to_delete
 
     def _check_docs_to_clean(self):
         locals_to_delete = []
-        response = self.api.list_documents(self.project_id)
         local_ids = self.doc_manager.get_doc_ids()
-        tms_doc_ids = []
-        if response.status_code == 200:
-            tms_documents = response.json()['entities']
-            for entity in tms_documents:
-                tms_doc_ids.append(entity['properties']['id'])
-        elif response.status_code == 204:
-            pass
-        else:
-            raise_error(response.json(), 'Error trying to list documents in TMS for cleaning')
-        locals_to_delete = [x for x in local_ids if x not in tms_doc_ids]
+        for check_id in local_ids:
+            response = self.api.document_status(check_id)
+            if response.status_code == 200:
+                if response.json()['properties']['status'].upper() == 'CANCELLED':
+                    locals_to_delete.append(check_id)
+            elif response.status_code == 404:
+                locals_to_delete.append(check_id)
+            else:
+                raise_error(response.json(), 'Error trying to list documents in TMS for cleaning')
 
         # check local files
         db_entries = self.doc_manager.get_all_entries()
@@ -85,5 +83,23 @@ class CleanAction(Action):
             # if local file doesn't exist, remove entry
             if not os.path.isfile(os.path.join(self.path, entry['file_name'])):
                 locals_to_delete.append(entry['id'])
+                self._cancel_document(entry['id'])
 
         return locals_to_delete
+
+    def _clean_all(self):
+        local_ids = self.doc_manager.get_doc_ids()
+        for doc_id in local_ids:
+            self._cancel_document(doc_id)
+        self.doc_manager.clear_all()
+        logger.info("Removed all associations between local and remote documents.")
+
+    def _cancel_document(self, cancel_id):
+        response = self.api.document_cancel(cancel_id)
+        if response.status_code == 404 or response.status_code == 204:
+            return
+        if response.status_code == 400:
+            for message in response.json()['messages']:
+                if 'already in a completed state' in message:#currently the API response when cancelling a document that has already been cancelled or completed is "Unable to cancel documents which are already in a completed state.  Current status: COMPLETED/CANCELLED" (COMPLETED or CANCELLED, not COMPLETED/CANCELLED)
+                    return
+        logger.warning('Error cleaning up association in TMS for document id {0}'.format(doc_id))
