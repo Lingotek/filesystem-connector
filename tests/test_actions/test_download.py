@@ -70,18 +70,16 @@ class TestDownload(unittest.TestCase):
         dl_file = self.get_dl_path(self.locales[0], self.first_doc)
 
         assert self.locales[0] in dl_file
-        dl_file_ = self.get_dl_path(self.locales[0].replace('-','_'), self.first_doc)#this is needed because currently the locale format is xx-XX in all cases except for this one (clone off, no download folder), which is xx_XX.  This is a workaround until we figure out the impact of changing everything to always be xx-XX and decide whether to implement it or not
 
-        assert os.path.isfile(dl_file_)
+        assert os.path.isfile(dl_file)
 
-        self.downloaded_files.append(dl_file_)
+        self.downloaded_files.append(dl_file)
 
     def test_pull_all(self):
         for document in self.files:
             for locale in self.locales:
-                #dl_file = self.get_dl_path(locale, document)
-                dl_file_ = self.get_dl_path(locale.replace('-','_'), document)#this is needed because currently the locale format is xx-XX in all cases except for this one (clone off, no download folder), which is xx_XX.  This is a workaround until we figure out the impact of changing everything to always be xx-XX and decide whether to implement it or not
-                self.downloaded_files.append(dl_file_)
+                dl_file = self.get_dl_path(locale, document)
+                self.downloaded_files.append(dl_file)
 
         self.pull_action.pull_translations(None, False, False, False)
         for path in self.downloaded_files:
@@ -89,9 +87,8 @@ class TestDownload(unittest.TestCase):
 
     def test_pull_locale(self):
         for document in self.files:
-            #dl_file = self.get_dl_path(self.locales[0], document)
-            dl_file_ = self.get_dl_path(self.locales[0].replace('-','_'), document)#this is needed because currently the locale format is xx-XX in all cases except for this one (clone off, no download folder), which is xx_XX.  This is a workaround until we figure out the impact of changing everything to always be xx-XX and decide whether to implement it or not
-            self.downloaded_files.append(dl_file_)
+            dl_file = self.get_dl_path(self.locales[0], document)
+            self.downloaded_files.append(dl_file)
         self.pull_action.pull_translations(self.locales[0], False, False, False)
         for path in self.downloaded_files:
             assert os.path.isfile(path)
