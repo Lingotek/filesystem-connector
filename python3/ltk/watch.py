@@ -435,7 +435,11 @@ class WatchAction(Action):
         for watch_path in watch_paths:
             observer = Observer()
             observer.schedule(self.handler, path=watch_path, recursive=True)
-            observer.start()
+            try:
+                observer.start()
+            except:
+                logger.warning("Make sure a folder has been added first!")
+                return
             self.observers.append(observer)
         queue_timeout = 3
         # start_time = time.clock()
