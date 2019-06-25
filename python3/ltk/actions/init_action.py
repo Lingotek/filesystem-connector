@@ -1001,7 +1001,7 @@ class InitAction():
                     metadata = Action.metadata_wizard(Action, METADATA_FIELDS, set_defaults=True)
                 else:
                     metadata = {}
-            self.config_parser.set('main', 'default_metadata', str(metadata))
+            self.config_parser.set('main', 'default_metadata', json.dumps(metadata))
             logger.info("Default metadata set to {0}".format(metadata))
 
         except KeyboardInterrupt:
@@ -1068,7 +1068,7 @@ class InitAction():
     
     def validate_field_option(self, field_options):
         if field_options.lower() == 'all' or field_options == '':
-            self.config_parser.set('main', 'metadata_fields', str(METADATA_FIELDS))
+            self.config_parser.set('main', 'metadata_fields', json.dumps(METADATA_FIELDS))
             logger.info("Metadata fields set to {0}".format(METADATA_FIELDS))
             return True
         elif field_options.lower() == 'none':
@@ -1076,11 +1076,12 @@ class InitAction():
             logger.info("Metadata fields set to []")
             return True
         else:
-            field_options.replace(", ",",") #allows for a comma-separated list with or without a single space after commas
-            options = field_options.split(",")
+            converted = field_options.replace(", ",",") #allows for a comma-separated list with or without a single space after commas
+            options = converted.split(",")
             for option in options:
                 if option not in METADATA_FIELDS:
                     logger.warning("Error: {0} is not a valid metadata field".format(option))
                     return False
-            self.config_parser.set('main', 'metadata_fields', str(options))
+            self.config_parser.set('main', 'metadata_fields', json.dumps(options))
             logger.info("Metadata fields set to {0}".format(options))
+            return True

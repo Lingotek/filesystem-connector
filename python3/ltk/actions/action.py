@@ -44,6 +44,9 @@ class Action:
         self.git_password = ''
         self.append_option = 'none'
         self.locale_folders = {}
+        self.default_metadata = {}
+        self.metadata_prompt = False
+        self.metadata_fields = METADATA_FIELDS
         if not self._is_initialized():
             raise exceptions.UninitializedError("This project is not initialized. Please run init command.")
         self._initialize_self()
@@ -146,6 +149,23 @@ class Action:
             else:
                 self.append_option = 'none'
                 self.update_config_file('append_option', self.append_option, conf_parser, config_file_name, "")
+            if conf_parser.has_option('main', 'default_metadata'):
+                self.default_metadata = json.loads(conf_parser.get('main', 'default_metadata'))
+            else:
+                self.default_metadata = {}
+                self.update_config_file('default_metadata', json.dumps(self.default_metadata), conf_parser, config_file_name, "")
+            if conf_parser.has_option('main', 'metadata_prompt'):
+                self.metadata_prompt = (conf_parser.get('main', 'metadata_prompt').lower() == 'on')
+            else:
+                self.metadata_prompt = False
+                self.update_config_file('metadata_prompt', 'off', conf_parser, config_file_name, "")
+            if conf_parser.has_option('main', 'metadata_fields'):
+                self.metadata_fields = json.loads(conf_parser.get('main', 'metadata_fields'))
+            else:
+                self.metadata_fields = METADATA_FIELDS
+                self.update_config_file('metadata_fields', json.dumps(self.metadata_fields), conf_parser, config_file_name, "")
+                
+
         except NoOptionError as e:
             if not self.project_name:
                 self.api = ApiCalls(self.host, self.access_token)
@@ -201,7 +221,7 @@ class Action:
             print(e)
 
     def metadata_wizard(self, fields, update=False, set_defaults=False, default_metadata={}, old_metadata={}):
-        new_metadata = {}
+        new_metadata = old_metadata
         if update and set_defaults:
             prompt_message = "New Default Value: "
         elif update:
@@ -243,6 +263,8 @@ class Action:
             # End Python 3
             if new_value:
                 new_metadata[field] = new_value
+            elif field in new_metadata:
+                del new_metadata[field]
         return new_metadata
 
     def get_relative_path(self, path):
