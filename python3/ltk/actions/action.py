@@ -16,7 +16,7 @@ from ltk import exceptions
 from ltk.apicalls import ApiCalls
 from ltk.utils import *
 from ltk.managers import DocumentManager, FolderManager
-from ltk.constants import CONF_DIR, CONF_FN, SYSTEM_FILE, ERROR_FN
+from ltk.constants import CONF_DIR, CONF_FN, SYSTEM_FILE, ERROR_FN, METADATA_FIELDS
 import json
 from ltk.logger import logger
 from ltk.git_auto import Git_Auto
@@ -199,6 +199,51 @@ class Action:
         except IOError as e:
             print(e.errno)
             print(e)
+
+    def metadata_wizard(self, fields, update=False, set_defaults=False, default_metadata={}, old_metadata={}):
+        new_metadata = {}
+        if update and set_defaults:
+            prompt_message = "New Default Value: "
+        elif update:
+            prompt_message = "New Value: "
+        elif set_defaults:
+            prompt_message = "Set Default Value: "
+        else:
+            prompt_message = "Value: "
+        for field in fields:
+            print("\n===",field,"===")
+            if update:
+                old_value = ""
+                if field in old_metadata and old_metadata[field]:
+                    old_value = old_metadata[field]
+                print("Current Value: {0}".format(old_value))
+            if field in default_metadata:
+                default_value = ""
+                if default_metadata[field]:
+                    default_value = default_metadata[field]
+                print("Default Value: {0}".format(default_value))
+                default_confirm = 'none'
+                while default_confirm not in ['y', 'Y', 'n', 'N', '']:
+                    default_prompt = "Use default value? [Y/n]: "
+                    # Python 2
+                    # default_confirm = raw_input(default_prompt)
+                    # End Python 2
+                    # Python 3
+                    default_confirm = input(default_prompt)
+                    # End Python 3
+                if default_confirm in ['y', 'Y', '']:
+                    if default_value:
+                        new_metadata[field] = default_value
+                    continue                        
+            # Python 2
+            # new_value = raw_input(prompt_message)
+            # End Python 2
+            # Python 3
+            new_value = input(prompt_message)
+            # End Python 3
+            if new_value:
+                new_metadata[field] = new_value
+        return new_metadata
 
     def get_relative_path(self, path):
         return get_relative_path(self.path, path)
