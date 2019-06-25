@@ -437,8 +437,8 @@ class WatchAction(Action):
             observer.schedule(self.handler, path=watch_path, recursive=True)
             try:
                 observer.start()
-            except:
-                logger.warning("Make sure a folder has been added first!")
+            except OSError as e:
+                logger.warning("Watching too many items, please be more specific by using ltk add on the files and folders that should be watched")
                 return
             self.observers.append(observer)
         queue_timeout = 3
