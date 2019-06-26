@@ -435,7 +435,11 @@ class WatchAction(Action):
         for watch_path in watch_paths:
             observer = Observer()
             observer.schedule(self.handler, path=watch_path, recursive=True)
-            observer.start()
+            try:
+                observer.start()
+            except OSError as e:
+                logger.warning("Watching too many items, please be more specific by using ltk add on the files and folders that should be watched")
+                return
             self.observers.append(observer)
         queue_timeout = 3
         # start_time = time.clock()
