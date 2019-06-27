@@ -418,10 +418,7 @@ class ConfigAction(Action):
         self.git_autocommit = self.conf_parser.get('main', 'git_autocommit')
 
     def set_metadata_defaults(self):
-        if len(self.default_metadata) > 0:
-            self.default_metadata = self.metadata_wizard(self.metadata_fields, update=True, set_defaults=True, old_metadata=self.default_metadata)
-        else:
-            self.default_metadata = self.metadata_wizard(self.metadata_fields, set_defaults=True)
+        self.default_metadata = self.metadata_wizard(self.metadata_fields, set_defaults=True)
         self.update_config_file('default_metadata', json.dumps(self.default_metadata), self.conf_parser, self.config_file_name, "Updated default metadata to {0}".format(self.default_metadata))
 
     def set_metadata_prompt(self, option):

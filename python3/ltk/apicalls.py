@@ -217,7 +217,7 @@ class ApiCalls:
             self.handleError()
         return r
 
-    def add_document(self, source_locale, file_name, project_id, title, **kwargs):
+    def add_document(self, source_locale, file_name, project_id, title, doc_metadata={}, **kwargs):
         """ adds a document """
         try:
             uri = API_URI['document']
@@ -225,6 +225,9 @@ class ApiCalls:
             for key in kwargs:
                 if kwargs[key]:
                     payload[key] = kwargs[key]
+            for field in doc_metadata:
+                if doc_metadata[field]:
+                    payload[field] = doc_metadata[field]
             detected_format = ltk.utils.detect_format(file_name)
             if ('format' not in kwargs or kwargs['format'] is None):
                 payload['format'] = detected_format
@@ -324,13 +327,16 @@ class ApiCalls:
             self.handleError()
         return r
 
-    def document_update(self, document_id, file_name=None, **kwargs):
+    def document_update(self, document_id, file_name=None, doc_metadata={}, **kwargs):
         try:
             uri = (API_URI['document_id'] % locals())
             payload = {'id': document_id}
             for key in kwargs:
                 if kwargs[key]:
                     payload[key] = kwargs[key]
+            for field in doc_metadata:
+                if doc_metadata[field]:
+                    payload[field] = doc_metadata[field]
             if file_name:
                 document = open(file_name, 'rb')
                 files = {'content': (file_name, document)}

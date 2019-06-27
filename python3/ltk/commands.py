@@ -9,7 +9,7 @@ import sys
 ''' Internal Dependencies '''
 from ltk import __version__
 from ltk.actions import *
-from ltk.constants import LOG_FN, CONF_DIR
+from ltk.constants import LOG_FN, CONF_DIR, METADATA_FIELDS
 from ltk.exceptions import UninitializedError, ResourceNotFound, RequestFailedError, AlreadyExistsError
 from ltk.logger import logger, API_LOG_LEVEL, API_RESPONSE_LOG_LEVEL, CustomFormatter
 from ltk.utils import remove_powershell_formatting
@@ -224,32 +224,9 @@ def config(**kwargs):
 @click.option('-v', '--vault_id', help='Save-to TM vault id')
 @click.option('-e', '--external_url', help='Source url')
 @click.option('--note', help='Note')
-
-# Metadata - optional parameters
-@click.option('--author_email', help='Author email')
-@click.option('--author_name', help='Author name')
-@click.option('--business_division', help='Business division')
-@click.option('--business_unit', help='Business unit')
-@click.option('--campaign_id', help='Campaign ID')
-@click.option('--campaign_rating', help='Campaign rating')
-@click.option('--channel', help='Channel')
-@click.option('--contact_email', help='Contact email')
-@click.option('--contact_name', help='Contact name')
-@click.option('--content_description', help='Content description')
-@click.option('--content_type', help='Content type')
-@click.option('--domain', help='Domain')
-@click.option('--due_date', help='Due date (as Unix timestamp, in milliseconds)')
-@click.option('--due_reason', help='Reason for due date')
-@click.option('--external_application_id', help='External application ID')
-@click.option('--external_document_id', help='External document ID')
-@click.option('--external_style_id', help='External style ID')
-@click.option('--purchase_order', help='Purchase Order')
-@click.option('--reference_url', help='Reference URL')
-@click.option('--region', help='Region')
-@click.option('--require_review', help='Require review')
-@click.option('--category_id', help='Category ID')
-
 @click.option('-o', '--overwrite', flag_value=True, help='Overwrite previously added file if the file has been modified')
+@click.option('-m', '--metadata', flag_value=True, help="Prompts to send metadata with the document(s).  Answering 'no' will also not send default metadata.  Answering 'yes' will start the metadata wizard to set the metadata to send")
+@click.option('--fields', help="Only use this with the -m or --metadata flag.  Enter a comma-separated list with no spaces of metadata fields to send, or enter 'all' to send all fields or 'none' to send no fields.  This overrides the fields set in the configuration.\nValid fields are: "+', '.join(str(field) for field in METADATA_FIELDS))
 
 def add(file_names, **kwargs):
     """ Add files and folders for upload to Lingotek.  Fileglobs (e.g. *.txt) can be used to add all matching files and/or folders. Added folders will automatically add the new files added or created inside of them.  """

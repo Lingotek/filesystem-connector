@@ -220,52 +220,78 @@ class Action:
             print(e.errno)
             print(e)
 
-    def metadata_wizard(self, fields, update=False, set_defaults=False, default_metadata={}, old_metadata={}):
-        new_metadata = old_metadata
-        if update and set_defaults:
-            prompt_message = "New Default Value: "
-        elif update:
-            prompt_message = "New Value: "
-        elif set_defaults:
-            prompt_message = "Set Default Value: "
+    def metadata_wizard(self, fields, set_defaults=False):
+        new_metadata = {}
+        if set_defaults:
+            old_metadata = self.default_metadata
+            for field in fields:
+                if field in old_metadata:
+                    del old_metadata[field]
+                print("\n===",field,"===")
+                prompt_message = "Set Default Value: "
+                # Python 2
+                # new_value = raw_input(prompt_message)
+                # End Python 2
+                # Python 3
+                new_value = input(prompt_message)
+                # End Python 3
+                if new_value:
+                    new_metadata[field] = new_value
+            if len(old_metadata) > 0:
+                print("Default metadata was previously set for some fields that are not currently managed")
+                for field in old_metadata:
+                    print(field,": ",old_metadata[field])
+                if yes_no_prompt("Would you like to preserve this default metadata?", default_yes=False):
+                    for field in old_metadata:
+                        new_metadata[field] = old_metadata[field]
         else:
-            prompt_message = "Value: "
-        for field in fields:
-            print("\n===",field,"===")
-            if update:
-                old_value = ""
-                if field in old_metadata and old_metadata[field]:
-                    old_value = old_metadata[field]
-                print("Current Value: {0}".format(old_value))
-            if field in default_metadata:
-                default_value = ""
-                if default_metadata[field]:
-                    default_value = default_metadata[field]
-                print("Default Value: {0}".format(default_value))
-                default_confirm = 'none'
-                while default_confirm not in ['y', 'Y', 'n', 'N', '']:
-                    default_prompt = "Use default value? [Y/n]: "
+            if yes_no_prompt("Would you like to skip the metadata wizard and just send the default metadata?", default_yes=True):
+                if not all(field in fields for field in self.default_metadata):
+                    if yes_no_prompt("The default metadata contains metadata for fields that are not currently managed.  Would you like to include that metadata?", default_yes=False):
+                        new_metadata = self.default_metadata
+                    else:
+                        for field in fields:
+                            if field in self.default_metadata:
+                                new_metadata[field] = self.default_metadata[field]
+                else:
+                    new_metadata = self.default_metadata
+            else:
+                for field in fields:
+                    print("\n===",field,"===")
+                    if field in self.default_metadata:
+                        print("Default Value: {0}".format(self.default_metadata[field]))
+                        if yes_no_prompt("Would you like to use the default value?", default_yes=True):
+                            new_metadata[field] = self.default_metadata[field]
+                            continue
+                    prompt_message = "Value: "
                     # Python 2
-                    # default_confirm = raw_input(default_prompt)
+                    # new_value = raw_input(prompt_message)
                     # End Python 2
                     # Python 3
-                    default_confirm = input(default_prompt)
+                    new_value = input(prompt_message)
                     # End Python 3
-                if default_confirm in ['y', 'Y', '']:
-                    if default_value:
-                        new_metadata[field] = default_value
-                    continue                        
-            # Python 2
-            # new_value = raw_input(prompt_message)
-            # End Python 2
-            # Python 3
-            new_value = input(prompt_message)
-            # End Python 3
-            if new_value:
-                new_metadata[field] = new_value
-            elif field in new_metadata:
-                del new_metadata[field]
+                    if new_value:
+                        new_metadata[field] = new_value
+                if not all(field in fields for field in self.default_metadata):
+                    if yes_no_prompt("The default metadata contains metadata for fields that are not currently managed.  Would you like to include that metadata?", default_yes=False):
+                        for field in self.default_metadata:
+                            if field not in new_metadata:
+                                new_metadata[field] = self.default_metadata[field]
         return new_metadata
+
+    def validate_metadata_fields(self, field_options):
+        if field_options.lower() == 'all' or field_options == '':
+            return True, METADATA_FIELDS
+        elif field_options.lower() == 'none':
+            return True, []
+        else:
+            converted = field_options.replace(", ",",") #allows for a comma-separated list with or without a single space after commas
+            options = converted.split(",")
+            for option in options:
+                if option not in METADATA_FIELDS:
+                    logger.warning("Error: {0} is not a valid metadata field".format(option))
+                    return False, None
+            return True, options
 
     def get_relative_path(self, path):
         return get_relative_path(self.path, path)

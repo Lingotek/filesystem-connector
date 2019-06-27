@@ -284,7 +284,6 @@ class InitAction():
         # Set default metadata
         print("--------------------------------")
         print("METADATA:")
-        print("Set default metadata to be sent with every document that is uploaded to Lingotek.")
         self.set_metadata_defaults()
         self.set_metadata_prompt()
         self.set_metadata_fields()
@@ -354,16 +353,8 @@ class InitAction():
             if not delete:
                 return False
             try:
-                confirm = 'not confirmed'
-                while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-                    prompt_message = "Are you sure you want to delete the current project? " + \
-                        "This will also delete the project in your community. [Y/n]: "
-                    # Python 2
-                    # confirm = raw_input(prompt_message)
-                    # End Python 2
-                    # Python 3
-                    confirm = input(prompt_message)
-                    # End Python 3
+                option = yes_no_prompt("Are you sure you want to delete the current project? " + \
+                        "This will also delete the project in your community.", default_yes=True)
             except KeyboardInterrupt:
                 # Python 2
                 # logger.info("\nRenit canceled")
@@ -373,9 +364,7 @@ class InitAction():
                 # End Python 3
                 return
             # confirm if deleting existing folder
-            if not confirm or confirm in ['n', 'N']:
-                return False
-            else:
+            if option:
                 # delete the corresponding project online
                 logger.info('Deleting old project folder and creating new one...')
                 config_file_name = os.path.join(project_path, CONF_DIR, CONF_FN)
@@ -398,6 +387,8 @@ class InitAction():
                 else:
                     raise exceptions.ResourceNotFound("Cannot find config file, please re-initialize project")
                 return access_token
+            else:
+                return False
         return True
 
     def create_global(self, access_token, host):
@@ -715,19 +706,7 @@ class InitAction():
 
     def prompt_advanced_settings(self):
         try:
-            confirm = 'none'
-            while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-                prompt_message = 'Would you like to configure advanced options? [y/N]: '
-                # Python 2
-                # confirm = raw_input(prompt_message)
-                # End Python 2
-                # Python 3
-                confirm = input(prompt_message)
-                # End Python 3
-            if confirm in ['n', 'N', 'no', 'No', '']:
-                return False
-            else:
-                return True
+            return yes_no_prompt('Would you like to configure advanced options?', default_yes=False)
         except KeyboardInterrupt:
             # Python 2
             # logger.info("\nInit canceled")
@@ -741,19 +720,11 @@ class InitAction():
 
     def set_git_autocommit(self):
         try:
-            confirm = 'none'
             if not(os.name == 'nt'):
-                while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-                    prompt_message = 'Would you like to use Git auto-commit? [y/N]: '
-                    # Python 2
-                    # confirm = raw_input(prompt_message)
-                    # End Python 2
-                    # Python 3
-                    confirm = input(prompt_message)
-                    # End Python 3
-                    if not confirm in ['n', 'N', 'no', 'No', '']:
-                        # get git credentials
-                        return self.get_git_credentials()
+                option = yes_no_prompt('Would you like to use Git auto-commit?', default_yes=False)
+                if option:
+                    # get git credentials
+                    return self.get_git_credentials()
 
         except KeyboardInterrupt:
             # Python 2
@@ -870,18 +841,10 @@ class InitAction():
     def set_append_option(self):
         append_option = None
         try:
-            confirm = 'none'
-            while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-                prompt_message = 'Would you like to change the append options? [y/N]: '
-                # Python 2
-                # confirm = raw_input(prompt_message)
-                # End Python 2
-                # Python 3
-                confirm = input(prompt_message)
-                # End Python 3
-                if confirm in ['y', 'yes', 'Yes']:
-                    option = self.get_user_append_option()
-                    return append_option
+            option = yes_no_prompt('Would you like to change the append options?', default_yes=False)
+            if option:
+                option = self.get_user_append_option()
+                return append_option
 
         except KeyboardInterrupt:
             # Python 2
@@ -987,20 +950,13 @@ class InitAction():
         return unzip_file
 
     def set_metadata_defaults(self):
+        print("Set default metadata to be sent with every document that is uploaded to Lingotek.")
         try:
-            confirm = 'none'
-            while confirm.upper() != 'Y' and confirm.upper() != 'N' and confirm != '':
-                prompt_message = 'Would you like to set default metadata? [y/N]: '
-                # Python 2
-                # confirm = raw_input(prompt_message)
-                # End Python 2
-                # Python 3
-                confirm = input(prompt_message)
-                # End Python 3
-                if confirm.upper() == 'Y':
-                    metadata = Action.metadata_wizard(Action, METADATA_FIELDS, set_defaults=True)
-                else:
-                    metadata = {}
+            option = yes_no_prompt('Would you like to set default metadata?', default_yes=False)
+            if option:
+                metadata = Action.metadata_wizard(Action, METADATA_FIELDS, set_defaults=True)
+            else:
+                metadata = {}
             self.config_parser.set('main', 'default_metadata', json.dumps(metadata))
             logger.info("Default metadata set to {0}".format(metadata))
 
@@ -1016,21 +972,13 @@ class InitAction():
     def set_metadata_prompt(self):
         print("Toggle an automatic prompt for metadata with every document upload/update.  Turning this on will display a prompt every time an add or push command is run that asks if metadata should be sent, and if it should be sent, it gives the option to define the metadata.  Leaving this off will require a command flag to be used to send metadata.")
         try:
-            confirm = 'none'
-            while confirm.upper() != 'Y' and confirm.upper() != 'N' and confirm != '':
-                prompt_message = 'Would you like to always prompt for metadata? [y/N]: '
-                # Python 2
-                # confirm = raw_input(prompt_message)
-                # End Python 2
-                # Python 3
-                confirm = input(prompt_message)
-                # End Python 3
-                if confirm.upper() == 'Y':
-                    self.config_parser.set('main', 'metadata_prompt', 'on')
-                    logger.info("Metadata prompting set to ON")
-                else:
-                    self.config_parser.set('main', 'metadata_prompt', 'off')
-                    logger.info("Metadata prompting set to OFF")
+            option = yes_no_prompt('Would you like to always prompt for metadata?', default_yes=False)
+            if option:
+                self.config_parser.set('main', 'metadata_prompt', 'on')
+                logger.info("Metadata prompting set to ON")
+            else:
+                self.config_parser.set('main', 'metadata_prompt', 'off')
+                logger.info("Metadata prompting set to OFF")
 
         except KeyboardInterrupt:
             # Python 2
@@ -1054,8 +1002,9 @@ class InitAction():
                 # Python 3
                 options = input(prompt_message)
                 # End Python 3
-                if self.validate_field_option(options):
-                    valid = True
+                valid, fields = Action.validate_metadata_fields(Action, options)
+            self.config_parser.set('main', 'metadata_fields', json.dumps(fields))
+            logger.info("Metadata fields set to {0}".format(fields))
 
         except KeyboardInterrupt:
             # Python 2
@@ -1065,23 +1014,3 @@ class InitAction():
             logger.error("\nInit canceled")
             # End Python 3
             return
-    
-    def validate_field_option(self, field_options):
-        if field_options.lower() == 'all' or field_options == '':
-            self.config_parser.set('main', 'metadata_fields', json.dumps(METADATA_FIELDS))
-            logger.info("Metadata fields set to {0}".format(METADATA_FIELDS))
-            return True
-        elif field_options.lower() == 'none':
-            self.config_parser.set('main', 'metadata_fields', "[]")
-            logger.info("Metadata fields set to []")
-            return True
-        else:
-            converted = field_options.replace(", ",",") #allows for a comma-separated list with or without a single space after commas
-            options = converted.split(",")
-            for option in options:
-                if option not in METADATA_FIELDS:
-                    logger.warning("Error: {0} is not a valid metadata field".format(option))
-                    return False
-            self.config_parser.set('main', 'metadata_fields', json.dumps(options))
-            logger.info("Metadata fields set to {0}".format(options))
-            return True
