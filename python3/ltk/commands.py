@@ -247,16 +247,21 @@ def add(file_names, **kwargs):
         logger.error(e)
         return
 
-@ltk.command(short_help="Sends updated content to Lingotek for documents that have been added")
+@ltk.command(short_help="Sends updated content to Lingotek for documents that have been added; defaults to the entire project.")
 @click.option('-n', '--test', 'test', flag_value=True, help='Shows which files will be added or updated without actually uploading any content')
 @click.option('-t', '--title', 'title', flag_value=True, help='Display document titles rather than file paths')
-def push(test, title):
-    """ Sends updated content to Lingotek for documents that have been added """
+@click.argument('files', type=click.Path(exists=True), required=False, nargs=-1)
+@click.option('-m', '--metadata', flag_value=True, help="Prompts to send metadata with the document(s).  Answering 'no' will also not send default metadata.  Answering 'yes' will start the metadata wizard to set the metadata to send")
+@click.option('-o', '--metadata-only', 'metadata_only', flag_value=True, help="Only updates the metadata and does not update the document contents")
+@click.option('--fields', help="Only use this with the -m or --metadata flag.  Enter a comma-separated list with no spaces of metadata fields to send, or enter 'all' to send all fields or 'none' to send no fields.  This overrides the fields set in the configuration.\nValid fields are: "+', '.join(str(field) for field in METADATA_FIELDS))
+
+def push(test, title, files, metadata, metadata_only, fields):
+    """ Sends updated content to Lingotek for documents that have been added.  Fileglobs (e.g. *.txt) can be used to push all matching files """
     try:
         add = add_action.AddAction(os.getcwd())
         action = push_action.PushAction(add, os.getcwd(), test, title)
         init_logger(action.path)
-        action.push_action()
+        action.push_action(files=files, send_metadata=metadata, metadata_only=metadata_only, use_fields=fields)
     except UninitializedError as e:
         print_log(e)
         logger.error(e)

@@ -67,13 +67,14 @@ class AddAction(Action):
                 metadata = self.metadata_wizard(fields)
             else:
                 metadata = {}
+        confirmed=False
         for file_name in matched_files:
             try:
                 # title = os.path.basename(os.path.normpath(file_name)).split('.')[0]
                 relative_path = self.norm_path(file_name)
                 title = os.path.basename(relative_path)
                 if not self.doc_manager.is_doc_new(relative_path):
-                    if self.doc_manager.is_doc_modified(relative_path, self.path):
+                    if self.doc_manager.is_doc_modified(relative_path, self.path) or len(metadata) > 0:
                         if 'overwrite' in kwargs and kwargs['overwrite']:
                             confirmed = True
                         try:
@@ -95,7 +96,7 @@ class AddAction(Action):
                             logger.error("Canceled adding the document")
                             return
                     else:
-                        logger.error("This document has already been added: {0}\n".format(title))
+                        logger.error("This document has already been added and no metadata is being sent: {0}\n".format(title))
                         continue
             except json.decoder.JSONDecodeError:
                 logger.error("JSON error on adding document.")

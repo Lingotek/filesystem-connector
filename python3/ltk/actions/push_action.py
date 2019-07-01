@@ -7,10 +7,25 @@ class PushAction(Action):
         self.title = title
         self.test = test
 
-    def push_action(self):
+    def push_action(self, files=None, send_metadata=False, metadata_only=False, use_fields=None):
+        self.metadata_only = metadata_only
+        self.metadata = self.default_metadata
+        if send_metadata or self.metadata_prompt:
+            fields = self.metadata_fields
+            if use_fields:
+                valid, fields = self.validate_metadata_fields(use_fields)
+                if not valid:
+                    return
+            if yes_no_prompt('Would you like to include metadata with this push?', default_yes=True):
+                self.metadata = self.metadata_wizard(fields)
+            else:
+                self.metadata = {}
         try:
-            added = self._add_new_docs()
-            updated = self._update_current_docs()
+            if files:
+                added, updated = self._push_specific_files(files)
+            else:
+                added = self._add_new_docs()
+                updated = self._update_current_docs()
             total = added + updated
             if total is 0:
                 report = 'All documents up-to-date with Lingotek Cloud. '
@@ -31,7 +46,7 @@ class PushAction(Action):
     def _add_new_docs(self):
         folders = self.folder_manager.get_file_names()
         added = 0
-        if len(folders):
+        if len(folders) and not self.metadata_only:
             for folder in folders:
                 matched_files = get_files(folder)
                 if matched_files:
@@ -44,7 +59,7 @@ class PushAction(Action):
                                 if self.test:
                                     print('Add {0}'.format(display_name))
                                 else:
-                                    self.add.add_document(file_name, title)
+                                    self.add.add_document(file_name, title, doc_metadata=self.metadata)
                                 added += 1
                         except json.decoder.JSONDecodeError as e:
                             log_error(self.error_file_name, e)
@@ -56,21 +71,62 @@ class PushAction(Action):
         entries = self.doc_manager.get_all_entries()
 
         for entry in entries:
-            if not self.doc_manager.is_doc_modified(entry['file_name'], self.path):
-                continue
-            display_name = entry['name'] if self.title else entry['file_name']
-            if self.test:
-                updated += 1 # would be updated
-                print('Update {0}'.format(display_name))
-                continue
-
-            response = self.api.document_update(entry['id'], os.path.join(self.path, entry['file_name']))
-            if response.status_code == 202:
-                updated += 1
-                logger.info('Updated {0}'.format(display_name))
-                self._update_document(entry['file_name'])
-            else:
-                raise_error(response.json(), "Failed to update document {0}".format(entry['name']), True)
-                return updated
+            if len(self.metadata) > 0 or (self.doc_manager.is_doc_modified(entry['file_name'], self.path) and not self.metadata_only):
+                display_name = entry['name'] if self.title else entry['file_name']
+                if self.test:
+                    updated += 1 # would be updated
+                    print('Update {0}'.format(display_name))
+                    continue
+                if self.metadata_only:
+                    response = self.api.document_update(entry['id'], doc_metadata=self.metadata)
+                else:
+                    response = self.api.document_update(entry['id'], os.path.join(self.path, entry['file_name']), doc_metadata=self.metadata)
+                if response.status_code == 202:
+                    updated += 1
+                    logger.info('Updated {0}'.format(display_name))
+                    self._update_document(entry['file_name'])
+                else:
+                    raise_error(response.json(), "Failed to update document {0}".format(entry['name']), True)
 
         return updated
+
+    def _push_specific_files(self, patterns):
+        files = set()
+        added = 0
+        updated = 0
+        for pattern in patterns:
+            if os.path.isdir(pattern):
+                for file in get_files(pattern):
+                    relative_path = self.norm_path(file)
+                    files.add(relative_path)
+            else:
+                relative_path = self.norm_path(pattern)
+                files.add(relative_path)
+        for file in files:
+            title = os.path.basename(file)
+            if not self.metadata_only and self.doc_manager.is_doc_new(file) and not self.doc_manager.is_translation(file, title, files, self):
+                display_name = title if self.title else file
+                if self.test:
+                    print('Add {0}'.format(display_name))
+                else:
+                    self.add.add_document(file, title, doc_metadata=self.metadata)
+                added += 1
+            elif len(self.metadata) > 0 or (self.doc_manager.is_doc_modified(file, self.path) and not self.metadata_only):
+                entry = self.doc_manager.get_doc_by_prop('file_name', file)
+                if entry:
+                    display_name = entry['name'] if self.title else entry['file_name']
+                    if self.test:
+                        updated += 1 # would be updated
+                        print('Update {0}'.format(display_name))
+                        continue
+                    if self.metadata_only:
+                        response = self.api.document_update(entry['id'], doc_metadata=self.metadata)
+                    else:
+                        response = self.api.document_update(entry['id'], os.path.join(self.path, entry['file_name']), doc_metadata=self.metadata)
+                    if response.status_code == 202:
+                        updated += 1
+                        logger.info('Updated {0}'.format(display_name))
+                        self._update_document(entry['file_name'])
+                    else:
+                        raise_error(response.json(), "Failed to update document {0}".format(entry['name']), True)
+        return added, updated

@@ -139,5 +139,3 @@ class TestAdd(unittest.TestCase):
 
         doc_id = self.action.doc_manager.get_doc_ids()[0]
         assert poll_doc(self.action, doc_id)
-
-    # todo test all those other args
