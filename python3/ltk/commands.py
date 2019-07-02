@@ -187,7 +187,7 @@ def init(host, access_token, client_id, path, project_name, workflow_id, locale,
 @click.option('-f', '--auto_format', help='Toggle auto format option \'on\' and \'off\'. Applies formatting during download.')
 @click.option('-md', '--metadata_defaults', is_flag=True, help='Launch the wizard to set the default metadata.')
 @click.option('-mp', '--metadata_prompt', help='Toggle prompting for metadata with every add and push.  Use the argument \'on\' to enable this prompt or \'off\' to disable it.')
-@click.option('-mf', '--metadata_fields', help="Set the fields that will be asked for when adding or changing metadata.  All default metadata will still be sent.  Enter the fields to prompt for as a comma-separated list with no spaces, or enter 'all' to include all fields or 'none' to include no fields.  Valid fields are: 'author_email', 'author_name', 'business_division', 'business_unit', 'campaign_id', 'campaign_rating', 'channel', 'contact_email', 'contact_name', 'content_description', 'content_type', 'domain', 'external_application_id', 'external_document_id', 'external_style_id', 'job_id', 'purchase_order', 'reference_url', 'region', and 'require_review'")
+@click.option('-mf', '--metadata_fields', help="Set the fields that will be asked for when adding or changing metadata.  All default metadata will still be sent.  Enter the fields to prompt for as a comma-separated list with no spaces, or enter 'all' to include all fields or 'none' to include no fields.  Valid fields are: "+', '.join(str(field) for field in METADATA_FIELDS))
 
 def config(**kwargs):
     """ View or change local configuration """
