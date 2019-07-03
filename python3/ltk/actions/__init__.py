@@ -13,5 +13,6 @@ __all__ = [ "action",
             "push_action",
             "request_action",
             "rm_action",
-            "status_action"
+            "status_action",
+            "reference_action"
           ]

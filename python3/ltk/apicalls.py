@@ -246,6 +246,57 @@ class ApiCalls:
         except requests.exceptions.ConnectionError:
             self.handleError()
         return r
+    
+    def document_add_reference(self, document_id, reference):
+        """ adds reference material to a document """
+        try:
+            uri = (API_URI['reference'] % locals())
+            payload = {'id': document_id}
+            document = open(reference['file'], 'rb')
+            files = {'content': (reference['file'], document)}
+            if 'name' in reference and reference['name']:
+                payload.update({'name': reference['name']})
+            if 'description' in reference and reference['description']:
+                payload.update({'description': reference['description']})
+            r = requests.post(self.host + uri, headers=self.headers, data=payload, files=files)
+            log_api('POST', uri, r)
+            document.close()
+        except requests.exceptions.ConnectionError:
+            self.handleError()
+        return r
+
+    def document_list_reference(self, document_id):
+        """ lists the reference material that is attached to a document """
+        try:
+            uri = (API_URI['reference'] % locals())
+            payload = {'id': document_id}
+            r = requests.get(self.host + uri, headers=self.headers, params=payload)
+            log_api('GET', uri, r)
+        except requests.exceptions.ConnectionError:
+            self.handleError()
+        return r
+
+    def document_download_reference(self, document_id, reference_id):
+        """ downloads reference material that is attached to a document """
+        try:
+            uri = (API_URI['reference_id'] % locals())
+            payload = {'id': document_id, 'reference_id': reference_id}
+            r = requests.get(self.host + uri, headers=self.headers, params=payload, stream=True)
+            log_api('GET', uri, r)
+        except requests.exceptions.ConnectionError:
+            self.handleError()
+        return r
+    
+    #Commenting out pending an API fix
+    # def document_remove_reference(self, document_id, reference_id):
+    #    """ removes reference material from a document """
+    #    try:
+    #        uri = (API_URI['reference_id'] % locals())
+    #        r = requests.delete(self.host + uri, headers=self.headers)
+    #        log_api('DELETE', uri, r)
+    #    except requests.exceptions.ConnectionError:
+    #        self.handleError()
+    #    return r
 
     def document_add_target(self, document_id, locale, workflow_id=None, due_date=None):
         """ adds a target to existing document, starts the workflow """
