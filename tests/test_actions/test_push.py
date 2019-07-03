@@ -16,7 +16,7 @@ class TestPush(unittest.TestCase):
         create_config()
         self.downloaded = []
         self.add_action = AddAction(os.getcwd())
-        self.action = PushAction(self.add_action,os.getcwd())
+        self.action = PushAction(self.add_action,os.getcwd(),False,False)
         self.clean_action = CleanAction(os.getcwd())
         self.rm_action = RmAction(os.getcwd())
         self.download_action = DownloadAction(os.getcwd())
@@ -53,8 +53,10 @@ class TestPush(unittest.TestCase):
         self.request_action.target_action()
         with open(self.files[0]) as f:
             downloaded = f.read()
+        orig_dates = get_orig_dates(self.action, [test_doc_id]) #get the initial timestamp before modifying the document on the cloud
+        assert orig_dates
         self.action.push_action()
-        assert check_updated_ids(self.action, [test_doc_id]) # Poll and wait until the modification has taken effect in the cloud
+        assert check_updated_ids(self.action, orig_dates) # Poll and wait until the modification has taken effect in the cloud
         downloaded_path = self.download_action.download_action(test_doc_id, locales[0], False)
         #print("downloaded_path: "+str(downloaded_path))
         self.downloaded.append(downloaded_path)
@@ -75,8 +77,10 @@ class TestPush(unittest.TestCase):
         target1 = self.request_action.target_action()
         self.request_action = RequestAction(os.getcwd(), self.files[1], None, locales, False, False, None, None, test_doc_id_1)
         target2 = self.request_action.target_action()
+        orig_dates = get_orig_dates(self.action, [test_doc_id_0, test_doc_id_1]) #get the initial timestamp before modifying the document on the cloud
+        assert orig_dates
         push = self.action.push_action()
-        assert check_updated_ids(self.action, [test_doc_id_0, test_doc_id_1]) # Poll and wait until the modification has taken effect on the cloud
+        assert check_updated_ids(self.action, orig_dates) # Poll and wait until the modification has taken effect on the cloud
         dl_path_0 = self.download_action.download_action(test_doc_id_0, locales[0], False)
         dl_path_1 = self.download_action.download_action(test_doc_id_1, locales[0], False)
         self.downloaded = [dl_path_0, dl_path_1]

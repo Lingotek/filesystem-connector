@@ -169,7 +169,7 @@ def init(host, access_token, client_id, path, project_name, workflow_id, locale,
 @click.option('-l', '--locale', help='Change the default source locale for the project')
 @click.option('-w', '--workflow_id', help='Change the default workflow id for the project')
 @click.option('-c', '--clone_option', help='Toggle clone download option \'on\' and \'off\'. Turning clone \'on\': Translations will be downloaded to a cloned folder structure, where the root folder for each locale is the locale folder specified in config or a locale folder inside of the default download folder. If a default download folder is not set, then translations will be downloaded to the directory where the project was initialized.' +
-                                                'Turning clone \'off\': If a download folder is specified, downloaded translations will download to that folder, but not in a cloned folder structure. If no download folder is specified, downloaded translations will go to the same folder as their corresponding source files.')
+                                                'Turning clone \'off\': Downloaded translations will go into their locale folder (if specified) or default download folder, but not in a cloned folder structure. If no default download folder or locale folder is specified, downloaded translations will go to the same folder as their corresponding source files.')
 @click.option('-ff', '--finalized_file', help='Toggle finalized file download option \'on\' and \'off\'. Turning finalized file on downloads the finalized file instead of the raw translation.\
                                                 A finalized file is typically a file that has undergone some sort of post editing like Desktop Publishing after the translation has compeleted.')
 @click.option('-u', '--unzip_file', help='Toggle finalized file UNZIP option \'on\' and \'off\'. With this option \'on\' contents of the finalized file will be placed in the expected directory.')
@@ -179,6 +179,7 @@ def init(host, access_token, client_id, path, project_name, workflow_id, locale,
               help='Specify target locales that documents in watch_folder should be assigned; may either specify '
                    'with multiple -t flags (ex: -t locale -t locale) or give a list separated by commas and no spaces '
                    '(ex: -t locale,locale)')
+
 @click.option('-p', '--locale_folder', nargs=2, type=str, multiple=True, help='For a specific locale, specify the root folder where downloaded translations should appear. Use --none for the path to clear the download folder for a specific locale. Example: -p fr_FR translations/fr_FR. Note: This only works with clone option \'on\'')
 @click.option('-r', '--remove_locales', flag_value=True, help='Remove all locale folders and use the default download location instead.')
 @click.option('-g', '--git', help='Toggle Git auto-commit option on and off')
@@ -208,10 +209,11 @@ def config(**kwargs):
 @ltk.command(short_help="Add files and folders")
 @click.argument('file_names', required=True, nargs=-1)
 @click.option('-d', '--directory', flag_value=True, help='Only add directories, not files inside directories')
-@click.option('-s', '--srx', type=click.Path(exists=True), help='srx file')
 @click.option('-l', '--locale', help='If source locale is different from the default configuration. Use ltk list -l to see possible locales')
 @click.option('-f', '--format',
               help="Format of file; if not specified, will use extension to detect; defaults to plaintext. Use ltk list -f to see possible formats. Files may not be added to Lingotek's system if not formatted correctly according to the specified format")
+@click.option('-D', '--download_folder', type=click.Path(exists=True), help='Download folder for the translations for this file.  If set, it will take precedence over locale folders and the default download folder and will ignore clone as well as the no_ext argument when pulling/downloading')
+@click.option('-o', '--overwrite', flag_value=True, help='Overwrite previously added file if the file has been modified')
 @click.option('-s', '--srx', type=click.Path(exists=True), help='srx file')
 @click.option('-si', '--srx_id', help='srx id')
 @click.option('-i', '--its', type=click.Path(exists=True), help='its file')
@@ -223,8 +225,6 @@ def config(**kwargs):
 @click.option('-fsi', '--fprm_subfilter_id', help='fprm subfilter id')
 @click.option('-v', '--vault_id', help='Save-to TM vault id')
 @click.option('-e', '--external_url', help='Source url')
-@click.option('--note', help='Note')
-@click.option('-o', '--overwrite', flag_value=True, help='Overwrite previously added file if the file has been modified')
 @click.option('-m', '--metadata', flag_value=True, help="Prompts to send metadata with the document(s).  Answering 'no' will also not send default metadata.  Answering 'yes' will start the metadata wizard to set the metadata to send")
 @click.option('--fields', help="Only use this with the -m or --metadata flag.  Enter a comma-separated list with no spaces of metadata fields to send, or enter 'all' to send all fields or 'none' to send no fields.  This overrides the fields set in the configuration.\nValid fields are: "+', '.join(str(field) for field in METADATA_FIELDS))
 
@@ -303,6 +303,7 @@ def request(doc_name, path, locales, to_cancel, to_delete, due_date, workflow):
 @click.option('-f', '--formats', 'id_type', flag_value='format', help='List supported formats')
 @click.option('-r', '--remote', 'id_type', flag_value='remote', help='List all project documents on Lingotek Cloud')
 @click.option('--filters', 'id_type', flag_value='filter', help='List default and custom filters')
+@click.option('-d', '--download_folder', 'show_dests', flag_value=True, help="Show target download folders for files that have had them set")
 def list(**kwargs):
     """ Shows docs, workflows, locales, formats, or filters. By default lists added folders and docs. """
     try:
@@ -519,7 +520,7 @@ def clone(folders, copy_root):
 
 @ltk.command(short_help="Watches local and remote files")
 # @click.option('-p', '--path', type=click.Path(exists=True), multiple=True, help='Specify a folder to watch. Use option multiple times to specify multiple folders.')
-@click.option('--ignore', multiple=True, help='Specify types of files to ignore')
+@click.option('--ignore', multiple=True, help='Specify types of files to ignore.  For multiple types, specify this flag multiple times.  For example, to ignore pdf and html files, use "ltk watch --ignore .pdf --ignore .html"')
 @click.option('--auto', 'delimiter', help='Automatically detects locale from the file name; specify locale delimiter')
 @click.option('-t', '--timeout', type=click.INT, default=60,
               help='The amount of time watch will sleep between polls, in seconds. Defaults to 1 minute')
@@ -527,8 +528,9 @@ def clone(folders, copy_root):
 @click.option('-f','--force_poll', flag_value=True, help='Force API calls to Lingotek system at every poll for every document')
 def watch(ignore, delimiter, timeout, no_folders, force_poll): # path, ignore, delimiter, timeout, no_folders):
     """
-    Watches local files added or imported by ltk, and sends a PATCH when a document is changed.
+    Watches local files added by ltk, and sends a PATCH when a document is changed.
     Also watches remote files, and automatically downloads finished translations.
+    Automatically adds documents that are added to the watchfolder.  Note: The add is performed without extra options (no srx id, no download folder, etc.)
     """
     try:
         action = WatchAction(os.getcwd(), timeout)

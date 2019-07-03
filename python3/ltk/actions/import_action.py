@@ -68,7 +68,7 @@ class ImportAction(Action):
             else:
                 ids_to_import = [ids_to_import]
             for curr_id in ids_to_import:
-                self.import_document(curr_id, tms_doc_info[curr_id], force, path)
+                self.import_document(curr_id, tms_doc_info[curr_id], force, path, track)
         except Exception as e:
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
                 logger.error("Error connecting to Lingotek's TMS")
@@ -114,7 +114,7 @@ class ImportAction(Action):
         # print(str(path_changed)+" "+str(new_path)+" "+str(write_file)+" "+str(delete_file))
         return path_changed, new_path, write_file, delete_file
 
-    def import_document(self, document_id, document_info, force=False, path=False):
+    def import_document(self, document_id, document_info, force=False, path=False, track=False):
         local_ids = self.doc_manager.get_doc_ids()
         response = self.api.document_content(document_id, None, None, finalized_file=self.finalized_file)
         if(response.status_code == 400):

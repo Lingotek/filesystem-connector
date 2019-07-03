@@ -224,6 +224,8 @@ class ApiCalls:
             payload = {'locale_code': source_locale, 'project_id': project_id, 'title': title}
             for key in kwargs:
                 if kwargs[key]:
+                    if key == 'download_folder':
+                        continue #don't add this key because the API is not set up to do anything with it and we don't want to expose anything in an API post that we don't have to
                     payload[key] = kwargs[key]
             for field in doc_metadata:
                 if doc_metadata[field]:
