@@ -43,27 +43,20 @@ class TestAdd(unittest.TestCase):
         self.clean_action.close()
         self.action.close()
 
-    def test_add_db(self):
+    def test_add_single(self):
         # check that document is added to db
         file_name = 'sample.txt'
         self.added_files.append(file_name)
         create_txt_file(file_name)
         self.action.add_action([file_name])
         doc_id = self.action.doc_manager.get_doc_ids()[0]
-        poll_doc(self.action, doc_id)
 
         assert self.action.doc_manager.get_doc_by_prop('name', file_name)
 
-    def test_add_remote(self):
         # check that document is added to Lingotek
-        file_name = 'sample.txt'
-        self.added_files.append(file_name)
-        create_txt_file(file_name)
-        self.action.add_action([file_name])
-        doc_id = self.action.doc_manager.get_doc_ids()[0]
         assert poll_doc(self.action, doc_id)
 
-    def test_add_pattern_db(self):
+    def test_add_multiple(self):
         # test that adding with a pattern gets all expected matches in local db
         files = ['sample.txt', 'sample1.txt', 'sample2.txt']
         self.added_files = files
@@ -74,23 +67,11 @@ class TestAdd(unittest.TestCase):
         for fn in files:
             doc = self.action.doc_manager.get_doc_by_prop('name', fn)
             assert doc
+            # test that adding with a pattern gets all expected matches in Lingotek
             assert poll_doc(self.action, doc['id'])
-
-    def test_add_pattern_remote(self):
-        # test that adding with a pattern gets all expected matches in Lingotek
-        files = ['sample.txt', 'sample1.txt', 'sample2.txt']
-        self.added_files = files
-        for fn in files:
-            create_txt_file(fn)
-        # self.action.add_action(['sample*.txt'])
-        os.system('ltk add sample*.txt') # Let the command line handle parsing the file pattern
-        doc_ids = self.action.doc_manager.get_doc_ids()
-        for doc_id in doc_ids:
-            assert poll_doc(self.action, doc_id)
 
     ''' Test that a directory, and documents inside directory, are added to the db '''
     def test_add_directory(self):
-
         #test add an empty directory
         directory = 'test_add_empty_directory'
         dir_path = os.path.join(os.getcwd(), directory)
@@ -115,22 +96,10 @@ class TestAdd(unittest.TestCase):
         self.action.add_action([dir_path])
         assert self.action._is_folder_added(dir_path)
         for fn in files:
-            assert self.action.doc_manager.get_doc_by_prop('name', fn)
-
-    ''' Test adding a directory with a document inside gets added to Lingotek '''
-    def test_add_remote_directory(self):
-
-        directory = 'test_add_full_directory'
-        dir_path = os.path.join(os.getcwd(), directory)
-        file_name = 'file_inside_directory.txt'
-        self.added_directories.append(dir_path)
-        create_directory(dir_path)
-        self.added_files.append(file_name)
-        create_txt_file(file_name, dir_path)
-        self.action.add_action([dir_path])
-
-        doc_id = self.action.doc_manager.get_doc_ids()[0]
-        assert poll_doc(self.action, doc_id)
+            doc = self.action.doc_manager.get_doc_by_prop('name', fn)
+            assert doc
+            # test that adding a directory gets all expected matches in Lingotek
+            assert poll_doc(self.action, doc['id'])
 
     def test_add_target_folders(self):
         #create and add files
@@ -228,3 +197,29 @@ class TestAdd(unittest.TestCase):
         for fn in files:
             delete_file(fn, dir_path)
         self.added_files.clear()
+
+    def test_add_metadata(self):
+        from unittest.mock import patch
+        file_name = 'sample.txt'
+        self.added_files.append(file_name)
+        create_txt_file(file_name)
+        with patch('builtins.input', side_effect = ['Y', 'N', 'alpha','beta','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','']):
+            self.action.add_action([file_name], metadata=True)
+        doc_id = self.action.doc_manager.get_doc_ids()[0]
+
+        assert self.action.doc_manager.get_doc_by_prop('name', file_name)
+
+        # check that document is added to Lingotek
+        assert poll_doc(self.action, doc_id)
+
+        #check that the metadata is attached to the document
+        properties = self.action.api.get_document(doc_id).json()['properties']
+        for field in METADATA_FIELDS:
+            if field == METADATA_FIELDS[0]:
+                assert field in properties
+                assert properties[field]== 'alpha'
+            elif field == METADATA_FIELDS[1]:
+                assert field in properties
+                assert properties[field] == 'beta'
+            else:
+                assert field not in properties

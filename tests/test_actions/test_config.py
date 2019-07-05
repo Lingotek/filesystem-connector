@@ -204,7 +204,22 @@ class TestConfig(unittest.TestCase):
         assert self.action.metadata_fields == ['author_email', 'author_name']
 
     def test_set_default_metadata(self):
-        self.action.config_action(metadata_defaults = True)
-
+        with patch('builtins.input', side_effect = ['alpha', 'beta', '','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','']):
+            self.action.config_action(metadata_defaults = True)
+        fields = METADATA_FIELDS
+        for field in fields:
+            if field == METADATA_FIELDS[0]:
+                assert field in self.action.default_metadata
+                assert self.action.default_metadata[field] == 'alpha'
+            elif field == METADATA_FIELDS[1]:
+                assert field in self.action.default_metadata
+                assert self.action.default_metadata[field] == 'beta'
+            else:
+                assert field not in self.action.default_metadata
 
     def test_set_metadata_prompt(self):
+        self.action.config_action(metadata_prompt='on')
+        assert self.action.metadata_prompt
+
+        self.action.config_action(metadata_prompt='off')
+        assert not self.action.metadata_prompt

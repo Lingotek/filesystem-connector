@@ -127,7 +127,7 @@ def check_updated(action, doc_id, orig_date):
         :returns True if document is modified within 3 min, else False
     """
     time_passed = 0
-    while time_passed < 180:
+    while time_passed < 60: #60 loops x 3 second sleep = 180 seconds = 3 minutes
         response = action.api.get_document(doc_id)
         if response.status_code == 200:
             mod_date = response.json()['properties']['modified_date']
@@ -143,7 +143,7 @@ def check_updated(action, doc_id, orig_date):
         else:
             print("Document id not found on Lingotek Cloud: "+str(doc_id))
             return False
-        time.sleep(5)
+        time.sleep(3)
         time_passed += 1
     return False
 
