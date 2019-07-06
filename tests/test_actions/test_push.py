@@ -271,5 +271,48 @@ class TestPush(unittest.TestCase):
             #print("downloaded_text: "+downloaded_text)
         assert "Texto agregado." not in downloaded_text, downloaded_text
         assert "Este es un ejemplo de archivo de texto." in downloaded_text, downloaded_text
+
+    def test_push_metadata_only(self):
+        append_file(self.files[0])
+        locales = ['es-AR']
+        test_doc_id = self.action.doc_manager.get_doc_by_prop('file_name',self.files[0])['id']
+        self.request_action = RequestAction(os.getcwd(), self.files[0], None, locales, False, False, None, None, test_doc_id)
+        self.request_action.target_action()
+        orig_dates = get_orig_dates(self.action, [test_doc_id]) #get the initial timestamp before modifying the document on the cloud
+        assert orig_dates
+        from unittest.mock import patch
+        with patch('builtins.input', side_effect = ['Y', 'N', 'alpha','beta','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','']):
+            self.action.push_action(send_metadata=True, metadata_only=True)
+
+        #check that the file contents weren't updated
+        print("polling to check that file wasn't modified.  This will take 3 minutes if successful.")
+        assert not check_updated_ids(self.action, orig_dates) # Poll and wait to make sure the modification didn't occur on the cloud
+        downloaded_path = self.download_action.download_action(test_doc_id, locales[0], False)
+        #print("downloaded_path: "+str(downloaded_path))
+        self.downloaded.append(downloaded_path)
+        with open(downloaded_path, 'r') as f:
+            downloaded_text = f.read()
+            #print ("Downloaded_text: " + downloaded)
+        assert "Texto agregado." not in downloaded_text
+        assert "Este es un ejemplo de archivo de texto." in downloaded_text
+
+        #check that the metadata was updated
+        for doc_id in self.action.doc_manager.get_doc_ids():
+            properties = self.action.api.get_document(doc_id).json()['properties']
+            for field in METADATA_FIELDS:
+                if field == METADATA_FIELDS[0]:
+                    assert field in properties
+                    assert properties[field]== 'alpha'
+                elif field == METADATA_FIELDS[1]:
+                    assert field in properties
+                    assert properties[field] == 'beta'
+                else:
+                    if field == 'require_review': #for some reason, the PATCH call adds some False or None values where metadata wasn't set.  Values are kept if they are set, so everything works, we just need to check for fields that are returned that we didn't set.
+                        assert not properties['require_review'] #should be False because it was set to an empty string
+                        continue
+                    if field == 'external_url':
+                        assert not properties['require_review'] #should be None because it was set to an empty string
+                        continue
+                    assert field not in properties
         
 #don't need tests for pushing to cancelled documents, because push only works for tracked documents and cancelled documents are never tracked.  Someone would have to intentionally try and break this by editing the docs.json file, at which point they're asking for errors.
