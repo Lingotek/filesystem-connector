@@ -19,4 +19,6 @@ API_URI = {
     'filter_content': '/api/filter/%(filter_id)s/content',
     'document_cancel': '/api/document/%(document_id)s/cancel',
     'document_cancel_locale': '/api/document/%(document_id)s/translation/%(locale)s/cancel',
+    'reference': '/api/document/%(document_id)s/reference-material',
+    'reference_id': '/api/document/%(document_id)s/reference-material/%(reference_id)s'
 }

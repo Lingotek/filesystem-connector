@@ -56,48 +56,54 @@ class AddAction(Action):
     def add_documents(self, matched_files, **kwargs):
         ''' adds new documents to the lingotek cloud and, after prompting user, overwrites changed documents that
                 have already been added '''
-
+        metadata = self.default_metadata
+        if ('metadata' in kwargs and kwargs['metadata']) or self.metadata_prompt:
+            fields = self.metadata_fields
+            if 'fields' in kwargs and kwargs['fields']:
+                valid, fields = self.validate_metadata_fields(kwargs['fields'])
+                if not valid:
+                    return
+            if yes_no_prompt('Would you like to send metadata with '+('this document' if len(matched_files) == 1 else 'these documents')+'?', default_yes=True):
+                metadata = self.metadata_wizard(fields)
+            else:
+                metadata = {}
+        confirmed=False
         for file_name in matched_files:
             try:
                 # title = os.path.basename(os.path.normpath(file_name)).split('.')[0]
                 relative_path = self.norm_path(file_name)
                 title = os.path.basename(relative_path)
                 if not self.doc_manager.is_doc_new(relative_path):
-                    if self.doc_manager.is_doc_modified(relative_path, self.path):
+                    if self.doc_manager.is_doc_modified(relative_path, self.path) or len(metadata) > 0:
                         if 'overwrite' in kwargs and kwargs['overwrite']:
-                            confirm = 'Y'
-                        else:
-                            confirm = 'not confirmed'
+                            confirmed = True
                         try:
-                            while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-                                prompt_message = "Document \'{0}\' already exists. Would you like to overwrite it? [y/N]: ".format(title)
-                                # Python 2
-                                confirm = raw_input(prompt_message)
-                                # End Python 2
-                                # Python 3
-#                                 confirm = input(prompt_message)
-                                # End Python 3
+                            if not confirmed:
+                                option = yes_no_prompt("Document \'{0}\' already exists. Would you like to overwrite it?".format(title), default_yes=False)
+                            else:
+                                option = True
 
                             # confirm if would like to overwrite existing document in Lingotek Cloud
-                            if not confirm or confirm in ['n', 'N']:
-                                logger.info('Will not overwrite document \'{0}\' in Lingotek Cloud\n'.format(title))
+                            if option:
+                                logger.info('Overwriting document \'{0}\' in Lingotek Cloud...\n'.format(title))
+                                self.update_document_action(file_name, title, doc_metadata=metadata, **kwargs)
                                 continue
                             else:
-                                logger.info('Overwriting document \'{0}\' in Lingotek Cloud...\n'.format(title))
-                                self.update_document_action(file_name, title, **kwargs)
+                                logger.info('Will not overwrite document \'{0}\' in Lingotek Cloud\n'.format(title))
                                 continue
+                                
                         except KeyboardInterrupt:
                             logger.error("Canceled adding the document")
                             return
                     else:
-                        logger.error("This document has already been added: {0}\n".format(title))
+                        logger.error("This document has already been added and no metadata is being sent: {0}\n".format(title))
                         continue
             except json.decoder.JSONDecodeError:
                 logger.error("JSON error on adding document.")
 
-            self.add_document(file_name, title, **kwargs)
+            self.add_document(file_name, title, doc_metadata=metadata, **kwargs)
 
-    def add_document(self, file_name, title, **kwargs):
+    def add_document(self, file_name, title, doc_metadata={}, **kwargs):
         ''' adds the document to Lingotek cloud and the db '''
 
         if ltk.check_connection.check_for_connection() == False:
@@ -114,7 +120,7 @@ class AddAction(Action):
                 locale = kwargs['locale']
 
             # add document to Lingotek cloud
-            response = self.api.add_document(locale, file_name, self.project_id, self.append_location(title, file_name), **kwargs)
+            response = self.api.add_document(locale, file_name, self.project_id, self.append_location(title, file_name), doc_metadata, **kwargs)
             if response.status_code != 202:
                 raise_error(response.json(), "Failed to add document {0}\n".format(title), True)
             else:
@@ -123,7 +129,10 @@ class AddAction(Action):
                 relative_path = self.norm_path(file_name)
 
                 # add document to the db
-                self._add_document(relative_path, title, response.json()['properties']['id'])
+                if 'download_folder' in kwargs and kwargs['download_folder']:
+                    self._add_document(relative_path, title, response.json()['properties']['id'], kwargs['download_folder'])
+                else:
+                    self._add_document(relative_path, title, response.json()['properties']['id'])
 
         except KeyboardInterrupt:
             raise_error("", "Canceled adding document\n")
@@ -187,7 +196,7 @@ class AddAction(Action):
         if not conf_parser.has_option('main', 'append_option'): self.update_config_file('append_option', 'none', conf_parser, config_file_name, 'Update: Added optional file location appending (ltk config --help)')
         append_option = conf_parser.get('main', 'append_option')
         if not in_directory:
-            while repo_directory and repo_directory != "" and not (os.path.isdir(repo_directory + "/.ltk")):
+            while repo_directory and repo_directory != "" and not (os.path.isdir(repo_directory + os.sep+".ltk")):
                 repo_directory = repo_directory.split(path_sep)[:-1]
                 repo_directory = path_sep.join(repo_directory)
             if repo_directory == "" and append_option != 'none':

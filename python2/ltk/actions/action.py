@@ -16,7 +16,7 @@ from ltk import exceptions
 from ltk.apicalls import ApiCalls
 from ltk.utils import *
 from ltk.managers import DocumentManager, FolderManager
-from ltk.constants import CONF_DIR, CONF_FN, SYSTEM_FILE, ERROR_FN
+from ltk.constants import CONF_DIR, CONF_FN, SYSTEM_FILE, ERROR_FN, METADATA_FIELDS
 import json
 from ltk.logger import logger
 from ltk.git_auto import Git_Auto
@@ -44,6 +44,9 @@ class Action:
         self.git_password = ''
         self.append_option = 'none'
         self.locale_folders = {}
+        self.default_metadata = {}
+        self.metadata_prompt = False
+        self.metadata_fields = METADATA_FIELDS
         if not self._is_initialized():
             raise exceptions.UninitializedError("This project is not initialized. Please run init command.")
         self._initialize_self()
@@ -146,6 +149,23 @@ class Action:
             else:
                 self.append_option = 'none'
                 self.update_config_file('append_option', self.append_option, conf_parser, config_file_name, "")
+            if conf_parser.has_option('main', 'default_metadata'):
+                self.default_metadata = json.loads(conf_parser.get('main', 'default_metadata'))
+            else:
+                self.default_metadata = {}
+                self.update_config_file('default_metadata', json.dumps(self.default_metadata), conf_parser, config_file_name, "")
+            if conf_parser.has_option('main', 'metadata_prompt'):
+                self.metadata_prompt = (conf_parser.get('main', 'metadata_prompt').lower() == 'on')
+            else:
+                self.metadata_prompt = False
+                self.update_config_file('metadata_prompt', 'off', conf_parser, config_file_name, "")
+            if conf_parser.has_option('main', 'metadata_fields'):
+                self.metadata_fields = json.loads(conf_parser.get('main', 'metadata_fields'))
+            else:
+                self.metadata_fields = METADATA_FIELDS
+                self.update_config_file('metadata_fields', json.dumps(self.metadata_fields), conf_parser, config_file_name, "")
+                
+
         except NoOptionError as e:
             if not self.project_name:
                 self.api = ApiCalls(self.host, self.access_token)
@@ -155,13 +175,15 @@ class Action:
                 log_info = 'Updated project name'
                 self.update_config_file('project_name', self.project_name, conf_parser, config_file_name, log_info)
 
-    def _add_document(self, file_name, title, doc_id):
+    def _add_document(self, file_name, title, doc_id, dl_folder=''):
         """ adds a document to db """
         now = time.time()
         # doc_id = json['properties']['id']
         full_path = os.path.join(self.path, file_name)
         last_modified = os.stat(full_path).st_mtime
-        self.doc_manager.add_document(title, now, doc_id, last_modified, now, file_name)
+        if dl_folder:
+            dl_folder = os.path.relpath(dl_folder, self.path)
+        self.doc_manager.add_document(title, now, doc_id, last_modified, now, file_name, dl_folder)
 
     def _update_document(self, file_name):
         """ updates a document in the db """
@@ -199,6 +221,79 @@ class Action:
         except IOError as e:
             print(e.errno)
             print(e)
+
+    def metadata_wizard(self, fields, set_defaults=False):
+        new_metadata = {}
+        if set_defaults:
+            old_metadata = self.default_metadata
+            for field in fields:
+                if field in old_metadata:
+                    del old_metadata[field]
+                print("\n===",field,"===")
+                prompt_message = "Set Default Value: "
+                # Python 2
+                new_value = raw_input(prompt_message)
+                # End Python 2
+                # Python 3
+#                 new_value = input(prompt_message)
+                # End Python 3
+                if new_value:
+                    new_metadata[field] = new_value
+            if len(old_metadata) > 0:
+                print("Default metadata was previously set for some fields that are not currently managed")
+                for field in old_metadata:
+                    print(field,": ",old_metadata[field])
+                if yes_no_prompt("Would you like to preserve this default metadata?", default_yes=False):
+                    for field in old_metadata:
+                        new_metadata[field] = old_metadata[field]
+        else:
+            if yes_no_prompt("Would you like to skip the metadata wizard and just send the default metadata?", default_yes=True):
+                if not all(field in fields for field in self.default_metadata):
+                    if yes_no_prompt("The default metadata contains metadata for fields that are not currently managed.  Would you like to include that metadata?", default_yes=False):
+                        new_metadata = self.default_metadata
+                    else:
+                        for field in fields:
+                            if field in self.default_metadata:
+                                new_metadata[field] = self.default_metadata[field]
+                else:
+                    new_metadata = self.default_metadata
+            else:
+                for field in fields:
+                    print("\n===",field,"===")
+                    if field in self.default_metadata:
+                        print("Default Value: {0}".format(self.default_metadata[field]))
+                        if yes_no_prompt("Would you like to use the default value?", default_yes=True):
+                            new_metadata[field] = self.default_metadata[field]
+                            continue
+                    prompt_message = "Value: "
+                    # Python 2
+                    new_value = raw_input(prompt_message)
+                    # End Python 2
+                    # Python 3
+#                     new_value = input(prompt_message)
+                    # End Python 3
+                    if new_value:
+                        new_metadata[field] = new_value
+                if not all(field in fields for field in self.default_metadata):
+                    if yes_no_prompt("The default metadata contains metadata for fields that are not currently managed.  Would you like to include that metadata?", default_yes=False):
+                        for field in self.default_metadata:
+                            if field not in new_metadata:
+                                new_metadata[field] = self.default_metadata[field]
+        return new_metadata
+
+    def validate_metadata_fields(self, field_options):
+        if field_options.lower() == 'all' or field_options == '':
+            return True, METADATA_FIELDS
+        elif field_options.lower() == 'none':
+            return True, []
+        else:
+            converted = field_options.replace(", ",",") #allows for a comma-separated list with or without a single space after commas
+            options = converted.split(",")
+            for option in options:
+                if option not in METADATA_FIELDS:
+                    logger.warning("Error: {0} is not a valid metadata field".format(option))
+                    return False, None
+            return True, options
 
     def get_relative_path(self, path):
         return get_relative_path(self.path, path)

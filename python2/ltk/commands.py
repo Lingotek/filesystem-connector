@@ -9,7 +9,7 @@ import sys
 ''' Internal Dependencies '''
 from ltk import __version__
 from ltk.actions import *
-from ltk.constants import LOG_FN, CONF_DIR
+from ltk.constants import LOG_FN, CONF_DIR, METADATA_FIELDS
 from ltk.exceptions import UninitializedError, ResourceNotFound, RequestFailedError, AlreadyExistsError
 from ltk.logger import logger, API_LOG_LEVEL, API_RESPONSE_LOG_LEVEL, CustomFormatter
 from ltk.utils import remove_powershell_formatting
@@ -169,7 +169,7 @@ def init(host, access_token, client_id, path, project_name, workflow_id, locale,
 @click.option('-l', '--locale', help='Change the default source locale for the project')
 @click.option('-w', '--workflow_id', help='Change the default workflow id for the project')
 @click.option('-c', '--clone_option', help='Toggle clone download option \'on\' and \'off\'. Turning clone \'on\': Translations will be downloaded to a cloned folder structure, where the root folder for each locale is the locale folder specified in config or a locale folder inside of the default download folder. If a default download folder is not set, then translations will be downloaded to the directory where the project was initialized.' +
-                                                'Turning clone \'off\': If a download folder is specified, downloaded translations will download to that folder, but not in a cloned folder structure. If no download folder is specified, downloaded translations will go to the same folder as their corresponding source files.')
+                                                'Turning clone \'off\': Downloaded translations will go into their locale folder (if specified) or default download folder, but not in a cloned folder structure. If no default download folder or locale folder is specified, downloaded translations will go to the same folder as their corresponding source files.')
 @click.option('-ff', '--finalized_file', help='Toggle finalized file download option \'on\' and \'off\'. Turning finalized file on downloads the finalized file instead of the raw translation.\
                                                 A finalized file is typically a file that has undergone some sort of post editing like Desktop Publishing after the translation has compeleted.')
 @click.option('-u', '--unzip_file', help='Toggle finalized file UNZIP option \'on\' and \'off\'. With this option \'on\' contents of the finalized file will be placed in the expected directory.')
@@ -179,12 +179,16 @@ def init(host, access_token, client_id, path, project_name, workflow_id, locale,
               help='Specify target locales that documents in watch_folder should be assigned; may either specify '
                    'with multiple -t flags (ex: -t locale -t locale) or give a list separated by commas and no spaces '
                    '(ex: -t locale,locale)')
+
 @click.option('-p', '--locale_folder', nargs=2, type=str, multiple=True, help='For a specific locale, specify the root folder where downloaded translations should appear. Use --none for the path to clear the download folder for a specific locale. Example: -p fr_FR translations/fr_FR. Note: This only works with clone option \'on\'')
 @click.option('-r', '--remove_locales', flag_value=True, help='Remove all locale folders and use the default download location instead.')
 @click.option('-g', '--git', help='Toggle Git auto-commit option on and off')
 @click.option('-gu', '--git_credentials', is_flag=True, help='Open prompt for Git credentials for auto-fill (\'none\' to unset); only enabled for Mac and Linux')
 @click.option('-a', '--append_option', help='Change the format of the default name given to documents on the Lingotek system.  Define file information to append to document names as none, full, number:+a number of folders down to include (e.g. number:2), or name:+a name of a directory to start after if found in file path (e.g. name:dir). Default option is none.')
 @click.option('-f', '--auto_format', help='Toggle auto format option \'on\' and \'off\'. Applies formatting during download.')
+@click.option('-md', '--metadata_defaults', is_flag=True, help='Launch the wizard to set the default metadata.')
+@click.option('-mp', '--metadata_prompt', help='Toggle prompting for metadata with every add and push.  Use the argument \'on\' to enable this prompt or \'off\' to disable it.')
+@click.option('-mf', '--metadata_fields', help="Set the fields that will be asked for when adding or changing metadata.  All default metadata will still be sent.  Enter the fields to prompt for as a comma-separated list with no spaces, or enter 'all' to include all fields or 'none' to include no fields.  Valid fields are: "+', '.join(str(field) for field in METADATA_FIELDS))
 
 def config(**kwargs):
     """ View or change local configuration """
@@ -205,10 +209,11 @@ def config(**kwargs):
 @ltk.command(short_help="Add files and folders")
 @click.argument('file_names', required=True, nargs=-1)
 @click.option('-d', '--directory', flag_value=True, help='Only add directories, not files inside directories')
-@click.option('-s', '--srx', type=click.Path(exists=True), help='srx file')
 @click.option('-l', '--locale', help='If source locale is different from the default configuration. Use ltk list -l to see possible locales')
 @click.option('-f', '--format',
               help="Format of file; if not specified, will use extension to detect; defaults to plaintext. Use ltk list -f to see possible formats. Files may not be added to Lingotek's system if not formatted correctly according to the specified format")
+@click.option('-D', '--download_folder', type=click.Path(exists=True), help='Download folder for the translations for this file.  If set, it will take precedence over locale folders and the default download folder and will ignore clone as well as the no_ext argument when pulling/downloading')
+@click.option('-o', '--overwrite', flag_value=True, help='Overwrite previously added file if the file has been modified')
 @click.option('-s', '--srx', type=click.Path(exists=True), help='srx file')
 @click.option('-si', '--srx_id', help='srx id')
 @click.option('-i', '--its', type=click.Path(exists=True), help='its file')
@@ -220,33 +225,8 @@ def config(**kwargs):
 @click.option('-fsi', '--fprm_subfilter_id', help='fprm subfilter id')
 @click.option('-v', '--vault_id', help='Save-to TM vault id')
 @click.option('-e', '--external_url', help='Source url')
-@click.option('--note', help='Note')
-
-# Metadata - optional parameters
-@click.option('--author_email', help='Author email')
-@click.option('--author_name', help='Author name')
-@click.option('--business_division', help='Business division')
-@click.option('--business_unit', help='Business unit')
-@click.option('--campaign_id', help='Campaign ID')
-@click.option('--campaign_rating', help='Campaign rating')
-@click.option('--channel', help='Channel')
-@click.option('--contact_email', help='Contact email')
-@click.option('--contact_name', help='Contact name')
-@click.option('--content_description', help='Content description')
-@click.option('--content_type', help='Content type')
-@click.option('--domain', help='Domain')
-@click.option('--due_date', help='Due date (as Unix timestamp, in milliseconds)')
-@click.option('--due_reason', help='Reason for due date')
-@click.option('--external_application_id', help='External application ID')
-@click.option('--external_document_id', help='External document ID')
-@click.option('--external_style_id', help='External style ID')
-@click.option('--purchase_order', help='Purchase Order')
-@click.option('--reference_url', help='Reference URL')
-@click.option('--region', help='Region')
-@click.option('--require_review', help='Require review')
-@click.option('--category_id', help='Category ID')
-
-@click.option('-o', '--overwrite', flag_value=True, help='Overwrite previously added file if the file has been modified')
+@click.option('-m', '--metadata', flag_value=True, help="Prompts to send metadata with the document(s).  Answering 'no' will also not send default metadata.  Answering 'yes' will start the metadata wizard to set the metadata to send")
+@click.option('--fields', help="Only use this with the -m or --metadata flag.  Enter a comma-separated list with no spaces of metadata fields to send, or enter 'all' to send all fields or 'none' to send no fields.  This overrides the fields set in the configuration.\nValid fields are: "+', '.join(str(field) for field in METADATA_FIELDS))
 
 def add(file_names, **kwargs):
     """ Add files and folders for upload to Lingotek.  Fileglobs (e.g. *.txt) can be used to add all matching files and/or folders. Added folders will automatically add the new files added or created inside of them.  """
@@ -267,16 +247,21 @@ def add(file_names, **kwargs):
         logger.error(e)
         return
 
-@ltk.command(short_help="Sends updated content to Lingotek for documents that have been added")
+@ltk.command(short_help="Sends updated content to Lingotek for documents that have been added; defaults to the entire project.")
 @click.option('-n', '--test', 'test', flag_value=True, help='Shows which files will be added or updated without actually uploading any content')
 @click.option('-t', '--title', 'title', flag_value=True, help='Display document titles rather than file paths')
-def push(test, title):
-    """ Sends updated content to Lingotek for documents that have been added """
+@click.argument('files', type=click.Path(exists=True), required=False, nargs=-1)
+@click.option('-m', '--metadata', flag_value=True, help="Prompts to send metadata with the document(s).  Answering 'no' will also not send default metadata.  Answering 'yes' will start the metadata wizard to set the metadata to send")
+@click.option('-o', '--metadata-only', 'metadata_only', flag_value=True, help="Only updates the metadata and does not update the document contents")
+@click.option('--fields', help="Only use this with the -m or --metadata flag.  Enter a comma-separated list with no spaces of metadata fields to send, or enter 'all' to send all fields or 'none' to send no fields.  This overrides the fields set in the configuration.\nValid fields are: "+', '.join(str(field) for field in METADATA_FIELDS))
+
+def push(test, title, files, metadata, metadata_only, fields):
+    """ Sends updated content to Lingotek for documents that have been added.  Fileglobs (e.g. *.txt) can be used to push all matching files """
     try:
         add = add_action.AddAction(os.getcwd())
         action = push_action.PushAction(add, os.getcwd(), test, title)
         init_logger(action.path)
-        action.push_action()
+        action.push_action(files=files, send_metadata=metadata, metadata_only=metadata_only, use_fields=fields)
     except UninitializedError as e:
         print_log(e)
         logger.error(e)
@@ -318,6 +303,7 @@ def request(doc_name, path, locales, to_cancel, to_delete, due_date, workflow):
 @click.option('-f', '--formats', 'id_type', flag_value='format', help='List supported formats')
 @click.option('-r', '--remote', 'id_type', flag_value='remote', help='List all project documents on Lingotek Cloud')
 @click.option('--filters', 'id_type', flag_value='filter', help='List default and custom filters')
+@click.option('-d', '--download_folder', 'show_dests', flag_value=True, help="Show target download folders for files that have had them set")
 def list(**kwargs):
     """ Shows docs, workflows, locales, formats, or filters. By default lists added folders and docs. """
     try:
@@ -534,7 +520,7 @@ def clone(folders, copy_root):
 
 @ltk.command(short_help="Watches local and remote files")
 # @click.option('-p', '--path', type=click.Path(exists=True), multiple=True, help='Specify a folder to watch. Use option multiple times to specify multiple folders.')
-@click.option('--ignore', multiple=True, help='Specify types of files to ignore')
+@click.option('--ignore', multiple=True, help='Specify types of files to ignore.  For multiple types, specify this flag multiple times.  For example, to ignore pdf and html files, use "ltk watch --ignore .pdf --ignore .html"')
 @click.option('--auto', 'delimiter', help='Automatically detects locale from the file name; specify locale delimiter')
 @click.option('-t', '--timeout', type=click.INT, default=60,
               help='The amount of time watch will sleep between polls, in seconds. Defaults to 1 minute')
@@ -542,8 +528,9 @@ def clone(folders, copy_root):
 @click.option('-f','--force_poll', flag_value=True, help='Force API calls to Lingotek system at every poll for every document')
 def watch(ignore, delimiter, timeout, no_folders, force_poll): # path, ignore, delimiter, timeout, no_folders):
     """
-    Watches local files added or imported by ltk, and sends a PATCH when a document is changed.
+    Watches local files added by ltk, and sends a PATCH when a document is changed.
     Also watches remote files, and automatically downloads finished translations.
+    Automatically adds documents that are added to the watchfolder.  Note: The add is performed without extra options (no srx id, no download folder, etc.)
     """
     try:
         action = WatchAction(os.getcwd(), timeout)
@@ -634,6 +621,71 @@ def filter_rm(filter_id):
 
 ltk.add_command(filters)
 
+@click.group(short_help="Manages reference material attached to documents.")
+def reference():
+    pass
+
+@reference.command(name='add', short_help="Uploads reference material and attaches it to a document.")
+@click.argument('filename')
+@click.option('-i', '--id', 'doc_id', flag_value=True, help="Adds reference material to the specified document ID instead of the specified filename.")
+def reference_add(filename, doc_id):
+    """Adds reference material to a document on Lingotek."""
+    try:
+        action = reference_action.ReferenceAction(os.getcwd())
+        init_logger(action.path)
+        action.reference_add_action(filename, doc_id)
+    except (UninitializedError, RequestFailedError) as e:
+        print_log(e)
+        logger.error(e)
+        return
+
+@reference.command(name='list', short_help="Lists the reference material that is currently attached to a document.")
+@click.argument('filename')
+@click.option('-i', '--id', 'doc_id', flag_value=True, help="Lists reference material attached to the specified document ID instead of the specified filename.")
+def reference_list(filename, doc_id):
+    """Lists reference material attached to a document on Lingotek."""
+    try:
+        action = reference_action.ReferenceAction(os.getcwd())
+        init_logger(action.path)
+        action.reference_list_action(filename, doc_id)
+    except (UninitializedError, RequestFailedError) as e:
+        print_log(e)
+        logger.error(e)
+        return
+
+@reference.command(name='get', short_help="Downloads reference material that is currently attached to a document.")
+@click.argument('filename')
+@click.option('-i', '--id', 'doc_id', flag_value=True, help="Downloads reference material attached to the specified document ID instead of the specified filename.")
+@click.option('-a', '--all', 'get_all', flag_value=True, help="Skips the prompt and downloads all the reference material that is attached to the document.")
+@click.option('-p', '--path', type=click.Path(exists=True), help='Download reference material to a specified path')
+def reference_get(filename, doc_id, get_all, path):
+    """Downloads reference material attached to a document on Lingotek.  Defaults to downloading them to the root of the project"""
+    try:
+        action = reference_action.ReferenceAction(os.getcwd())
+        init_logger(action.path)
+        action.reference_download_action(filename, doc_id, get_all, path)
+    except (UninitializedError, RequestFailedError) as e:
+        print_log(e)
+        logger.error(e)
+        return
+
+#Commenting out pending an API fix
+# @reference.command(name='remove', short_help="Removes reference material that is currently attached to a document.")
+# @click.argument('filename')
+# @click.option('-i', '--id', 'doc_id', flag_value=True, help="Removes reference material from the specified document ID instead of the specified filename.")
+# @click.option('-a', '--all', 'remove_all', flag_value=True, help="Skips the prompt and removes all the reference material from the document.")
+# def reference_remove(filename, doc_id, remove_all):
+#     """Deletes reference material attached to a document on Lingotek."""
+#     try:
+#         action = reference_action.ReferenceAction(os.getcwd())
+#         init_logger(action.path)
+#         action.reference_remove_action(filename, doc_id, remove_all)
+#     except (UninitializedError, RequestFailedError) as e:
+#         print_log(e)
+#         logger.error(e)
+#         return
+
+ltk.add_command(reference)
 
 if __name__ == '__main__':
     ltk()

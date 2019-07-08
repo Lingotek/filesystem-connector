@@ -110,11 +110,11 @@ class InitAction():
             # create the config file and add info
             config_file = open(config_file_name, 'w')
 
-            config_parser = ConfigParser()
-            config_parser.add_section('main')
-            config_parser.set('main', 'access_token', access_token)
-            config_parser.set('main', 'host', host)
-            # config_parser.set('main', 'root_path', project_path)
+            self.config_parser = ConfigParser()
+            self.config_parser.add_section('main')
+            self.config_parser.set('main', 'access_token', access_token)
+            self.config_parser.set('main', 'host', host)
+            # self.config_parser.set('main', 'root_path', project_path)
             # get community id
             community_info = self.api.get_communities_info()
             if not community_info:
@@ -137,7 +137,7 @@ class InitAction():
                     community_id = id
                 #community_id = community_info.iterkeys().next()  --- iterkeys() is not in python 3
             if community_id != None:
-                config_parser.set('main', 'community_id', community_id)
+                self.config_parser.set('main', 'community_id', community_id)
                 response = self.api.list_projects(community_id)
                 if response.status_code == 204:#no projects in community
                     project_info = []
@@ -161,13 +161,13 @@ class InitAction():
                     else:
                         logger.info('There are no projects')
                     if project_id != None:
-                        config_parser.set('main', 'project_id', project_id)
+                        self.config_parser.set('main', 'project_id', project_id)
                         if project_name != None:
-                            config_parser.set('main', 'project_name', project_name)
+                            self.config_parser.set('main', 'project_name', project_name)
                     if not project_id:
                         project_id, project_name = self.create_new_project(folder_name, community_id, workflow_id)
-                        config_parser.set('main', 'project_id', project_id)
-                        config_parser.set('main', 'project_name', project_name)
+                        self.config_parser.set('main', 'project_id', project_id)
+                        self.config_parser.set('main', 'project_name', project_name)
 
                 except KeyboardInterrupt:
                     # Python 2
@@ -185,7 +185,7 @@ class InitAction():
                 workflow_id, workflow_updated = self.set_workflow(community_id, project_id)
                 if(workflow_updated):
                     self.api.patch_project(project_id, workflow_id)
-                config_parser.set('main', 'workflow_id', workflow_id)
+                self.config_parser.set('main', 'workflow_id', workflow_id)
 
                 # print out locale codes
                 logger.info('---------------------------')
@@ -195,22 +195,22 @@ class InitAction():
 
                 # get source locale
                 selected_source_locale = self.set_source_locale()
-                config_parser.set('main', 'default_locale', selected_source_locale)
+                self.config_parser.set('main', 'default_locale', selected_source_locale)
 
                 # get target locale(s)
                 target_locales = self.set_target_locales()
-                config_parser.set('main', 'watch_locales', target_locales)
+                self.config_parser.set('main', 'watch_locales', target_locales)
 
                 # get download location
                 download_path = self.set_download_path(project_path)
-                config_parser.set('main', 'download_folder', download_path)
+                self.config_parser.set('main', 'download_folder', download_path)
 
                 # ask about advanced settings
                 if(self.prompt_advanced_settings() == True):
-                    self.show_advanced_settings(config_parser)
+                    self.show_advanced_settings()
 
                 logger.info("\nAll finished. Use ltk -h to learn more about using Lingotek Filesystem Connector.")
-                config_parser.write(config_file)
+                self.config_parser.write(config_file)
                 config_file.close()
         except KeyboardInterrupt:
             # Python 2
@@ -226,17 +226,17 @@ class InitAction():
             else:
                 logger.error("Error on init: "+str(e))
 
-    def show_advanced_settings(self, config_parser):
+    def show_advanced_settings(self):
         # git auto-commit
         username, encrypted_password = self.set_git_autocommit()
         if not username == None and not encrypted_password == None:
-            config_parser.set('main', 'git_autocommit', 'on')
-            config_parser.set('main', 'git_username', username)
-            config_parser.set('main', 'git_password', encrypted_password)
+            self.config_parser.set('main', 'git_autocommit', 'on')
+            self.config_parser.set('main', 'git_username', username)
+            self.config_parser.set('main', 'git_password', encrypted_password)
         else:
-            config_parser.set('main', 'git_autocommit', 'off')
-            config_parser.set('main', 'git_username', '')
-            config_parser.set('main', 'git_password', '')
+            self.config_parser.set('main', 'git_autocommit', 'off')
+            self.config_parser.set('main', 'git_username', '')
+            self.config_parser.set('main', 'git_password', '')
 
         # toggle clone on/off
         print("\n--------------------------------")
@@ -244,9 +244,9 @@ class InitAction():
         print("Toggle clone download option \'on\' and \'off\'.\n\nTurning clone \'on\': Translations will be downloaded to a cloned folder structure, where the root folder for each locale is the locale folder specified in config or a locale folder inside of the default download folder. If a default download folder is not set, then translations will be downloaded to the directory where the project was initialized.\n\nTurning clone \'off\': If a download folder is specified, downloaded translations will download to that folder, but not in a cloned folder structure. If no download folder is specified, downloaded translations will go to the same folder as their corresponding source files.")
         self.turn_clone_on = self.set_clone_option()
         if self.turn_clone_on:
-            config_parser.set('main', 'clone_option', 'on')
+            self.config_parser.set('main', 'clone_option', 'on')
         else:
-            config_parser.set('main', 'clone_option', 'off')
+            self.config_parser.set('main', 'clone_option', 'off')
 
         # toggle auto-format on/off
         print("--------------------------------")
@@ -254,9 +254,9 @@ class InitAction():
         print("Toggle auto format option \'on\' and \'off\'. Applies formatting during download.")
         turn_auto_format_on = self.set_auto_format_option()
         if turn_auto_format_on:
-            config_parser.set('main', 'auto_format', 'on')
+            self.config_parser.set('main', 'auto_format', 'on')
         else:
-            config_parser.set('main', 'auto_format', 'off')
+            self.config_parser.set('main', 'auto_format', 'off')
 
         # change append options
         print("--------------------------------")
@@ -264,7 +264,7 @@ class InitAction():
         print('Change the format of the default name given to documents on the Lingotek system.\nDefine file information to append to document names as none, full, number:+a number of folders down to include (e.g. number:2), or name:+a name of a directory to start after if found in file path (e.g. name:dir). Default option is none.')
         append_option = self.set_append_option()
         if not append_option == None:
-            config_parser.set('main', 'append_option', append_option)
+            self.config_parser.set('main', 'append_option', append_option)
 
         # Toggle finalized file download option
         print("\n--------------------------------")
@@ -272,14 +272,21 @@ class InitAction():
         print("Toggle finalized file download option 'on' or 'off'. Turning this option on downloads the finalized file instaed of the raw translation. " +
               "A finalized file is typically a file that has undergone some sort of post editing like Desktop Publishing after the translation has completed.")
         self.finalized_file = self.set_finalized_file_option()
-        config_parser.set('main', 'finalized_file', self.finalized_file)
+        self.config_parser.set('main', 'finalized_file', self.finalized_file)
 
         if self.finalized_file == 'on':
             print("\n--------------------------------")
             print("UNZIP FINALIZED FILE:")
             print("Toggle UNZIP finalized file option 'on' or 'off'. Turning this option on unzips the file from TMS. Turning it off leaves the file unzipped.")
             self.unzip_file = self.prompt_unzip_file_option()
-            config_parser.set('main', 'unzip_file', self.unzip_file)
+            self.config_parser.set('main', 'unzip_file', self.unzip_file)
+
+        # Set default metadata
+        print("--------------------------------")
+        print("METADATA:")
+        self.set_metadata_defaults()
+        self.set_metadata_prompt()
+        self.set_metadata_fields()
 
     def check_global(self, host):
         # check for a global config file and return the access token
@@ -346,16 +353,8 @@ class InitAction():
             if not delete:
                 return False
             try:
-                confirm = 'not confirmed'
-                while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-                    prompt_message = "Are you sure you want to delete the current project? " + \
-                        "This will also delete the project in your community. [Y/n]: "
-                    # Python 2
-                    confirm = raw_input(prompt_message)
-                    # End Python 2
-                    # Python 3
-#                     confirm = input(prompt_message)
-                    # End Python 3
+                option = yes_no_prompt("Are you sure you want to delete the current project? " + \
+                        "This will also delete the project in your community.", default_yes=True)
             except KeyboardInterrupt:
                 # Python 2
                 logger.info("\nRenit canceled")
@@ -365,9 +364,7 @@ class InitAction():
                 # End Python 3
                 return
             # confirm if deleting existing folder
-            if not confirm or confirm in ['n', 'N']:
-                return False
-            else:
+            if option:
                 # delete the corresponding project online
                 logger.info('Deleting old project folder and creating new one...')
                 config_file_name = os.path.join(project_path, CONF_DIR, CONF_FN)
@@ -390,6 +387,8 @@ class InitAction():
                 else:
                     raise exceptions.ResourceNotFound("Cannot find config file, please re-initialize project")
                 return access_token
+            else:
+                return False
         return True
 
     def create_global(self, access_token, host):
@@ -400,9 +399,9 @@ class InitAction():
             # go to the home dir
             home_path = os.path.expanduser('~')
             file_name = os.path.join(home_path, SYSTEM_FILE)
-            config_parser = ConfigParser()
+            global_parser = ConfigParser()
             if os.path.isfile(file_name):
-                config_parser.read(file_name)
+                global_parser.read(file_name)
                 # if on Windows, temporarily unhide the .lingotek file so we can write to it
                 if os.name == 'nt':
                     try:
@@ -411,15 +410,15 @@ class InitAction():
                         logger.error("Error on init: "+str(e))
             sys_file = open(file_name, 'w')
 
-            if config_parser.has_section(host):
-                config_parser.set(host, 'access_token', access_token)
-                config_parser.set(host, 'host', host)
+            if global_parser.has_section(host):
+                global_parser.set(host, 'access_token', access_token)
+                global_parser.set(host, 'host', host)
             else:
-                config_parser.add_section(host)
-                config_parser.set(host, 'access_token', access_token)
-                config_parser.set(host, 'host', host)
+                global_parser.add_section(host)
+                global_parser.set(host, 'access_token', access_token)
+                global_parser.set(host, 'host', host)
 
-            config_parser.write(sys_file)
+            global_parser.write(sys_file)
             sys_file.close()
         except Exception as e:
             logger.error("Error on init: "+str(e))
@@ -684,41 +683,30 @@ class InitAction():
             return norm_path
         else:
             return None
-        # go to the home dir
-        home_path = os.path.expanduser('~')
-        file_name = os.path.join(home_path, SYSTEM_FILE)
-        config_parser = ConfigParser()
-        if os.path.isfile(file_name):
-            config_parser.read(file_name)
-        sys_file = open(file_name, 'w')
-
-        if config_parser.has_section(host):
-            config_parser.set(host, 'access_token', access_token)
-            config_parser.set(host, 'host', host)
-        else:
-            config_parser.add_section(host)
-            config_parser.set(host, 'access_token', access_token)
-            config_parser.set(host, 'host', host)
-
-        config_parser.write(sys_file)
-        sys_file.close()
+#This can never be reached.  Commenting it out for now
+#        # go to the home dir
+#        home_path = os.path.expanduser('~')
+#        file_name = os.path.join(home_path, SYSTEM_FILE)
+#        self.config_parser = ConfigParser()
+#        if os.path.isfile(file_name):
+#            self.config_parser.read(file_name)
+#        sys_file = open(file_name, 'w')
+#
+#        if self.config_parser.has_section(host):
+#            self.config_parser.set(host, 'access_token', access_token)
+#            self.config_parser.set(host, 'host', host)
+#        else:
+#            self.config_parser.add_section(host)
+#            self.config_parser.set(host, 'access_token', access_token)
+#            self.config_parser.set(host, 'host', host)
+#
+#        self.config_parser.write(sys_file)
+#        sys_file.close()
 
 
     def prompt_advanced_settings(self):
         try:
-            confirm = 'none'
-            while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-                prompt_message = 'Would you like to configure advanced options? [y/N]: '
-                # Python 2
-                confirm = raw_input(prompt_message)
-                # End Python 2
-                # Python 3
-#                 confirm = input(prompt_message)
-                # End Python 3
-            if confirm in ['n', 'N', 'no', 'No', '']:
-                return False
-            else:
-                return True
+            return yes_no_prompt('Would you like to configure advanced options?', default_yes=False)
         except KeyboardInterrupt:
             # Python 2
             logger.info("\nInit canceled")
@@ -732,19 +720,11 @@ class InitAction():
 
     def set_git_autocommit(self):
         try:
-            confirm = 'none'
             if not(os.name == 'nt'):
-                while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-                    prompt_message = 'Would you like to use Git auto-commit? [y/N]: '
-                    # Python 2
-                    confirm = raw_input(prompt_message)
-                    # End Python 2
-                    # Python 3
-#                     confirm = input(prompt_message)
-                    # End Python 3
-                    if not confirm in ['n', 'N', 'no', 'No', '']:
-                        # get git credentials
-                        return self.get_git_credentials()
+                option = yes_no_prompt('Would you like to use Git auto-commit?', default_yes=False)
+                if option:
+                    # get git credentials
+                    return self.get_git_credentials()
 
         except KeyboardInterrupt:
             # Python 2
@@ -861,18 +841,10 @@ class InitAction():
     def set_append_option(self):
         append_option = None
         try:
-            confirm = 'none'
-            while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-                prompt_message = 'Would you like to change the append options? [y/N]: '
-                # Python 2
-                confirm = raw_input(prompt_message)
-                # End Python 2
-                # Python 3
-#                 confirm = input(prompt_message)
-                # End Python 3
-                if confirm in ['y', 'yes', 'Yes']:
-                    option = self.get_user_append_option()
-                    return append_option
+            option = yes_no_prompt('Would you like to change the append options?', default_yes=False)
+            if option:
+                option = self.get_user_append_option()
+                return append_option
 
         except KeyboardInterrupt:
             # Python 2
@@ -976,3 +948,69 @@ class InitAction():
             return
 
         return unzip_file
+
+    def set_metadata_defaults(self):
+        print("Set default metadata to be sent with every document that is uploaded to Lingotek.")
+        try:
+            option = yes_no_prompt('Would you like to set default metadata?', default_yes=False)
+            if option:
+                metadata = Action.metadata_wizard(Action, METADATA_FIELDS, set_defaults=True)
+            else:
+                metadata = {}
+            self.config_parser.set('main', 'default_metadata', json.dumps(metadata))
+            logger.info("Default metadata set to {0}".format(metadata))
+
+        except KeyboardInterrupt:
+            # Python 2
+            logger.info("\nInit canceled")
+            # End Python 2
+            # Python 3
+#             logger.error("\nInit canceled")
+            # End Python 3
+            return    
+
+    def set_metadata_prompt(self):
+        print("Toggle an automatic prompt for metadata with every document upload/update.  Turning this on will display a prompt every time an add or push command is run that asks if metadata should be sent, and if it should be sent, it gives the option to define the metadata.  Leaving this off will require a command flag to be used to send metadata.")
+        try:
+            option = yes_no_prompt('Would you like to always prompt for metadata?', default_yes=False)
+            if option:
+                self.config_parser.set('main', 'metadata_prompt', 'on')
+                logger.info("Metadata prompting set to ON")
+            else:
+                self.config_parser.set('main', 'metadata_prompt', 'off')
+                logger.info("Metadata prompting set to OFF")
+
+        except KeyboardInterrupt:
+            # Python 2
+            logger.info("\nInit canceled")
+            # End Python 2
+            # Python 3
+#             logger.error("\nInit canceled")
+            # End Python 3
+            return
+
+    def set_metadata_fields(self):
+        print("Set the fields that will be displayed when adding, editing, and viewing document metadata.  The possible fields are:\n")
+        print(', '.join(str(field) for field in METADATA_FIELDS)+"\n")
+        try:
+            valid = False
+            while not valid:
+                prompt_message = "Enter a comma-separated list of fields to include, or enter 'all' to include all fields or 'none' to include no fields: "
+                # Python 2
+                options = raw_input(prompt_message)
+                # End Python 2
+                # Python 3
+#                 options = input(prompt_message)
+                # End Python 3
+                valid, fields = Action.validate_metadata_fields(Action, options)
+            self.config_parser.set('main', 'metadata_fields', json.dumps(fields))
+            logger.info("Metadata fields set to {0}".format(fields))
+
+        except KeyboardInterrupt:
+            # Python 2
+            logger.info("\nInit canceled")
+            # End Python 2
+            # Python 3
+#             logger.error("\nInit canceled")
+            # End Python 3
+            return
