@@ -223,6 +223,7 @@ class Action:
             print(e)
 
     def metadata_wizard(self, fields, set_defaults=False):
+        import re
         new_metadata = {}
         if set_defaults:
             old_metadata = self.default_metadata
@@ -238,6 +239,26 @@ class Action:
 #                 new_value = input(prompt_message)
                 # End Python 3
                 if new_value:
+                    #validate campaign rating field, which is a number field with a maximum of seven digits and allows positive and negative numbers but no decimals
+                    if field == "campaign_rating":
+                        while not re.fullmatch('-?0*[0-9]{1,7}', new_value):
+                            print("Value must be an integer between -9999999 and 9999999")
+                            new_value = input(prompt_message)
+                            #allow blank value to not set/change the field in defaults
+                            if not new_value:
+                                break
+                        #catch -0 and convert it to 0
+                        if re.fullmatch('-0+', new_value):
+                            new_value = "0"
+                    #validate require review field, which is either true or false
+                    elif field == "require_review":
+                        while new_value.upper() != "TRUE" and new_value.upper() != "FALSE":
+                            print("Value must be either TRUE or FALSE")
+                            new_value = input(prompt_message)
+                            #allow blank value to not set/change the field in defaults
+                            if not new_value:
+                                break
+                if new_value: #check the value again in case it was unset during the special case validation
                     new_metadata[field] = new_value
             if len(old_metadata) > 0:
                 print("Default metadata was previously set for some fields that are not currently managed")
@@ -273,6 +294,26 @@ class Action:
 #                     new_value = input(prompt_message)
                     # End Python 3
                     if new_value:
+                        #validate campaign rating field, which is a number field with a maximum of seven digits and allows positive and negative numbers but no decimals
+                        if field == "campaign_rating":
+                            while not re.fullmatch('-?0*[0-9]{1,7}', new_value):
+                                print("Value must be an integer between -9999999 and 9999999")
+                                new_value = input(prompt_message)
+                                #allow blank value to not set the field to send
+                                if not new_value:
+                                    break
+                            #catch -0 and convert it to 0
+                            if re.fullmatch('-0+', new_value):
+                                new_value = "0"
+                        #validate require review field, which is either true or false
+                        elif field == "require_review":
+                            while new_value.upper() != "TRUE" and new_value.upper() != "FALSE":
+                                print("Value must be either TRUE or FALSE")
+                                new_value = input(prompt_message)
+                                #allow blank value to not set the field to send
+                                if not new_value:
+                                    break
+                    if new_value: #check the value again in case it was unset during the special case validation
                         new_metadata[field] = new_value
                 if not all(field in fields for field in self.default_metadata):
                     if yes_no_prompt("The default metadata contains metadata for fields that are not currently managed.  Would you like to include that metadata?", default_yes=False):
