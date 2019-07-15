@@ -203,7 +203,7 @@ class TestAdd(unittest.TestCase):
         file_name = 'sample.txt'
         self.added_files.append(file_name)
         create_txt_file(file_name)
-        with patch('builtins.input', side_effect = ['Y', 'N', 'alpha','beta','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','']):
+        with patch('builtins.input', side_effect = ['alpha','beta','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','']):
             self.action.add_action([file_name], metadata=True)
         doc_id = self.action.doc_manager.get_doc_ids()[0]
 
@@ -221,5 +221,32 @@ class TestAdd(unittest.TestCase):
             elif field == METADATA_FIELDS[1]:
                 assert field in properties
                 assert properties[field] == 'beta'
+            else:
+                assert field not in properties
+
+    def test_add_default_metadata(self):
+        file_name = 'sample.txt'
+        self.added_files.append(file_name)
+        create_txt_file(file_name)
+
+        #set default metadata directly instead of using the config action so the config action can be tested in its own unit test
+        self.action.default_metadata[METADATA_FIELDS[2]] = 'delta'
+        self.action.default_metadata[METADATA_FIELDS[3]] = 'gamma'
+        
+        self.action.add_action([file_name])
+        doc_id = self.action.doc_manager.get_doc_ids()[0]
+
+        # check that document is added to Lingotek
+        assert poll_doc(self.action, doc_id)
+
+        #check that the metadata is attached to the document
+        properties = self.action.api.get_document(doc_id).json()['properties']
+        for field in METADATA_FIELDS:
+            if field == METADATA_FIELDS[2]:
+                assert field in properties
+                assert properties[field]== 'delta'
+            elif field == METADATA_FIELDS[3]:
+                assert field in properties
+                assert properties[field] == 'gamma'
             else:
                 assert field not in properties

@@ -259,7 +259,7 @@ def push(test, title, files, metadata, metadata_only):
         add = add_action.AddAction(os.getcwd())
         action = push_action.PushAction(add, os.getcwd(), test, title)
         init_logger(action.path)
-        action.push_action(files=files, send_metadata=metadata, metadata_only=metadata_only)
+        action.push_action(files=files, set_metadata=metadata, metadata_only=metadata_only)
     except UninitializedError as e:
         print_log(e)
         logger.error(e)

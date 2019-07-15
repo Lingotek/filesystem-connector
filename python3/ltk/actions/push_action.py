@@ -7,10 +7,10 @@ class PushAction(Action):
         self.title = title
         self.test = test
 
-    def push_action(self, files=None, send_metadata=False, metadata_only=False):
+    def push_action(self, files=None, set_metadata=False, metadata_only=False):
         self.metadata_only = metadata_only
-        self.metadata = self.default_metadata
-        if send_metadata:
+        self.metadata = copy.deepcopy(self.default_metadata)
+        if set_metadata:
             self.metadata = self.metadata_wizard()
         elif self.metadata_prompt:
             if yes_no_prompt('Would you like to launch the metadata wizard?', default_yes=True):
@@ -72,7 +72,7 @@ class PushAction(Action):
                     updated += 1 # would be updated
                     print('Update {0}'.format(display_name))
                     continue
-                if self.metadata_only:
+                if self.metadata_only or not self.doc_manager.is_doc_modified(entry['file_name'], self.path):
                     response = self.api.document_update(entry['id'], doc_metadata=self.metadata)
                 else:
                     response = self.api.document_update(entry['id'], os.path.join(self.path, entry['file_name']), doc_metadata=self.metadata)
@@ -114,7 +114,7 @@ class PushAction(Action):
                         updated += 1 # would be updated
                         print('Update {0}'.format(display_name))
                         continue
-                    if self.metadata_only:
+                    if self.metadata_only or not self.doc_manager.is_doc_modified(entry['file_name'], self.path):
                         response = self.api.document_update(entry['id'], doc_metadata=self.metadata)
                     else:
                         response = self.api.document_update(entry['id'], os.path.join(self.path, entry['file_name']), doc_metadata=self.metadata)

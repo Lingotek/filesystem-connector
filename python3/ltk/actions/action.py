@@ -12,6 +12,7 @@ import fnmatch
 import time
 import getpass
 import itertools
+import copy
 from ltk import exceptions
 from ltk.apicalls import ApiCalls
 from ltk.utils import *
@@ -230,9 +231,9 @@ class Action:
             prompt_message = "Default Value: "
         else:
             fields = self.metadata_fields
-            new_metadata = self.default_metadata
+            new_metadata = copy.deepcopy(self.default_metadata) 
             prompt_message = "Value: "
-            if all (field in self.metadata_fields for field in fields):
+            if all (field in self.default_metadata for field in fields):
                 print("All fields have default metadata already set")
                 for field in fields:
                     print(field,": ",self.default_metadata[field])

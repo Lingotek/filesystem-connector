@@ -192,9 +192,8 @@ class TestPush(unittest.TestCase):
 
     def test_push_metadata(self):
         from unittest.mock import patch
-        with patch('builtins.input', side_effect = ['Y', 'N', 'alpha','beta','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','']):
-            self.action.push_action(send_metadata=True)
-
+        with patch('builtins.input', side_effect = ['alpha','beta','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','']):
+            self.action.push_action(set_metadata=True)
         #check that the metadata is attached to the documents
         for doc_id in self.action.doc_manager.get_doc_ids():
             properties = self.action.api.get_document(doc_id).json()['properties']
@@ -206,7 +205,8 @@ class TestPush(unittest.TestCase):
                     assert field in properties
                     assert properties[field] == 'beta'
                 else:
-                    if field == 'require_review': #for some reason, the PATCH call adds some False or None values where metadata wasn't set.  Values are kept if they are set, so everything works, we just need to check for fields that are returned that we didn't set.
+                    #for some reason, the PATCH call adds some False or None values where metadata wasn't set.  Values are kept if they are set, so everything works, we just need to check for fields that are returned that we didn't set.
+                    if field == 'require_review':
                         assert not properties['require_review'] #should be False because it was set to an empty string
                         continue
                     if field == 'external_url':
@@ -215,8 +215,9 @@ class TestPush(unittest.TestCase):
                     assert field not in properties
 
         #modify the metadata
-        with patch('builtins.input', side_effect = ['Y', 'N', '','delta','gamma','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','']):
-            self.action.push_action(send_metadata=True)
+        with patch('builtins.input', side_effect = ['','delta','gamma','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','']):
+            self.action.push_action(set_metadata=True)
+
 
         #check that the metadata was updated
         for doc_id in self.action.doc_manager.get_doc_ids():
@@ -229,6 +230,32 @@ class TestPush(unittest.TestCase):
                     assert field in properties
                     assert properties[field] == 'delta'
                 elif field == METADATA_FIELDS[2]:
+                    assert field in properties
+                    assert properties[field] == 'gamma'
+                else:
+                    if field == 'require_review': #for some reason, the PATCH call adds some False or None values where metadata wasn't set.  Values are kept if they are set, so everything works, we just need to check for fields that are returned that we didn't set.
+                        assert not properties['require_review'] #should be False because it was set to an empty string
+                        continue
+                    if field == 'external_url':
+                        assert not properties['require_review'] #should be None because it was set to an empty string
+                        continue
+                    assert field not in properties
+
+    def test_push_default_metadata(self):
+        #set default metadata directly so the config action can be tested in its own unit test
+        self.action.default_metadata[METADATA_FIELDS[2]] = "delta"
+        self.action.default_metadata[METADATA_FIELDS[3]] = "gamma"
+        
+        self.action.push_action()
+
+        #check that the metadata is attached to the documents
+        for doc_id in self.action.doc_manager.get_doc_ids():
+            properties = self.action.api.get_document(doc_id).json()['properties']
+            for field in METADATA_FIELDS:
+                if field == METADATA_FIELDS[2]:
+                    assert field in properties
+                    assert properties[field]== 'delta'
+                elif field == METADATA_FIELDS[3]:
                     assert field in properties
                     assert properties[field] == 'gamma'
                 else:
@@ -281,8 +308,8 @@ class TestPush(unittest.TestCase):
         orig_dates = get_orig_dates(self.action, [test_doc_id]) #get the initial timestamp before modifying the document on the cloud
         assert orig_dates
         from unittest.mock import patch
-        with patch('builtins.input', side_effect = ['Y', 'N', 'alpha','beta','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','']):
-            self.action.push_action(send_metadata=True, metadata_only=True)
+        with patch('builtins.input', side_effect = ['alpha','beta','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','']):
+            self.action.push_action(set_metadata=True, metadata_only=True)
 
         #check that the file contents weren't updated
         print("polling to check that file wasn't modified.  This will take 3 minutes if successful.")

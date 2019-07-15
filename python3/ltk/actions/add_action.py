@@ -56,7 +56,7 @@ class AddAction(Action):
     def add_documents(self, matched_files, **kwargs):
         ''' adds new documents to the lingotek cloud and, after prompting user, overwrites changed documents that
                 have already been added '''
-        metadata = self.default_metadata
+        metadata = copy.deepcopy(self.default_metadata)
         if 'metadata' in kwargs and kwargs['metadata']:
             metadata = self.metadata_wizard()
         elif self.metadata_prompt:
