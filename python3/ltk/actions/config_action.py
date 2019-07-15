@@ -49,15 +49,15 @@ class ConfigAction(Action):
 
             if 'auto_format' in kwargs and kwargs['auto_format']:
                 self.set_auto_format_option(kwargs['auto_format'])
-
-            if 'metadata_fields' in kwargs and kwargs['metadata_fields']: #handle this before default metadata argument to be sure that the fields displayed are what the user wants if they did multiple arguments at once
-                self.set_metadata_fields(kwargs['metadata_fields'])
-
-            if 'metadata_defaults' in kwargs and kwargs['metadata_defaults']:
-                self.set_metadata_defaults()
             
             if 'metadata_prompt' in kwargs and kwargs['metadata_prompt']:
                 self.set_metadata_prompt(kwargs['metadata_prompt'])
+
+            if 'metadata_fields' in kwargs and kwargs['metadata_fields']:
+                self.set_metadata_fields(kwargs['metadata_fields'])
+
+            if 'metadata_defaults' in kwargs and kwargs['metadata_defaults']: #handle this last in case a prior argument caused an error
+                self.set_metadata_defaults()
 
             self.print_output()
 
@@ -418,7 +418,7 @@ class ConfigAction(Action):
         self.git_autocommit = self.conf_parser.get('main', 'git_autocommit')
 
     def set_metadata_defaults(self):
-        self.default_metadata = self.metadata_wizard(self.metadata_fields, set_defaults=True)
+        self.default_metadata = self.metadata_wizard(set_defaults=True)
         self.update_config_file('default_metadata', json.dumps(self.default_metadata), self.conf_parser, self.config_file_name, "Updated default metadata to {0}".format(self.default_metadata))
 
     def set_metadata_prompt(self, option):
@@ -434,10 +434,11 @@ class ConfigAction(Action):
     def set_metadata_fields(self, fields):
         if fields.lower() == 'all':
             self.metadata_fields = METADATA_FIELDS
-        elif fields.lower() == 'none':
-            self.metadata_fields = []
         else:
             new_fields = fields.split(",")
+            if len(new_fields) == 0 or fields.isspace():
+                logger.error("You must set at least one field")
+                return
             for field in new_fields:
                 if field not in METADATA_FIELDS:
                     logger.warning("{0} is not a valid metadata field".format(field))

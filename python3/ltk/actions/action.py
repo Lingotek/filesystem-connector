@@ -222,111 +222,69 @@ class Action:
             print(e.errno)
             print(e)
 
-    def metadata_wizard(self, fields, set_defaults=False):
+    def metadata_wizard(self, set_defaults=False):
         import re
-        new_metadata = {}
         if set_defaults:
-            old_metadata = self.default_metadata
-            for field in fields:
-                if field in old_metadata:
-                    del old_metadata[field]
-                print("\n===",field,"===")
-                prompt_message = "Set Default Value: "
-                # Python 2
-                # new_value = raw_input(prompt_message)
-                # End Python 2
-                # Python 3
-                new_value = input(prompt_message)
-                # End Python 3
-                if new_value:
-                    #validate campaign rating field, which is a number field with a maximum of seven digits and allows positive and negative numbers but no decimals
-                    if field == "campaign_rating":
-                        while not re.fullmatch('-?0*[0-9]{1,7}', new_value):
-                            print("Value must be an integer between -9999999 and 9999999")
-                            new_value = input(prompt_message)
-                            #allow blank value to not set/change the field in defaults
-                            if not new_value:
-                                break
-                        #catch -0 and convert it to 0
-                        if re.fullmatch('-0+', new_value):
-                            new_value = "0"
-                    #validate require review field, which is either true or false
-                    elif field == "require_review":
-                        while new_value.upper() != "TRUE" and new_value.upper() != "FALSE":
-                            print("Value must be either TRUE or FALSE")
-                            new_value = input(prompt_message)
-                            #allow blank value to not set/change the field in defaults
-                            if not new_value:
-                                break
-                if new_value: #check the value again in case it was unset during the special case validation
-                    new_metadata[field] = new_value
-            if len(old_metadata) > 0:
-                print("Default metadata was previously set for some fields that are not currently managed")
-                for field in old_metadata:
-                    print(field,": ",old_metadata[field])
-                if yes_no_prompt("Would you like to preserve this default metadata?", default_yes=False):
-                    for field in old_metadata:
-                        new_metadata[field] = old_metadata[field]
+            fields = METADATA_FIELDS
+            new_metadata = {}
+            prompt_message = "Default Value: "
         else:
-            if yes_no_prompt("Would you like to skip the metadata wizard and just send the default metadata?", default_yes=True):
-                if not all(field in fields for field in self.default_metadata):
-                    if yes_no_prompt("The default metadata contains metadata for fields that are not currently managed.  Would you like to include that metadata?", default_yes=False):
-                        new_metadata = self.default_metadata
-                    else:
-                        for field in fields:
-                            if field in self.default_metadata:
-                                new_metadata[field] = self.default_metadata[field]
-                else:
-                    new_metadata = self.default_metadata
-            else:
+            fields = self.metadata_fields
+            new_metadata = self.default_metadata
+            prompt_message = "Value: "
+            if all (field in self.metadata_fields for field in fields):
+                print("All fields have default metadata already set")
                 for field in fields:
-                    print("\n===",field,"===")
-                    if field in self.default_metadata:
-                        print("Default Value: {0}".format(self.default_metadata[field]))
-                        if yes_no_prompt("Would you like to use the default value?", default_yes=True):
-                            new_metadata[field] = self.default_metadata[field]
-                            continue
-                    prompt_message = "Value: "
-                    # Python 2
-                    # new_value = raw_input(prompt_message)
-                    # End Python 2
-                    # Python 3
+                    print(field,": ",self.default_metadata[field])
+                return self.default_metadata
+        for field in fields:
+            print("\n===",field,"===")
+            if field in self.default_metadata and self.default_metadata[field]:
+                if set_defaults:
+                    print("Current "+prompt_message,self.default_metadata[field])
+                    if not yes_no_prompt("Would you like to change the default value for this field?", default_yes=False):
+                        new_metadata[field] = self.default_metadata[field]
+                        continue
+                else:
+                    print(prompt_message,self.default_metadata[field])
+                    continue
+            # Python 2
+            # new_value = raw_input(prompt_message)
+            # End Python 2
+            # Python 3
+            new_value = input(prompt_message)
+            #End Python 3
+            if not new_value:
+                continue
+            #validate campaign rating field, which is a number field with a maximum of seven digits and allows positive and negative numbers but no decimals
+            if field == "campaign_rating":
+                while not re.fullmatch('-?0*[0-9]{1,7}', new_value):
+                    print("Value must be an integer between -9999999 and 9999999")
                     new_value = input(prompt_message)
-                    # End Python 3
-                    if new_value:
-                        #validate campaign rating field, which is a number field with a maximum of seven digits and allows positive and negative numbers but no decimals
-                        if field == "campaign_rating":
-                            while not re.fullmatch('-?0*[0-9]{1,7}', new_value):
-                                print("Value must be an integer between -9999999 and 9999999")
-                                new_value = input(prompt_message)
-                                #allow blank value to not set the field to send
-                                if not new_value:
-                                    break
-                            #catch -0 and convert it to 0
-                            if re.fullmatch('-0+', new_value):
-                                new_value = "0"
-                        #validate require review field, which is either true or false
-                        elif field == "require_review":
-                            while new_value.upper() != "TRUE" and new_value.upper() != "FALSE":
-                                print("Value must be either TRUE or FALSE")
-                                new_value = input(prompt_message)
-                                #allow blank value to not set the field to send
-                                if not new_value:
-                                    break
-                    if new_value: #check the value again in case it was unset during the special case validation
-                        new_metadata[field] = new_value
-                if not all(field in fields for field in self.default_metadata):
-                    if yes_no_prompt("The default metadata contains metadata for fields that are not currently managed.  Would you like to include that metadata?", default_yes=False):
-                        for field in self.default_metadata:
-                            if field not in new_metadata:
-                                new_metadata[field] = self.default_metadata[field]
+                    #allow blank value to not set/change the field in defaults
+                    if not new_value:
+                        break
+                if not new_value: #check if value was unset
+                    continue
+                #catch -0 and convert it to 0
+                if re.fullmatch('-0+', new_value):
+                    new_value = "0"
+            #validate require review field, which is either true or false
+            elif field == "require_review":
+                while new_value.upper() != "TRUE" and new_value.upper() != "FALSE":
+                    print("Value must be either TRUE or FALSE")
+                    new_value = input(prompt_message)
+                    #allow blank value to not set/change the field in defaults
+                    if not new_value:
+                        break
+                if not new_value: #check if value was unset
+                    continue
+            new_metadata[field] = new_value
         return new_metadata
 
     def validate_metadata_fields(self, field_options):
         if field_options.lower() == 'all' or field_options == '':
             return True, METADATA_FIELDS
-        elif field_options.lower() == 'none':
-            return True, []
         else:
             converted = field_options.replace(", ",",") #allows for a comma-separated list with or without a single space after commas
             options = converted.split(",")

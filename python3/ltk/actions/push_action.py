@@ -7,19 +7,14 @@ class PushAction(Action):
         self.title = title
         self.test = test
 
-    def push_action(self, files=None, send_metadata=False, metadata_only=False, use_fields=None):
+    def push_action(self, files=None, send_metadata=False, metadata_only=False):
         self.metadata_only = metadata_only
         self.metadata = self.default_metadata
-        if send_metadata or self.metadata_prompt:
-            fields = self.metadata_fields
-            if use_fields:
-                valid, fields = self.validate_metadata_fields(use_fields)
-                if not valid:
-                    return
-            if yes_no_prompt('Would you like to include metadata with this push?', default_yes=True):
-                self.metadata = self.metadata_wizard(fields)
-            else:
-                self.metadata = {}
+        if send_metadata:
+            self.metadata = self.metadata_wizard()
+        elif self.metadata_prompt:
+            if yes_no_prompt('Would you like to launch the metadata wizard?', default_yes=True):
+                self.metadata = self.metadata_wizard()
         try:
             if files:
                 added, updated = self._push_specific_files(files)

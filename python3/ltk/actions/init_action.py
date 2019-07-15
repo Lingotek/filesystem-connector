@@ -87,6 +87,8 @@ class InitAction():
                 if os.name == 'nt':
                     try:
                         subprocess.call(["attrib", "+H", os.path.join(project_path, CONF_DIR)])
+                    except KeyboardInterrupt:
+                        raise
                     except Exception as e:
                         logger.error("Error on init: "+str(e))
                     # # Python 2
@@ -152,31 +154,21 @@ class InitAction():
                 project_id = None
                 project_name = None
                 confirm = 'none'
-                try:
-                    logger.info('---------------------------')
-                    logger.info('SELECT LINGOTEK PROJECT')
-                    logger.info('---------------------------')
-                    if len(project_info) > 0:
-                        project_id, project_name = self.display_choice('project', project_info)
-                    else:
-                        logger.info('There are no projects')
-                    if project_id != None:
-                        self.config_parser.set('main', 'project_id', project_id)
-                        if project_name != None:
-                            self.config_parser.set('main', 'project_name', project_name)
-                    if not project_id:
-                        project_id, project_name = self.create_new_project(folder_name, community_id, workflow_id)
-                        self.config_parser.set('main', 'project_id', project_id)
+                logger.info('---------------------------')
+                logger.info('SELECT LINGOTEK PROJECT')
+                logger.info('---------------------------')
+                if len(project_info) > 0:
+                    project_id, project_name = self.display_choice('project', project_info)
+                else:
+                    logger.info('There are no projects')
+                if project_id != None:
+                    self.config_parser.set('main', 'project_id', project_id)
+                    if project_name != None:
                         self.config_parser.set('main', 'project_name', project_name)
-
-                except KeyboardInterrupt:
-                    # Python 2
-                    # logger.info("\nInit canceled")
-                    # End Python 2
-                    # Python 3
-                    logger.error("\nInit canceled")
-                    # End Python 3
-                    return
+                if not project_id:
+                    project_id, project_name = self.create_new_project(folder_name, community_id, workflow_id)
+                    self.config_parser.set('main', 'project_id', project_id)
+                    self.config_parser.set('main', 'project_name', project_name)
 
                 # get workflow
                 logger.info('---------------------------')
@@ -206,7 +198,7 @@ class InitAction():
                 self.config_parser.set('main', 'download_folder', download_path)
 
                 # ask about advanced settings
-                if(self.prompt_advanced_settings() == True):
+                if yes_no_prompt('Would you like to configure advanced options?', default_yes=False):
                     self.show_advanced_settings()
 
                 logger.info("\nAll finished. Use ltk -h to learn more about using Lingotek Filesystem Connector.")
@@ -285,7 +277,9 @@ class InitAction():
         print("--------------------------------")
         print("METADATA:")
         self.set_metadata_defaults()
+        print('')
         self.set_metadata_prompt()
+        print('')
         self.set_metadata_fields()
 
     def check_global(self, host):
@@ -315,23 +309,12 @@ class InitAction():
         choice = 'none-chosen'
         if display_type != 'workflow':
             while choice not in mapper:
-                try:
-                    # Python 2
-                    # choice = raw_input(prompt_message)
-                    # End Python 2
-                    # Python 3
-                    choice = input(prompt_message)
-                    # End Python 3
-                except KeyboardInterrupt:
-                    # Python 2
-                    # logger.info("\nInit canceled")
-                    # End Python 2
-                    # Python 3
-                    logger.error("\nInit canceled")
-                    # End Python 3
-                    #testing
-                    return None, None
-                    #end testing
+                # Python 2
+                # choice = raw_input(prompt_message)
+                # End Python 2
+                # Python 3
+                choice = input(prompt_message)
+                # End Python 3
                 try:
                     if display_type == 'project':
                         if choice == '':
@@ -352,17 +335,8 @@ class InitAction():
             logger.warning('This project is already initialized!')
             if not delete:
                 return False
-            try:
-                option = yes_no_prompt("Are you sure you want to delete the current project? " + \
-                        "This will also delete the project in your community.", default_yes=True)
-            except KeyboardInterrupt:
-                # Python 2
-                # logger.info("\nRenit canceled")
-                # End Python 2
-                # Python 3
-                logger.error("\nReinit canceled")
-                # End Python 3
-                return
+            option = yes_no_prompt("Are you sure you want to delete the current project? " + \
+                    "This will also delete the project in your community.", default_yes=True)
             # confirm if deleting existing folder
             if option:
                 # delete the corresponding project online
@@ -406,6 +380,8 @@ class InitAction():
                 if os.name == 'nt':
                     try:
                         subprocess.call(["attrib", "-H", file_name])
+                    except KeyboardInterrupt:
+                        raise
                     except Exception as e:
                         logger.error("Error on init: "+str(e))
             sys_file = open(file_name, 'w')
@@ -420,32 +396,27 @@ class InitAction():
 
             global_parser.write(sys_file)
             sys_file.close()
+        except KeyboardInterrupt:
+            raise
         except Exception as e:
             logger.error("Error on init: "+str(e))
         # # if on Windows, set file properties to hidden
         if os.name == 'nt':
             try:
                 subprocess.call(["attrib", "+H", file_name])
+            except KeyboardInterrupt:
+                raise
             except Exception as e:
                 logger.error("Error on init: "+str(e))
 
     def create_new_project(self, folder_name, community_id, workflow_id):
         prompt_message = "Please enter a new Lingotek project name [%s]: " % folder_name
-        try:
-            # Python 2
-            # project_name = raw_input(prompt_message)
-            # End Python 2
-            # Python 3
-            project_name = input(prompt_message)
-            # End Python 3
-        except KeyboardInterrupt:
-            # Python 2
-            # logger.info("\nInit canceled")
-            # End Python 2
-            # Python 3
-            logger.error("\nInit canceled")
-            # End Python 3
-            return
+        # Python 2
+        # project_name = raw_input(prompt_message)
+        # End Python 2
+        # Python 3
+        project_name = input(prompt_message)
+        # End Python 3
         if not project_name:
             project_name = folder_name
         response = self.api.add_project(project_name, community_id, workflow_id)
@@ -472,50 +443,32 @@ class InitAction():
 
         if len(workflow_info) > 0:
             confirm = 'none'
+            workflow_info[workflow_id] = 'Project Default'
+            mapper = choice_mapper(workflow_info)
+            choice = 'none-chosen'
+            prompt_message = 'Select workflow ID [Project Default]: '
+            # Python 2
+            # choice = raw_input(prompt_message)
+            # End Python 2
+            # Python 3
+            choice = input(prompt_message)
+            # End Python 3
             try:
-
-                workflow_info[workflow_id] = 'Project Default'
-                mapper = choice_mapper(workflow_info)
-                choice = 'none-chosen'
-                prompt_message = 'Select workflow ID [Project Default]: '
-                try:
-                    # Python 2
-                    # choice = raw_input(prompt_message)
-                    # End Python 2
-                    # Python 3
-                    choice = input(prompt_message)
-                    # End Python 3
-                except KeyboardInterrupt:
-                    # Python 2
-                    # logger.info("\nInit canceled")
-                    # End Python 2
-                    # Python 3
-                    logger.error("\nInit canceled")
-                    # End Python 3
-                try:
-                    if choice == '':
-                        for x in workflow_info:
-                            if x == workflow_id:
-                                workflow_id, workflow_name = x, 'Project Default'
-                        logger.info('\nSelected "{0}" {1}.\n'.format(workflow_name, 'workflow'))
-                        return workflow_id, False 
-                    else:
-                        choice = int(choice)
-                        for v in mapper[choice]:
-                            print(v)
-                            logger.info('\nSelected "{0}" {1}.\n'.format(mapper[choice][v], 'workflow'))   
-                            workflow_id, workflow_name = v, mapper[choice][v]
-                            return workflow_id, True
-                except ValueError:
-                    print('Not a valid option') 
-            except KeyboardInterrupt:
-                # Python 2
-                # logger.info("\nInit canceled")
-                # End Python 2
-                # Python 3
-                logger.error("\nInit canceled")
-                # End Python 3
-                return         
+                if choice == '':
+                    for x in workflow_info:
+                        if x == workflow_id:
+                            workflow_id, workflow_name = x, 'Project Default'
+                    logger.info('\nSelected "{0}" {1}.\n'.format(workflow_name, 'workflow'))
+                    return workflow_id, False 
+                else:
+                    choice = int(choice)
+                    for v in mapper[choice]:
+                        print(v)
+                        logger.info('\nSelected "{0}" {1}.\n'.format(mapper[choice][v], 'workflow'))   
+                        workflow_id, workflow_name = v, mapper[choice][v]
+                        return workflow_id, True
+            except ValueError:
+                print('Not a valid option')  
 
     def print_locale_codes(self):
         locale_info = []
@@ -542,119 +495,89 @@ class InitAction():
         return locale_dict
 
     def set_source_locale(self):
-        try:
-            selected_locale = ''
-            keep_prompting = True
-            while selected_locale not in self.locale_info.keys():
-                prompt_message = '\nWhat is the default locale for your source content? [en-US]: '
-                # Python 2
-                # locale = raw_input(prompt_message)
-                # End Python 2
-                # Python 3
-                locale = input(prompt_message)
-                # End Python 3
-                if(locale == ''):
-                    selected_locale = 'en-US'
-                    keep_prompting = False
-                else:
-                    if(locale not in self.locale_info.keys()):
-                        logger.warning('\'{0}\' is not a valid locale'.format(locale))
-                    else:
-                        selected_locale = locale
-                        keep_prompting = False
-
-            logger.info("Set source locale to: {0}\n".format(selected_locale))
-            return selected_locale
-
-        except KeyboardInterrupt:
+        selected_locale = ''
+        keep_prompting = True
+        while selected_locale not in self.locale_info.keys():
+            prompt_message = '\nWhat is the default locale for your source content? [en-US]: '
             # Python 2
-            # logger.info("\nInit canceled")
+            # locale = raw_input(prompt_message)
             # End Python 2
             # Python 3
-            logger.error("\nInit canceled")
+            locale = input(prompt_message)
             # End Python 3
-            return
+            if(locale == ''):
+                selected_locale = 'en-US'
+                keep_prompting = False
+            else:
+                if(locale not in self.locale_info.keys()):
+                    logger.warning('\'{0}\' is not a valid locale'.format(locale))
+                else:
+                    selected_locale = locale
+                    keep_prompting = False
+
+        logger.info("Set source locale to: {0}\n".format(selected_locale))
+        return selected_locale
 
     def set_target_locales(self):
-        try:
-            user_input = 'not given'
-            locales = []
-            prompt_for_input = True
-            while prompt_for_input:
-                prompt_message = 'What default target locales would you like to translate into (e.g. fr-FR, ja-JP)? [None]: '
-                # Python 2
-                # user_input = raw_input(prompt_message)
-                # End Python 2
-                # Python 3
-                user_input = input(prompt_message)
-                # End Python 3
-                if(user_input == '' or user_input == 'none'):
-                    prompt_for_input = False
-                else:
-                    locales = user_input.replace(" ", "").split(",")
-
-                    prompt_for_input = False
-                    # make sure the locales given are valid
-                    for l in locales:
-                        if l not in self.locale_info:
-                            print("Please provide valid locales as a comma seperated list (e.g. fr-FR, ja-JP)\n")
-                            prompt_for_input = True
-
-            if(user_input == 'none' or user_input == ''):
-                logger.info("Set target locales to: None\n")
-                return ""
-            elif(len(locales) > 0):
-                logger.info("Set target locales to: {0}\n".format(', '.join(locales)))
-                return ','.join(locales)
-
-        except KeyboardInterrupt:
+        user_input = 'not given'
+        locales = []
+        prompt_for_input = True
+        while prompt_for_input:
+            prompt_message = 'What default target locales would you like to translate into (e.g. fr-FR, ja-JP)? [None]: '
             # Python 2
-            # logger.info("\nInit canceled")
+            # user_input = raw_input(prompt_message)
             # End Python 2
             # Python 3
-            logger.error("\nInit canceled")
+            user_input = input(prompt_message)
             # End Python 3
-            return
+            if(user_input == '' or user_input == 'none'):
+                prompt_for_input = False
+            else:
+                locales = user_input.replace(" ", "").split(",")
+
+                prompt_for_input = False
+                # make sure the locales given are valid
+                for l in locales:
+                    if l not in self.locale_info:
+                        print("Please provide valid locales as a comma seperated list (e.g. fr-FR, ja-JP)\n")
+                        prompt_for_input = True
+
+        if(user_input == 'none' or user_input == ''):
+            logger.info("Set target locales to: None\n")
+            return ""
+        elif(len(locales) > 0):
+            logger.info("Set target locales to: {0}\n".format(', '.join(locales)))
+            return ','.join(locales)
 
     def set_download_path(self, project_path):
-        try:
-            download_path = ''
-            keep_prompting = True
-            while keep_prompting:
-                prompt_message = 'Where would you like translations to be downloaded? [.]: '
-                # Python 2
-                # path = raw_input(prompt_message)
-                # End Python 2
-                # Python 3
-                path = input(prompt_message)
-                # End Python 3
-
-                if(path == '' or path == '.'):
-                    # set download path to the current directory
-                    download_path = self.norm_path(project_path, '.')
-                else:
-                    download_path = self.norm_path(project_path, path)
-
-                if os.path.exists(os.path.join(project_path, download_path)):
-                    if(path == '' or path == '.'):
-                        logger.info("Set download folder to the current working directory\n")
-                    else:
-                        logger.info("Set download folder to: {0}\n".format(download_path))
-
-                    keep_prompting = False
-                else:
-                    logger.warning('Error: The folder {0} does not exist\n'.format(os.path.join(project_path,download_path)))
-
-            return download_path
-
-        except KeyboardInterrupt:
+        download_path = ''
+        keep_prompting = True
+        while keep_prompting:
+            prompt_message = 'Where would you like translations to be downloaded? [.]: '
             # Python 2
-            # logger.info("\nInit canceled")
+            # path = raw_input(prompt_message)
             # End Python 2
             # Python 3
-            logger.error("\nInit canceled")
+            path = input(prompt_message)
             # End Python 3
-            return
+
+            if(path == '' or path == '.'):
+                # set download path to the current directory
+                download_path = self.norm_path(project_path, '.')
+            else:
+                download_path = self.norm_path(project_path, path)
+
+            if os.path.exists(os.path.join(project_path, download_path)):
+                if(path == '' or path == '.'):
+                    logger.info("Set download folder to the current working directory\n")
+                else:
+                    logger.info("Set download folder to: {0}\n".format(download_path))
+
+                keep_prompting = False
+            else:
+                logger.warning('Error: The folder {0} does not exist\n'.format(os.path.join(project_path,download_path)))
+
+        return download_path
 
     def norm_path(self, project_path, file_location):
         # print("original path: "+str(file_location))
@@ -703,37 +626,12 @@ class InitAction():
 #        self.config_parser.write(sys_file)
 #        sys_file.close()
 
-
-    def prompt_advanced_settings(self):
-        try:
-            return yes_no_prompt('Would you like to configure advanced options?', default_yes=False)
-        except KeyboardInterrupt:
-            # Python 2
-            # logger.info("\nInit canceled")
-            # End Python 2
-            # Python 3
-            logger.error("\nInit canceled")
-            # End Python 3
-            return
-
-        return False
-
     def set_git_autocommit(self):
-        try:
-            if not(os.name == 'nt'):
-                option = yes_no_prompt('Would you like to use Git auto-commit?', default_yes=False)
-                if option:
-                    # get git credentials
-                    return self.get_git_credentials()
-
-        except KeyboardInterrupt:
-            # Python 2
-            # logger.info("\nInit canceled")
-            # End Python 2
-            # Python 3
-            logger.error("\nInit canceled")
-            # End Python 3
-            return
+        if not(os.name == 'nt'):
+            option = yes_no_prompt('Would you like to use Git auto-commit?', default_yes=False)
+            if option:
+                # get git credentials
+                return self.get_git_credentials()
 
         return None, None
 
@@ -774,86 +672,56 @@ class InitAction():
 
     def set_clone_option(self):
         turn_clone_on = True
-        try:
-            confirm = 'none'
-            while confirm != 'on' and confirm != 'On' and confirm != 'ON' and confirm != 'off' and confirm != 'Off' and confirm != '':
-                prompt_message = 'Would you like to turn clone on or off? [ON/off]: '
-                # Python 2
-                # confirm = raw_input(prompt_message)
-                # End Python 2
-                # Python 3
-                confirm = input(prompt_message)
-                # End Python 3
-                if confirm in ['on', 'On', 'ON', 'off', 'Off', '']:
-                    if confirm in ['on', 'On', 'ON', '']:
-                        logger.info("Clone set to ON\n")
-                        turn_clone_on = True
-                        return turn_clone_on
-                    else:
-                        logger.info("Clone set to OFF\n")
-                        turn_clone_on = False
-                        return turn_clone_on
-
-        except KeyboardInterrupt:
+        confirm = 'none'
+        while confirm != 'on' and confirm != 'On' and confirm != 'ON' and confirm != 'off' and confirm != 'Off' and confirm != '':
+            prompt_message = 'Would you like to turn clone on or off? [ON/off]: '
             # Python 2
-            # logger.info("\nInit canceled")
+            # confirm = raw_input(prompt_message)
             # End Python 2
             # Python 3
-            logger.error("\nInit canceled")
+            confirm = input(prompt_message)
             # End Python 3
-            return
+            if confirm in ['on', 'On', 'ON', 'off', 'Off', '']:
+                if confirm in ['on', 'On', 'ON', '']:
+                    logger.info("Clone set to ON\n")
+                    turn_clone_on = True
+                    return turn_clone_on
+                else:
+                    logger.info("Clone set to OFF\n")
+                    turn_clone_on = False
+                    return turn_clone_on
 
         return turn_clone_on
 
     def set_auto_format_option(self):
         turn_auto_format_on = True
-        try:
-            confirm = 'none'
-            while confirm != 'on' and confirm != 'On' and confirm != 'ON' and confirm != 'off' and confirm != 'Off' and confirm != '':
-                prompt_message = 'Would you like to turn auto-format on or off? [ON/off]: '
-                # Python 2
-                # confirm = raw_input(prompt_message)
-                # End Python 2
-                # Python 3
-                confirm = input(prompt_message)
-                # End Python 3
-                if confirm in ['on', 'On', 'ON', 'off', 'Off', '']:
-                    if confirm in ['on', 'On', 'ON', '']:
-                        logger.info("Auto format set to ON\n")
-                        turn_auto_format_on = True
-                        return turn_auto_format_on
-                    else:
-                        logger.info("Auto format set to OFF\n")
-                        turn_auto_format_on = False
-                        return turn_auto_format_on
-
-        except KeyboardInterrupt:
+        confirm = 'none'
+        while confirm != 'on' and confirm != 'On' and confirm != 'ON' and confirm != 'off' and confirm != 'Off' and confirm != '':
+            prompt_message = 'Would you like to turn auto-format on or off? [ON/off]: '
             # Python 2
-            # logger.info("\nInit canceled")
+            # confirm = raw_input(prompt_message)
             # End Python 2
             # Python 3
-            logger.error("\nInit canceled")
+            confirm = input(prompt_message)
             # End Python 3
-            return
+            if confirm in ['on', 'On', 'ON', 'off', 'Off', '']:
+                if confirm in ['on', 'On', 'ON', '']:
+                    logger.info("Auto format set to ON\n")
+                    turn_auto_format_on = True
+                    return turn_auto_format_on
+                else:
+                    logger.info("Auto format set to OFF\n")
+                    turn_auto_format_on = False
+                    return turn_auto_format_on
 
         return turn_auto_format_on
 
     def set_append_option(self):
         append_option = None
-        try:
-            option = yes_no_prompt('Would you like to change the append options?', default_yes=False)
-            if option:
-                option = self.get_user_append_option()
-                return append_option
-
-        except KeyboardInterrupt:
-            # Python 2
-            # logger.info("\nInit canceled")
-            # End Python 2
-            # Python 3
-            logger.error("\nInit canceled")
-            # End Python 3
-            return
+        option = yes_no_prompt('Would you like to change the append options?', default_yes=False)
+        if option:
+            option = self.get_user_append_option()
+            return append_option
 
         return None
 
@@ -890,127 +758,78 @@ class InitAction():
 
     def set_finalized_file_option(self):
         finalized_file = 'off'
-        try:
-            confirm = 'none'
-            while confirm.lower() not in ['on', 'off', '']:
-                prompt_message = 'Would you like to turn finalized file download on or off? [on/OFF]: '
-                # Python 2
-                # confirm = raw_input(prompt_message)
-                # End Python 2
-                # Python 3
-                confirm = input(prompt_message)
-                # End Python 3
-            if confirm.lower() == 'on':
-                logger.info("Finalized file download set to ON\n")
-                finalized_file = 'on'
-            else:
-                logger.info("Finalized file download set to OFF\n")
-                finalized_file = 'off'
-
-        except KeyboardInterrupt:
+        confirm = 'none'
+        while confirm.lower() not in ['on', 'off', '']:
+            prompt_message = 'Would you like to turn finalized file download on or off? [on/OFF]: '
             # Python 2
-            # logger.info("\nInit canceled")
+            # confirm = raw_input(prompt_message)
             # End Python 2
             # Python 3
-            logger.error("\nInit canceled")
+            confirm = input(prompt_message)
             # End Python 3
-            return
+        if confirm.lower() == 'on':
+            logger.info("Finalized file download set to ON\n")
+            finalized_file = 'on'
+        else:
+            logger.info("Finalized file download set to OFF\n")
+            finalized_file = 'off'
 
         return finalized_file
 
     def prompt_unzip_file_option(self):
         unzip_file = 'on'
-        try:
-            confirm = 'none'
-            while confirm != 'on' and confirm != 'On' and confirm != 'ON' and confirm != 'off' and confirm != 'Off' and confirm != '':
-                prompt_message = 'Would you like to turn finalized file UNZIP on or off? [ON/off]: '
-                # Python 2
-                # confirm = raw_input(prompt_message)
-                # End Python 2
-                # Python 3
-                confirm = input(prompt_message)
-                # End Python 3
-                if confirm in ['on', 'On', 'ON', 'off', 'Off', '']:
-                    if confirm in ['on', 'On', 'ON', '']:
-                        logger.info("Finalized file UNZIP set to ON\n")
-                        unzip_file = 'on'
-                    else:
-                        logger.info("Finalized file UNZIP set to OFF\n")
-                        unzip_file = 'off'
-
-        except KeyboardInterrupt:
+        confirm = 'none'
+        while confirm != 'on' and confirm != 'On' and confirm != 'ON' and confirm != 'off' and confirm != 'Off' and confirm != '':
+            prompt_message = 'Would you like to turn finalized file UNZIP on or off? [ON/off]: '
             # Python 2
-            # logger.info("\nInit canceled")
+            # confirm = raw_input(prompt_message)
             # End Python 2
             # Python 3
-            logger.error("\nInit canceled")
+            confirm = input(prompt_message)
             # End Python 3
-            return
+            if confirm in ['on', 'On', 'ON', 'off', 'Off', '']:
+                if confirm in ['on', 'On', 'ON', '']:
+                    logger.info("Finalized file UNZIP set to ON\n")
+                    unzip_file = 'on'
+                else:
+                    logger.info("Finalized file UNZIP set to OFF\n")
+                    unzip_file = 'off'
 
         return unzip_file
 
     def set_metadata_defaults(self):
         print("Set default metadata to be sent with every document that is uploaded to Lingotek.")
-        try:
-            option = yes_no_prompt('Would you like to set default metadata?', default_yes=False)
-            if option:
-                metadata = Action.metadata_wizard(Action, METADATA_FIELDS, set_defaults=True)
-            else:
-                metadata = {}
-            self.config_parser.set('main', 'default_metadata', json.dumps(metadata))
-            logger.info("Default metadata set to {0}".format(metadata))
-
-        except KeyboardInterrupt:
-            # Python 2
-            # logger.info("\nInit canceled")
-            # End Python 2
-            # Python 3
-            logger.error("\nInit canceled")
-            # End Python 3
-            return    
+        option = yes_no_prompt('Would you like to set default metadata?', default_yes=True)
+        if option:
+            Action.default_metadata = {}
+            metadata = Action.metadata_wizard(Action, set_defaults=True)
+        else:
+            metadata = {}
+        self.config_parser.set('main', 'default_metadata', json.dumps(metadata))
+        logger.info("Default metadata set to {0}".format(metadata))
 
     def set_metadata_prompt(self):
         print("Toggle an automatic prompt for metadata with every document upload/update.  Turning this on will display a prompt every time an add or push command is run that asks if metadata should be sent, and if it should be sent, it gives the option to define the metadata.  Leaving this off will require a command flag to be used to send metadata.")
-        try:
-            option = yes_no_prompt('Would you like to always prompt for metadata?', default_yes=False)
-            if option:
-                self.config_parser.set('main', 'metadata_prompt', 'on')
-                logger.info("Metadata prompting set to ON")
-            else:
-                self.config_parser.set('main', 'metadata_prompt', 'off')
-                logger.info("Metadata prompting set to OFF")
-
-        except KeyboardInterrupt:
-            # Python 2
-            # logger.info("\nInit canceled")
-            # End Python 2
-            # Python 3
-            logger.error("\nInit canceled")
-            # End Python 3
-            return
+        option = yes_no_prompt('Would you like to always prompt for metadata?', default_yes=False)
+        if option:
+            self.config_parser.set('main', 'metadata_prompt', 'on')
+            logger.info("Metadata prompting set to ON")
+        else:
+            self.config_parser.set('main', 'metadata_prompt', 'off')
+            logger.info("Metadata prompting set to OFF")
 
     def set_metadata_fields(self):
         print("Set the fields that will be displayed when adding, editing, and viewing document metadata.  The possible fields are:\n")
         print(', '.join(str(field) for field in METADATA_FIELDS)+"\n")
-        try:
-            valid = False
-            while not valid:
-                prompt_message = "Enter a comma-separated list of fields to include, or enter 'all' to include all fields or 'none' to include no fields: "
-                # Python 2
-                # options = raw_input(prompt_message)
-                # End Python 2
-                # Python 3
-                options = input(prompt_message)
-                # End Python 3
-                valid, fields = Action.validate_metadata_fields(Action, options)
-            self.config_parser.set('main', 'metadata_fields', json.dumps(fields))
-            logger.info("Metadata fields set to {0}".format(fields))
-
-        except KeyboardInterrupt:
+        valid = False
+        while not valid:
+            prompt_message = "Enter a comma-separated list of fields to include, or enter 'all' to include all the fields [all]: "
             # Python 2
-            # logger.info("\nInit canceled")
+            # options = raw_input(prompt_message)
             # End Python 2
             # Python 3
-            logger.error("\nInit canceled")
+            options = input(prompt_message)
             # End Python 3
-            return
+            valid, fields = Action.validate_metadata_fields(Action, options)
+        self.config_parser.set('main', 'metadata_fields', json.dumps(fields))
+        logger.info("Metadata fields set to {0}".format(fields))

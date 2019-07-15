@@ -57,16 +57,11 @@ class AddAction(Action):
         ''' adds new documents to the lingotek cloud and, after prompting user, overwrites changed documents that
                 have already been added '''
         metadata = self.default_metadata
-        if ('metadata' in kwargs and kwargs['metadata']) or self.metadata_prompt:
-            fields = self.metadata_fields
-            if 'fields' in kwargs and kwargs['fields']:
-                valid, fields = self.validate_metadata_fields(kwargs['fields'])
-                if not valid:
-                    return
-            if yes_no_prompt('Would you like to send metadata with '+('this document' if len(matched_files) == 1 else 'these documents')+'?', default_yes=True):
-                metadata = self.metadata_wizard(fields)
-            else:
-                metadata = {}
+        if 'metadata' in kwargs and kwargs['metadata']:
+            metadata = self.metadata_wizard()
+        elif self.metadata_prompt:
+            if yes_no_prompt('Would you like to launch the metadata wizard?', default_yes=True):
+                metadata = self.metadata_wizard()
         confirmed=False
         for file_name in matched_files:
             try:
