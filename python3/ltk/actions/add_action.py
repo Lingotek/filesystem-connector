@@ -123,7 +123,7 @@ class AddAction(Action):
                 relative_path = self.norm_path(file_name)
 
                 # add document to the db
-                self._add_document(relative_path, title, response.json()['properties']['id'])
+                self._add_document(relative_path, title, response.json()['properties']['id'], response.json()['properties']['process_id'])
 
         except KeyboardInterrupt:
             raise_error("", "Canceled adding document\n")

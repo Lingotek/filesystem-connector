@@ -155,13 +155,13 @@ class Action:
                 log_info = 'Updated project name'
                 self.update_config_file('project_name', self.project_name, conf_parser, config_file_name, log_info)
 
-    def _add_document(self, file_name, title, doc_id):
+    def _add_document(self, file_name, title, doc_id, process_id):
         """ adds a document to db """
         now = time.time()
         # doc_id = json['properties']['id']
         full_path = os.path.join(self.path, file_name)
         last_modified = os.stat(full_path).st_mtime
-        self.doc_manager.add_document(title, now, doc_id, last_modified, now, file_name)
+        self.doc_manager.add_document(title, now, doc_id, last_modified, now, file_name, process_id)
 
     def _update_document(self, file_name):
         """ updates a document in the db """
