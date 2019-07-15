@@ -186,9 +186,9 @@ def init(host, access_token, client_id, path, project_name, workflow_id, locale,
 @click.option('-gu', '--git_credentials', is_flag=True, help='Open prompt for Git credentials for auto-fill (\'none\' to unset); only enabled for Mac and Linux')
 @click.option('-a', '--append_option', help='Change the format of the default name given to documents on the Lingotek system.  Define file information to append to document names as none, full, number:+a number of folders down to include (e.g. number:2), or name:+a name of a directory to start after if found in file path (e.g. name:dir). Default option is none.')
 @click.option('-f', '--auto_format', help='Toggle auto format option \'on\' and \'off\'. Applies formatting during download.')
-@click.option('-md', '--metadata_defaults', is_flag=True, help='Launch the wizard to set the default metadata.')
+@click.option('-md', '--metadata_defaults', is_flag=True, help='Launch the metadata wizard to set the default metadata that will be sent with every document.')
 @click.option('-mp', '--metadata_prompt', help='Toggle prompting for metadata with every add and push.  Use the argument \'on\' to enable this prompt or \'off\' to disable it.')
-@click.option('-mf', '--metadata_fields', help="Set the fields that will be asked for when adding or changing metadata.  All default metadata will still be sent.  Enter the fields to prompt for as a comma-separated list with no spaces, or enter 'all' to include all fields or 'none' to include no fields.  Valid fields are: "+', '.join(str(field) for field in METADATA_FIELDS))
+@click.option('-mf', '--metadata_fields', help="Set the fields that the metadata wizard will use when adding or pushing documents.  All default metadata will still be sent.  Enter the fields to prompt for as a comma-separated list with no spaces, or enter 'all' to include all the fields.  Valid fields are: "+', '.join(str(field) for field in METADATA_FIELDS))
 
 def config(**kwargs):
     """ View or change local configuration """
@@ -225,8 +225,7 @@ def config(**kwargs):
 @click.option('-fsi', '--fprm_subfilter_id', help='fprm subfilter id')
 @click.option('-v', '--vault_id', help='Save-to TM vault id')
 @click.option('-e', '--external_url', help='Source url')
-@click.option('-m', '--metadata', flag_value=True, help="Prompts to send metadata with the document(s).  Answering 'no' will also not send default metadata.  Answering 'yes' will start the metadata wizard to set the metadata to send")
-@click.option('--fields', help="Only use this with the -m or --metadata flag.  Enter a comma-separated list with no spaces of metadata fields to send, or enter 'all' to send all fields or 'none' to send no fields.  This overrides the fields set in the configuration.\nValid fields are: "+', '.join(str(field) for field in METADATA_FIELDS))
+@click.option('-m', '--metadata', flag_value=True, help="Launches the metadata wizard to set metadata to send in addition to the default metadata")
 
 def add(file_names, **kwargs):
     """ Add files and folders for upload to Lingotek.  Fileglobs (e.g. *.txt) can be used to add all matching files and/or folders. Added folders will automatically add the new files added or created inside of them.  """
@@ -251,17 +250,16 @@ def add(file_names, **kwargs):
 @click.option('-n', '--test', 'test', flag_value=True, help='Shows which files will be added or updated without actually uploading any content')
 @click.option('-t', '--title', 'title', flag_value=True, help='Display document titles rather than file paths')
 @click.argument('files', type=click.Path(exists=True), required=False, nargs=-1)
-@click.option('-m', '--metadata', flag_value=True, help="Prompts to send metadata with the document(s).  Answering 'no' will also not send default metadata.  Answering 'yes' will start the metadata wizard to set the metadata to send")
+@click.option('-m', '--metadata', flag_value=True, help="Launches the metadata wizard to set metadata to send in addition to the default metadata")
 @click.option('-o', '--metadata-only', 'metadata_only', flag_value=True, help="Only updates the metadata and does not update the document contents")
-@click.option('--fields', help="Only use this with the -m or --metadata flag.  Enter a comma-separated list with no spaces of metadata fields to send, or enter 'all' to send all fields or 'none' to send no fields.  This overrides the fields set in the configuration.\nValid fields are: "+', '.join(str(field) for field in METADATA_FIELDS))
 
-def push(test, title, files, metadata, metadata_only, fields):
+def push(test, title, files, metadata, metadata_only):
     """ Sends updated content to Lingotek for documents that have been added.  Fileglobs (e.g. *.txt) can be used to push all matching files """
     try:
         add = add_action.AddAction(os.getcwd())
         action = push_action.PushAction(add, os.getcwd(), test, title)
         init_logger(action.path)
-        action.push_action(files=files, send_metadata=metadata, metadata_only=metadata_only, use_fields=fields)
+        action.push_action(files=files, set_metadata=metadata, metadata_only=metadata_only)
     except UninitializedError as e:
         print_log(e)
         logger.error(e)
