@@ -12,11 +12,12 @@ import fnmatch
 import time
 import getpass
 import itertools
+import copy
 from ltk import exceptions
 from ltk.apicalls import ApiCalls
 from ltk.utils import *
 from ltk.managers import DocumentManager, FolderManager
-from ltk.constants import CONF_DIR, CONF_FN, SYSTEM_FILE, ERROR_FN
+from ltk.constants import CONF_DIR, CONF_FN, SYSTEM_FILE, ERROR_FN, METADATA_FIELDS
 import json
 from ltk.logger import logger
 from ltk.git_auto import Git_Auto
@@ -44,6 +45,9 @@ class Action:
         self.git_password = ''
         self.append_option = 'none'
         self.locale_folders = {}
+        self.default_metadata = {}
+        self.metadata_prompt = False
+        self.metadata_fields = METADATA_FIELDS
         if not self._is_initialized():
             raise exceptions.UninitializedError("This project is not initialized. Please run init command.")
         self._initialize_self()
@@ -146,6 +150,23 @@ class Action:
             else:
                 self.append_option = 'none'
                 self.update_config_file('append_option', self.append_option, conf_parser, config_file_name, "")
+            if conf_parser.has_option('main', 'default_metadata'):
+                self.default_metadata = json.loads(conf_parser.get('main', 'default_metadata'))
+            else:
+                self.default_metadata = {}
+                self.update_config_file('default_metadata', json.dumps(self.default_metadata), conf_parser, config_file_name, "")
+            if conf_parser.has_option('main', 'metadata_prompt'):
+                self.metadata_prompt = (conf_parser.get('main', 'metadata_prompt').lower() == 'on')
+            else:
+                self.metadata_prompt = False
+                self.update_config_file('metadata_prompt', 'off', conf_parser, config_file_name, "")
+            if conf_parser.has_option('main', 'metadata_fields'):
+                self.metadata_fields = json.loads(conf_parser.get('main', 'metadata_fields'))
+            else:
+                self.metadata_fields = METADATA_FIELDS
+                self.update_config_file('metadata_fields', json.dumps(self.metadata_fields), conf_parser, config_file_name, "")
+                
+
         except NoOptionError as e:
             if not self.project_name:
                 self.api = ApiCalls(self.host, self.access_token)
@@ -155,13 +176,15 @@ class Action:
                 log_info = 'Updated project name'
                 self.update_config_file('project_name', self.project_name, conf_parser, config_file_name, log_info)
 
-    def _add_document(self, file_name, title, doc_id, process_id):
+    def _add_document(self, file_name, title, doc_id, dl_folder='', process_id):
         """ adds a document to db """
         now = time.time()
         # doc_id = json['properties']['id']
         full_path = os.path.join(self.path, file_name)
         last_modified = os.stat(full_path).st_mtime
-        self.doc_manager.add_document(title, now, doc_id, last_modified, now, file_name, process_id)
+        if dl_folder:
+            dl_folder = os.path.relpath(dl_folder, self.path)
+        self.doc_manager.add_document(title, now, doc_id, last_modified, now, file_name, dl_folder, process_id)
 
     def _update_document(self, file_name):
         """ updates a document in the db """
@@ -199,6 +222,78 @@ class Action:
         except IOError as e:
             print(e.errno)
             print(e)
+
+    def metadata_wizard(self, set_defaults=False):
+        import re
+        if set_defaults:
+            fields = METADATA_FIELDS
+            new_metadata = {}
+            prompt_message = "Default Value: "
+        else:
+            fields = self.metadata_fields
+            new_metadata = copy.deepcopy(self.default_metadata) 
+            prompt_message = "Value: "
+            if all (field in self.default_metadata for field in fields):
+                print("All fields have default metadata already set")
+                for field in fields:
+                    print(field,": ",self.default_metadata[field])
+                return self.default_metadata
+        for field in fields:
+            print("\n===",field,"===")
+            if field in self.default_metadata and self.default_metadata[field]:
+                if set_defaults:
+                    print("Current "+prompt_message,self.default_metadata[field])
+                    if not yes_no_prompt("Would you like to change the default value for this field?", default_yes=False):
+                        new_metadata[field] = self.default_metadata[field]
+                        continue
+                else:
+                    print(prompt_message,self.default_metadata[field])
+                    continue
+            # Python 2
+            # new_value = raw_input(prompt_message)
+            # End Python 2
+            # Python 3
+            new_value = input(prompt_message)
+            #End Python 3
+            if not new_value:
+                continue
+            #validate campaign rating field, which is a number field with a maximum of seven digits and allows positive and negative numbers but no decimals
+            if field == "campaign_rating":
+                while not re.fullmatch('-?0*[0-9]{1,7}', new_value):
+                    print("Value must be an integer between -9999999 and 9999999")
+                    new_value = input(prompt_message)
+                    #allow blank value to not set/change the field in defaults
+                    if not new_value:
+                        break
+                if not new_value: #check if value was unset
+                    continue
+                #catch -0 and convert it to 0
+                if re.fullmatch('-0+', new_value):
+                    new_value = "0"
+            #validate require review field, which is either true or false
+            elif field == "require_review":
+                while new_value.upper() != "TRUE" and new_value.upper() != "FALSE":
+                    print("Value must be either TRUE or FALSE")
+                    new_value = input(prompt_message)
+                    #allow blank value to not set/change the field in defaults
+                    if not new_value:
+                        break
+                if not new_value: #check if value was unset
+                    continue
+            new_metadata[field] = new_value
+        return new_metadata
+
+    def validate_metadata_fields(self, field_options):
+        if field_options.lower() == 'all' or field_options == '':
+            return True, METADATA_FIELDS
+        else:
+            converted = field_options.replace(", ",",") #allows for a comma-separated list with or without a single space after commas
+            options = converted.split(",")
+            for option in options:
+                if option not in METADATA_FIELDS:
+                    logger.warning("Error: {0} is not a valid metadata field".format(option))
+                    return False, None
+            return True, options
 
     def get_relative_path(self, path):
         return get_relative_path(self.path, path)

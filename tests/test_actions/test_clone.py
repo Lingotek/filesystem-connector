@@ -23,7 +23,6 @@ class TestClone(unittest.TestCase):
         self.added_directories = []
         self.config_action = ConfigAction(os.getcwd())
         self.rm_action = RmAction(os.getcwd())
-        
         self.dir_path1 = os.path.join(os.getcwd(), 'dir1')
         self.added_directories.append(self.dir_path1)
         create_directory(self.dir_path1)
@@ -33,7 +32,6 @@ class TestClone(unittest.TestCase):
         self.dir_path3 = os.path.join(os.getcwd(), 'dir1','dir3')
         self.added_directories.append(self.dir_path3)
         create_directory(self.dir_path3)
-        
         self.delete_directory(os.path.join(os.getcwd(), 'ja-JP'))
         self.delete_directory(os.path.join(os.getcwd(), 'es-MX'))
         self.delete_directory(os.path.join(os.getcwd(), 'downloads'))
@@ -56,7 +54,7 @@ class TestClone(unittest.TestCase):
         assert os.path.isdir(os.path.join(os.getcwd(), 'ja-JP','dir1'))
         assert os.path.isdir(os.path.join(os.getcwd(), 'ja-JP','dir1','dir3'))
         assert os.path.isdir(os.path.join(os.getcwd(), 'ja-JP','dir2'))
-        
+
     def test_clone_multi_locale(self):
         #currently doesn't work, clone needs to be fixed
         os.system('ltk config -t ja-JP,es-MX')

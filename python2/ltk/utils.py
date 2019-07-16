@@ -388,3 +388,23 @@ def remove_formatting(f):
 
     else:
         return f
+
+def yes_no_prompt(prompt, default_yes=False):
+    try:
+        confirm = 'none'
+        prompt_message = prompt + (" [Y/n]: " if default_yes else " [y/N]: ")
+        while confirm not in ['y', 'Y', 'n', 'N', '']:
+            # Python 2
+            confirm = raw_input(prompt_message)
+            # End Python 2
+            # Python 3
+#             confirm = input(prompt_message)
+            # End Python 3
+        if confirm in ['y', 'Y']:
+            return True
+        elif confirm in ['n', 'N']:
+            return False
+        else:
+            return default_yes
+    except KeyboardInterrupt:
+        raise
