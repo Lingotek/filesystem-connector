@@ -61,16 +61,8 @@ class FiltersAction(Action):
             value, params = cgi.parse_header(response.headers['Content-Disposition'])
             filename = params['filename']
         if os.path.exists(filename) and overwrite != True:
-            confirm = None
-            while confirm not in ['y','Y','n','N','']:
-                prompt_message = 'Filter "{0}" already exists locally. Would you like to overwrite it? [y/N]: '.format(filename)
-                # Python 2
-                # confirm = raw_input(prompt_message)
-                # End Python 2
-                # Python 3
-                confirm = input(prompt_message)
-                # End Python 3
-            if not confirm or confirm in ['','n','N']:
+            option = yes_no_prompt('Filter "{0}" already exists locally. Would you like to overwrite it?'.format(filename), default_yes=False)
+            if not option:
                 logger.info('Will not overwrite local filter "{0}"'.format(filename))
                 return
         try: # save filter content to filename

@@ -125,7 +125,7 @@ class CloneAction(Action):
             if os.path.exists(path):
                 if os.path.isdir(path):
                     for root, subdirs, files in os.walk(path):
-                        split_path = root.split('/')
+                        split_path = root.split(os.sep)
                         for subdir in subdirs:
                             # print(os.path.join(root, subdir))
                             matched_dirs.append(os.path.join(root,subdir).replace(str(path)+os.sep,""))

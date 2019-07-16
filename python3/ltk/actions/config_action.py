@@ -49,6 +49,15 @@ class ConfigAction(Action):
 
             if 'auto_format' in kwargs and kwargs['auto_format']:
                 self.set_auto_format_option(kwargs['auto_format'])
+            
+            if 'metadata_prompt' in kwargs and kwargs['metadata_prompt']:
+                self.set_metadata_prompt(kwargs['metadata_prompt'])
+
+            if 'metadata_fields' in kwargs and kwargs['metadata_fields']:
+                self.set_metadata_fields(kwargs['metadata_fields'])
+
+            if 'metadata_defaults' in kwargs and kwargs['metadata_defaults']: #handle this last in case a prior argument caused an error
+                self.set_metadata_defaults()
 
             self.print_output()
 
@@ -95,11 +104,14 @@ class ConfigAction(Action):
                 ["Clone Option", self.clone_option],
                 ["Download Finalized Files", self.finalized_file],
                 ["Auto Format", self.auto_format_option],
-                ["Download Folder", self.download_dir],
-                ["Target Locales", list(self.watch_locales)],
+                ["Default Download Folder", download_dir],
+                ["Target Locales", watch_locales],
                 ["Target Locale Folders", locale_folders_str],
                 ["Git Auto-commit", git_output],
-                ["Append Option", self.append_option.title()]
+                ["Append Option", self.append_option.title()],
+                ["Metadata Fields", self.metadata_fields],
+                ["Always Prompt for Metadata", "on" if self.metadata_prompt else "off"],
+                ["Default Metadata", self.default_metadata]
             ]
             if self.finalized_file == 'on':
                 table.append(["Unzip Finalized File", self.unzip_file])
@@ -404,3 +416,32 @@ class ConfigAction(Action):
             self.update_config_file('git_username', '', self.conf_parser, self.config_file_name, 'Update: Added \'git username\' option (ltk config --help)')
             self.update_config_file('git_password', '', self.conf_parser, self.config_file_name, 'Update: Added \'git password\' option (ltk config --help)')
         self.git_autocommit = self.conf_parser.get('main', 'git_autocommit')
+
+    def set_metadata_defaults(self):
+        self.default_metadata = self.metadata_wizard(set_defaults=True)
+        self.update_config_file('default_metadata', json.dumps(self.default_metadata), self.conf_parser, self.config_file_name, "Updated default metadata to {0}".format(self.default_metadata))
+
+    def set_metadata_prompt(self, option):
+        if option.lower() == 'on':
+            self.metadata_prompt = True
+            self.update_config_file('metadata_prompt', 'on', self.conf_parser, self.config_file_name, 'Update: Metadata prompt set to ON')
+        elif option.lower() == 'off':
+            self.metadata_prompt = False
+            self.update_config_file('metadata_prompt', 'off', self.conf_parser, self.config_file_name, 'Update: Metadata prompt set to OFF')
+        else:
+            logger.warning("The flag for the metadata prompt only takes the arguments 'on' or 'off'")
+
+    def set_metadata_fields(self, fields):
+        if fields.lower() == 'all':
+            self.metadata_fields = METADATA_FIELDS
+        else:
+            new_fields = fields.split(",")
+            if len(new_fields) == 0 or fields.isspace():
+                logger.error("You must set at least one field")
+                return
+            for field in new_fields:
+                if field not in METADATA_FIELDS:
+                    logger.warning("{0} is not a valid metadata field".format(field))
+                    return
+            self.metadata_fields = new_fields
+        self.update_config_file('metadata_fields', json.dumps(self.metadata_fields), self.conf_parser, self.config_file_name, "Updated metadata fields to {0}".format(self.metadata_fields))
