@@ -124,7 +124,7 @@ class DocumentManager:
             return True
         return False
 
-    def add_document(self, title, create_date, doc_id, sys_mtime, last_mod, file_name, download_folder=''):
+    def add_document(self, title, create_date, doc_id, sys_mtime, last_mod, file_name, process_id, download_folder=''):
         entry = {'name': title, 'added': create_date, 'id': doc_id,
                  'sys_last_mod': sys_mtime, 'last_mod': last_mod, 'file_name': file_name,
                  'downloaded': [], 'download_folder': download_folder, 'process_id': process_id}

@@ -110,7 +110,7 @@ class StatusAction(Action):
                 # Process is completed and the document was uploaded to TMS, but there was an error in getting the document status
                 # Seems to happen when the document is deleted from within TMS
                 # print(response.json())
-                print('Document {0} was imported, but has been deleted from within TMS.'.format(entry['name']))\
+                print('Document {0} was imported, but has been deleted from within TMS.'.format(entry['name']))
                 self.doc_manager.remove_element(entry['id'])
             else:
                 # Process has a failed status

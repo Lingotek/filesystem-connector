@@ -68,6 +68,9 @@ class AddAction(Action):
                 # title = os.path.basename(os.path.normpath(file_name)).split('.')[0]
                 relative_path = self.norm_path(file_name)
                 title = os.path.basename(relative_path)
+                if os.stat(relative_path).st_size == 0:
+                    logger.info("This document is empty and was not added: {0}\n".format(title))
+                    continue
                 if not self.doc_manager.is_doc_new(relative_path):
                     if self.doc_manager.is_doc_modified(relative_path, self.path) or len(metadata) > 0:
                         if 'overwrite' in kwargs and kwargs['overwrite']:
@@ -95,6 +98,8 @@ class AddAction(Action):
                         continue
             except json.decoder.JSONDecodeError:
                 logger.error("JSON error on adding document.")
+            except Exception:
+                logger.error("Error adding document")
 
             self.add_document(file_name, title, doc_metadata=metadata, **kwargs)
 
@@ -125,9 +130,9 @@ class AddAction(Action):
 
                 # add document to the db
                 if 'download_folder' in kwargs and kwargs['download_folder']:
-                    self._add_document(relative_path, title, response.json()['properties']['id'], kwargs['download_folder'], response.json()['properties']['process_id'])
+                    self._add_document(relative_path, title, response.json()['properties']['id'], response.json()['properties']['process_id'], kwargs['download_folder'])
                 else:
-                    self._add_document(relative_path, title, response.json()['properties']['id'], None, response.json()['properties']['process_id'])
+                    self._add_document(relative_path, title, response.json()['properties']['id'], response.json()['properties']['process_id'], '')
 
         except KeyboardInterrupt:
             raise_error("", "Canceled adding document\n")
