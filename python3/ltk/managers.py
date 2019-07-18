@@ -157,7 +157,8 @@ class DocumentManager:
         """ returns all the process ids of documents that the user has added"""
         process_ids = []
         for entry in self._db.all():
-            process_ids.append(entry['process_id'])
+            if 'process_id' in entry:
+                process_ids.append(entry['process_id'])
         return process_ids
 
     def get_file_names(self):
