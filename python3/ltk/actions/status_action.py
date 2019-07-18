@@ -94,7 +94,7 @@ class StatusAction(Action):
                 self._print_detailed_status(doc_id, title)
 
     def _get_process(self, entry):
-        if 'process_id' in entry:
+        if 'process_id' not in entry:
             error_message = "Check Lingotek TMS to see if \'"+entry['file_name']+"\' has been deleted or was not properly imported"
             raise_error("", "Not Found: "+error_message, True, entry['id'])
             return
