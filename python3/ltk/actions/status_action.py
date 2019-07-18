@@ -109,9 +109,7 @@ class StatusAction(Action):
             elif status.lower() == 'completed':
                 # Process is completed and the document was uploaded to TMS, but there was an error in getting the document status
                 # Seems to happen when the document is deleted from within TMS
-                # print(response.json())
-                print('Document {0} was imported, but has been deleted from within TMS.'.format(entry['name']))
-                self.doc_manager.remove_element(entry['id'])
+                print('Document {0} was imported, but could not be found within TMS. You may need to run ltk clean to update the local database'.format(entry['name']))
             else:
                 # Process has a failed status
                 self._failed_entry(entry['id'], entry['name'])

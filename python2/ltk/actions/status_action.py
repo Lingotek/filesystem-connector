@@ -84,16 +84,7 @@ class StatusAction(Action):
             if check_response(response):
                 raise_error(response.json(), error_message, True, doc_id)
             else:
-                #if document has recently been added, determined by uploadWaitTime, let user know that document is still being processed
-                #otherwise, suggest that user check TMS for deletion or potential upload problems
-                entry = self.doc_manager.get_doc_by_prop('id', doc_id)
-                diff = time.time() - entry['added']
-                if diff < self.uploadWaitTime:
-                    error_message = "\'" +entry['file_name']+ "\' is still being processed"
-                    raise_error("", str(response.status_code)+" Not Found: "+error_message, True, doc_id)
-                else:
-                    error_message = "Check Lingotek TMS to see if \'" +entry['file_name']+ "\' has been deleted or was not properly imported"
-                    raise_error("", str(response.status_code)+" Not Found: "+error_message, True, doc_id)
+                self._get_process(entry)
         else:
             title = response.json()['properties']['title']
             progress = response.json()['properties']['progress']
@@ -101,7 +92,34 @@ class StatusAction(Action):
             self._print_status(title, doc_id, progress, statustext)
             if detailed:
                 self._print_detailed_status(doc_id, title)
-                
+
+    def _get_process(self, entry):
+        process_id = entry['process_id']
+        response = self.api.get_process(process_id)
+        if response.status_code == 404:
+            # The process doesn't exist for some reason
+            self._failed_entry(entry['id'], entry['name'])
+        else:
+            status = response.json()['properties']['status']
+            progress = response.json()['properties']['progress']
+            if status.lower() == 'in_progress':
+                # Process is currently in progress. Replaces need for upload wait time since now we can get the
+                # current document process progress.
+                print('Uploading document {0}: {1}% complete'.format(entry['name'], progress))
+            elif status.lower() == 'completed':
+                # Process is completed and the document was uploaded to TMS, but there was an error in getting the document status
+                # Seems to happen when the document is deleted from within TMS
+                print('Document {0} was imported, but could not be found within TMS. You may need to run ltk clean to update the local database'.format(entry['name']))
+            else:
+                # Process has a failed status
+                self._failed_entry(entry['id'], entry['name'])
+
+    def _failed_entry(self, doc_id, name):
+        error_message = "\'"+name+"\' failed to import properly"
+        raise_error("", "Not Found: "+error_message, True, doc_id)
+        self.doc_manager.remove_element(doc_id)
+        # Process has failed status/does not exist, so document info is
+        # deleted from the local database
 
     def _print_status(self, title, doc_id, progress, statustext):
         print ('{0} ({1}): {2}% ({3})'.format(title, doc_id, progress, statustext))

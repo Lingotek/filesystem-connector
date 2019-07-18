@@ -132,7 +132,7 @@ class AddAction(Action):
                 if 'download_folder' in kwargs and kwargs['download_folder']:
                     self._add_document(relative_path, title, response.json()['properties']['id'], response.json()['properties']['process_id'], kwargs['download_folder'])
                 else:
-                    self._add_document(relative_path, title, response.json()['properties']['id'], response.json()['properties']['process_id'], '')
+                    self._add_document(relative_path, title, response.json()['properties']['id'], response.json()['properties']['process_id'])
 
         except KeyboardInterrupt:
             raise_error("", "Canceled adding document\n")
