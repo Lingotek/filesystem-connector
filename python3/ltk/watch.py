@@ -410,7 +410,7 @@ class WatchAction(Action):
         # norm_path = os.path.abspath(file_location).replace(self.path, '')
         print
         return abspath.rstrip(os.sep)
-
+       
     def watch_action(self, ignore, delimiter=None, no_folders=False, force_poll=False): # watch_paths, ignore, delimiter=None, no_folders=False):
         # print self.path
         watch_paths = None
