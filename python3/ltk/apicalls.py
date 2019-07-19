@@ -446,6 +446,16 @@ class ApiCalls:
             self.handleError()
         return r
 
+    def get_process(self, process_id):
+        try:
+            uri = (API_URI['process'] % locals())
+            payload = {'process_id': process_id}
+            r = requests.get(self.host + uri, headers=self.headers, params=payload)
+            log_api('GET', uri, r)
+        except requests.exceptions.ConnectionError:
+            self.handleError()
+        return r
+
     def list_workflows(self, community_id):
         try:
             uri = API_URI['workflow']
