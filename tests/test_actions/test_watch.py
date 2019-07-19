@@ -60,7 +60,6 @@ class TestWatch(unittest.TestCase):
                 shutil.rmtree(locale)
         #delete_directory(self.dir_name)
 
-    @unittest.skip("temp skip")
     def test_watch_new_file(self):
         file_name = "test_watch_sample_0.txt"
         self.files.append(self.dir_name+os.sep+file_name)
@@ -84,7 +83,6 @@ class TestWatch(unittest.TestCase):
         assert doc
         assert poll_doc(self.action, doc['id'])
 
-    @unittest.skip("temp skip")
     def test_watch_update(self):
         file_name = "test_watch_sample_1.txt"
         self.files.append(self.dir_name+os.sep+file_name)
