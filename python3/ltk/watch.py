@@ -268,7 +268,7 @@ class WatchAction(Action):
             return locales
         entry = self.doc_manager.get_doc_by_prop("id", document_id)
         try:
-            locales = [locale for locale in self.watch_locales if locale not in entry['locales']]
+            locales = [locale for locale in self.watch_locales if locale not in entry['locales']]  
         except KeyError:
             locales = self.watch_locales
         return locales
@@ -457,7 +457,7 @@ class WatchAction(Action):
                         self.process_queue()
                         time.sleep(queue_timeout)
                         current_timeout -= queue_timeout
-                time.sleep(self.timeout)
+                time.sleep(current_timeout) # default 60 sec total, 3 already taken
         except KeyboardInterrupt:
             for observer in self.observers:
                 observer.stop()

@@ -25,10 +25,11 @@ class TestWatch(unittest.TestCase):
         self.clean_action = CleanAction(os.getcwd())
         self.add_action = AddAction(os.getcwd())
         self.rm_action = RmAction(os.getcwd())
-        #default in my test was clone on download folder none target locales none
+        self.locales_to_test = ['de-DE','es-AR','ja-JP']
+        #default in my test was clone on download folder none target locale folders none
         self.config_action = ConfigAction(os.getcwd())
         self.clean_action.clean_action(False, False, None)
-        self.config_action.config_action(target_locales=['de-DE','es-AR','ja-JP'])
+        self.config_action.config_action(target_locales=self.locales_to_test)
         # self.action.open()
         self.downloaded = []
         self.files = []
@@ -57,6 +58,9 @@ class TestWatch(unittest.TestCase):
         # delete directory
         # using rmtree so it deletes recursively when file not empty
         shutil.rmtree(self.dir_name)
+        for locale in self.locales_to_test:
+            if os.path.exists(locale) and os.path.isdir(locale):
+                shutil.rmtree(locale)
         #delete_directory(self.dir_name)
 
     @unittest.skip("temp skip")
@@ -216,12 +220,13 @@ class TestWatch(unittest.TestCase):
 #test creating file in a subdirectory with clone option on, make sure recursion does not occur 
     def test_watch_subdir_clone_recursion(self):
         self.config_action.config_action(clone_option='on', download_folder='--none')
+        self.action.watch_locales = self.locales_to_test #this changes watch_locale options for the daemon instead of current thread
         subdir_name = "subdir"
         working_directory = self.dir_name + os.sep + subdir_name
         create_directory(working_directory)
         file_name1 = "test_watch_clone.txt"
         self.files.append(working_directory+os.sep+file_name1)
-        if os.path.exists(self.dir_name+file_name1):
+        if os.path.exists(working_directory+os.sep+file_name1):
             delete_file(file_name1)
         self.action.timeout = 5 #set poll to 5 seconds instead of a minute for testing
         watch_thread = Thread(target=self.action.watch_action, args=((), None, False, False))
@@ -230,9 +235,40 @@ class TestWatch(unittest.TestCase):
         time.sleep(10) #Gives watch enough time to start up before appending to the document
 
         create_txt_file(file_name1, working_directory)
-        print("SLEEEEEP")
-        time.sleep(120) #Gives watch enough time to pick up on the append
-        print("I awake!")
-        #CANNOT GET LOCALEEEEEEE
-        self.config_action.config_action(clone_option='off')
-        assert False
+        
+        #checks that the document was added to local tracking
+        doc = None
+        time_passed = 0
+        while doc is None and time_passed < 10:
+            doc = self.action.doc_manager.get_doc_by_prop('name', file_name1)
+            time.sleep(1)
+            time_passed += 1
+        assert doc
+        #checks that the document was added to Lingotek
+        assert poll_doc(self.action, doc['id'])
+
+        #checks the locale folders were created when the document was downloaded
+        waittime = 0
+        while not all(os.path.isdir(locale) for locale in self.locales_to_test):
+            time.sleep(5)
+            waittime += 5
+            if waittime == 120:
+                print("TEST FAIL: Timed out before locale folder was added")
+                assert False
+        print("passed, isdir")
+        #check that downloaded files exist locally
+        waittime = 0
+        while not all(os.path.exists(locale+os.sep+file_name1) for locale in self.locales_to_test):
+            time.sleep(5)
+            waittime += 5
+            if waittime == 30 * len(self.locales_to_test):
+                print("TEST FAIL: Timed out before translation was downloaded")
+                assert False
+        print("passed, downloaded")
+        #wait for two minutes in case it tries to upload them (which we're testing to make sure it doesn't) 
+        time.sleep(30)
+        #check that no new files were added (if len(self.action.doc_manager.get_doc_whatever) == 1
+        print("all entries:", self.action.doc_manager.get_all_entries())
+        print("names:", self.action.doc_manager.get_names())
+        print("file names:", self.action.doc_manager.get_file_names())
+        assert len(self.action.doc_manager.get_file_names()) == 1
