@@ -45,16 +45,13 @@ class TestWatch(unittest.TestCase):
 
     def tearDown(self):
         #delete files
-        print("HEY:", self.files)
         for fn in self.files:
             self.rm_action.rm_action(fn, remote=True, force=True)
         self.clean_action.clean_action(False, False, None)
         # delete downloads
-        print("DELETE FILE COMPLETE")
-        print("DOWNLOADS:", self.downloaded)
+        self.action.folder_manager.clear_all()
         for fn in self.downloaded:
             os.remove(fn)
-        print("DELETE DOWNLOALD COMPLEETE")
         # delete directory
         # using rmtree so it deletes recursively when file not empty
         shutil.rmtree(self.dir_name)
@@ -221,6 +218,7 @@ class TestWatch(unittest.TestCase):
     def test_watch_subdir_clone_recursion(self):
         self.config_action.config_action(clone_option='on', download_folder='--none')
         self.action.watch_locales = self.locales_to_test #this changes watch_locale options for the daemon instead of current thread
+        self.action.folder_manager.clear_all() #don't add dir1 as watch file
         subdir_name = "subdir"
         working_directory = self.dir_name + os.sep + subdir_name
         create_directory(working_directory)
@@ -255,7 +253,6 @@ class TestWatch(unittest.TestCase):
             if waittime == 120:
                 print("TEST FAIL: Timed out before locale folder was added")
                 assert False
-        print("passed, isdir")
         #check that downloaded files exist locally
         waittime = 0
         while not all(os.path.exists(locale+os.sep+file_name1) for locale in self.locales_to_test):
@@ -264,11 +261,7 @@ class TestWatch(unittest.TestCase):
             if waittime == 30 * len(self.locales_to_test):
                 print("TEST FAIL: Timed out before translation was downloaded")
                 assert False
-        print("passed, downloaded")
         #wait for two minutes in case it tries to upload them (which we're testing to make sure it doesn't) 
-        time.sleep(30)
+        time.sleep(120)
         #check that no new files were added (if len(self.action.doc_manager.get_doc_whatever) == 1
-        print("all entries:", self.action.doc_manager.get_all_entries())
-        print("names:", self.action.doc_manager.get_names())
-        print("file names:", self.action.doc_manager.get_file_names())
         assert len(self.action.doc_manager.get_file_names()) == 1
