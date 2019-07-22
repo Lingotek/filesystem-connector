@@ -78,7 +78,7 @@ class WatchAction(Action):
         self.add = add_action.AddAction(path)
         self.download = download_action.DownloadAction(path)
         self.root_path = path
-        self.download_file_paths = set() # set of clone file path names
+        self.download_file_paths = set() # set of download file path names
         # if remote:  # poll lingotek cloud periodically if this option enabled
         # self.remote_thread = threading.Thread(target=self.poll_remote(), args=())
         # self.remote_thread.daemon = True
@@ -383,7 +383,7 @@ class WatchAction(Action):
                                 # Note that in the case of a file with the same name, this is only called if the file was created outside of the watch home dir first (ex. creating testing/test.txt then test.txt will trigger, creating test.txt then testing/test.txt will not)
                             else:
                                 download_file_path = self.download.download_action(doc_id, locale, autoFormat)
-                        # This prevennts recursion when clone option is off and download folder is set. 
+                        # This prevents recursion when clone option is off and download folder is set. 
                         self.download_file_paths.add(download_file_path)
                     elif progress != 100 and locale in downloaded:
                         # print("Locale "+str(locale)+" for document "+doc['name']+" is no longer completed.")
