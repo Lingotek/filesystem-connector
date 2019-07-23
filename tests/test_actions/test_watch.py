@@ -3,8 +3,10 @@ from ltk.watch import WatchAction
 from ltk.actions.clean_action import CleanAction
 from ltk.actions.add_action import AddAction
 from ltk.actions.rm_action import RmAction
+from ltk.actions.config_action import ConfigAction
 from threading import Thread
 import unittest
+import shutil
 import os
 
 # @unittest.skip("skip testing watch for now")
@@ -23,7 +25,11 @@ class TestWatch(unittest.TestCase):
         self.clean_action = CleanAction(os.getcwd())
         self.add_action = AddAction(os.getcwd())
         self.rm_action = RmAction(os.getcwd())
+        self.locales_to_test = ['de-DE','es-AR','ja-JP']
+        #default in my test was clone on download folder none target locale folders none
+        self.config_action = ConfigAction(os.getcwd())
         self.clean_action.clean_action(False, False, None)
+        self.config_action.config_action(target_locales=self.locales_to_test)
         # self.action.open()
         self.downloaded = []
         self.files = []
@@ -32,24 +38,31 @@ class TestWatch(unittest.TestCase):
         self.add_action.add_action([self.dir_name], overwrite=True)
         # todo current problem: watchdog does not seem to detect changes in daemon
         # but not daemonizing watch causes tests to hang..
-        watch_thread = Thread(target=self.action.watch_action, args=('.', (), None))
-        watch_thread.daemon = True
-        watch_thread.start()
+        #this function is run again in each test so seems superfluous
+        #watch_thread = Thread(target=self.action.watch_action, args=('.', (), None))
+        #watch_thread.daemon = True
+        #watch_thread.start()
 
     def tearDown(self):
         #delete files
         for fn in self.files:
             self.rm_action.rm_action(fn, remote=True, force=True)
         self.clean_action.clean_action(False, False, None)
-        #delete downloads
+        # delete downloads
+        self.action.folder_manager.clear_all()
         for fn in self.downloaded:
             os.remove(fn)
-        #delete directory
-        delete_directory(self.dir_name)
+        # delete directory
+        # using rmtree so it deletes recursively when file not empty
+        shutil.rmtree(self.dir_name)
+        for locale in self.locales_to_test:
+            if os.path.exists(locale) and os.path.isdir(locale):
+                shutil.rmtree(locale)
+        #delete_directory(self.dir_name)
 
     def test_watch_new_file(self):
         file_name = "test_watch_sample_0.txt"
-        self.files.append(self.dir_name+"/"+file_name)
+        self.files.append(self.dir_name+os.sep+file_name)
         if os.path.exists(self.dir_name+file_name):
             delete_file(file_name)
         #start the watch
@@ -144,13 +157,13 @@ class TestWatch(unittest.TestCase):
     def test_watch_auto(self):
         pass
 
-#test watch no_folders with update and new file (currently broken)
+#test watch no_folderswith update and new file (currently broken)
     @unittest.skip("skipping until watch is fully functional")
     def test_watch_no_folders(self):
         file_name1 = "test_watch_text_1.txt"
         self.files.append(self.dir_name+os.sep+file_name1)
         if os.path.exists(self.dir_name+file_name1):
-            delete_file(file_name2)
+            delete_file(file_name1)
         file_name2 = "test_watch_text_2.txt"
         self.files.append(self.dir_name+os.sep+file_name2)
         if os.path.exists(self.dir_name+file_name2):
@@ -164,7 +177,7 @@ class TestWatch(unittest.TestCase):
         watch_thread.daemon = True
         watch_thread.start()
         time.sleep(10) #Gives watch enough time to start up before creating the document
-        create_txt_file(file_name2, self.dir_name)#create a file to add and be ignored
+        create_txt_file(file_name2, self.dir_name)#create a file to add and be ignored -- why exactly should it be ignored if we pass in () as ignore list
 
         time.sleep(10) #Gives watch enough time to pick up on the new files
         assert file_name1 in self.action.doc_manager.get_names(), self.action.doc_manager.get_names()
@@ -198,3 +211,55 @@ class TestWatch(unittest.TestCase):
     @unittest.skip("skipping until watch is fully functional")
     def test_watch_translation_clone(self):
         pass
+
+#test creating file in a subdirectory with clone option on, make sure recursion does not occur 
+    def test_watch_subdir_clone_recursion(self):
+        self.config_action.config_action(clone_option='on', download_folder='--none')
+        self.action.watch_locales = self.locales_to_test #this changes watch_locale options for the daemon instead of current thread
+        self.action.folder_manager.clear_all() #don't add dir1 as watch file
+        subdir_name = "subdir"
+        working_directory = self.dir_name + os.sep + subdir_name
+        create_directory(working_directory)
+        file_name1 = "test_watch_clone.txt"
+        self.files.append(working_directory+os.sep+file_name1)
+        if os.path.exists(working_directory+os.sep+file_name1):
+            delete_file(file_name1)
+        self.action.timeout = 5 #set poll to 5 seconds instead of a minute for testing
+        watch_thread = Thread(target=self.action.watch_action, args=((), None, False, False))
+        watch_thread.daemon = True
+        watch_thread.start()
+        time.sleep(10) #Gives watch enough time to start up before appending to the document
+
+        create_txt_file(file_name1, working_directory)
+        
+        #checks that the document was added to local tracking
+        doc = None
+        time_passed = 0
+        while doc is None and time_passed < 10:
+            doc = self.action.doc_manager.get_doc_by_prop('name', file_name1)
+            time.sleep(1)
+            time_passed += 1
+        assert doc
+        #checks that the document was added to Lingotek
+        assert poll_doc(self.action, doc['id'])
+
+        #checks the locale folders were created when the document was downloaded
+        waittime = 0
+        while not all(os.path.isdir(locale) for locale in self.locales_to_test):
+            time.sleep(5)
+            waittime += 5
+            if waittime == 120:
+                print("TEST FAIL: Timed out before locale folder was added")
+                assert False
+        #check that downloaded files exist locally
+        waittime = 0
+        while not all(os.path.exists(locale+os.sep+file_name1) for locale in self.locales_to_test):
+            time.sleep(5)
+            waittime += 5
+            if waittime == 30 * len(self.locales_to_test):
+                print("TEST FAIL: Timed out before translation was downloaded")
+                assert False
+        #wait for two minutes in case it tries to upload them (which we're testing to make sure it doesn't) 
+        time.sleep(120)
+        #check that no new files were added (if len(self.action.doc_manager.get_doc_whatever) == 1
+        assert len(self.action.doc_manager.get_file_names()) == 1
