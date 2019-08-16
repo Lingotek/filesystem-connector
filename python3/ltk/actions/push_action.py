@@ -7,7 +7,7 @@ class PushAction(Action):
         self.title = title
         self.test = test
 
-    def push_action(self, files=None, set_metadata=False, metadata_only=False):
+    def push_action(self, files=None, set_metadata=False, metadata_only=False, **kwargs):
         self.metadata_only = metadata_only
         self.metadata = copy.deepcopy(self.default_metadata)
         if set_metadata:
@@ -17,7 +17,7 @@ class PushAction(Action):
                 self.metadata = self.metadata_wizard()
         try:
             if files:
-                added, updated = self._push_specific_files(files)
+                added, updated = self._push_specific_files(files, **kwargs)
             else:
                 added = self._add_new_docs()
                 updated = self._update_current_docs()
@@ -38,7 +38,7 @@ class PushAction(Action):
             else:
                 logger.error("Error on push: "+str(e))
 
-    def _add_new_docs(self):
+    def _add_new_docs(self, **kwargs):
         folders = self.folder_manager.get_file_names()
         added = 0
         if len(folders) and not self.metadata_only:
@@ -54,28 +54,28 @@ class PushAction(Action):
                                 if self.test:
                                     print('Add {0}'.format(display_name))
                                 else:
-                                    self.add.add_document(file_name, title, doc_metadata=self.metadata)
+                                    self.add.add_document(file_name, title, doc_metadata=self.metadata, **kwargs)
                                 added += 1
                         except json.decoder.JSONDecodeError as e:
                             log_error(self.error_file_name, e)
                             logger.error("JSON error on adding document.")
         return added
 
-    def _update_current_docs(self):
+    def _update_current_docs(self, **kwargs):
         updated = 0
         entries = self.doc_manager.get_all_entries()
 
         for entry in entries:
-            if len(self.metadata) > 0 or (self.doc_manager.is_doc_modified(entry['file_name'], self.path) and not self.metadata_only):
+            if (len(self.metadata) > 0 or kwargs['due_date'] or kwargs['due_reason']) or (self.doc_manager.is_doc_modified(entry['file_name'], self.path) and not self.metadata_only):
                 display_name = entry['name'] if self.title else entry['file_name']
                 if self.test:
                     updated += 1 # would be updated
                     print('Update {0}'.format(display_name))
                     continue
                 if self.metadata_only or not self.doc_manager.is_doc_modified(entry['file_name'], self.path):
-                    response = self.api.document_update(entry['id'], doc_metadata=self.metadata)
+                    response = self.api.document_update(entry['id'], doc_metadata=self.metadata, **kwargs)
                 else:
-                    response = self.api.document_update(entry['id'], os.path.join(self.path, entry['file_name']), doc_metadata=self.metadata)
+                    response = self.api.document_update(entry['id'], os.path.join(self.path, entry['file_name']), doc_metadata=self.metadata, **kwargs)
                 if response.status_code == 202:
                     updated += 1
                     logger.info('Updated {0}'.format(display_name))
@@ -85,7 +85,7 @@ class PushAction(Action):
 
         return updated
 
-    def _push_specific_files(self, patterns):
+    def _push_specific_files(self, patterns, **kwargs):
         files = set()
         added = 0
         updated = 0
@@ -104,9 +104,9 @@ class PushAction(Action):
                 if self.test:
                     print('Add {0}'.format(display_name))
                 else:
-                    self.add.add_document(file, title, doc_metadata=self.metadata)
+                    self.add.add_document(file, title, doc_metadata=self.metadata, **kwargs)
                 added += 1
-            elif len(self.metadata) > 0 or (self.doc_manager.is_doc_modified(file, self.path) and not self.metadata_only):
+            elif (len(self.metadata) > 0 or kwargs['due_date'] or kwargs['due_reason']) or (self.doc_manager.is_doc_modified(file, self.path) and not self.metadata_only):
                 entry = self.doc_manager.get_doc_by_prop('file_name', file)
                 if entry:
                     display_name = entry['name'] if self.title else entry['file_name']
@@ -115,9 +115,9 @@ class PushAction(Action):
                         print('Update {0}'.format(display_name))
                         continue
                     if self.metadata_only or not self.doc_manager.is_doc_modified(entry['file_name'], self.path):
-                        response = self.api.document_update(entry['id'], doc_metadata=self.metadata)
+                        response = self.api.document_update(entry['id'], doc_metadata=self.metadata, **kwargs)
                     else:
-                        response = self.api.document_update(entry['id'], os.path.join(self.path, entry['file_name']), doc_metadata=self.metadata)
+                        response = self.api.document_update(entry['id'], os.path.join(self.path, entry['file_name']), doc_metadata=self.metadata, **kwargs)
                     if response.status_code == 202:
                         updated += 1
                         logger.info('Updated {0}'.format(display_name))
