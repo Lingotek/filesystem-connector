@@ -289,16 +289,15 @@ class ApiCalls:
             self.handleError()
         return r
     
-    #Commenting out pending an API fix
-    # def document_remove_reference(self, document_id, reference_id):
-    #    """ removes reference material from a document """
-    #    try:
-    #        uri = (API_URI['reference_id'] % locals())
-    #        r = requests.delete(self.host + uri, headers=self.headers)
-    #        log_api('DELETE', uri, r)
-    #    except requests.exceptions.ConnectionError:
-    #        self.handleError()
-    #    return r
+    def document_remove_reference(self, document_id, reference_id):
+       """ removes reference material from a document """
+       try:
+           uri = (API_URI['reference_id'] % locals())
+           r = requests.delete(self.host + uri, headers=self.headers)
+           log_api('DELETE', uri, r)
+       except requests.exceptions.ConnectionError:
+           self.handleError()
+       return r
 
     def document_add_target(self, document_id, locale, workflow_id=None, due_date=None):
         """ adds a target to existing document, starts the workflow """

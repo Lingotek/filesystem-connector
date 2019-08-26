@@ -124,52 +124,51 @@ class ReferenceAction(Action):
                         logger.info("{0} ({1}) could not be downloaded".format(reference['name'], reference['id']))
                         logger.error(response.json()['messages'])
 
-    #Commenting out pending an API fix
-    # def reference_remove_action(self, filename, doc_id, remove_all):
-    #    if self._check_filename(filename, doc_id):
-    #        if doc_id:
-    #            document_id = filename
-    #        else:
-    #            doc_entity = self.doc_manager.get_doc_by_prop('file_name', self.norm_path(filename))
-    #            if not doc_entity:
-    #                logger.error("{0} could not be found in local database".format(self.norm_path(filename)))
-    #                return
-    #            document_id = doc_entity['id']
-    #        table = self._list_reference_material(document_id)
-    #        tablemap = {}
-    #        for row in table:
-    #            tablemap.update({row[0]: {'name': row[1], 'id': row[2]}})
-    #        if len(tablemap) > 0:
-    #            chosen_list = []
-    #            if remove_all:
-    #                chosen_list = tablemap.values()
-    #            while not len(chosen_list) > 0:
-    #                prompt_message = 'Reference materials to download: (Separate indices by comma) '
-    #                # Python 2
-    #                # choice = raw_input(prompt_message)
-    #                # End Python 2
-    #                # Python 3
-    #                choice = input(prompt_message)
-    #                # End Python 3
-    #                try:
-    #                    choices = (choice.replace(", ",",")).split(",")
-    #                    for index in choices:
-    #                        chosen_list.append(tablemap[int(index)])
-    #                except ValueError:
-    #                    logger.error('Some unexpected, non-integer value was included')
-    #                    chosen_list = []
-    #                except KeyError:
-    #                    logger.error('An index not in the list was included')
-    #                    chosen_list = []
-    #            for reference in chosen_list:
-    #                response = self.api.document_remove_reference(document_id, reference['id'])
-    #                if response.status_code == 404:
-    #                    logger.error("{0} ({1}) not found".format(reference['name'], reference['id']))
-    #                elif response.status_code == 204:
-    #                    logger.info("{0} ({1}) deleted".format(reference['name'], reference['id']))
-    #                else:
-    #                    logger.info("{0} ({1}) could not be deleted".format(reference['name'], reference['id']))
-    #                    logger.error(response.json()['messages'])
+    def reference_remove_action(self, filename, doc_id, remove_all):
+       if self._check_filename(filename, doc_id):
+           if doc_id:
+               document_id = filename
+           else:
+               doc_entity = self.doc_manager.get_doc_by_prop('file_name', self.norm_path(filename))
+               if not doc_entity:
+                   logger.error("{0} could not be found in local database".format(self.norm_path(filename)))
+                   return
+               document_id = doc_entity['id']
+           table = self._list_reference_material(document_id)
+           tablemap = {}
+           for row in table:
+               tablemap.update({row[0]: {'name': row[1], 'id': row[2]}})
+           if len(tablemap) > 0:
+               chosen_list = []
+               if remove_all:
+                   chosen_list = tablemap.values()
+               while not len(chosen_list) > 0:
+                   prompt_message = 'Reference materials to download: (Separate indices by comma) '
+                   # Python 2
+                   # choice = raw_input(prompt_message)
+                   # End Python 2
+                   # Python 3
+                   choice = input(prompt_message)
+                   # End Python 3
+                   try:
+                       choices = (choice.replace(", ",",")).split(",")
+                       for index in choices:
+                           chosen_list.append(tablemap[int(index)])
+                   except ValueError:
+                       logger.error('Some unexpected, non-integer value was included')
+                       chosen_list = []
+                   except KeyError:
+                       logger.error('An index not in the list was included')
+                       chosen_list = []
+               for reference in chosen_list:
+                   response = self.api.document_remove_reference(document_id, reference['id'])
+                   if response.status_code == 404:
+                       logger.error("{0} ({1}) not found".format(reference['name'], reference['id']))
+                   elif response.status_code == 204:
+                       logger.info("{0} ({1}) deleted".format(reference['name'], reference['id']))
+                   else:
+                       logger.info("{0} ({1}) could not be deleted".format(reference['name'], reference['id']))
+                       logger.error(response.json()['messages'])
 
     def _check_filename(self, filename, doc_id):
         if doc_id:
