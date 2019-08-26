@@ -19,8 +19,8 @@ class PushAction(Action):
             if files:
                 added, updated = self._push_specific_files(files, **kwargs)
             else:
-                added = self._add_new_docs()
-                updated = self._update_current_docs()
+                added = self._add_new_docs(**kwargs)
+                updated = self._update_current_docs(**kwargs)
             total = added + updated
             if total is 0:
                 report = 'All documents up-to-date with Lingotek Cloud. '
