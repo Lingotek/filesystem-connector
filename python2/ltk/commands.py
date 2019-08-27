@@ -225,10 +225,63 @@ def config(**kwargs):
 @click.option('-fsi', '--fprm_subfilter_id', help='fprm subfilter id')
 @click.option('-v', '--vault_id', help='Save-to TM vault id')
 @click.option('-e', '--external_url', help='Source url')
-@click.option('-m', '--metadata', flag_value=True, help="Launches the metadata wizard to set metadata to send in addition to the default metadata")
+@click.option('--due_date', help='Due date (as Unix timestamp, in milliseconds)')
+@click.option('--due_reason', help='Reason for due date')
+@click.option('-m', '--metadata', flag_value=True, help="Launches the metadata wizard")
+
+# # Metadata - optional parameters
+# @click.option('--author_email', help='Author email')
+# @click.option('--author_name', help='Author name')
+# @click.option('--business_division', help='Business division')
+# @click.option('--business_unit', help='Business unit')
+# @click.option('--campaign_id', help='Campaign ID')
+# @click.option('--campaign_rating', help='Campaign rating')
+# @click.option('--channel', help='Channel')
+# @click.option('--contact_email', help='Contact email')
+# @click.option('--contact_name', help='Contact name')
+# @click.option('--content_description', help='Content description')
+# @click.option('--content_type', help='Content type')
+# @click.option('--domain', help='Domain')
+# @click.option('--external_application_id', help='External application ID')
+# @click.option('--external_document_id', help='External document ID')
+# @click.option('--external_style_id', help='External style ID')
+# @click.option('--job_id', help='Job ID')
+# @click.option('--purchase_order', help='Purchase Order')
+# @click.option('--reference_url', help='Reference URL')
+# @click.option('--region', help='Region')
+# @click.option('--require_review', help='Require review')
+# @click.option('--category_id', help='Category ID')
+# @click.option('--note', help='Note')
+
+# Metadata - optional parameters
+@click.option('--author_email', hidden=True)
+@click.option('--author_name', hidden=True)
+@click.option('--business_division', hidden=True)
+@click.option('--business_unit', hidden=True)
+@click.option('--campaign_id', hidden=True)
+@click.option('--campaign_rating', hidden=True)
+@click.option('--channel', hidden=True)
+@click.option('--contact_email', hidden=True)
+@click.option('--contact_name', hidden=True)
+@click.option('--content_description', hidden=True)
+@click.option('--content_type', hidden=True)
+@click.option('--domain', hidden=True)
+@click.option('--external_application_id', hidden=True)
+@click.option('--external_document_id', hidden=True)
+@click.option('--external_style_id', hidden=True)
+@click.option('--job_id', hidden=True)
+@click.option('--purchase_order', hidden=True)
+@click.option('--reference_url', hidden=True)
+@click.option('--region', hidden=True)
+@click.option('--require_review', hidden=True)
+@click.option('--category_id', hidden=True)
+@click.option('--note', hidden=True)
 
 def add(file_names, **kwargs):
-    """ Add files and folders for upload to Lingotek.  Fileglobs (e.g. *.txt) can be used to add all matching files and/or folders. Added folders will automatically add the new files added or created inside of them.  """
+    #""" Add files and folders for upload to Lingotek.  Fileglobs (e.g. *.txt) can be used to add all matching files and/or folders. Added folders will automatically add the new files added or created inside of them. """
+    """ Add files and folders for upload to Lingotek.  Fileglobs (e.g. *.txt) can be used to add all matching files and/or folders. Added folders will automatically add the new files added or created inside of them.
+    
+    Metadata can be added by launching the metadata wizard with the -m flag or by using flags for specific metadata.  The metadata flags are --author_email, --author_name, --business_division, --business_unit, --campaign_id, --campaign_rating, --channel, --contact_email, --contact_name, --content_description, --content_type, --domain, --external_application_id, --external_document_id, --external_style_id, --job_id, --purchase_order, --reference_url, --region, --require_review, --category_id, and --note """
     try:
         action = add_action.AddAction(os.getcwd())
         init_logger(action.path)
@@ -250,16 +303,69 @@ def add(file_names, **kwargs):
 @click.option('-n', '--test', 'test', flag_value=True, help='Shows which files will be added or updated without actually uploading any content')
 @click.option('-t', '--title', 'title', flag_value=True, help='Display document titles rather than file paths')
 @click.argument('files', type=click.Path(exists=True), required=False, nargs=-1)
-@click.option('-m', '--metadata', flag_value=True, help="Launches the metadata wizard to set metadata to send in addition to the default metadata")
-@click.option('-o', '--metadata-only', 'metadata_only', flag_value=True, help="Only updates the metadata and does not update the document contents")
+@click.option('--due_date', help='Due date (as Unix timestamp, in milliseconds)')
+@click.option('--due_reason', help='Reason for due date')
+@click.option('-m', '--metadata', flag_value=True, help="Launches the metadata wizard")
+@click.option('-o', '--metadata-only', 'metadata_only', flag_value=True, help="Only updates the metadata and due date/due reason and does not update the document contents")
 
-def push(test, title, files, metadata, metadata_only):
-    """ Sends updated content to Lingotek for documents that have been added.  Fileglobs (e.g. *.txt) can be used to push all matching files """
+# # Metadata - optional parameters
+# @click.option('--author_email', help='Author email')
+# @click.option('--author_name', help='Author name')
+# @click.option('--business_division', help='Business division')
+# @click.option('--business_unit', help='Business unit')
+# @click.option('--campaign_id', help='Campaign ID')
+# @click.option('--campaign_rating', help='Campaign rating')
+# @click.option('--channel', help='Channel')
+# @click.option('--contact_email', help='Contact email')
+# @click.option('--contact_name', help='Contact name')
+# @click.option('--content_description', help='Content description')
+# @click.option('--content_type', help='Content type')
+# @click.option('--domain', help='Domain')
+# @click.option('--external_application_id', help='External application ID')
+# @click.option('--external_document_id', help='External document ID')
+# @click.option('--external_style_id', help='External style ID')
+# @click.option('--job_id', help='Job ID')
+# @click.option('--purchase_order', help='Purchase Order')
+# @click.option('--reference_url', help='Reference URL')
+# @click.option('--region', help='Region')
+# @click.option('--require_review', help='Require review')
+# @click.option('--category_id', help='Category ID')
+# @click.option('--note', help='Note')
+
+# Metadata - optional parameters
+@click.option('--author_email', hidden=True)
+@click.option('--author_name', hidden=True)
+@click.option('--business_division', hidden=True)
+@click.option('--business_unit', hidden=True)
+@click.option('--campaign_id', hidden=True)
+@click.option('--campaign_rating', hidden=True)
+@click.option('--channel', hidden=True)
+@click.option('--contact_email', hidden=True)
+@click.option('--contact_name', hidden=True)
+@click.option('--content_description', hidden=True)
+@click.option('--content_type', hidden=True)
+@click.option('--domain', hidden=True)
+@click.option('--external_application_id', hidden=True)
+@click.option('--external_document_id', hidden=True)
+@click.option('--external_style_id', hidden=True)
+@click.option('--job_id', hidden=True)
+@click.option('--purchase_order', hidden=True)
+@click.option('--reference_url', hidden=True)
+@click.option('--region', hidden=True)
+@click.option('--require_review', hidden=True)
+@click.option('--category_id', hidden=True)
+@click.option('--note', hidden=True)
+
+def push(test, title, files, metadata, metadata_only, **kwargs):
+    #""" Sends updated content to Lingotek for documents that have been added.  Fileglobs (e.g. *.txt) can be used to push all matching files """
+    """ Sends updated content to Lingotek for documents that have been added.  Fileglobs (e.g. *.txt) can be used to push all matching files
+
+    Metadata can be updated by launching the metadata wizard with the -m flag or by using flags for specific metadata.  The metadata flags are --author_email, --author_name, --business_division, --business_unit, --campaign_id, --campaign_rating, --channel, --contact_email, --contact_name, --content_description, --content_type, --domain, --external_application_id, --external_document_id, --external_style_id, --job_id, --purchase_order, --reference_url, --region, --require_review, --category_id, and --note """
     try:
         add = add_action.AddAction(os.getcwd())
         action = push_action.PushAction(add, os.getcwd(), test, title)
         init_logger(action.path)
-        action.push_action(files=files, set_metadata=metadata, metadata_only=metadata_only)
+        action.push_action(files=files, set_metadata=metadata, metadata_only=metadata_only, **kwargs)
     except UninitializedError as e:
         print_log(e)
         logger.error(e)
@@ -623,7 +729,7 @@ ltk.add_command(filters)
 def reference():
     pass
 
-@reference.command(name='add', short_help="Uploads reference material and attaches it to a document.")
+@reference.command(name='add', short_help="Uploads reference material and attaches it to the specified document.")
 @click.argument('filename')
 @click.option('-i', '--id', 'doc_id', flag_value=True, help="Adds reference material to the specified document ID instead of the specified filename.")
 def reference_add(filename, doc_id):
@@ -637,7 +743,7 @@ def reference_add(filename, doc_id):
         logger.error(e)
         return
 
-@reference.command(name='list', short_help="Lists the reference material that is currently attached to a document.")
+@reference.command(name='list', short_help="Lists the reference material that is currently attached to the specified document.")
 @click.argument('filename')
 @click.option('-i', '--id', 'doc_id', flag_value=True, help="Lists reference material attached to the specified document ID instead of the specified filename.")
 def reference_list(filename, doc_id):
@@ -651,7 +757,7 @@ def reference_list(filename, doc_id):
         logger.error(e)
         return
 
-@reference.command(name='get', short_help="Downloads reference material that is currently attached to a document.")
+@reference.command(name='get', short_help="Downloads reference material that is currently attached to the specified document.")
 @click.argument('filename')
 @click.option('-i', '--id', 'doc_id', flag_value=True, help="Downloads reference material attached to the specified document ID instead of the specified filename.")
 @click.option('-a', '--all', 'get_all', flag_value=True, help="Skips the prompt and downloads all the reference material that is attached to the document.")
@@ -667,21 +773,20 @@ def reference_get(filename, doc_id, get_all, path):
         logger.error(e)
         return
 
-#Commenting out pending an API fix
-# @reference.command(name='remove', short_help="Removes reference material that is currently attached to a document.")
-# @click.argument('filename')
-# @click.option('-i', '--id', 'doc_id', flag_value=True, help="Removes reference material from the specified document ID instead of the specified filename.")
-# @click.option('-a', '--all', 'remove_all', flag_value=True, help="Skips the prompt and removes all the reference material from the document.")
-# def reference_remove(filename, doc_id, remove_all):
-#     """Deletes reference material attached to a document on Lingotek."""
-#     try:
-#         action = reference_action.ReferenceAction(os.getcwd())
-#         init_logger(action.path)
-#         action.reference_remove_action(filename, doc_id, remove_all)
-#     except (UninitializedError, RequestFailedError) as e:
-#         print_log(e)
-#         logger.error(e)
-#         return
+@reference.command(name='remove', short_help="Removes reference material that is currently attached to the specified document")
+@click.argument('filename')
+@click.option('-i', '--id', 'doc_id', flag_value=True, help="Removes reference material from the specified document ID instead of the specified filename.")
+@click.option('-a', '--all', 'remove_all', flag_value=True, help="Skips the prompt and removes all the reference material from the document.")
+def reference_remove(filename, doc_id, remove_all):
+    """Deletes reference material attached to a document on Lingotek."""
+    try:
+        action = reference_action.ReferenceAction(os.getcwd())
+        init_logger(action.path)
+        action.reference_remove_action(filename, doc_id, remove_all)
+    except (UninitializedError, RequestFailedError) as e:
+        print_log(e)
+        logger.error(e)
+        return
 
 ltk.add_command(reference)
 

@@ -109,9 +109,9 @@ class ConfigAction(Action):
                 ["Target Locale Folders", locale_folders_str],
                 ["Git Auto-commit", git_output],
                 ["Append Option", self.append_option.title()],
-                ["Metadata Fields", self.metadata_fields],
+                ["Metadata Wizard Fields", ",\n".join(self.metadata_fields)],
                 ["Always Prompt for Metadata", "on" if self.metadata_prompt else "off"],
-                ["Default Metadata", self.default_metadata]
+                ["Default Metadata", "\n".join("{}:{}".format(key, value) for key, value in self.default_metadata.items())]
             ]
             if self.finalized_file == 'on':
                 table.append(["Unzip Finalized File", self.unzip_file])
@@ -444,4 +444,4 @@ class ConfigAction(Action):
                     logger.warning("{0} is not a valid metadata field".format(field))
                     return
             self.metadata_fields = new_fields
-        self.update_config_file('metadata_fields', json.dumps(self.metadata_fields), self.conf_parser, self.config_file_name, "Updated metadata fields to {0}".format(self.metadata_fields))
+        self.update_config_file('metadata_fields', json.dumps(self.metadata_fields), self.conf_parser, self.config_file_name, "Updated metadata wizard fields to {0}".format(self.metadata_fields))
