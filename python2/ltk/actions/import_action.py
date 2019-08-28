@@ -68,7 +68,7 @@ class ImportAction(Action):
             else:
                 ids_to_import = [ids_to_import]
             for curr_id in ids_to_import:
-                self.import_document(curr_id, tms_doc_info[curr_id], force, path)
+                self.import_document(curr_id, tms_doc_info[curr_id], force, path, track)
         except Exception as e:
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
                 logger.error("Error connecting to Lingotek's TMS")
@@ -95,50 +95,26 @@ class ImportAction(Action):
             if not curr_path and not os.path.exists(new_path):
                 return path_changed, new_path, write_file, delete_file
             if path_changed and curr_path: # Confirm changing the file path saved in docs.json
-                prompt_message = 'Would you like to change ' \
-                                   'the current saved path of '+title+' from '+curr_path+' to '+new_path+'? [y/n]:'
-                confirm = 'none'
-                while confirm not in ['y', 'yes', 'n', 'no', '']:
-                    # Python 2
-                    confirm = raw_input(prompt_message).lower()
-                    # End Python 2
-                    # Python 3
-#                     confirm = input(prompt_message).lower()
-                    # End Python 3
-                if not confirm or confirm in ['n', 'no']:
+                change_option = yes_no_prompt('Would you like to change ' \
+                    'the current saved path of '+title+' from '+curr_path+' to '+new_path+'?', default_yes=False)
+                if change_option:
+                    delete_option = yes_no_prompt('Delete '+curr_path+'?', default_yes=False)
+                    if delete_option:
+                        delete_file = True
+                else:
                     logger.info('Retaining old path "{0}"'.format(curr_path))
                     path_changed = False
                     new_path = curr_path
-                else:
-                    prompt_message = 'Delete '+curr_path+'? [y/n]:'
-                    confirm = 'none'
-                    while confirm not in ['y', 'yes', 'n', 'no', '']:
-                        # Python 2
-                        confirm = raw_input(prompt_message).lower()
-                        # End Python 2
-                        # Python 3
-#                         confirm = input(prompt_message).lower()
-                        # End Python 3
-                    if confirm and confirm in ['y', 'yes']:
-                        delete_file = True
             # Confirm overwriting a local file
             if os.path.exists(new_path):
-                prompt_message = 'Would you like to overwrite the existing document at '+new_path+'? [y/N]:'
-                confirm = 'none'
-                while confirm not in ['y', 'yes', 'n', 'no', '']:
-                    # Python 2
-                    confirm = raw_input(prompt_message).lower()
-                    # End Python 2
-                    # Python 3
-#                     confirm = input(prompt_message).lower()
-                    # End Python 3
-                if not confirm or confirm in ['n', 'no']:
+                overwrite_option = yes_no_prompt('Would you like to overwrite the existing document at '+new_path+'?', default_yes=False)
+                if not overwrite_option:
                     logger.info('Skipped importing "{0}"'.format(title))
                     write_file = False
         # print(str(path_changed)+" "+str(new_path)+" "+str(write_file)+" "+str(delete_file))
         return path_changed, new_path, write_file, delete_file
 
-    def import_document(self, document_id, document_info, force=False, path=False):
+    def import_document(self, document_id, document_info, force=False, path=False, track=False):
         local_ids = self.doc_manager.get_doc_ids()
         response = self.api.document_content(document_id, None, None, finalized_file=self.finalized_file)
         if(response.status_code == 400):
@@ -198,7 +174,7 @@ class ImportAction(Action):
             if document_id in self.skip_ids:
                 return
             if document_id not in local_ids:
-                self._add_document(new_path, title, document_id)
+                self._add_document(new_path, title, document_id, 'imported')
                 self.doc_manager.update_document('locales', locale_info, document_id)
             elif changed_path:
                 # update the document's path

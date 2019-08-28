@@ -38,9 +38,9 @@ class TestStatusAction(unittest.TestCase):
         try:
             out = StringIO()
             sys.stdout = out
-            self.action.get_status(doc_name=self.file_name)
+            self.action.get_status()
             status = out.getvalue()
-            assert status.startswith('Status of {0}'.format(self.file_name))
+            assert 'Status of {0}'.format(self.file_name) in status
         finally:
             sys.stdout = sys.__stdout__
 
@@ -52,7 +52,7 @@ class TestStatusAction(unittest.TestCase):
         try:
             out = StringIO()
             sys.stdout = out
-            self.action.get_status(detailed=True, doc_name=self.file_name)
+            self.action.get_status(detailed=True)
             status = out.getvalue()
             assert 'Status of {0}'.format(self.file_name) in status
             for target in self.targets:

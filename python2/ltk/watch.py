@@ -78,6 +78,7 @@ class WatchAction(Action):
         self.add = add_action.AddAction(path)
         self.download = download_action.DownloadAction(path)
         self.root_path = path
+        self.download_file_paths = set() # set of download file path names
         # if remote:  # poll lingotek cloud periodically if this option enabled
         # self.remote_thread = threading.Thread(target=self.poll_remote(), args=())
         # self.remote_thread.daemon = True
@@ -179,6 +180,10 @@ class WatchAction(Action):
                 self._on_modified(event)
             else:
                 file_path = event.src_path
+                # if created file was a downloaded translation, don't add to poll. Prevents recursion from downloaded translation files when ltk watch is running
+                if file_path in self.download_file_paths:
+                    self.download_file_paths.remove(file_path)
+                    return
                 # if it's a hidden document, don't do anything
                 if not self.is_hidden_file(file_path) and not self.is_translation(file_path):
                     relative_path = file_path.replace(self.path, '')
@@ -368,13 +373,18 @@ class WatchAction(Action):
                         logger.info('Translation completed ({0} - {1})\n'.format(file_name, locale))
                         if self.locale_delimiter:
                             locale = locale.replace('_','-')
-                            self.download.download_action(doc_id, locale, autoFormat, xliff=False, locale_ext=False)
+                            download_file_path = self.download.download_action(doc_id, locale, autoFormat, xliff=False, locale_ext=False)
                         else:
                             locale = locale.replace('_','-')
                             if self.clone_option == 'on':
-                                self.download.download_action(doc_id, locale, autoFormat, xliff=False, locale_ext=False)
+                                # This prevents recursion when clone option is turned on and a file in a subfolder is added/modified while watch is running
+                                download_file_path = self.download.download_action(doc_id, locale, autoFormat, xliff=False, locale_ext=False)
+                                # Making clone paths a set prevents the list of paths to become full of duplicates from files added with the same name.
+                                # Note that in the case of a file with the same name, this is only called if the file was created outside of the watch home dir first (ex. creating testing/test.txt then test.txt will trigger, creating test.txt then testing/test.txt will not)
                             else:
-                                self.download.download_action(doc_id, locale, autoFormat)
+                                download_file_path = self.download.download_action(doc_id, locale, autoFormat)
+                        # This prevents recursion when clone option is off and download folder is set. 
+                        self.download_file_paths.add(download_file_path)
                     elif progress != 100 and locale in downloaded:
                         # print("Locale "+str(locale)+" for document "+doc['name']+" is no longer completed.")
                         self.doc_manager.remove_element_in_prop(doc_id, 'downloaded', locale)
@@ -401,7 +411,7 @@ class WatchAction(Action):
         # norm_path = os.path.abspath(file_location).replace(self.path, '')
         print
         return abspath.rstrip(os.sep)
-
+       
     def watch_action(self, ignore, delimiter=None, no_folders=False, force_poll=False): # watch_paths, ignore, delimiter=None, no_folders=False):
         # print self.path
         watch_paths = None
@@ -435,7 +445,11 @@ class WatchAction(Action):
         for watch_path in watch_paths:
             observer = Observer()
             observer.schedule(self.handler, path=watch_path, recursive=True)
-            observer.start()
+            try:
+                observer.start()
+            except OSError as e:
+                logger.warning("Watching too many items, please be more specific by using ltk add on the files and folders that should be watched")
+                return
             self.observers.append(observer)
         queue_timeout = 3
         # start_time = time.clock()
@@ -448,7 +462,7 @@ class WatchAction(Action):
                         self.process_queue()
                         time.sleep(queue_timeout)
                         current_timeout -= queue_timeout
-                time.sleep(self.timeout)
+                time.sleep(current_timeout) # default 60 sec total, 3 already taken
         except KeyboardInterrupt:
             for observer in self.observers:
                 observer.stop()

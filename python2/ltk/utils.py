@@ -185,8 +185,11 @@ def find_translations(file_name, path, downloads):
 
 def raise_error(json, error_message, is_warning=False, doc_id=None, file_name=None):
     try:
-        error = json['messages'][0]
-        file_name = file_name.replace("Status of ", "")
+        error = ""
+        if json:
+            error = json['messages'][0]
+        if file_name:
+            file_name = file_name.replace("Status of ", "")
         if file_name is not None and doc_id is not None:
             error = error.replace(doc_id, file_name+" ("+doc_id+")")
         # Sometimes api returns vague errors like 'Unknown error'
@@ -195,7 +198,9 @@ def raise_error(json, error_message, is_warning=False, doc_id=None, file_name=No
         if not is_warning:
             raise exceptions.RequestFailedError(error)
         # warnings.warn(error)
-        logger.error(error)
+        if error:
+            error = error+"\n"
+        logger.error(error+error_message)
     except (AttributeError, IndexError):
         if not is_warning:
             raise exceptions.RequestFailedError(error_message)
@@ -388,3 +393,23 @@ def remove_formatting(f):
 
     else:
         return f
+
+def yes_no_prompt(prompt, default_yes=False):
+    try:
+        confirm = 'none'
+        prompt_message = prompt + (" [Y/n]: " if default_yes else " [y/N]: ")
+        while confirm not in ['y', 'Y', 'n', 'N', '']:
+            # Python 2
+            confirm = raw_input(prompt_message)
+            # End Python 2
+            # Python 3
+#             confirm = input(prompt_message)
+            # End Python 3
+        if confirm in ['y', 'Y']:
+            return True
+        elif confirm in ['n', 'N']:
+            return False
+        else:
+            return default_yes
+    except KeyboardInterrupt:
+        raise

@@ -2,6 +2,7 @@ from tests.test_actions import *
 from ltk.actions.config_action import *
 from io import StringIO
 import unittest
+from unittest.mock import patch
 
 
 class TestConfig(unittest.TestCase):
@@ -23,8 +24,9 @@ class TestConfig(unittest.TestCase):
             self.action.config_action(locale=None, target_locales=None, remove_locales=False, append_option=None, git=False, git_credentials=False,
                 clone_option=None, locale_folder=None, workflow_id = None, download_folder=None)
             info = out.getvalue()
-            key_words = ['Host: https://myaccount.lingotek.com', 'Community ID', 'Locale', 'Workflow ID']
-
+            key_words = ['Community ID', 'Locale', 'Workflow ID']
+            import re
+            assert re.search('Host\s*https://myaccount.lingotek.com', info) #changed to regex because display uses tabulate, which has an indeterminate amount of whitespace to create the columns
             assert all(word in info for word in key_words)
         finally:
             sys.stdout = sys.__stdout__
@@ -124,3 +126,100 @@ class TestConfig(unittest.TestCase):
 
         assert self.action.clone_option == 'off'
         assert self.action.download_option == 'same'
+
+    def test_git_autocommit(self):
+        self.action.config_action(git='on')
+        assert self.action.git_autocommit == 'on'
+
+        self.action.config_action(git='off')
+        assert self.action.git_autocommit == 'off'
+
+    def test_git_credentials(self):
+        with patch('builtins.input', return_value = 'testusername'), patch('getpass.getpass', return_value = 'testpassword'):
+            self.action.config_action(git_credentials=True)
+        assert self.action.conf_parser.get('main', 'git_username') == 'testusername'
+        #using git_auto.encrypt on the password just converts it to base64, so 'testpassword' will always become 'dGVzdHBhc3N3b3Jk' and we can assert that that is so
+        assert self.action.conf_parser.get('main', 'git_password') == 'dGVzdHBhc3N3b3Jk\n'#the config parser addes a newline after the password for some reason, but it works with the code so we'll just test around it
+
+        with patch('builtins.input', return_value = 'testusername'), patch('getpass.getpass', return_value = '--none'):
+            self.action.config_action(git_credentials=True)
+        assert self.action.conf_parser.get('main', 'git_username') == 'testusername'
+        assert self.action.conf_parser.get('main', 'git_password') == ''
+
+        with patch('builtins.input', return_value = '--none'), patch('getpass.getpass', return_value = 'testpassword'):
+            self.action.config_action(git_credentials=True)
+        assert self.action.conf_parser.get('main', 'git_username') == ''
+        #using git_auto.encrypt on the password just converts it to base64, so 'testpassword' will always become 'dGVzdHBhc3N3b3Jk' and we can assert that that is so
+        assert self.action.conf_parser.get('main', 'git_password') == 'dGVzdHBhc3N3b3Jk\n'#the config parser addes a newline after the password for some reason, but it works with the code so we'll just test around it
+
+        with patch('builtins.input', return_value = '--none'), patch('getpass.getpass', return_value = '--none'):
+            self.action.config_action(git_credentials=True)
+        assert self.action.conf_parser.get('main', 'git_username') == ''
+        assert self.action.conf_parser.get('main', 'git_password') == ''
+
+    def test_finalized_file(self):
+        with patch('builtins.input', return_value = 'off'):#to skip turning on unzipping when testing turning finalized files on
+            self.action.config_action(finalized_file='on')
+        assert self.action.finalized_file == 'on'
+
+        self.action.config_action(finalized_file='off')
+        assert self.action.finalized_file == 'off'
+
+    def test_unzip_finalized_file(self):
+        self.action.config_action(unzip_file='on')
+        assert self.action.unzip_file == 'on'
+
+        self.action.config_action(unzip_file='off')
+        assert self.action.unzip_file == 'off'
+
+    def test_append_number(self):
+        self.action.config_action(append_option='number:3')
+        assert self.action.append_option == 'number:3'
+
+        self.action.config_action(append_option='none')
+        assert self.action.append_option == 'none'
+
+
+    def test_append_name(self):
+        self.action.config_action(append_option='name:folder')
+        assert self.action.append_option == 'name:folder'
+
+        self.action.config_action(append_option='none')
+        assert self.action.append_option == 'none'
+
+    def test_autoformat(self):
+        self.action.config_action(auto_format='on')
+        assert self.action.auto_format_option == 'on'
+
+        self.action.config_action(auto_format='off')
+        assert self.action.auto_format_option == 'off'
+
+    def test_set_metadata_fields(self):
+        #testing with invalid fields
+        self.action.config_action(metadata_fields='field1,author_email,author_name')
+        assert self.action.metadata_fields == METADATA_FIELDS
+
+        #testing with valid fields
+        self.action.config_action(metadata_fields='author_email,author_name')
+        assert self.action.metadata_fields == ['author_email', 'author_name']
+
+    def test_set_default_metadata(self):
+        with patch('builtins.input', side_effect = ['alpha', 'beta', '','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','']):
+            self.action.config_action(metadata_defaults = True)
+        fields = METADATA_FIELDS
+        for field in fields:
+            if field == METADATA_FIELDS[0]:
+                assert field in self.action.default_metadata
+                assert self.action.default_metadata[field] == 'alpha'
+            elif field == METADATA_FIELDS[1]:
+                assert field in self.action.default_metadata
+                assert self.action.default_metadata[field] == 'beta'
+            else:
+                assert field not in self.action.default_metadata
+
+    def test_set_metadata_prompt(self):
+        self.action.config_action(metadata_prompt='on')
+        assert self.action.metadata_prompt
+
+        self.action.config_action(metadata_prompt='off')
+        assert not self.action.metadata_prompt

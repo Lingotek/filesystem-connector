@@ -34,7 +34,7 @@ class DocumentManager:
         if root_path != None:
             config = ConfigParser()
             try:
-                config.read( root_path + "/.ltk/config")
+                config.read( root_path + os.sep+".ltk"+os.sep+"config")
                 download_folder = config.get('main','download_folder')
                 locale_folders = config.get('main','locale_folders')
                 locale_folders = json.loads(locale_folders)
@@ -49,7 +49,7 @@ class DocumentManager:
             #       Is the file name inside of the download folder (it's in a sub-folder of the download folder)? (That's okay)
             ###
             if file_name[:len(download_folder)] == download_folder and download_folder is not "" and len(file_name) < len(download_folder) :
-                with open(root_path + '/.ltk/folders.json') as json_data:
+                with open(root_path + os.sep+'.ltk'+os.sep+'folders.json') as json_data:
                     folders_json = json.load(json_data)
                 folders = folders_json['_default']
                 for folder in folders:
@@ -124,10 +124,10 @@ class DocumentManager:
             return True
         return False
 
-    def add_document(self, title, create_date, doc_id, sys_mtime, last_mod, file_name):
+    def add_document(self, title, create_date, doc_id, sys_mtime, last_mod, file_name, process_id, download_folder=''):
         entry = {'name': title, 'added': create_date, 'id': doc_id,
                  'sys_last_mod': sys_mtime, 'last_mod': last_mod, 'file_name': file_name,
-                 'downloaded': []}
+                 'downloaded': [], 'download_folder': download_folder, 'process_id': process_id}
         self._db.insert(entry)
 
     def update_document(self, field, new_val, doc_id):
@@ -152,6 +152,14 @@ class DocumentManager:
         for entry in self._db.all():
             doc_ids.append(entry['id'])
         return doc_ids
+
+    def get_process_ids(self):
+        """ returns all the process ids of documents that the user has added"""
+        process_ids = []
+        for entry in self._db.all():
+            if 'process_id' in entry:
+                process_ids.append(entry['process_id'])
+        return process_ids
 
     def get_file_names(self):
         """ returns all the file names of documents that the user has added """
@@ -190,6 +198,16 @@ class DocumentManager:
         if entry:
             downloads = entry['downloaded']
             return downloads
+
+    def get_doc_target_folder(self, file_name):
+        """ returns the target download folder for a given file """
+        folder = ''
+        entry = self._db.get(where("file_name") == file_name)
+        if entry:
+            if 'download_folder' not in entry:
+                entry['download_folder'] = ''
+            folder = entry['download_folder']
+        return folder
 
     def remove_element(self, doc_id):
         self._db.remove(where('id') == doc_id)
