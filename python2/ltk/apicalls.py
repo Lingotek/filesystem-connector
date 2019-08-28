@@ -222,14 +222,14 @@ class ApiCalls:
         try:
             uri = API_URI['document']
             payload = {'locale_code': source_locale, 'project_id': project_id, 'title': title}
-            for key in kwargs:
-                if kwargs[key]:
-                    if key == 'download_folder':
-                        continue #don't add this key because the API is not set up to do anything with it and we don't want to expose anything in an API post that we don't have to
-                    payload[key] = kwargs[key]
             for field in doc_metadata:
                 if doc_metadata[field]:
                     payload[field] = doc_metadata[field]
+            for key in kwargs:#set after metadata so metadata flags can override the wizard
+                if kwargs[key]:
+                    if key == 'download_folder' or key == 'overwrite':
+                        continue #don't add this key because the API is not set up to do anything with it and we don't want to expose anything in an API post that we don't have to
+                    payload[key] = kwargs[key]
             detected_format = ltk.utils.detect_format(file_name)
             if ('format' not in kwargs or kwargs['format'] is None):
                 payload['format'] = detected_format
@@ -289,16 +289,15 @@ class ApiCalls:
             self.handleError()
         return r
     
-    #Commenting out pending an API fix
-    # def document_remove_reference(self, document_id, reference_id):
-    #    """ removes reference material from a document """
-    #    try:
-    #        uri = (API_URI['reference_id'] % locals())
-    #        r = requests.delete(self.host + uri, headers=self.headers)
-    #        log_api('DELETE', uri, r)
-    #    except requests.exceptions.ConnectionError:
-    #        self.handleError()
-    #    return r
+    def document_remove_reference(self, document_id, reference_id):
+       """ removes reference material from a document """
+       try:
+           uri = (API_URI['reference_id'] % locals())
+           r = requests.delete(self.host + uri, headers=self.headers)
+           log_api('DELETE', uri, r)
+       except requests.exceptions.ConnectionError:
+           self.handleError()
+       return r
 
     def document_add_target(self, document_id, locale, workflow_id=None, due_date=None):
         """ adds a target to existing document, starts the workflow """
@@ -384,12 +383,12 @@ class ApiCalls:
         try:
             uri = (API_URI['document_id'] % locals())
             payload = {'id': document_id}
-            for key in kwargs:
-                if kwargs[key]:
-                    payload[key] = kwargs[key]
             for field in doc_metadata:
                 if doc_metadata[field]:
                     payload[field] = doc_metadata[field]
+            for key in kwargs:#set after metadata so metadata flags can override the metadata wizard
+                if kwargs[key]:
+                    payload[key] = kwargs[key]#will need to update this to look like it does in add_document if any arguments are added to ltk push that take parameters but shouldn't be sent
             if file_name:
                 document = open(file_name, 'rb')
                 files = {'content': (file_name, document)}

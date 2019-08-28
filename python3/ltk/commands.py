@@ -729,7 +729,7 @@ ltk.add_command(filters)
 def reference():
     pass
 
-@reference.command(name='add', short_help="Uploads reference material and attaches it to a document.")
+@reference.command(name='add', short_help="Uploads reference material and attaches it to the specified document.")
 @click.argument('filename')
 @click.option('-i', '--id', 'doc_id', flag_value=True, help="Adds reference material to the specified document ID instead of the specified filename.")
 def reference_add(filename, doc_id):
@@ -743,7 +743,7 @@ def reference_add(filename, doc_id):
         logger.error(e)
         return
 
-@reference.command(name='list', short_help="Lists the reference material that is currently attached to a document.")
+@reference.command(name='list', short_help="Lists the reference material that is currently attached to the specified document.")
 @click.argument('filename')
 @click.option('-i', '--id', 'doc_id', flag_value=True, help="Lists reference material attached to the specified document ID instead of the specified filename.")
 def reference_list(filename, doc_id):
@@ -757,7 +757,7 @@ def reference_list(filename, doc_id):
         logger.error(e)
         return
 
-@reference.command(name='get', short_help="Downloads reference material that is currently attached to a document.")
+@reference.command(name='get', short_help="Downloads reference material that is currently attached to the specified document.")
 @click.argument('filename')
 @click.option('-i', '--id', 'doc_id', flag_value=True, help="Downloads reference material attached to the specified document ID instead of the specified filename.")
 @click.option('-a', '--all', 'get_all', flag_value=True, help="Skips the prompt and downloads all the reference material that is attached to the document.")
@@ -773,21 +773,20 @@ def reference_get(filename, doc_id, get_all, path):
         logger.error(e)
         return
 
-#Commenting out pending an API fix
-# @reference.command(name='remove', short_help="Removes reference material that is currently attached to a document.")
-# @click.argument('filename')
-# @click.option('-i', '--id', 'doc_id', flag_value=True, help="Removes reference material from the specified document ID instead of the specified filename.")
-# @click.option('-a', '--all', 'remove_all', flag_value=True, help="Skips the prompt and removes all the reference material from the document.")
-# def reference_remove(filename, doc_id, remove_all):
-#     """Deletes reference material attached to a document on Lingotek."""
-#     try:
-#         action = reference_action.ReferenceAction(os.getcwd())
-#         init_logger(action.path)
-#         action.reference_remove_action(filename, doc_id, remove_all)
-#     except (UninitializedError, RequestFailedError) as e:
-#         print_log(e)
-#         logger.error(e)
-#         return
+@reference.command(name='rm', short_help="Removes reference material that is currently attached to the specified document")
+@click.argument('filename')
+@click.option('-i', '--id', 'doc_id', flag_value=True, help="Removes reference material from the specified document ID instead of the specified filename.")
+@click.option('-a', '--all', 'remove_all', flag_value=True, help="Skips the prompt and removes all the reference material from the document.")
+def reference_remove(filename, doc_id, remove_all):
+    """Deletes reference material attached to a document on Lingotek."""
+    try:
+        action = reference_action.ReferenceAction(os.getcwd())
+        init_logger(action.path)
+        action.reference_remove_action(filename, doc_id, remove_all)
+    except (UninitializedError, RequestFailedError) as e:
+        print_log(e)
+        logger.error(e)
+        return
 
 ltk.add_command(reference)
 

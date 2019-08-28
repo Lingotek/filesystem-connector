@@ -118,7 +118,6 @@ class TestReference(unittest.TestCase):
         finally:
             sys.stdout = sys.__stdout__
 
-    @unittest.skip("Skipping until API gets fixed and remove feature is implemented")
     def test_remove_reference(self):
         #use API instead of add function so it can be tested separately
         referenceA = {'file': self.references[0]}

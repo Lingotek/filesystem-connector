@@ -16,7 +16,7 @@ class TestPush(unittest.TestCase):
         create_config()
         self.downloaded = []
         self.add_action = AddAction(os.getcwd())
-        self.action = PushAction(self.add_action,os.getcwd(),False,False)
+        self.action = PushAction(self.add_action,os.getcwd(),False,False)#all push_action calls below need to have the kwargs 'due_date' and 'due_reason'.  They aren't declared in the push action itself, but are in the click command that calls the push action when a user uses it and are used in the logic of the push action
         self.clean_action = CleanAction(os.getcwd())
         self.rm_action = RmAction(os.getcwd())
         self.download_action = DownloadAction(os.getcwd())
@@ -53,7 +53,7 @@ class TestPush(unittest.TestCase):
         self.request_action.target_action()
         orig_dates = get_orig_dates(self.action, [test_doc_id]) #get the initial timestamp before modifying the document on the cloud
         assert orig_dates
-        self.action.push_action()
+        self.action.push_action(due_date='', due_reason='')
         assert check_updated_ids(self.action, orig_dates) # Poll and wait until the modification has taken effect in the cloud
         downloaded_path = self.download_action.download_action(test_doc_id, locales[0], False)
         #print("downloaded_path: "+str(downloaded_path))
@@ -77,7 +77,7 @@ class TestPush(unittest.TestCase):
         target2 = self.request_action.target_action()
         orig_dates = get_orig_dates(self.action, [test_doc_id_0, test_doc_id_1]) #get the initial timestamp before modifying the document on the cloud
         assert orig_dates
-        push = self.action.push_action()
+        push = self.action.push_action(due_date='', due_reason='')
         assert check_updated_ids(self.action, orig_dates) # Poll and wait until the modification has taken effect on the cloud
         dl_path_0 = self.download_action.download_action(test_doc_id_0, locales[0], False)
         dl_path_1 = self.download_action.download_action(test_doc_id_1, locales[0], False)
@@ -94,7 +94,7 @@ class TestPush(unittest.TestCase):
         try:
             # out = StringIO()
             # sys.stdout = out
-            assert not self.action.push_action()
+            assert not self.action.push_action(due_date='', due_reason='')
             # info = out.getvalue()
             # assert 'All documents up-to-date with Lingotek Cloud.' in info
         finally:
@@ -121,7 +121,7 @@ class TestPush(unittest.TestCase):
             formatter = logging.Formatter('%(message)s')
             handler.setFormatter(formatter)
             logger.addHandler(handler)
-            push = self.action.push_action()
+            push = self.action.push_action(due_date='', due_reason='')
             info = out.getvalue()
             assert 'Update '+self.files[0] in info
             assert 'Update '+self.files[1] in info
@@ -168,7 +168,7 @@ class TestPush(unittest.TestCase):
             formatter = logging.Formatter('%(message)s')
             handler.setFormatter(formatter)
             logger.addHandler(handler)
-            push = self.action.push_action()
+            push = self.action.push_action(due_date='', due_reason='')
             info = out.getvalue()
             assert 'Updated '+self.files[0] in info
             assert 'Updated nestedfile.txt' in info #should be just nestedfile.txt, not nested/nestedfile.txt
@@ -193,7 +193,7 @@ class TestPush(unittest.TestCase):
     def test_push_metadata(self):
         from unittest.mock import patch
         with patch('builtins.input', side_effect = ['alpha','beta','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','']):
-            self.action.push_action(set_metadata=True)
+            self.action.push_action(set_metadata=True, due_date='', due_reason='')
         #check that the metadata is attached to the documents
         for doc_id in self.action.doc_manager.get_doc_ids():
             properties = self.action.api.get_document(doc_id).json()['properties']
@@ -216,7 +216,7 @@ class TestPush(unittest.TestCase):
 
         #modify the metadata
         with patch('builtins.input', side_effect = ['','delta','gamma','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','']):
-            self.action.push_action(set_metadata=True)
+            self.action.push_action(set_metadata=True, due_date='', due_reason='')
 
 
         #check that the metadata was updated
@@ -246,7 +246,7 @@ class TestPush(unittest.TestCase):
         self.action.default_metadata[METADATA_FIELDS[2]] = "delta"
         self.action.default_metadata[METADATA_FIELDS[3]] = "gamma"
         
-        self.action.push_action()
+        self.action.push_action(due_date='', due_reason='')
 
         #check that the metadata is attached to the documents
         for doc_id in self.action.doc_manager.get_doc_ids():
@@ -281,7 +281,7 @@ class TestPush(unittest.TestCase):
         assert orig_dates0
         orig_dates1 = get_orig_dates(self.action, [test_doc_id_1]) #get the initial timestamp before modifying the document on the cloud
         assert orig_dates1
-        push = self.action.push_action(files=[self.files[0]])
+        push = self.action.push_action(files=[self.files[0]], due_date='', due_reason='')
         assert check_updated_ids(self.action, orig_dates0) # Poll and wait until the modification has taken effect on the cloud
         print("polling to check that file wasn't modified.  This will take 3 minutes if successful.")
         assert not check_updated_ids(self.action, orig_dates1) # Poll and wait to make sure the modification didn't occur on the cloud
@@ -309,7 +309,7 @@ class TestPush(unittest.TestCase):
         assert orig_dates
         from unittest.mock import patch
         with patch('builtins.input', side_effect = ['alpha','beta','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','']):
-            self.action.push_action(set_metadata=True, metadata_only=True)
+            self.action.push_action(set_metadata=True, metadata_only=True, due_date='', due_reason='')
 
         #check that the file contents weren't updated
         print("polling to check that file wasn't modified.  This will take 3 minutes if successful.")

@@ -99,6 +99,10 @@ class StatusAction(Action):
             raise_error("", "Not Found: "+error_message, True, entry['id'])
             return
         process_id = entry['process_id']
+        if process_id == 'imported':#documents added with ltk import -t don't come with a process id, so they get set to 'imported'
+            error_message = "Check Lingotek TMS to see if \'"+entry['file_name']+"\' has been deleted"
+            raise_error("", "Not Found: "+error_message, True, entry['id'])
+            return
         response = self.api.get_process(process_id)
         if response.status_code == 404:
             # The process doesn't exist for some reason
