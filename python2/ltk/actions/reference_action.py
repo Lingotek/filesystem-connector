@@ -143,7 +143,7 @@ class ReferenceAction(Action):
                if remove_all:
                    chosen_list = tablemap.values()
                while not len(chosen_list) > 0:
-                   prompt_message = 'Reference materials to download: (Separate indices by comma) '
+                   prompt_message = 'Reference materials to remove: (Separate indices by comma) '
                    # Python 2
                    choice = raw_input(prompt_message)
                    # End Python 2

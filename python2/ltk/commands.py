@@ -773,7 +773,7 @@ def reference_get(filename, doc_id, get_all, path):
         logger.error(e)
         return
 
-@reference.command(name='remove', short_help="Removes reference material that is currently attached to the specified document")
+@reference.command(name='rm', short_help="Removes reference material that is currently attached to the specified document")
 @click.argument('filename')
 @click.option('-i', '--id', 'doc_id', flag_value=True, help="Removes reference material from the specified document ID instead of the specified filename.")
 @click.option('-a', '--all', 'remove_all', flag_value=True, help="Skips the prompt and removes all the reference material from the document.")
