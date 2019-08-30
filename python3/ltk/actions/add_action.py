@@ -68,9 +68,14 @@ class AddAction(Action):
                 # title = os.path.basename(os.path.normpath(file_name)).split('.')[0]
                 relative_path = self.norm_path(file_name)
                 title = os.path.basename(relative_path)
-                if os.stat(relative_path).st_size == 0:
-                    logger.info("This document is empty and was not added: {0}\n".format(title))
-                    continue
+                try:
+                    if os.stat(os.path.join(self.path,relative_path)).st_size == 0:
+                        logger.info("This document is empty and was not added: {0}\n".format(title))
+                        continue
+                except FileNotFoundError:
+                    logger.warning("Warning: could not verify that {0} is not empty".format(relative_path))
+                except Exception as e:
+                    raise e
                 if not self.doc_manager.is_doc_new(relative_path):
                     if self.doc_manager.is_doc_modified(relative_path, self.path) or len(metadata) > 0:
                         if 'overwrite' in kwargs and kwargs['overwrite']:
