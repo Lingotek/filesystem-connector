@@ -1,6 +1,10 @@
 # Changelog #
-# 1.3.6
-## NEW FEATURES
+# 1.3.7
+##CHANGES:
+* no longer incorrectly reports errors on successful uploads
+
+## 1.3.6
+### NEW FEATURES
 * added ability to specify different target download folders for translations of different files using ltk add -D
 * added option to see target download folders for files, if set, by using ltk pull -d
 * added the ability to set default metadata to be sent with every document
@@ -8,7 +12,7 @@
 * added ability to send metadata when pushing documents
 * added a set of commands (ltk reference add, ltk reference list, ltk reference get, and ltk reference rm) to upload, download, list, and remove reference material to/from documents
 * added a warning to ltk watch if trying to watch too many folders/files
-## CHANGES:
+### CHANGES:
 * ltk import no longer automatically adds documents to tracking, and instead lets the user specify if they want to track the imported documents or not with the -t flag
 * ltk mv correctly moves files and no longer throws an error when doing so
 * downloads files in the correct format when pulling by locale with locale extensions turned on
