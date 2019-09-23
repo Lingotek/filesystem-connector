@@ -199,6 +199,11 @@ class Action:
         # whenever a document is updated, it should have new translations
         self.doc_manager.update_document('downloaded', [], doc_id)
 
+    def handle_update(self, response):
+        """ handles possible update responses """
+
+        # self.doc_manager.update_document('id', new_id, old_id)
+
     def close(self):
         self.doc_manager.close_db()
 
@@ -420,6 +425,7 @@ class Action:
                 response = self.api.document_update(document_id, file_name, title=title, **kwargs)
             else:
                 response = self.api.document_update(document_id, file_name)
+            self.handle_update(response)
             if response.status_code != 202:
                 raise_error(response.json(), "Failed to update document {0}".format(file_name), True)
             self._update_document(relative_path)
