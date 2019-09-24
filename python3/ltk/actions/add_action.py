@@ -89,8 +89,12 @@ class AddAction(Action):
                             # confirm if would like to overwrite existing document in Lingotek Cloud
                             if option:
                                 logger.info('Overwriting document \'{0}\' in Lingotek Cloud...\n'.format(title))
-                                self.update_document_action(file_name, title, doc_metadata=metadata, **kwargs)
-                                continue
+                                status = self.update_document_action(file_name, title, doc_metadata=metadata, **kwargs)
+                                if status == 410:
+                                    print("Document was upload but ID was archived. Reuploading Document")
+                                else:
+                                    continue
+
                             else:
                                 logger.info('Will not overwrite document \'{0}\' in Lingotek Cloud\n'.format(title))
                                 continue
@@ -105,12 +109,10 @@ class AddAction(Action):
                 logger.error("JSON error on adding document.")
             except Exception:
                 logger.error("Error adding document")
-
             self.add_document(file_name, title, doc_metadata=metadata, **kwargs)
 
     def add_document(self, file_name, title, doc_metadata={}, **kwargs):
         ''' adds the document to Lingotek cloud and the db '''
-
         if ltk.check_connection.check_for_connection() == False:
             logger.warning("Cannot connect to network. Documents added to the watch folder will be translated after you reconnect to the network.")
             while ltk.check_connection.check_for_connection() == False:

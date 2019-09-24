@@ -186,7 +186,7 @@ class Action:
             dl_folder = os.path.relpath(dl_folder, self.path)
         self.doc_manager.add_document(title, now, doc_id, last_modified, now, file_name, process_id, dl_folder)
 
-    def _update_document(self, file_name):
+    def _update_document(self, file_name, next_document_id=None):
         """ updates a document in the db """
         now = time.time()
         file_path = os.path.join(self.path, file_name)
@@ -198,6 +198,14 @@ class Action:
         self.doc_manager.update_document('sys_last_mod', sys_last_modified, doc_id)
         # whenever a document is updated, it should have new translations
         self.doc_manager.update_document('downloaded', [], doc_id)
+        if next_document_id:
+            self.doc_manager.update_document('id', next_document_id, doc_id)
+
+    def update_doc_response_manager(self, response, document_id, file_name, *args, **kwargs):
+        if response.status_code == 423 and 'next_document_id' in response.json():
+            self.doc_manager.update_document('id', response.json()['next_document_id'], document_id)
+            return self.api.document_update(response.json()['next_document_id'], file_name, *args, **kwargs)
+        return response
 
     def close(self):
         self.doc_manager.close_db()
@@ -417,19 +425,31 @@ class Action:
                 logger.error("Document name specified for update doesn't exist: {0}".format(title))
                 return
             if title:
-                response = self.api.document_update(document_id, file_name, title=title, **kwargs)
+                response = self.update_doc_response_manager(self.api.document_update(document_id, file_name, title=title, **kwargs), document_id, file_name, title=title, **kwargs)
             else:
-                response = self.api.document_update(document_id, file_name)
-            if response.status_code != 202:
+                response = self.update_doc_response_manager(self.api.document_update(document_id, file_name), document_id, file_name, **kwargs)
+            if response.status_code == 402:
+                raise_error(response.json(), "Failed to updated document {0}".format(file_name), True)
+            elif response.status_code == 410:
+                return 410
+            elif response.status_code == 202:
+                try:
+                    next_document_id = response.json()['next_document_id']
+                except Exception:
+                    next_document_id = None
+                else:
+                    self._update_document(relative_path, next_document_id)
+            else:
                 raise_error(response.json(), "Failed to update document {0}".format(file_name), True)
-            self._update_document(relative_path)
             return True
+
         except Exception as e:
             log_error(self.error_file_name, e)
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
                 logger.error("Error connecting to Lingotek's TMS")
             else:
                 logger.error("Error on updating document"+str(file_name)+": "+str(e))
+            return False
 
     def _target_action_db(self, to_delete, locales, document_id):
         locale_set = set()

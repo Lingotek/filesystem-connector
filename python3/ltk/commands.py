@@ -527,7 +527,8 @@ def mv(source_path, destination_path):
     """
     try:
         # action = actions.Action(os.getcwd())
-        action = move_action.MoveAction(os.getcwd())
+        add = add_action.AddAction(os.getcwd())
+        action = move_action.MoveAction(add, os.getcwd())
         init_logger(action.path)
 
         source_path = remove_powershell_formatting(source_path)
