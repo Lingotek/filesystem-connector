@@ -82,6 +82,9 @@ class MoveAction(Action):
             try:
                 # This is a try block in the case that response is undefined
                 if response.status_code == 202:
+                    if 'next_document_id' in response.json():
+                        self.doc = self.doc_manager.get_doc_by_prop('id', self.doc['id'])
+                        self.doc_manager.update_document('id', response.json()['next_document_id'], self.doc['id'])
                     return True
                 if response.status_code == 410:
                     self.doc = self.doc_manager.get_doc_by_prop('id', self.doc['id'])
