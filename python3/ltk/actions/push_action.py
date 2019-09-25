@@ -73,17 +73,31 @@ class PushAction(Action):
                     print('Update {0}'.format(display_name))
                     continue
                 if self.metadata_only or not self.doc_manager.is_doc_modified(entry['file_name'], self.path):
-                    response = self.api.document_update(entry['id'], doc_metadata=self.metadata, **kwargs)
+                    response = self.update_doc_response_manager(self.api.document_update(entry['id'], doc_metadata=self.metadata, **kwargs), entry['id'], doc_metadata=self.metadata, **kwargs)
                 else:
-                    response = self.api.document_update(entry['id'], os.path.join(self.path, entry['file_name']), doc_metadata=self.metadata, **kwargs)
+                    response = self.update_doc_response_manager(self.api.document_update(entry['id'], os.path.join(self.path, entry['file_name']), doc_metadata=self.metadata, **kwargs), entry['id'], os.path.join(self.path, entry['file_name']), doc_metadata=self.metadata, **kwargs)
                 if response.status_code == 202:
-                    updated += 1
-                    logger.info('Updated {0}'.format(display_name))
-                    self._update_document(entry['file_name'])
+                    try:
+                        next_document_id = response.json()['next_document_id']
+                    except Exception:
+                        next_document_id = None
+                    finally:
+                        updated += 1
+                        logger.info('Updated {0}'.format(display_name))
+                        self._update_document(entry['file_name'], next_document_id)
+                elif response.status_code == 410:
+                    print("Document was uploaded, but ID has been archived. Reuploading")
+                    self.add.add_document(entry['file_name'], entry['name'])
                 else:
                     raise_error(response.json(), "Failed to update document {0}".format(entry['name']), True)
 
         return updated
+
+    def update_doc_response_manager(self, response, document_id, *args, **kwargs):
+        if response.status_code == 423 and 'next_document_id' in response.json():
+            self.doc_manager.update_document('id', response.json()['next_document_id'], document_id)
+            return self.api.document_update(response.json()['next_document_id'], *args, **kwargs)
+        return response
 
     def _push_specific_files(self, patterns, **kwargs):
         files = set()
@@ -115,13 +129,21 @@ class PushAction(Action):
                         print('Update {0}'.format(display_name))
                         continue
                     if self.metadata_only or not self.doc_manager.is_doc_modified(entry['file_name'], self.path):
-                        response = self.api.document_update(entry['id'], doc_metadata=self.metadata, **kwargs)
+                        response = self.update_doc_response_manager(self.api.document_update(entry['id'], doc_metadata=self.metadata, **kwargs), entry['id'], doc_metadata=self.metadata, **kwargs)
                     else:
-                        response = self.api.document_update(entry['id'], os.path.join(self.path, entry['file_name']), doc_metadata=self.metadata, **kwargs)
+                        response = self.update_doc_response_manager(self.api.document_update(entry['id'], os.path.join(self.path, entry['file_name']), doc_metadata=self.metadata, **kwargs), entry['id'], os.path.join(self.path, entry['file_name']), doc_metadata=self.metadata, **kwargs)
                     if response.status_code == 202:
-                        updated += 1
-                        logger.info('Updated {0}'.format(display_name))
-                        self._update_document(entry['file_name'])
+                        try:
+                            next_document_id = response.json()['next_document_id']
+                        except Exception:
+                            next_document_id = None
+                        finally:
+                            updated += 1
+                            logger.info('Updated {0}'.format(display_name))
+                            self._update_document(entry['file_name'], next_document_id)
+                    elif response.status_code == 410:
+                        print("Document was uploaded, but ID has been archived. Reuploading")
+                        self.add.add_document(entry['file_name'], entry['name'])
                     else:
                         raise_error(response.json(), "Failed to update document {0}".format(entry['name']), True)
         return added, updated

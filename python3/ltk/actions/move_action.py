@@ -80,9 +80,10 @@ class MoveAction(Action):
                         self.doc = self.doc_manager.get_doc_by_prop("file_name",file_name)
                         self.doc_manager.update_document('file_name', file_name.replace(self.directory_to_source, self.directory_to_destination, 1), self.doc['id'])
             try:
+                # This is a try block in the case that response is undefined
                 if response.status_code == 202:
                     return True
-                elif response.status_code == 410:
+                if response.status_code == 410:
                     self.doc = self.doc_manager.get_doc_by_prop('id', self.doc['id'])
                     print("Document was uploaded, but ID has been archived. Renaming and reuploading")
                     self.add.add_document(self.doc['file_name'], self.doc['name'])

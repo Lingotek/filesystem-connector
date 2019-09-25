@@ -428,16 +428,15 @@ class Action:
                 response = self.update_doc_response_manager(self.api.document_update(document_id, file_name, title=title, **kwargs), document_id, file_name, title=title, **kwargs)
             else:
                 response = self.update_doc_response_manager(self.api.document_update(document_id, file_name), document_id, file_name, **kwargs)
-            if response.status_code == 402:
-                raise_error(response.json(), "Failed to updated document {0}".format(file_name), True)
-            elif response.status_code == 410:
+
+            if response.status_code == 410:
                 return 410
             elif response.status_code == 202:
                 try:
                     next_document_id = response.json()['next_document_id']
                 except Exception:
                     next_document_id = None
-                else:
+                finally:
                     self._update_document(relative_path, next_document_id)
             else:
                 raise_error(response.json(), "Failed to update document {0}".format(file_name), True)
