@@ -20,6 +20,7 @@ class PushAction(Action):
                 added, updated = self._push_specific_files(files, **kwargs)
             else:
                 added = self._add_new_docs(**kwargs)
+                # FIND ISSUES HERE!!
                 updated = self._update_current_docs(**kwargs)
             total = added + updated
             if total is 0:
@@ -64,7 +65,6 @@ class PushAction(Action):
     def _update_current_docs(self, **kwargs):
         updated = 0
         entries = self.doc_manager.get_all_entries()
-
         for entry in entries:
             if (len(self.metadata) > 0 or kwargs['due_date'] or kwargs['due_reason']) or (self.doc_manager.is_doc_modified(entry['file_name'], self.path) and not self.metadata_only):
                 display_name = entry['name'] if self.title else entry['file_name']

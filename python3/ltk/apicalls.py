@@ -409,8 +409,8 @@ class ApiCalls:
         r = Response()
         r.code = "expired"
         r.error_type = "expired"
-        r.status_code = 402
-        r._content = b'{ "next_document_id" : "12345-678910-111213", "messages" : [ "You such a scrub" ]}'
+        r.status_code = 410
+        r._content = b'{ "next_document_id" : "987654321000000000", "messages" : [ "You such a scrub" ]}'
         return r
 
     def document_delete_target(self, document_id, locale):
