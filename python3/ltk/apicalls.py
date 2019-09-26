@@ -1,5 +1,4 @@
 import requests
-from requests.models import Response
 from ltk.api_uri import API_URI
 from ltk.utils import restart
 import ltk.utils
@@ -406,11 +405,6 @@ class ApiCalls:
             log_api('PATCH', uri, r)
         except requests.exceptions.ConnectionError:
             self.handleError()
-        r = Response()
-        r.code = "expired"
-        r.error_type = "expired"
-        r.status_code = 410
-        r._content = b'{ "next_document_id" : "987654321000000000", "messages" : [ "You such a scrub" ]}'
         return r
 
     def document_delete_target(self, document_id, locale):

@@ -89,9 +89,10 @@ class AddAction(Action):
                             # confirm if would like to overwrite existing document in Lingotek Cloud
                             if option:
                                 logger.info('Overwriting document \'{0}\' in Lingotek Cloud...\n'.format(title))
-                                status = self.update_document_action(file_name, title, doc_metadata=metadata, **kwargs)
+                                status, doc_id = self.update_document_action(file_name, title, doc_metadata=metadata, **kwargs)
                                 if status == 410:
                                     print("Document was upload but ID was archived. Reuploading Document")
+                                    self.doc_manager.remove_element(doc_id)
                                 else:
                                     continue
 

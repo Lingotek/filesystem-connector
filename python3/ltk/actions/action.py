@@ -204,8 +204,8 @@ class Action:
     def update_doc_response_manager(self, response, document_id, file_name, *args, **kwargs):
         if response.status_code == 423 and 'next_document_id' in response.json():
             self.doc_manager.update_document('id', response.json()['next_document_id'], document_id)
-            return self.api.document_update(response.json()['next_document_id'], file_name, *args, **kwargs)
-        return response
+            return self.api.document_update(response.json()['next_document_id'], file_name, *args, **kwargs), response.json()['next_document_id']
+        return response, document_id
 
     def close(self):
         self.doc_manager.close_db()
@@ -425,12 +425,12 @@ class Action:
                 logger.error("Document name specified for update doesn't exist: {0}".format(title))
                 return
             if title:
-                response = self.update_doc_response_manager(self.api.document_update(document_id, file_name, title=title, **kwargs), document_id, file_name, title=title, **kwargs)
+                response, next_doc_id = self.update_doc_response_manager(self.api.document_update(document_id, file_name, title=title, **kwargs), document_id, file_name, title=title, **kwargs)
             else:
-                response = self.update_doc_response_manager(self.api.document_update(document_id, file_name), document_id, file_name, **kwargs)
+                response, next_doc_id = self.update_doc_response_manager(self.api.document_update(document_id, file_name), document_id, file_name, **kwargs)
 
             if response.status_code == 410:
-                return 410
+                return 410, next_doc_id
             elif response.status_code == 202:
                 try:
                     next_document_id = response.json()['next_document_id']

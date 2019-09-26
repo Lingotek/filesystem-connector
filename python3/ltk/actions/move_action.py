@@ -86,8 +86,10 @@ class MoveAction(Action):
                     self.doc_manager.update_document('id', response.json()['next_document_id'], self.doc['id'])
                 elif response.status_code == 410:
                     self.doc = self.doc_manager.get_doc_by_prop('id', self.doc['id'])
+                    doc_name = self.doc['name']
+                    self.doc_manager.remove_element(self.doc['id'])
                     print("Document was uploaded, but ID has been archived. Renaming and reuploading")
-                    self.add.add_document(self.path_to_destination, self.doc['name'])
+                    self.add.add_document(self.path_to_destination, doc_name)
                 else:
                     return False
             except NameError:
