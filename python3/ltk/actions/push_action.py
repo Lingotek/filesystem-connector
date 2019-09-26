@@ -73,9 +73,9 @@ class PushAction(Action):
                     print('Update {0}'.format(display_name))
                     continue
                 if self.metadata_only or not self.doc_manager.is_doc_modified(entry['file_name'], self.path):
-                    response, next_doc_id = self.update_doc_response_manager(self.api.document_update(entry['id'], doc_metadata=self.metadata, **kwargs), entry['id'], doc_metadata=self.metadata, **kwargs)
+                    response, previous_doc_id = self.update_doc_response_manager(self.api.document_update(entry['id'], doc_metadata=self.metadata, **kwargs), entry['id'], doc_metadata=self.metadata, **kwargs)
                 else:
-                    response, next_doc_id = self.update_doc_response_manager(self.api.document_update(entry['id'], os.path.join(self.path, entry['file_name']), doc_metadata=self.metadata, **kwargs), entry['id'], os.path.join(self.path, entry['file_name']), doc_metadata=self.metadata, **kwargs)
+                    response, previous_doc_id = self.update_doc_response_manager(self.api.document_update(entry['id'], os.path.join(self.path, entry['file_name']), doc_metadata=self.metadata, **kwargs), entry['id'], os.path.join(self.path, entry['file_name']), doc_metadata=self.metadata, **kwargs)
                 if response.status_code == 202:
                     try:
                         next_document_id = response.json()['next_document_id']
@@ -86,7 +86,7 @@ class PushAction(Action):
                         logger.info('Updated {0}'.format(display_name))
                         self._update_document(entry['file_name'], next_document_id)
                 elif response.status_code == 410:
-                    self.doc_manager.remove_element(next_doc_id)
+                    self.doc_manager.remove_element(previous_doc_id)
                     print("Document was uploaded, but ID has been archived. Reuploading")
                     self.add.add_document(entry['file_name'], entry['name'])
                 else:

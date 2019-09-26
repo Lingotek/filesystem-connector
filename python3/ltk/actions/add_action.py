@@ -89,10 +89,10 @@ class AddAction(Action):
                             # confirm if would like to overwrite existing document in Lingotek Cloud
                             if option:
                                 logger.info('Overwriting document \'{0}\' in Lingotek Cloud...\n'.format(title))
-                                status, doc_id = self.update_document_action(file_name, title, doc_metadata=metadata, **kwargs)
+                                status, previous_doc_id = self.update_document_action(file_name, title, doc_metadata=metadata, **kwargs)
                                 if status == 410:
-                                    print("Document was upload but ID was archived. Reuploading Document")
-                                    self.doc_manager.remove_element(doc_id)
+                                    print("Document was uploaded but ID was archived. Reuploading Document")
+                                    self.doc_manager.remove_element(previous_doc_id)
                                 else:
                                     continue
 
@@ -110,7 +110,8 @@ class AddAction(Action):
                 logger.error("JSON error on adding document.")
             except Exception:
                 logger.error("Error adding document")
-            self.add_document(file_name, title, doc_metadata=metadata, **kwargs)
+            else:
+                self.add_document(file_name, title, doc_metadata=metadata, **kwargs)
 
     def add_document(self, file_name, title, doc_metadata={}, **kwargs):
         ''' adds the document to Lingotek cloud and the db '''

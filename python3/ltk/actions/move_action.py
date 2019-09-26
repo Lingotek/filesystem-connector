@@ -56,7 +56,6 @@ class MoveAction(Action):
         try:
             if self.rename and self.source_type == 'file' and self.path_to_source.rstrip(self.path_sep).rstrip(self.doc['name']) != self.path_to_source.rstrip(self.path_sep):
                 new_name = os.path.basename(self.path_to_destination)
-                self.doc_manager.update_document('name', new_name, self.doc['id'])
                 response = self.api.document_update(self.doc['id'], title=new_name)
                 if response.status_code == 423 and 'next_document_id' in response.json():
                     self.doc_manager.update_document('id', response.json()['next_document_id'], self.doc['id'])
@@ -64,6 +63,7 @@ class MoveAction(Action):
                     response = self.api.document_update(self.doc['id'], title=new_name)
                 if response.status_code == 402 or response.status_code == 423:
                     return False
+                self.doc_manager.update_document('name', new_name, self.doc['id'])
             elif not self.rename:
                 file_name = os.path.basename(self.path_to_source)
                 self.path_to_destination+=self.path_sep+file_name
