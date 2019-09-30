@@ -11,7 +11,6 @@ import sys, os
 # Python 3
 import urllib.parse as parse
 # End Python 3
-from requests.models import Response
 
 class ApiCalls:
     def __init__(self, host, access_token, watch=False, timeout=5):
@@ -406,11 +405,6 @@ class ApiCalls:
             log_api('PATCH', uri, r)
         except requests.exceptions.ConnectionError:
             self.handleError()
-        r = Response()
-        r.code = "expired"
-        r.error_type = "expired"
-        r.status_code = 202
-        r._content = b'{ "next_document_id" : "tekashiasdfasdf", "messages" : [ "Failed ya scrub" ]}'
         return r
 
     def document_delete_target(self, document_id, locale):
