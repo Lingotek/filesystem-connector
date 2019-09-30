@@ -56,13 +56,10 @@ class MoveAction(Action):
         try:
             if self.rename and self.source_type == 'file' and self.path_to_source.rstrip(self.path_sep).rstrip(self.doc['name']) != self.path_to_source.rstrip(self.path_sep):
                 new_name = os.path.basename(self.path_to_destination)
-                response = self.api.document_update(self.doc['id'], title=new_name)
-                if response.status_code == 423 and 'next_document_id' in response.json():
-                    self.doc_manager.update_document('id', response.json()['next_document_id'], self.doc['id'])
-                    self.doc['id'] = response.json()['next_document_id']
-                    response = self.api.document_update(self.doc['id'], title=new_name)
+                response, document_id = self.locked_doc_response_manager(self.api.document_update(self.doc['id'], title=new_name), self.doc['id'], title=new_name)
                 # The reason we return here on 402 or after getting a 423 is because that means the API call will definitely fail
                 # So we want to prevent the rest of the move action from happening.
+                self.doc['id'] = document_id
                 if response.status_code == 402 or response.status_code == 423:
                     return False
                 self.doc_manager.update_document('name', new_name, self.doc['id'])
