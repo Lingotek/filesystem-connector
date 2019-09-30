@@ -362,8 +362,7 @@ def push(test, title, files, metadata, metadata_only, **kwargs):
 
     Metadata can be updated by launching the metadata wizard with the -m flag or by using flags for specific metadata.  The metadata flags are --author_email, --author_name, --business_division, --business_unit, --campaign_id, --campaign_rating, --channel, --contact_email, --contact_name, --content_description, --content_type, --domain, --external_application_id, --external_document_id, --external_style_id, --job_id, --purchase_order, --reference_url, --region, --require_review, --category_id, and --note """
     try:
-        add = add_action.AddAction(os.getcwd())
-        action = push_action.PushAction(add, os.getcwd(), test, title)
+        action = push_action.PushAction(os.getcwd(), test, title)
         init_logger(action.path)
         action.push_action(files=files, set_metadata=metadata, metadata_only=metadata_only, **kwargs)
     except UninitializedError as e:

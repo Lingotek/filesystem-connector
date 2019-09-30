@@ -6,6 +6,8 @@
 from configparser import ConfigParser, NoOptionError
 # End Python 3
 import requests
+import ctypes
+import ltk.check_connection
 import os
 import shutil
 import fnmatch
@@ -58,6 +60,105 @@ class Action:
         self.api = ApiCalls(self.host, self.access_token, self.watch, self.timeout)
         self.git_auto = Git_Auto(self.path)
         self.error_file_name = os.path.join(self.path, CONF_DIR, ERROR_FN)
+
+    def is_hidden_file(self, file_path):
+        # todo more robust checking for OSX files that doesn't start with '.'
+        name = os.path.abspath(file_path).replace(self.path, "")
+        if self.has_hidden_attribute(file_path) or ('Thumbs.db' in file_path) or ('ehthumbs.db' in file_path):
+            return True
+        while name != "":
+            if name.startswith('.') or name.startswith('~') or name == "4913":
+                return True
+            name = name.split(os.sep)[1:]
+            name = (os.sep).join(name)
+        return False
+
+    def has_hidden_attribute(self, file_path):
+        """ Detects if a file has hidden attributes """
+        try:
+            # Python 2
+            # attrs = ctypes.windll.kernel32.GetFileAttributesW(unicode(file_path))
+            # End Python 2
+            # Python 3
+            attrs = ctypes.windll.kernel32.GetFileAttributesW(str(file_path))
+            # End Python 3
+            assert attrs != -1
+            result = bool(attrs & 2)
+        except (AttributeError, AssertionError):
+            result = False
+        return result
+
+    def append_location(self, name, path_to_file, in_directory=False):
+        repo_directory = path_to_file
+        path_sep = os.sep
+        config_file_name, conf_parser = self.init_config_file()
+        if not conf_parser.has_option('main', 'append_option'): self.update_config_file('append_option', 'none', conf_parser, config_file_name, 'Update: Added optional file location appending (ltk config --help)')
+        append_option = conf_parser.get('main', 'append_option')
+        if not in_directory:
+            while repo_directory and repo_directory != "" and not (os.path.isdir(repo_directory + os.sep+".ltk")):
+                repo_directory = repo_directory.split(path_sep)[:-1]
+                repo_directory = path_sep.join(repo_directory)
+            if repo_directory == "" and append_option != 'none':
+                logger.warning('Error: File must be contained within an ltk-initialized directory')
+                return name
+            path_to_file = path_to_file.replace(repo_directory, '', 1).strip(os.sep)
+        if append_option == 'none': return name
+        elif append_option == 'full': return '{0} ({1})'.format(name, path_to_file.rstrip(name).rstrip(os.sep))
+        elif len(append_option) > 5 and append_option[:5] == 'name:':
+            folder_name = append_option[5:]
+            if folder_name in path_to_file:
+                return '{0} ({1})'.format(name, path_to_file[path_to_file.find(folder_name)+len(folder_name):].rstrip(name).strip(os.sep))
+            else: return '{0} ({1})'.format(name, path_to_file.rstrip(name).rstrip(os.sep))
+        elif len(append_option) > 7 and append_option[:7] == 'number:':
+            try: folder_number = int(append_option[7:])
+            except ValueError:
+                logger.warning('Error: Value after "number" must be an integer')
+                return name
+            if(folder_number >=0):
+                return '{0} ({1})'.format(name, path_sep.join(path_to_file.rstrip(name).rstrip(os.sep).split(path_sep)[(-1*folder_number) if folder_number != 0 else len(path_to_file):]))
+            else:
+                logger.warning('Error: Value after "number" must be a non-negative integer')
+                return name
+        else:
+            logger.warning('Error: Invalid value listed for append option. Please update; see ltk config --help')
+
+    def add_document(self, file_name, title, doc_metadata={}, **kwargs):
+        ''' adds the document to Lingotek cloud and the db '''
+        if ltk.check_connection.check_for_connection() == False:
+            logger.warning("Cannot connect to network. Documents added to the watch folder will be translated after you reconnect to the network.")
+            while ltk.check_connection.check_for_connection() == False:
+                time.sleep(15)
+
+        if self.is_hidden_file(file_name):
+            return
+        try:
+            if not 'locale' in kwargs or not kwargs['locale']:
+                locale = self.locale
+            else:
+                locale = kwargs['locale']
+
+            # add document to Lingotek cloud
+            response = self.api.add_document(locale, file_name, self.project_id, self.append_location(title, file_name), doc_metadata, **kwargs)
+            if response.status_code != 202:
+                raise_error(response.json(), "Failed to add document {0}\n".format(title), True)
+            else:
+                title = self.append_location(title, file_name)
+                logger.info('Added document {0} with ID {1}\n'.format(title,response.json()['properties']['id']))
+                relative_path = self.norm_path(file_name)
+
+                # add document to the db
+                if 'download_folder' in kwargs and kwargs['download_folder']:
+                    self._add_document(relative_path, title, response.json()['properties']['id'], response.json()['properties']['process_id'], kwargs['download_folder'])
+                else:
+                    self._add_document(relative_path, title, response.json()['properties']['id'], response.json()['properties']['process_id'])
+        except KeyboardInterrupt:
+            raise_error("", "Canceled adding document\n")
+        except Exception as e:
+            log_error(self.error_file_name, e)
+            if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
+                logger.error("Error connecting to Lingotek's TMS\n")
+            else:
+                logger.error("Error on adding document \n"+str(file_name)+": "+str(e))
 
     def _is_initialized(self):
         actual_path = find_conf(self.path)
@@ -165,7 +266,6 @@ class Action:
             else:
                 self.metadata_fields = METADATA_FIELDS
                 self.update_config_file('metadata_fields', json.dumps(self.metadata_fields), conf_parser, config_file_name, "")
-                
 
         except NoOptionError as e:
             if not self.project_name:
@@ -201,10 +301,10 @@ class Action:
         if next_document_id:
             self.doc_manager.update_document('id', next_document_id, doc_id)
 
-    def update_doc_response_manager(self, response, document_id, file_name, *args, **kwargs):
+    def locked_doc_response_manager(self, response, document_id, *args, **kwargs):
         if response.status_code == 423 and 'next_document_id' in response.json():
             self.doc_manager.update_document('id', response.json()['next_document_id'], document_id)
-            return self.api.document_update(response.json()['next_document_id'], file_name, *args, **kwargs), response.json()['next_document_id']
+            return self.api.document_update(response.json()['next_document_id'], *args, **kwargs), response.json()['next_document_id']
         return response, document_id
 
     def close(self):
@@ -425,12 +525,15 @@ class Action:
                 logger.error("Document name specified for update doesn't exist: {0}".format(title))
                 return
             if title:
-                response, previous_doc_id = self.update_doc_response_manager(self.api.document_update(document_id, file_name, title=title, **kwargs), document_id, file_name, title=title, **kwargs)
+                response, previous_doc_id = self.locked_doc_response_manager(self.api.document_update(document_id, file_name, title=title, **kwargs), document_id, file_name, title=title, **kwargs)
             else:
-                response, previous_doc_id = self.update_doc_response_manager(self.api.document_update(document_id, file_name), document_id, file_name, **kwargs)
+                response, previous_doc_id = self.locked_doc_response_manager(self.api.document_update(document_id, file_name), document_id, file_name, **kwargs)
 
             if response.status_code == 410:
-                return 410, previous_doc_id
+                self.doc_manager.remove_element(previous_doc_id)
+                logger.info('Document was uploaded but the ID has been archived. Reuploading...')
+                self.add_document(file_name, title)
+                return True
             elif response.status_code == 202:
                 try:
                     next_document_id = response.json()['next_document_id']
@@ -438,11 +541,10 @@ class Action:
                     next_document_id = None
                 finally:
                     self._update_document(relative_path, next_document_id)
-                    return 202, next_document_id
+                    return True
             else:
                 raise_error(response.json(), "Failed to update document {0}".format(file_name), True)
                 return False
-
         except Exception as e:
             log_error(self.error_file_name, e)
             if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):

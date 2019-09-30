@@ -61,6 +61,8 @@ class MoveAction(Action):
                     self.doc_manager.update_document('id', response.json()['next_document_id'], self.doc['id'])
                     self.doc['id'] = response.json()['next_document_id']
                     response = self.api.document_update(self.doc['id'], title=new_name)
+                # The reason we return here on 402 or after getting a 423 is because that means the API call will definitely fail
+                # So we want to prevent the rest of the move action from happening.
                 if response.status_code == 402 or response.status_code == 423:
                     return False
                 self.doc_manager.update_document('name', new_name, self.doc['id'])
@@ -80,7 +82,9 @@ class MoveAction(Action):
                         self.doc = self.doc_manager.get_doc_by_prop("file_name",file_name)
                         self.doc_manager.update_document('file_name', file_name.replace(self.directory_to_source, self.directory_to_destination, 1), self.doc['id'])
             try:
-                # This is a try block in the case that response is undefined
+                # We place this try catch block down here because if we know that the response was not a 423 or a 402,
+                # then we want the rest of the move to take place (the above if/elif/if statements)
+                # This is inside of a try block in the case that response is undefined
                 if response.status_code == 202 and 'next_document_id' in response.json():
                     self.doc = self.doc_manager.get_doc_by_prop('id', self.doc['id'])
                     self.doc_manager.update_document('id', response.json()['next_document_id'], self.doc['id'])
@@ -89,10 +93,10 @@ class MoveAction(Action):
                     doc_name = self.doc['name']
                     self.doc_manager.remove_element(self.doc['id'])
                     print("Document was uploaded, but ID has been archived. Renaming and reuploading")
-                    self.add.add_document(self.path_to_destination, doc_name)
+                    self.add_document(self.path_to_destination, doc_name)
                 else:
                     return False
-            except NameError:
+            except Exception:
                 response = None
             return True
         except Exception as e:
