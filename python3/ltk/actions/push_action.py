@@ -1,9 +1,8 @@
 from ltk.actions.action import *
 
 class PushAction(Action):
-    def __init__(self, add, path, test, title):
+    def __init__(self, path, test, title):
         Action.__init__(self, path)
-        self.add = add
         self.title = title
         self.test = test
 
@@ -17,15 +16,15 @@ class PushAction(Action):
                 self.metadata = self.metadata_wizard()
         try:
             if files:
-                added, updated = self._push_specific_files(files, **kwargs)
+                added, updated, failed = self._push_specific_files(files, **kwargs)
             else:
                 added = self._add_new_docs(**kwargs)
-                updated = self._update_current_docs(**kwargs)
-            total = added + updated
+                updated, failed = self._update_current_docs(**kwargs)
+            total = added + updated + failed
             if total is 0:
                 report = 'All documents up-to-date with Lingotek Cloud. '
             else:
-                report = "Added {0}, Updated {1} (Total {2})".format(added, updated, total)
+                report = "Added {0}, Updated {1}, Failed {2} (Total {3})".format(added, updated, failed, total)
             if self.test:
                 logger.info("TEST RUN: " + report)
             else:
@@ -54,7 +53,7 @@ class PushAction(Action):
                                 if self.test:
                                     print('Add {0}'.format(display_name))
                                 else:
-                                    self.add.add_document(file_name, title, doc_metadata=self.metadata, **kwargs)
+                                    self.add_document(file_name, title, doc_metadata=self.metadata, **kwargs)
                                 added += 1
                         except json.decoder.JSONDecodeError as e:
                             log_error(self.error_file_name, e)
@@ -63,32 +62,19 @@ class PushAction(Action):
 
     def _update_current_docs(self, **kwargs):
         updated = 0
+        failed = 0
         entries = self.doc_manager.get_all_entries()
-
         for entry in entries:
             if (len(self.metadata) > 0 or kwargs['due_date'] or kwargs['due_reason']) or (self.doc_manager.is_doc_modified(entry['file_name'], self.path) and not self.metadata_only):
                 display_name = entry['name'] if self.title else entry['file_name']
-                if self.test:
-                    updated += 1 # would be updated
-                    print('Update {0}'.format(display_name))
-                    continue
-                if self.metadata_only or not self.doc_manager.is_doc_modified(entry['file_name'], self.path):
-                    response = self.api.document_update(entry['id'], doc_metadata=self.metadata, **kwargs)
-                else:
-                    response = self.api.document_update(entry['id'], os.path.join(self.path, entry['file_name']), doc_metadata=self.metadata, **kwargs)
-                if response.status_code == 202:
-                    updated += 1
-                    logger.info('Updated {0}'.format(display_name))
-                    self._update_document(entry['file_name'])
-                else:
-                    raise_error(response.json(), "Failed to update document {0}".format(entry['name']), True)
-
-        return updated
+                updated, failed = self._handle_update(updated, failed, display_name, entry, **kwargs)
+        return updated, failed
 
     def _push_specific_files(self, patterns, **kwargs):
         files = set()
         added = 0
         updated = 0
+        failed = 0
         for pattern in patterns:
             if os.path.isdir(pattern):
                 for file in get_files(pattern):
@@ -104,24 +90,23 @@ class PushAction(Action):
                 if self.test:
                     print('Add {0}'.format(display_name))
                 else:
-                    self.add.add_document(file, title, doc_metadata=self.metadata, **kwargs)
+                    self.add_document(file, title, doc_metadata=self.metadata, **kwargs)
                 added += 1
             elif (len(self.metadata) > 0 or kwargs['due_date'] or kwargs['due_reason']) or (self.doc_manager.is_doc_modified(file, self.path) and not self.metadata_only):
                 entry = self.doc_manager.get_doc_by_prop('file_name', file)
                 if entry:
                     display_name = entry['name'] if self.title else entry['file_name']
-                    if self.test:
-                        updated += 1 # would be updated
-                        print('Update {0}'.format(display_name))
-                        continue
-                    if self.metadata_only or not self.doc_manager.is_doc_modified(entry['file_name'], self.path):
-                        response = self.api.document_update(entry['id'], doc_metadata=self.metadata, **kwargs)
-                    else:
-                        response = self.api.document_update(entry['id'], os.path.join(self.path, entry['file_name']), doc_metadata=self.metadata, **kwargs)
-                    if response.status_code == 202:
-                        updated += 1
-                        logger.info('Updated {0}'.format(display_name))
-                        self._update_document(entry['file_name'])
-                    else:
-                        raise_error(response.json(), "Failed to update document {0}".format(entry['name']), True)
-        return added, updated
+                    updated, failed = self._handle_update(updated, failed, display_name, entry, **kwargs)
+        return added, updated, failed
+
+    def _handle_update(self, updated, failed, display_name, entry, **kwargs):
+        if self.test:
+            updated += 1 # would be updated
+            print('Update {0}'.format(display_name))
+            return updated, failed
+        if self.update_document_action(entry['file_name'], display_name, doc_metadata=self.metadata, **kwargs):
+            updated += 1
+            logger.info('Updated {0}'.format(display_name))
+        else:
+            failed += 1
+        return updated, failed
