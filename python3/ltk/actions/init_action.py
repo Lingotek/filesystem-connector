@@ -55,6 +55,8 @@ class InitAction():
                             login_host = 'https://sso.lingotek.com'
                         elif 'clone.lingotek.com' in host:
                             login_host = 'https://clonesso.lingotek.com'
+                        elif 'int.lingotek.com' in host:
+                            login_host = 'https://intsso.lingotek.com'
                         else:
                             if (host.find('sso') != -1):
                                 host_env = host.split('sso')[0]
