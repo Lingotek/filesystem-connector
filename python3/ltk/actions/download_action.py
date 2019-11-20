@@ -47,6 +47,9 @@ class DownloadAction(Action):
                 if self.doc_manager.get_doc_target_folder(entry['file_name']):
                     specific_folder = True
             git_commit_message = self.DEFAULT_COMMIT_MESSAGE
+            if response.status_code == 410:
+                raise_error(response.json(), "Failed to download " + locale_code + ".", True)
+                return
             if response.status_code == 200:
                 self.download_path = self.path
                 if specific_folder:

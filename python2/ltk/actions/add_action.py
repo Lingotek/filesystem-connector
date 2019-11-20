@@ -3,21 +3,6 @@ import ctypes
 import socket
 import ltk.check_connection
 
-def has_hidden_attribute(file_path):
-    """ Detects if a file has hidden attributes """
-    try:
-        # Python 2
-        attrs = ctypes.windll.kernel32.GetFileAttributesW(unicode(file_path))
-        # End Python 2
-        # Python 3
-#         attrs = ctypes.windll.kernel32.GetFileAttributesW(str(file_path))
-        # End Python 3
-        assert attrs != -1
-        result = bool(attrs & 2)
-    except (AttributeError, AssertionError):
-        result = False
-    return result
-
 class AddAction(Action):
     def __init__(self, path):
         Action.__init__(self, path)
@@ -105,61 +90,8 @@ class AddAction(Action):
                 logger.error("JSON error on adding document.")
             except Exception:
                 logger.error("Error adding document")
-
-            self.add_document(file_name, title, doc_metadata=metadata, **kwargs)
-
-    def add_document(self, file_name, title, doc_metadata={}, **kwargs):
-        ''' adds the document to Lingotek cloud and the db '''
-
-        if ltk.check_connection.check_for_connection() == False:
-            logger.warning("Cannot connect to network. Documents added to the watch folder will be translated after you reconnect to the network.")
-            while ltk.check_connection.check_for_connection() == False:
-                time.sleep(15)
-
-        if self.is_hidden_file(file_name):
-            return
-        try:
-            if not 'locale' in kwargs or not kwargs['locale']:
-                locale = self.locale
             else:
-                locale = kwargs['locale']
-
-            # add document to Lingotek cloud
-            response = self.api.add_document(locale, file_name, self.project_id, self.append_location(title, file_name), doc_metadata, **kwargs)
-            if response.status_code != 202:
-                raise_error(response.json(), "Failed to add document {0}\n".format(title), True)
-            else:
-                title = self.append_location(title, file_name)
-                logger.info('Added document {0} with ID {1}\n'.format(title,response.json()['properties']['id']))
-                relative_path = self.norm_path(file_name)
-
-                # add document to the db
-                if 'download_folder' in kwargs and kwargs['download_folder']:
-                    self._add_document(relative_path, title, response.json()['properties']['id'], response.json()['properties']['process_id'], kwargs['download_folder'])
-                else:
-                    self._add_document(relative_path, title, response.json()['properties']['id'], response.json()['properties']['process_id'])
-
-        except KeyboardInterrupt:
-            raise_error("", "Canceled adding document\n")
-
-        except Exception as e:
-            log_error(self.error_file_name, e)
-            if 'string indices must be integers' in str(e) or 'Expecting value: line 1 column 1' in str(e):
-                logger.error("Error connecting to Lingotek's TMS\n")
-            else:
-                logger.error("Error on adding document \n"+str(file_name)+": "+str(e))
-
-    def is_hidden_file(self, file_path):
-        # todo more robust checking for OSX files that doesn't start with '.'
-        name = os.path.abspath(file_path).replace(self.path, "")
-        if has_hidden_attribute(file_path) or ('Thumbs.db' in file_path) or ('ehthumbs.db' in file_path):
-            return True
-        while name != "":
-            if name.startswith('.') or name.startswith('~') or name == "4913":
-                return True
-            name = name.split(os.sep)[1:]
-            name = (os.sep).join(name)
-        return False
+                self.add_document(file_name, title, doc_metadata=metadata, **kwargs)
 
     def add_folders(self, file_patterns):
         ''' checks each file pattern for a directory and adds matching patterns to the db '''
@@ -193,37 +125,3 @@ class AddAction(Action):
             if os.path.join(self.path,folder) in os.path.abspath(file_name):
                 return True
         return False
-
-    def append_location(self, name, path_to_file, in_directory=False):
-        repo_directory = path_to_file
-        path_sep = os.sep
-        config_file_name, conf_parser = self.init_config_file()
-        if not conf_parser.has_option('main', 'append_option'): self.update_config_file('append_option', 'none', conf_parser, config_file_name, 'Update: Added optional file location appending (ltk config --help)')
-        append_option = conf_parser.get('main', 'append_option')
-        if not in_directory:
-            while repo_directory and repo_directory != "" and not (os.path.isdir(repo_directory + os.sep+".ltk")):
-                repo_directory = repo_directory.split(path_sep)[:-1]
-                repo_directory = path_sep.join(repo_directory)
-            if repo_directory == "" and append_option != 'none':
-                logger.warning('Error: File must be contained within an ltk-initialized directory')
-                return name
-            path_to_file = path_to_file.replace(repo_directory, '', 1).strip(os.sep)
-        if append_option == 'none': return name
-        elif append_option == 'full': return '{0} ({1})'.format(name, path_to_file.rstrip(name).rstrip(os.sep))
-        elif len(append_option) > 5 and append_option[:5] == 'name:':
-            folder_name = append_option[5:]
-            if folder_name in path_to_file:
-                return '{0} ({1})'.format(name, path_to_file[path_to_file.find(folder_name)+len(folder_name):].rstrip(name).strip(os.sep))
-            else: return '{0} ({1})'.format(name, path_to_file.rstrip(name).rstrip(os.sep))
-        elif len(append_option) > 7 and append_option[:7] == 'number:':
-            try: folder_number = int(append_option[7:])
-            except ValueError:
-                logger.warning('Error: Value after "number" must be an integer')
-                return name
-            if(folder_number >=0):
-                return '{0} ({1})'.format(name, path_sep.join(path_to_file.rstrip(name).rstrip(os.sep).split(path_sep)[(-1*folder_number) if folder_number != 0 else len(path_to_file):]))
-            else:
-                logger.warning('Error: Value after "number" must be a non-negative integer')
-                return name
-        else:
-            logger.warning('Error: Invalid value listed for append option. Please update; see ltk config --help')

@@ -139,7 +139,9 @@ class Action:
 
             # add document to Lingotek cloud
             response = self.api.add_document(locale, file_name, self.project_id, self.append_location(title, file_name), doc_metadata, **kwargs)
-            if response.status_code != 202:
+            if response.status_code == 402:
+                raise_error(response.json(), "", True)
+            elif response.status_code != 202:
                 raise_error(response.json(), "Failed to add document {0}\n".format(title), True)
             else:
                 title = self.append_location(title, file_name)
@@ -151,6 +153,8 @@ class Action:
                     self._add_document(relative_path, title, response.json()['properties']['id'], response.json()['properties']['process_id'], kwargs['download_folder'])
                 else:
                     self._add_document(relative_path, title, response.json()['properties']['id'], response.json()['properties']['process_id'])
+                if 'translation_locale_code' in kwargs and kwargs['translation_locale_code']:
+                    self._update_document(relative_path, None, kwargs['translation_locale_code'])
         except KeyboardInterrupt:
             raise_error("", "Canceled adding document\n")
         except Exception as e:
@@ -286,7 +290,7 @@ class Action:
             dl_folder = os.path.relpath(dl_folder, self.path)
         self.doc_manager.add_document(title, now, doc_id, last_modified, now, file_name, process_id, dl_folder)
 
-    def _update_document(self, file_name, next_document_id=None):
+    def _update_document(self, file_name, next_document_id=None, locales=None):
         """ updates a document in the db """
         now = time.time()
         file_path = os.path.join(self.path, file_name)
@@ -300,6 +304,9 @@ class Action:
         self.doc_manager.update_document('downloaded', [], doc_id)
         if next_document_id:
             self.doc_manager.update_document('id', next_document_id, doc_id)
+            doc_id = next_document_id
+        if locales:
+            self.doc_manager.update_document('locales', locales, doc_id)
 
     def locked_doc_response_manager(self, response, document_id, *args, **kwargs):
         if response.status_code == 423 and 'next_document_id' in response.json():
@@ -530,10 +537,13 @@ class Action:
                 response, previous_doc_id = self.locked_doc_response_manager(self.api.document_update(document_id, file_name), document_id, file_name, **kwargs)
 
             if response.status_code == 410:
+                target_locales = entry['locales']
                 self.doc_manager.remove_element(previous_doc_id)
-                logger.info('Document was uploaded but the ID has been archived. Reuploading...')
-                self.add_document(file_name, title)
+                print('Document has been archived. Reuploading...')
+                self.add_document(file_name, title, self.default_metadata, translation_locale_code=target_locales)
                 return True
+            elif response.status_code == 402:
+                raise_error(response.json(), "Community has been disabled. Please contact support@lingotek.com to re-enable your community", True)
             elif response.status_code == 202:
                 try:
                     next_document_id = response.json()['next_document_id']

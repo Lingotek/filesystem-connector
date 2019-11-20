@@ -200,7 +200,7 @@ class WatchAction(Action):
                             #self.polled_list.add(relative_path) #test that this doesn't break other areas of watch
                             #end testing
 
-                            self.add.add_document(file_path, title, locale=self.locale)
+                            self.add_document(file_path, title, locale=self.locale)
 
                         elif self.doc_manager.is_doc_modified(relative_path, self.path):
                             self.update_content(relative_path)
