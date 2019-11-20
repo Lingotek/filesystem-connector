@@ -543,7 +543,7 @@ class Action:
                 self.add_document(file_name, title, self.default_metadata, translation_locale_code=target_locales)
                 return True
             elif response.status_code == 402:
-                raise_error(response.json(), "Community has been disabled. Please contact support@lingotek.com to re-enable your community", False)
+                raise_error(response.json(), "Community has been disabled. Please contact support@lingotek.com to re-enable your community", True)
             elif response.status_code == 202:
                 try:
                     next_document_id = response.json()['next_document_id']
