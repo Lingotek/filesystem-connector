@@ -1,7 +1,7 @@
 from ltk.actions.action import *
 
 class MoveAction(Action):
-    def __init__(self, path):
+    def __init__(self, add, path):
         Action.__init__(self, path)
         self.uploadWaitTime = 300
         self.rename = False
@@ -14,6 +14,7 @@ class MoveAction(Action):
         self.doc = None
         self.folder = None
         self.directory_to_source = ''
+        self.add = add
 
     def mv_file(self, source, destination):
         self.source = source
@@ -55,8 +56,13 @@ class MoveAction(Action):
         try:
             if self.rename and self.source_type == 'file' and self.path_to_source.rstrip(self.path_sep).rstrip(self.doc['name']) != self.path_to_source.rstrip(self.path_sep):
                 new_name = os.path.basename(self.path_to_destination)
+                response, document_id = self.locked_doc_response_manager(self.api.document_update(self.doc['id'], title=new_name), self.doc['id'], title=new_name)
+                # The reason we return here on 402 or after getting a 423 is because that means the API call will definitely fail
+                # So we want to prevent the rest of the move action from happening.
+                self.doc['id'] = document_id
+                if response.status_code == 402 or response.status_code == 423:
+                    return False
                 self.doc_manager.update_document('name', new_name, self.doc['id'])
-                self.api.document_update(self.doc['id'], title=new_name)
             elif not self.rename:
                 file_name = os.path.basename(self.path_to_source)
                 self.path_to_destination+=self.path_sep+file_name
@@ -72,6 +78,23 @@ class MoveAction(Action):
                     if file_name.find(self.directory_to_source) == 0:
                         self.doc = self.doc_manager.get_doc_by_prop("file_name",file_name)
                         self.doc_manager.update_document('file_name', file_name.replace(self.directory_to_source, self.directory_to_destination, 1), self.doc['id'])
+            try:
+                # We place this try catch block down here because if we know that the response was not a 423 or a 402,
+                # then we want the rest of the move to take place (the above if/elif/if statements)
+                # This is inside of a try block in the case that response is undefined
+                if response.status_code == 202 and 'next_document_id' in response.json():
+                    self.doc = self.doc_manager.get_doc_by_prop('id', self.doc['id'])
+                    self.doc_manager.update_document('id', response.json()['next_document_id'], self.doc['id'])
+                elif response.status_code == 410:
+                    self.doc = self.doc_manager.get_doc_by_prop('id', self.doc['id'])
+                    doc_name = self.doc['name']
+                    self.doc_manager.remove_element(self.doc['id'])
+                    print("Document was uploaded, but ID has been archived. Renaming and reuploading")
+                    self.add_document(self.path_to_destination, doc_name)
+                else:
+                    return False
+            except Exception:
+                response = None
             return True
         except Exception as e:
             log_error(self.error_file_name, e)
