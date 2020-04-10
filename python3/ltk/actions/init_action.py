@@ -197,6 +197,13 @@ class InitAction():
                 download_path = self.set_download_path(project_path)
                 self.config_parser.set('main', 'download_folder', download_path)
 
+                # get most recent document
+                always_check_latest_doc = yes_no_prompt('Always check for the latest document?', default_yes=False)
+                if always_check_latest_doc:
+                    check = 'on'    
+                else:
+                    check = 'off'
+                self.config_parser.set('main', 'always_check_latest_doc', check)
                 # ask about advanced settings
                 if yes_no_prompt('Would you like to configure advanced options?', default_yes=False):
                     self.show_advanced_settings()
