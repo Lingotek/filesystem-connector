@@ -35,6 +35,7 @@ class Action:
         self.community_id = ''
         self.workflow_id = ''  # default workflow id; MT phase only
         self.locale = ''
+        self.always_check_latest_doc = 'off'
         self.clone_option = 'on'
         self.finalized_file = 'off'
         self.unzip_file = 'on'
@@ -183,6 +184,8 @@ class Action:
         self.community_id = conf_parser.get('main', 'community_id')
         self.workflow_id = conf_parser.get('main', 'workflow_id')
         self.locale = conf_parser.get('main', 'default_locale')
+        self.always_check_latest_doc = conf_parser.get('main', 'always_check_latest_doc')
+
 
         self.locale = self.locale.replace('_','-')
         try:

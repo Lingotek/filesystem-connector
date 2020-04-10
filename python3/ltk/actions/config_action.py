@@ -18,6 +18,9 @@ class ConfigAction(Action):
             if 'download_folder' in kwargs and kwargs['download_folder']:
                 self.set_download_folder(kwargs['download_folder'])
 
+            if 'always_check_latest_doc' in kwargs and kwargs['always_check_latest_doc']:
+                self.set_always_check_latest_doc(kwargs['always_check_latest_doc'])
+
             if 'clone_option' in kwargs and kwargs['clone_option']:
                 self.set_clone_option(kwargs['clone_option'])
 
@@ -91,7 +94,7 @@ class ConfigAction(Action):
             if str(watch_locales) == "[]" or not watch_locales:
                 watch_locales = "None"
             """ print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity ID: {4}\nWorkflow ID: {5}\n'
-                'Default Source Locale: {6}\nClone Option: {7}\nDownload Finalized Files: {8}\nAuto Format: {9}\nDownload Folder: {10}\nTarget Locales: {11}\nTarget Locale Folders: {12}\nGit Auto-commit: {13}\nAppend Option: {14}'.format(
+                'Default Source Locale: {6}\nAlways Check Latest Document: {7}\nClone Option: {8}\nDownload Finalized Files: {9}\nAuto Format: {10}\nDownload Folder: {11}\nTarget Locales: {12}\nTarget Locale Folders: {13}\nGit Auto-commit: {14}\nAppend Option: {15}'.format(
                 self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.clone_option, self.finalized_file, self.auto_format_option,
                 download_dir, watch_locales, locale_folders_str, git_output, self.append_option)) """
             table = [
@@ -101,6 +104,7 @@ class ConfigAction(Action):
                 ["Community ID", self.community_id],
                 ["Workflow ID", self.workflow_id],
                 ["Default Source Locale", self.locale],
+                ["Always Check Latest Document", self.always_check_latest_doc],
                 ["Clone Option", self.clone_option],
                 ["Download Finalized Files", self.finalized_file],
                 ["Auto Format", self.auto_format_option],
@@ -328,6 +332,9 @@ class ConfigAction(Action):
         self.locale = locale
         log_info = 'Project default locale has been updated to {0}'.format(self.locale)
         self.update_config_file('default_locale', locale, self.conf_parser, self.config_file_name, log_info)
+
+    def set_always_check_latest_doc(self, always_check_latest_doc):
+        self.always_check_latest_doc = always_check_latest_doc
 
     def set_locale_folder(self, locale_folders):
         count = 0
