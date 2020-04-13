@@ -529,6 +529,22 @@ class Action:
                 return locale
         return False
 
+    def get_latest_document_version(self, document_id):
+        if self.always_check_latest_doc == 'off':
+            return False
+        try:
+            response = self.api.get_latest_document(document_id)
+            if response.status_code == 404:
+                print('Latest document was not found')
+                return False
+            else:
+                latest_id = response.json()['properties']['id']
+                return latest_id
+        except Exception as e:
+            log_error(self.error_file_name, e)
+            logger.error('Error getting latest document')
+            return False
+
     def update_document_action(self, file_name, title=None, **kwargs):
         try:
             relative_path = self.norm_path(file_name)
