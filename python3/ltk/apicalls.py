@@ -217,6 +217,16 @@ class ApiCalls:
             self.handleError()
         return r
 
+    def get_latest_document(self, document_id):
+        """ get latest version of a document """
+        try:
+            uri = (API_URI['document_latest_version'] % locals())
+            r = requests.get(self.host + uri, headers=self.headers)
+            log_api('GET', uri, r)
+        except requests.exceptions.ConnectionError:
+            self.handleError()
+        return r
+
     def add_document(self, source_locale, file_name, project_id, title, doc_metadata={}, **kwargs):
         """ adds a document """
         try:
