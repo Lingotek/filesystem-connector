@@ -238,6 +238,11 @@ class Action:
             else:
                 self.clone_option = 'on'
                 self.update_config_file('clone_option', self.clone_option, conf_parser, config_file_name, "")
+            if conf_parser.has_option('main', 'always_check_latest_doc'):
+                self.always_check_latest_doc = conf_parser.get('main', 'always_check_latest_doc')
+            else:
+                self.always_check_latest_doc = 'off'
+                self.update_config_file('always_check_latest_doc', self.always_check_latest_doc, conf_parser, config_file_name, "")
             if conf_parser.has_option('main', 'git_autocommit'):
                 self.git_autocommit = conf_parser.get('main', 'git_autocommit')
             else:

@@ -18,8 +18,8 @@ class ConfigAction(Action):
             if 'download_folder' in kwargs and kwargs['download_folder']:
                 self.set_download_folder(kwargs['download_folder'])
 
-            if 'always_check_latest_doc' in kwargs and kwargs['always_check_latest_doc']:
-                self.set_always_check_latest_doc(kwargs['always_check_latest_doc'])
+            if 'latest_document' in kwargs and kwargs['latest_document']:
+                self.set_always_check_latest_doc(kwargs['latest_document'])
 
             if 'clone_option' in kwargs and kwargs['clone_option']:
                 self.set_clone_option(kwargs['clone_option'])
@@ -192,6 +192,16 @@ class ConfigAction(Action):
             logger.warning('Error: Invalid value for "-c" / "--clone_option": Must be either "on" or "off"')
             print_config = False
 
+    def set_always_check_latest_doc(self, always_check_latest_doc_option, print_info=True):
+        if print_info:
+            log_info = 'Turned always check latest document ' + always_check_latest_doc_option
+        else:
+            log_info = ''
+        if always_check_latest_doc_option == 'on' or always_check_latest_doc_option == 'off':
+            self.update_config_file('always_check_latest_doc', always_check_latest_doc_option, self.conf_parser, self.config_file_name, log_info)
+        else:
+            logger.warning('Error: Invalid value for "-ld" / "--latest_document": Must be either "on" or "off"')
+
     def set_finalized_file_option(self, finalized_file, print_info=True):
         if finalized_file:
             finalized_file = finalized_file.lower()
@@ -332,9 +342,6 @@ class ConfigAction(Action):
         self.locale = locale
         log_info = 'Project default locale has been updated to {0}'.format(self.locale)
         self.update_config_file('default_locale', locale, self.conf_parser, self.config_file_name, log_info)
-
-    def set_always_check_latest_doc(self, always_check_latest_doc):
-        self.always_check_latest_doc = always_check_latest_doc
 
     def set_locale_folder(self, locale_folders):
         count = 0
