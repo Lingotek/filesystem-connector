@@ -26,6 +26,7 @@ class StatusAction(Action):
                     return
 
             for doc_id in doc_ids:
+                doc_id = self.get_latest_document_version(doc_id) or doc_id
                 self._get_status_of_doc(doc_id, detailed)
         except requests.exceptions.ConnectionError:
             logger.warning("Could not connect to Lingotek")
@@ -74,6 +75,7 @@ class StatusAction(Action):
                 self._get_status_of_doc(entry['properties']['id'], detailed)
 
     def _get_status_of_doc(self, doc_id, detailed):
+        doc_id = self.get_latest_document_version(doc_id) or doc_id
         response = self.api.document_status(doc_id)
         if response.status_code != 200:
             entry = self.doc_manager.get_doc_by_prop('id', doc_id)
@@ -135,6 +137,7 @@ class StatusAction(Action):
         # for each doc id, also call /document/id/translation and get % of each locale
 
     def _print_detailed_status(self, doc_id, doc_name):
+        doc_id = self.get_latest_document_version(doc_id) or doc_id
         response = self.api.document_translation_status(doc_id)
         if response.status_code != 200:
             raise_error(response.json(), 'Failed to get detailed status of document', True, doc_id, doc_name)

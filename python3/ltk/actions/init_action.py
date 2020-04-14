@@ -200,7 +200,7 @@ class InitAction():
                 # get most recent document
                 always_check_latest_doc = yes_no_prompt('Always check for the latest document?', default_yes=False)
                 if always_check_latest_doc:
-                    check = 'on'    
+                    check = 'on'
                 else:
                     check = 'off'
                 self.config_parser.set('main', 'always_check_latest_doc', check)
