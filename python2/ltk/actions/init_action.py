@@ -471,7 +471,7 @@ class InitAction():
                         workflow_id, workflow_name = v, mapper[choice][v]
                         return workflow_id, True
             except ValueError:
-                print('Not a valid option')  
+                print('Not a valid option')
 
     def print_locale_codes(self):
         locale_info = []
