@@ -171,9 +171,9 @@ class InitAction():
                     self.config_parser.set('main', 'project_name', project_name)
 
                 # get workflow
-                logger.info('---------------------------')
-                logger.info('SELECT TRANSLATION WORKFLOW')
-                logger.info('---------------------------')
+                logger.info('----------------------------------------------')
+                logger.info('SELECT PROJECT DEFAULT TRANSLATION WORKFLOW')
+                logger.info('----------------------------------------------')
                 workflow_id, workflow_updated = self.set_workflow(community_id, project_id)
                 if(workflow_updated):
                     self.api.patch_project(project_id, workflow_id)
@@ -439,8 +439,6 @@ class InitAction():
 
 
     def set_workflow(self, community_id, project_id):
-        response = self.api.get_project(project_id)
-        workflow_id = response.json()['properties']['workflow_id']
         response = self.api.list_workflows(community_id)
         workflows = response.json()['entities']
         workflow_info = {}
@@ -450,7 +448,6 @@ class InitAction():
 
         if len(workflow_info) > 0:
             confirm = 'none'
-            workflow_info[workflow_id] = 'Project Default'
             mapper = choice_mapper(workflow_info)
             choice = 'none-chosen'
             prompt_message = 'Select workflow ID [Project Default]: '
@@ -462,10 +459,8 @@ class InitAction():
             # End Python 3
             try:
                 if choice == '':
-                    for x in workflow_info:
-                        if x == workflow_id:
-                            workflow_id, workflow_name = x, 'Project Default'
-                    logger.info('\nSelected "{0}" {1}.\n'.format(workflow_name, 'workflow'))
+                    workflow_id, workflow_name = 'Project Default', 'Project Default'
+                    logger.info('\nKept "{0}" {1}.\n'.format(workflow_name, 'workflow'))
                     return workflow_id, False 
                 else:
                     choice = int(choice)
@@ -475,7 +470,7 @@ class InitAction():
                         workflow_id, workflow_name = v, mapper[choice][v]
                         return workflow_id, True
             except ValueError:
-                print('Not a valid option')  
+                print('Not a valid option')
 
     def print_locale_codes(self):
         locale_info = []
