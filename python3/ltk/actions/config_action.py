@@ -18,6 +18,9 @@ class ConfigAction(Action):
             if 'download_folder' in kwargs and kwargs['download_folder']:
                 self.set_download_folder(kwargs['download_folder'])
 
+            if 'latest_document' in kwargs and kwargs['latest_document']:
+                self.set_always_check_latest_doc(kwargs['latest_document'])
+
             if 'clone_option' in kwargs and kwargs['clone_option']:
                 self.set_clone_option(kwargs['clone_option'])
 
@@ -91,7 +94,7 @@ class ConfigAction(Action):
             if str(watch_locales) == "[]" or not watch_locales:
                 watch_locales = "None"
             """ print ('Host: {0}\nLingotek Project: {1} ({2})\nLocal Project Path: {3}\nCommunity ID: {4}\nWorkflow ID: {5}\n'
-                'Default Source Locale: {6}\nClone Option: {7}\nDownload Finalized Files: {8}\nAuto Format: {9}\nDownload Folder: {10}\nTarget Locales: {11}\nTarget Locale Folders: {12}\nGit Auto-commit: {13}\nAppend Option: {14}'.format(
+                'Default Source Locale: {6}\nAlways Check Latest Document: {7}\nClone Option: {8}\nDownload Finalized Files: {9}\nAuto Format: {10}\nDownload Folder: {11}\nTarget Locales: {12}\nTarget Locale Folders: {13}\nGit Auto-commit: {14}\nAppend Option: {15}'.format(
                 self.host, self.project_id, self.project_name, self.path, self.community_id, self.workflow_id, self.locale, self.clone_option, self.finalized_file, self.auto_format_option,
                 download_dir, watch_locales, locale_folders_str, git_output, self.append_option)) """
             table = [
@@ -101,6 +104,7 @@ class ConfigAction(Action):
                 ["Community ID", self.community_id],
                 ["Workflow ID", self.workflow_id],
                 ["Default Source Locale", self.locale],
+                ["Always Check Latest Document", self.always_check_latest_doc],
                 ["Clone Option", self.clone_option],
                 ["Download Finalized Files", self.finalized_file],
                 ["Auto Format", self.auto_format_option],
@@ -187,6 +191,16 @@ class ConfigAction(Action):
         else:
             logger.warning('Error: Invalid value for "-c" / "--clone_option": Must be either "on" or "off"')
             print_config = False
+
+    def set_always_check_latest_doc(self, always_check_latest_doc_option, print_info=True):
+        if print_info:
+            log_info = 'Turned always check latest document ' + always_check_latest_doc_option
+        else:
+            log_info = ''
+        if always_check_latest_doc_option == 'on' or always_check_latest_doc_option == 'off':
+            self.update_config_file('always_check_latest_doc', always_check_latest_doc_option, self.conf_parser, self.config_file_name, log_info)
+        else:
+            logger.warning('Error: Invalid value for "-ld" / "--latest_document": Must be either "on" or "off"')
 
     def set_finalized_file_option(self, finalized_file, print_info=True):
         if finalized_file:

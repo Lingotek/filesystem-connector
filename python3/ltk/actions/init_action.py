@@ -197,6 +197,13 @@ class InitAction():
                 download_path = self.set_download_path(project_path)
                 self.config_parser.set('main', 'download_folder', download_path)
 
+                # get most recent document
+                always_check_latest_doc = yes_no_prompt('Always check for the latest document?', default_yes=False)
+                if always_check_latest_doc:
+                    check = 'on'
+                else:
+                    check = 'off'
+                self.config_parser.set('main', 'always_check_latest_doc', check)
                 # ask about advanced settings
                 if yes_no_prompt('Would you like to configure advanced options?', default_yes=False):
                     self.show_advanced_settings()
@@ -261,7 +268,7 @@ class InitAction():
         # Toggle finalized file download option
         print("\n--------------------------------")
         print("DOWNLOAD FINALIZED FILE:")
-        print("Toggle finalized file download option 'on' or 'off'. Turning this option on downloads the finalized file instaed of the raw translation. " +
+        print("Toggle finalized file download option 'on' or 'off'. Turning this option on downloads the finalized file instead of the raw translation. " +
               "A finalized file is typically a file that has undergone some sort of post editing like Desktop Publishing after the translation has completed.")
         self.finalized_file = self.set_finalized_file_option()
         self.config_parser.set('main', 'finalized_file', self.finalized_file)

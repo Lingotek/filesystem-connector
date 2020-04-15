@@ -35,6 +35,7 @@ class Action:
         self.community_id = ''
         self.workflow_id = ''  # default workflow id; MT phase only
         self.locale = ''
+        self.always_check_latest_doc = 'off'
         self.clone_option = 'on'
         self.finalized_file = 'off'
         self.unzip_file = 'on'
@@ -183,6 +184,7 @@ class Action:
         self.community_id = conf_parser.get('main', 'community_id')
         self.workflow_id = conf_parser.get('main', 'workflow_id')
         self.locale = conf_parser.get('main', 'default_locale')
+        self.always_check_latest_doc = conf_parser.get('main', 'always_check_latest_doc')
 
         self.locale = self.locale.replace('_','-')
         try:
@@ -235,6 +237,11 @@ class Action:
             else:
                 self.clone_option = 'on'
                 self.update_config_file('clone_option', self.clone_option, conf_parser, config_file_name, "")
+            if conf_parser.has_option('main', 'always_check_latest_doc'):
+                self.always_check_latest_doc = conf_parser.get('main', 'always_check_latest_doc')
+            else:
+                self.always_check_latest_doc = 'off'
+                self.update_config_file('always_check_latest_doc', self.always_check_latest_doc, conf_parser, config_file_name, "")
             if conf_parser.has_option('main', 'git_autocommit'):
                 self.git_autocommit = conf_parser.get('main', 'git_autocommit')
             else:
@@ -520,6 +527,22 @@ class Action:
             if path == folder and not locale == new_locale:
                 return locale
         return False
+
+    def get_latest_document_version(self, document_id):
+        if self.always_check_latest_doc == 'off':
+            return False
+        try:
+            response = self.api.get_latest_document(document_id)
+            if response.status_code != 200:
+                print('Latest document was not found')
+                return False
+            else:
+                latest_id = response.json()['properties']['id']
+                return latest_id
+        except Exception as e:
+            log_error(self.error_file_name, e)
+            logger.error('Error on getting latest document')
+            return False
 
     def update_document_action(self, file_name, title=None, **kwargs):
         try:
