@@ -171,9 +171,9 @@ class InitAction():
                     self.config_parser.set('main', 'project_name', project_name)
 
                 # get workflow
-                logger.info('----------------------------------------------')
-                logger.info('SELECT PROJECT DEFAULT TRANSLATION WORKFLOW')
-                logger.info('----------------------------------------------')
+                logger.info('---------------------------------------------------------------')
+                logger.info('SELECT WORKFLOW TEMPLATE TO COPY AS A NEW PROJECT WORKFLOW')
+                logger.info('---------------------------------------------------------------')
                 workflow_id, workflow_updated = self.set_workflow(community_id, project_id)
                 if(workflow_updated):
                     self.api.patch_project(project_id, workflow_id)
