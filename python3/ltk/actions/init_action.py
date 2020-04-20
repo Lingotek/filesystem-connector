@@ -171,9 +171,9 @@ class InitAction():
                     self.config_parser.set('main', 'project_name', project_name)
 
                 # get workflow
-                logger.info('---------------------------')
-                logger.info('SELECT TRANSLATION WORKFLOW')
-                logger.info('---------------------------')
+                logger.info('---------------------------------------------------------------')
+                logger.info('SELECT WORKFLOW TEMPLATE TO COPY AS A NEW PROJECT WORKFLOW')
+                logger.info('---------------------------------------------------------------')
                 workflow_id, workflow_updated = self.set_workflow(community_id, project_id)
                 if(workflow_updated):
                     self.api.patch_project(project_id, workflow_id)
@@ -197,6 +197,13 @@ class InitAction():
                 download_path = self.set_download_path(project_path)
                 self.config_parser.set('main', 'download_folder', download_path)
 
+                # get most recent document
+                always_check_latest_doc = yes_no_prompt('Always check for the latest document?', default_yes=False)
+                if always_check_latest_doc:
+                    check = 'on'
+                else:
+                    check = 'off'
+                self.config_parser.set('main', 'always_check_latest_doc', check)
                 # ask about advanced settings
                 if yes_no_prompt('Would you like to configure advanced options?', default_yes=False):
                     self.show_advanced_settings()
@@ -261,7 +268,7 @@ class InitAction():
         # Toggle finalized file download option
         print("\n--------------------------------")
         print("DOWNLOAD FINALIZED FILE:")
-        print("Toggle finalized file download option 'on' or 'off'. Turning this option on downloads the finalized file instaed of the raw translation. " +
+        print("Toggle finalized file download option 'on' or 'off'. Turning this option on downloads the finalized file instead of the raw translation. " +
               "A finalized file is typically a file that has undergone some sort of post editing like Desktop Publishing after the translation has completed.")
         self.finalized_file = self.set_finalized_file_option()
         self.config_parser.set('main', 'finalized_file', self.finalized_file)
@@ -432,8 +439,6 @@ class InitAction():
 
 
     def set_workflow(self, community_id, project_id):
-        response = self.api.get_project(project_id)
-        workflow_id = response.json()['properties']['workflow_id']
         response = self.api.list_workflows(community_id)
         workflows = response.json()['entities']
         workflow_info = {}
@@ -443,7 +448,6 @@ class InitAction():
 
         if len(workflow_info) > 0:
             confirm = 'none'
-            workflow_info[workflow_id] = 'Project Default'
             mapper = choice_mapper(workflow_info)
             choice = 'none-chosen'
             prompt_message = 'Select workflow ID [Project Default]: '
@@ -455,10 +459,8 @@ class InitAction():
             # End Python 3
             try:
                 if choice == '':
-                    for x in workflow_info:
-                        if x == workflow_id:
-                            workflow_id, workflow_name = x, 'Project Default'
-                    logger.info('\nSelected "{0}" {1}.\n'.format(workflow_name, 'workflow'))
+                    workflow_id, workflow_name = 'Project Default', 'Project Default'
+                    logger.info('\nKept "{0}" {1}.\n'.format(workflow_name, 'workflow'))
                     return workflow_id, False 
                 else:
                     choice = int(choice)
@@ -468,7 +470,7 @@ class InitAction():
                         workflow_id, workflow_name = v, mapper[choice][v]
                         return workflow_id, True
             except ValueError:
-                print('Not a valid option')  
+                print('Not a valid option')
 
     def print_locale_codes(self):
         locale_info = []

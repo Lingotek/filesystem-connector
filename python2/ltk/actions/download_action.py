@@ -39,7 +39,8 @@ class DownloadAction(Action):
 
     def download_action(self, document_id, locale_code, auto_format, xliff=False, locale_ext=True):
         try:
-            response = self.api.document_content(document_id, locale_code, auto_format, xliff, self.finalized_file)
+            latest_document_id = self.get_latest_document_version(document_id) or document_id
+            response = self.api.document_content(latest_document_id, locale_code, auto_format, xliff, self.finalized_file)
             entry = None
             entry = self.doc_manager.get_doc_by_prop('id', document_id)
             specific_folder = False
