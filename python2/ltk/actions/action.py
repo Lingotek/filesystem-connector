@@ -186,6 +186,7 @@ class Action:
         self.locale = conf_parser.get('main', 'default_locale')
         self.always_check_latest_doc = conf_parser.get('main', 'always_check_latest_doc')
 
+
         self.locale = self.locale.replace('_','-')
         try:
             if conf_parser.has_option('main', 'auto_format'):
