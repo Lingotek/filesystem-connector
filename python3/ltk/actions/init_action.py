@@ -480,7 +480,7 @@ class InitAction():
         locale_json = response.json()['entities']
         locale_dict = {}
         for entry in locale_json:
-            locale_code = entry['properties']['code'].replace('_','-').replace('\'', '')
+            locale_code = entry['properties']['code']
             language = entry['properties']['language']
             country = entry['properties']['country']
             locale_info.append((locale_code, language, country))

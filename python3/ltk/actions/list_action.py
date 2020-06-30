@@ -163,7 +163,7 @@ class ListAction(Action):
             raise exceptions.RequestFailedError("Failed to get locale codes")
         locale_json = response.json()['entities']
         for entry in locale_json:
-            locale_code = entry['properties']['code'].replace('_','-')
+            locale_code = entry['properties']['code']
             language = entry['properties']['language']
             country = entry['properties']['country']
             locale_info.append((locale_code, language, country))
