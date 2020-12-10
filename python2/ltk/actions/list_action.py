@@ -175,7 +175,7 @@ class ListAction(Action):
         print(tabulate(table))
     def list_remote(self):
         """ lists ids of all remote documents """
-        response = self.api.list_documents(self.project_id)
+        response = self.api.list_documents(self.project_id, self.community_id)
         if response.status_code == 204:
             print("No documents to report")
             return
