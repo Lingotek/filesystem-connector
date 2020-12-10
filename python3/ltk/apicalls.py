@@ -324,13 +324,14 @@ class ApiCalls:
             self.handleError()
         return r
 
-    def list_documents(self, project_id):
+    def list_documents(self, project_id, community_id):
         """ lists all documents a user has access to, could be filtered by project id """
         try:
             uri = API_URI['document']
-            payload = {}
+            payload = {'limit': 10000}
             if project_id:
-                payload = {'project_id': project_id, 'limit': 10000}
+                payload['project_id'] = project_id
+            payload['community_id'] = community_id
             r = requests.get(self.host + uri, headers=self.headers, params=payload)
             log_api('GET', uri, r)
         except requests.exceptions.ConnectionError:
