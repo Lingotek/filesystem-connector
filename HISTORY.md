@@ -1,6 +1,9 @@
 # Changelog #
+# 1.3.10
+### CHANGES:
+* Added the ability to request generic locales da, de, en, es, fr, it, ja, nl, no, pt, tr, zh
 # 1.3.7
-## CHANGES:
+### CHANGES:
 * no longer incorrectly reports errors on successful uploads
 
 ## 1.3.6
