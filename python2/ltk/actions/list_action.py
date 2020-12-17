@@ -161,11 +161,11 @@ class ListAction(Action):
         response = self.api.list_locales()
         if response.status_code != 200:
             raise exceptions.RequestFailedError("Failed to get locale codes")
-        locale_json = response.json()
+        locale_json = response.json()['entities']
         for entry in locale_json:
-            locale_code = locale_json[entry]['locale'].replace('_','-')
-            language = locale_json[entry]['language_name']
-            country = locale_json[entry]['country_name']
+            locale_code = entry['properties']['code']
+            language = entry['properties']['language']
+            country = entry['properties']['country']
             locale_info.append((locale_code, language, country))
         for locale in sorted(locale_info):
             if not len(locale[2]):  # Arabic
@@ -175,7 +175,7 @@ class ListAction(Action):
         print(tabulate(table))
     def list_remote(self):
         """ lists ids of all remote documents """
-        response = self.api.list_documents(self.project_id)
+        response = self.api.list_documents(self.project_id, self.community_id)
         if response.status_code == 204:
             print("No documents to report")
             return
