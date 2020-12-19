@@ -211,6 +211,10 @@ def config(**kwargs):
 @click.argument('file_names', required=True, nargs=-1)
 @click.option('-d', '--directory', flag_value=True, help='Only add directories, not files inside directories')
 @click.option('-l', '--locale', help='If source locale is different from the default configuration. Use ltk list -l to see possible locales')
+@click.option('-t', '--target_locales', multiple=True,
+              help='Specify target locales that documents in watch_folder should be assigned; may either specify '
+                   'with multiple -t flags (ex: -t locale -t locale) or give a list separated by commas and no spaces '
+                   '(ex: -t locale,locale)')
 @click.option('-f', '--format',
               help="Format of file; if not specified, will use extension to detect; defaults to plaintext. Use ltk list -f to see possible formats. Files may not be added to Lingotek's system if not formatted correctly according to the specified format")
 @click.option('-D', '--download_folder', type=click.Path(exists=True), help='Download folder for the translations for this file.  If set, it will take precedence over locale folders and the default download folder and will ignore clone as well as the no_ext argument when pulling/downloading')
@@ -334,6 +338,10 @@ def add(file_names, **kwargs):
 # @click.option('--note', help='Note')
 
 # Metadata - optional parameters
+@click.option('-t', '--target_locales', multiple=True,
+              help='Specify target locales that documents in watch_folder should be assigned; may either specify '
+                   'with multiple -t flags (ex: -t locale -t locale) or give a list separated by commas and no spaces '
+                   '(ex: -t locale,locale)')
 @click.option('--author_email', hidden=True)
 @click.option('--author_name', hidden=True)
 @click.option('--business_division', hidden=True)

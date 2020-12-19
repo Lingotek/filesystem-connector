@@ -137,7 +137,8 @@ class Action:
                 locale = self.locale
             else:
                 locale = kwargs['locale']
-
+            if not 'translation_locale_code' in kwargs and len(self.watch_locales) > 0:
+                kwargs['translation_locale_code'] = self.watch_locales
             # add document to Lingotek cloud
             response = self.api.add_document(locale, file_name, self.project_id, self.append_location(title, file_name), doc_metadata, **kwargs)
             if response.status_code == 402:
