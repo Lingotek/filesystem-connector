@@ -561,7 +561,7 @@ class Action:
             if title:
                 response, previous_doc_id = self.locked_doc_response_manager(self.api.document_update(document_id, file_name, title=title, **kwargs), document_id, file_name, title=title, **kwargs)
             else:
-                response, previous_doc_id = self.locked_doc_response_manager(self.api.document_update(document_id, file_name), document_id, file_name, **kwargs)
+                response, previous_doc_id = self.locked_doc_response_manager(self.api.document_update(document_id, file_name, title=None, **kwargs), document_id, file_name, **kwargs)
 
             if response.status_code == 410:
                 target_locales = entry['locales']
