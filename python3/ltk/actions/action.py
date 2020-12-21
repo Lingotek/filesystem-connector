@@ -549,7 +549,6 @@ class Action:
     def update_document_action(self, file_name, title=None, **kwargs):
         try:
             kwargs['translation_locale_code'] = self.watch_locales
-            kwargs['translation_workflow_id'] = self.workflow_id
             kwargs['project_id'] = self.project_id
             relative_path = self.norm_path(file_name)
             entry = self.doc_manager.get_doc_by_prop('file_name', relative_path)
