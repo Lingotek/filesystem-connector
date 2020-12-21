@@ -144,6 +144,7 @@ class ConfigAction(Action):
             workflow_info = {}
             for workflow in workflows:
                 workflow_info[workflow['properties']['id']] = workflow['properties']['title']
+            workflow_id = None
             if len(workflow_info) > 0:
                 mapper = choice_mapper(workflow_info)
                 choice = 'none-chosen'
@@ -156,17 +157,32 @@ class ConfigAction(Action):
                 # End Python 3
                 try:
                     if choice == '':
-                        self.workflow_id, workflow_name = 'Project Default', 'Project Default'
+                        workflow_id, workflow_name = 'Project Default', 'Project Default'
                         logger.info('\nKept "{0}" {1}.\n'.format(workflow_name, 'workflow'))
                     else:
                         choice = int(choice)
                         for v in mapper[choice]:
-                            self.workflow_id, workflow_name = v, mapper[choice][v]
+                            workflow_id, workflow_name = v, mapper[choice][v]
                             print(workflow_name)
                             logger.info('\nSelected "{0}" {1}.\n'.format(workflow_name, 'workflow'))
                 except ValueError:
                     print('Not a valid option')
-            self.project_id, self.project_name = project_response_properties['id'], project_response_properties['title']
+            project_id, project_name = project_response_properties['id'], project_response_properties['title']
+
+            log_info = 'Project id has been updated to {0}'.format(project_id)
+            self.update_config_file('project_id', project_id, self.conf_parser, self.config_file_name, log_info)
+
+            log_info = 'Project name has been updated to {0}'.format(project_name)
+            self.update_config_file('project_name', project_name, self.conf_parser, self.config_file_name, log_info)
+
+            if workflow_id is not None and workflow_id != 'Project Default':
+                self.set_workflow_id(workflow_id)
+            else:
+                workflow_id = 'Project Default'
+                log_info = 'Workflow id has been kept as {0}'.format(workflow_id)
+                self.update_config_file('workflow_id', workflow_id, self.conf_parser, self.config_file_name, log_info)
+                self.conf_parser.set('main', 'workflow_id', workflow_id)
+            self.project_id, self.project_name = project_id, project_name
 
         except KeyboardInterrupt:
             # Python 2
