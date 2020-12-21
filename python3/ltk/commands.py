@@ -408,6 +408,7 @@ def request(doc_name, path, locales, to_cancel, to_delete, due_date, workflow):
 @click.option('-c', '--hide_docs', 'hide_docs', flag_value=True, help='Collapse down to list only added directories instead of both directories and documents.')
 @click.option('-w', '--workflows', 'id_type', flag_value='workflow', help='List available workflows')
 @click.option('-l', '--locales', 'id_type', flag_value='locale', help='List supported locale codes')
+@click.option('-lp', '--lingotek_projects', 'id_type', flag_value='lingotek_project', help='List all available projects in the community')
 @click.option('-f', '--formats', 'id_type', flag_value='format', help='List supported formats')
 @click.option('-r', '--remote', 'id_type', flag_value='remote', help='List all project documents on Lingotek Cloud')
 @click.option('--filters', 'id_type', flag_value='filter', help='List default and custom filters')
