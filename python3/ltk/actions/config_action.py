@@ -39,6 +39,9 @@ class ConfigAction(Action):
             if 'remove_locales' in kwargs and kwargs['remove_locales']:
                 self.remove_locales(kwargs['remove_locales'])
 
+            if 'lingotek_project' in kwargs and kwargs['lingotek_project']:
+                self.set_lingotek_project(kwargs['lingotek_project'])
+
             self.update_config_parser_info()
 
             if 'git' in kwargs and kwargs['git']:
@@ -128,6 +131,51 @@ class ConfigAction(Action):
         self.locale_folders = {}
         locale_folders_str = json.dumps(self.locale_folders)
         self.update_config_file('locale_folders', locale_folders_str, self.conf_parser, self.config_file_name, log_info)
+
+    def set_lingotek_project(self, project_id):
+        try:
+            response = self.api.get_project(project_id)
+            if response.status_code != 200:
+                raise_error(response.json(), 'Something went wrong trying to switch to this project')
+            project_response_properties = response.json()['properties']
+
+            response = self.api.list_workflows(self.community_id)
+            workflows = response.json()['entities']
+            workflow_info = {}
+            for workflow in workflows:
+                workflow_info[workflow['properties']['id']] = workflow['properties']['title']
+            if len(workflow_info) > 0:
+                mapper = choice_mapper(workflow_info)
+                choice = 'none-chosen'
+                prompt_message = 'Select workflow ID [Project Default]: '
+                # Python 2
+                # choice = raw_input(prompt_message)
+                # End Python 2
+                # Python 3
+                choice = input(prompt_message)
+                # End Python 3
+                try:
+                    if choice == '':
+                        self.workflow_id, workflow_name = 'Project Default', 'Project Default'
+                        logger.info('\nKept "{0}" {1}.\n'.format(workflow_name, 'workflow'))
+                    else:
+                        choice = int(choice)
+                        for v in mapper[choice]:
+                            self.workflow_id, workflow_name = v, mapper[choice][v]
+                            print(workflow_name)
+                            logger.info('\nSelected "{0}" {1}.\n'.format(workflow_name, 'workflow'))
+                except ValueError:
+                    print('Not a valid option')
+            self.project_id, self.project_name = project_response_properties['id'], project_response_properties['title']
+
+        except KeyboardInterrupt:
+            # Python 2
+            # logger.info("\nProject change canceled")
+            # End Python 2
+            # Python 3
+            logger.error("\nProject change canceled")
+            # End Python 3
+            return
 
     def set_append_option(self, append_option):
         self.print_config = True
