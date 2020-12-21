@@ -338,10 +338,6 @@ def add(file_names, **kwargs):
 # @click.option('--note', help='Note')
 
 # Metadata - optional parameters
-@click.option('-t', '--target_locales', multiple=True,
-              help='Specify target locales that documents in watch_folder should be assigned; may either specify '
-                   'with multiple -t flags (ex: -t locale -t locale) or give a list separated by commas and no spaces '
-                   '(ex: -t locale,locale)')
 @click.option('--author_email', hidden=True)
 @click.option('--author_name', hidden=True)
 @click.option('--business_division', hidden=True)

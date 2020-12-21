@@ -14,9 +14,6 @@ class PushAction(Action):
         elif self.metadata_prompt:
             if yes_no_prompt('Would you like to launch the metadata wizard?', default_yes=True):
                 self.metadata = self.metadata_wizard()
-        if 'target_locales' in kwargs and kwargs['target_locales']:
-            kwargs['translation_locale_code'] = self._set_target_locales(kwargs['target_locales'])
-            del kwargs['target_locales']
         try:
             if files:
                 added, updated, failed = self._push_specific_files(files, **kwargs)
@@ -113,9 +110,3 @@ class PushAction(Action):
         else:
             failed += 1
         return updated, failed
-
-    def _set_target_locales(self, target_locales):
-        translation_locale_codes = []
-        for target in target_locales:
-            translation_locale_codes.extend(target.split(','))
-        return translation_locale_codes
