@@ -548,10 +548,13 @@ class Action:
 
     def update_document_action(self, file_name, title=None, **kwargs):
         try:
-            kwargs['translation_locale_code'] = self.watch_locales
-            kwargs['project_id'] = self.project_id
             relative_path = self.norm_path(file_name)
             entry = self.doc_manager.get_doc_by_prop('file_name', relative_path)
+            kwargs['project_id'] = self.project_id
+            entry_locales = set(entry['locales']) if 'locales' in entry and entry['locales'] else set()
+            # if doc has no locales, or all watch locales, send them with translation_locale_code so that the project default workflow is applied to all
+            if len(entry_locales) > 0 and self.watch_locales.issuperset(entry_locales):
+                kwargs['translation_locale_code'] = entry_locales
             try:
                 document_id = entry['id']
             except TypeError as e:
