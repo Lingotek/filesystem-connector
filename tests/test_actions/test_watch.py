@@ -194,7 +194,7 @@ class TestWatch(unittest.TestCase):
         assert file_name2 not in self.action.doc_manager.get_names()
 
         #check in progress - get a list of remote files and ensure that the one that was supposed to be ignored isn't there
-        #print(str(self.action.api.list_documents(self.action.project_id)['entities']['properties']['title']))
+        #print(str(self.action.api.list_documents(self.action.project_id, self.action.community_id)['entities']['properties']['title']))
 
 #the following three tests are for a functionality that is currently broken in watch, so they are not yet implemented
 #test watch downloading 

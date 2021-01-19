@@ -447,7 +447,6 @@ class InitAction():
             workflow_info[workflow['properties']['id']] = workflow['properties']['title']
 
         if len(workflow_info) > 0:
-            confirm = 'none'
             mapper = choice_mapper(workflow_info)
             choice = 'none-chosen'
             prompt_message = 'Select workflow ID [Project Default]: '
@@ -477,12 +476,12 @@ class InitAction():
         response = self.api.list_locales()
         if response.status_code != 200:
             raise exceptions.RequestFailedError("Failed to get locale codes")
-        locale_json = response.json()
+        locale_json = response.json()['entities']
         locale_dict = {}
         for entry in locale_json:
-            locale_code = locale_json[entry]['locale'].replace('_','-').replace('\'', '')
-            language = locale_json[entry]['language_name']
-            country = locale_json[entry]['country_name']
+            locale_code = entry['properties']['code']
+            language = entry['properties']['language']
+            country = entry['properties']['country']
             locale_info.append((locale_code, language, country))
             locale_dict[locale_code] = (language, country),
 

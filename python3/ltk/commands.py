@@ -168,6 +168,7 @@ def init(host, access_token, client_id, path, project_name, workflow_id, locale,
 #TO-DO: @click.option('-a', '--all', help='List all configuration settings (including access token)')
 @click.option('-l', '--locale', help='Change the default source locale for the project')
 @click.option('-w', '--workflow_id', help='Change the default workflow id for the project')
+@click.option('-lp', '--lingotek_project', help='Change the default project id')
 @click.option('-ld', '--latest_document', help='Toggle always get latest document option \'on\' and \'off\'')
 @click.option('-c', '--clone_option', help='Toggle clone download option \'on\' and \'off\'. Turning clone \'on\': Translations will be downloaded to a cloned folder structure, where the root folder for each locale is the locale folder specified in config or a locale folder inside of the default download folder. If a default download folder is not set, then translations will be downloaded to the directory where the project was initialized.' +
                                                 'Turning clone \'off\': Downloaded translations will go into their locale folder (if specified) or default download folder, but not in a cloned folder structure. If no default download folder or locale folder is specified, downloaded translations will go to the same folder as their corresponding source files.')
@@ -211,6 +212,10 @@ def config(**kwargs):
 @click.argument('file_names', required=True, nargs=-1)
 @click.option('-d', '--directory', flag_value=True, help='Only add directories, not files inside directories')
 @click.option('-l', '--locale', help='If source locale is different from the default configuration. Use ltk list -l to see possible locales')
+@click.option('-t', '--target_locales', multiple=True,
+              help='Specify target locales that documents in watch_folder should be assigned; may either specify '
+                   'with multiple -t flags (ex: -t locale -t locale) or give a list separated by commas and no spaces '
+                   '(ex: -t locale,locale)')
 @click.option('-f', '--format',
               help="Format of file; if not specified, will use extension to detect; defaults to plaintext. Use ltk list -f to see possible formats. Files may not be added to Lingotek's system if not formatted correctly according to the specified format")
 @click.option('-D', '--download_folder', type=click.Path(exists=True), help='Download folder for the translations for this file.  If set, it will take precedence over locale folders and the default download folder and will ignore clone as well as the no_ext argument when pulling/downloading')
@@ -404,6 +409,7 @@ def request(doc_name, path, locales, to_cancel, to_delete, due_date, workflow):
 @click.option('-c', '--hide_docs', 'hide_docs', flag_value=True, help='Collapse down to list only added directories instead of both directories and documents.')
 @click.option('-w', '--workflows', 'id_type', flag_value='workflow', help='List available workflows')
 @click.option('-l', '--locales', 'id_type', flag_value='locale', help='List supported locale codes')
+@click.option('-lp', '--lingotek_projects', 'id_type', flag_value='lingotek_project', help='List all available projects in the community')
 @click.option('-f', '--formats', 'id_type', flag_value='format', help='List supported formats')
 @click.option('-r', '--remote', 'id_type', flag_value='remote', help='List all project documents on Lingotek Cloud')
 @click.option('--filters', 'id_type', flag_value='filter', help='List default and custom filters')
