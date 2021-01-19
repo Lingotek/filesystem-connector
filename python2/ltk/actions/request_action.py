@@ -166,12 +166,12 @@ class RequestAction(Action):
             if (self.to_delete or self.to_cancel) and self.entered_locales:
                 locales_to_add = locales
             else:
-                locales_to_add = existing_locales
+                locales_to_add = [locale.replace('_', '-') for locale in  existing_locales]
                 remote_locales = self.get_doc_locales(self.document_id, self.document_name) # Get locales from Lingotek Cloud
                 # Check for remote locales not in entry locales
                 if remote_locales:
                     for remote_locale in remote_locales:
-                        if remote_locale not in existing_locales and remote_locale not in locales:
+                        if remote_locale not in locales_to_add and remote_locale not in locales:
                             locales_to_add.append(remote_locale)
 
                 # Check for requested locales not in entry locales

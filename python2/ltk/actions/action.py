@@ -156,7 +156,7 @@ class Action:
                 else:
                     self._add_document(relative_path, title, response.json()['properties']['id'], response.json()['properties']['process_id'])
                 if 'translation_locale_code' in kwargs and kwargs['translation_locale_code']:
-                    self._update_document(relative_path, None, kwargs['translation_locale_code'])
+                    self._update_document(relative_path, None, list(kwargs['translation_locale_code']))
         except KeyboardInterrupt:
             raise_error("", "Canceled adding document\n")
         except Exception as e:
