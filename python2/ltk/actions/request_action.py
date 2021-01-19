@@ -160,21 +160,21 @@ class RequestAction(Action):
                 # self.update_doc_locales(document_id)
                 continue
             logger.info('{message} {locale} for document {name}\n'.format(message=self.info_message, locale=locale, name=self.document_name))
+        remote_locales = self.get_doc_locales(self.document_id, self.document_name) # Get locales from Lingotek Cloud
+        locales_to_add = []
+        existing_locales = []
+        if 'locales' in entry and entry['locales']:
+            existing_locales = entry['locales']
         if self.change_db_entry:
-            locales_to_add = []
             # Make sure that the locales that were just added are added to the database as well as the previous remote locales (since they were only just recently added to Lingotek's system)
             if (self.to_delete or self.to_cancel) and self.entered_locales:
                 locales_to_add = locales
             else:
-                locales_to_add = [locale.replace('_', '-') for locale in  existing_locales]
-                remote_locales = self.get_doc_locales(self.document_id, self.document_name) # Get locales from Lingotek Cloud
-                # Check for remote locales not in entry locales
                 if remote_locales:
-                    for remote_locale in remote_locales:
-                        if remote_locale not in locales_to_add and remote_locale not in locales:
-                            locales_to_add.append(remote_locale)
+                    for locale in remote_locales:
+                        if locale not in locales:
+                            locales_to_add.append(locale)
 
-                # Check for requested locales not in entry locales
                 for locale in locales:
                     locale = locale.replace('_', '-')
                     if locale not in existing_locales and locale not in locales_to_add:

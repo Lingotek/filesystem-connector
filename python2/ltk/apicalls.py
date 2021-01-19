@@ -324,14 +324,13 @@ class ApiCalls:
             self.handleError()
         return r
 
-    def list_documents(self, project_id, community_id):
+    def list_documents(self, project_id):
         """ lists all documents a user has access to, could be filtered by project id """
         try:
             uri = API_URI['document']
-            payload = {'limit': 10000}
+            payload = {}
             if project_id:
-                payload['project_id'] = project_id
-            payload['community_id'] = community_id
+                payload = {'project_id': project_id, 'limit': 10000}
             r = requests.get(self.host + uri, headers=self.headers, params=payload)
             log_api('GET', uri, r)
         except requests.exceptions.ConnectionError:
@@ -478,8 +477,8 @@ class ApiCalls:
 
     def list_locales(self):
         try:
-            uri = 'https://myaccount.lingotek.com/api/locale?limit=5000'
-            r = requests.get(uri, headers=self.headers)
+            uri = 'http://gmc.lingotek.com/v1/locales'
+            r = requests.get(uri)
         except requests.exceptions.ConnectionError:
             self.handleError()
         return r

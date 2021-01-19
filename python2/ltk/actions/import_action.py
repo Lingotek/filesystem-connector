@@ -25,7 +25,7 @@ class ImportAction(Action):
     def import_action(self, import_all, force, path, track, no_cancel, ids_to_import=None):
         try:
             path = self.norm_path(path)
-            response = self.api.list_documents(self.project_id, self.community_id)
+            response = self.api.list_documents(self.project_id)
             tms_doc_info = {}
             if response.status_code == 200:
                 tms_documents = response.json()['entities']

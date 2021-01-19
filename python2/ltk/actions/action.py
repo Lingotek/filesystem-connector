@@ -137,8 +137,7 @@ class Action:
                 locale = self.locale
             else:
                 locale = kwargs['locale']
-            if not 'translation_locale_code' in kwargs and len(self.watch_locales) > 0:
-                kwargs['translation_locale_code'] = self.watch_locales
+
             # add document to Lingotek cloud
             response = self.api.add_document(locale, file_name, self.project_id, self.append_location(title, file_name), doc_metadata, **kwargs)
             if response.status_code == 402:
@@ -156,7 +155,7 @@ class Action:
                 else:
                     self._add_document(relative_path, title, response.json()['properties']['id'], response.json()['properties']['process_id'])
                 if 'translation_locale_code' in kwargs and kwargs['translation_locale_code']:
-                    self._update_document(relative_path, None, list(kwargs['translation_locale_code']))
+                    self._update_document(relative_path, None, kwargs['translation_locale_code'])
         except KeyboardInterrupt:
             raise_error("", "Canceled adding document\n")
         except Exception as e:
@@ -550,11 +549,6 @@ class Action:
         try:
             relative_path = self.norm_path(file_name)
             entry = self.doc_manager.get_doc_by_prop('file_name', relative_path)
-            kwargs['project_id'] = self.project_id
-            entry_locales = set(entry['locales']) if 'locales' in entry and entry['locales'] else set()
-            # if doc has no locales, or all watch locales, send them with translation_locale_code so that the project default workflow is applied to all
-            if len(entry_locales) > 0 and self.watch_locales.issuperset(entry_locales):
-                kwargs['translation_locale_code'] = entry_locales
             try:
                 document_id = entry['id']
             except TypeError as e:
@@ -564,7 +558,7 @@ class Action:
             if title:
                 response, previous_doc_id = self.locked_doc_response_manager(self.api.document_update(document_id, file_name, title=title, **kwargs), document_id, file_name, title=title, **kwargs)
             else:
-                response, previous_doc_id = self.locked_doc_response_manager(self.api.document_update(document_id, file_name, title=None, **kwargs), document_id, file_name, **kwargs)
+                response, previous_doc_id = self.locked_doc_response_manager(self.api.document_update(document_id, file_name), document_id, file_name, **kwargs)
 
             if response.status_code == 410:
                 target_locales = entry['locales']

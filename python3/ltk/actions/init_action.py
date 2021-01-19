@@ -447,6 +447,7 @@ class InitAction():
             workflow_info[workflow['properties']['id']] = workflow['properties']['title']
 
         if len(workflow_info) > 0:
+            confirm = 'none'
             mapper = choice_mapper(workflow_info)
             choice = 'none-chosen'
             prompt_message = 'Select workflow ID [Project Default]: '
