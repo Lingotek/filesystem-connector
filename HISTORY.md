@@ -1,7 +1,13 @@
 # Changelog #
+
+# 1.3.11
+### NEW FEATURES:
+* Added the ability to change project and workflow on document update without needing to disassociate
+
 # 1.3.10
 ### CHANGES:
 * Added the ability to request generic locales da, de, en, es, fr, it, ja, nl, no, pt, tr, zh
+
 # 1.3.7
 ### CHANGES:
 * no longer incorrectly reports errors on successful uploads
