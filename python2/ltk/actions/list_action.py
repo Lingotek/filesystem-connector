@@ -18,8 +18,6 @@ class ListAction(Action):
                 self.list_filters()
             elif id_type == 'remote':
                 self.list_remote()
-            elif id_type == 'lingotek_project':
-                self.list_projects()
 
         elif 'hide_docs' in kwargs and 'title' in kwargs and 'show_dests' in kwargs:
             self.list_ids(kwargs['hide_docs'], kwargs['title'], kwargs['show_dests'])
@@ -163,11 +161,11 @@ class ListAction(Action):
         response = self.api.list_locales()
         if response.status_code != 200:
             raise exceptions.RequestFailedError("Failed to get locale codes")
-        locale_json = response.json()['entities']
+        locale_json = response.json()
         for entry in locale_json:
-            locale_code = entry['properties']['code']
-            language = entry['properties']['language']
-            country = entry['properties']['country']
+            locale_code = locale_json[entry]['locale'].replace('_','-')
+            language = locale_json[entry]['language_name']
+            country = locale_json[entry]['country_name']
             locale_info.append((locale_code, language, country))
         for locale in sorted(locale_info):
             if not len(locale[2]):  # Arabic
@@ -177,7 +175,7 @@ class ListAction(Action):
         print(tabulate(table))
     def list_remote(self):
         """ lists ids of all remote documents """
-        response = self.api.list_documents(self.project_id, self.community_id)
+        response = self.api.list_documents(self.project_id)
         if response.status_code == 204:
             print("No documents to report")
             return
@@ -211,20 +209,3 @@ class ListAction(Action):
 
         except:
             logger.error("An error occurred while attempting to connect to remote.")
-
-    def list_projects(self):
-        try:
-            response = self.api.list_projects(self.community_id)
-            if response.status_code != 200:
-                raise_error(response.json(), "Failed to list community projects")
-
-            table = []
-            headers=["Project Name", "ID"]
-            for entry in response.json()['entities']:
-                title = entry['properties']['title']
-                id = entry['properties']['id']
-                table.append([title, id])
-            print(tabulate(table, headers=headers))
-
-        except:
-            logger.error("An error occurred while attempting to connect to remote")
