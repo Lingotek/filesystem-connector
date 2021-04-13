@@ -315,10 +315,10 @@ class ConfigAction(Action):
     def set_git_credentials(self):
         if "nt" not in os.name:
             # Python 2
-            # git_username = raw_input('Username: ')
+            # git_username = raw_input('Username (Username and password are not required if SSH is enabled): ')
             # End Python 2
             # Python 3
-            git_username = input('Username: ')
+            git_username = input('Username (Username and password are not required if SSH is enabled): ')
             # End Python 3
             git_password = getpass.getpass()
             if git_username in ['None', 'none', 'N', 'n', '--none']:
