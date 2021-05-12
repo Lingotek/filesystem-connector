@@ -104,9 +104,9 @@ def is_valid_locale(api, locale):
     remote_check = False
     if response.status_code == 200:
         remote_check = True
-    locale_json = response.json()
+    locale_json = response.json()['entities']
     for entry in locale_json:
-        valid_locales.append(locale_json[entry]['locale'])
+        valid_locales.append(entry['properties']['code'])
     locales = []
     check_locale = locale.replace("-","_")
     if remote_check and check_locale not in valid_locales or not remote_check and not check_locale in locale_list:
@@ -122,8 +122,8 @@ def get_valid_locales(api, entered_locales, operation_text):
     if response.status_code == 200:
         remote_check = True
     locale_json = response.json()
-    for entry in locale_json:
-        valid_locales.append(locale_json[entry]['locale'])
+    for entry in locale_json['entities']:
+        valid_locales.append(entry['properties']['code'])
     locales = []
     if(len(entered_locales) == 0 or (len(entered_locales) == 1 and entered_locales[0] == "[]")):
         logger.warning('No locales have been assigned to this document.  Please add them using \'ltk request\'.')

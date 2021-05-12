@@ -193,6 +193,18 @@ default_locales = {
 }
 
 locale_list = [
+    "da",
+    "de",
+    "en",
+    "es",
+    "fr",
+    "it",
+    "js",
+    "nl",
+    "no",
+    "pt",
+    "tr",
+    "zh",
     "ar-UZ", 
     "lt-LT", 
     "ur-PK", 

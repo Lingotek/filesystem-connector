@@ -477,8 +477,8 @@ class ApiCalls:
 
     def list_locales(self):
         try:
-            uri = 'http://gmc.lingotek.com/v1/locales'
-            r = requests.get(uri)
+            uri = 'https://myaccount.lingotek.com/api/locale?limit=5000'
+            r = requests.get(uri, headers=self.headers)
         except requests.exceptions.ConnectionError:
             self.handleError()
         return r

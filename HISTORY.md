@@ -1,5 +1,8 @@
 # Changelog #
 
+# 1.3.12
+### CHANGES:
+* Clarified set up with git
 # 1.3.11
 ### NEW FEATURES:
 * Added the ability to change project and workflow on document update without needing to disassociate
