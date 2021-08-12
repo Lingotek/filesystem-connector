@@ -174,9 +174,7 @@ class InitAction():
                 logger.info('---------------------------------------------------------------')
                 logger.info('SELECT WORKFLOW TEMPLATE TO COPY AS A NEW PROJECT WORKFLOW')
                 logger.info('---------------------------------------------------------------')
-                workflow_id, workflow_updated = self.set_workflow(community_id, project_id)
-                if(workflow_updated):
-                    self.api.patch_project(project_id, workflow_id)
+                workflow_id = self.set_workflow(community_id, project_id)
                 self.config_parser.set('main', 'workflow_id', workflow_id)
 
                 # print out locale codes
@@ -468,7 +466,7 @@ class InitAction():
                         print(v)
                         logger.info('\nSelected "{0}" {1}.\n'.format(mapper[choice][v], 'workflow'))   
                         workflow_id, workflow_name = v, mapper[choice][v]
-                        return workflow_id, True
+                        return workflow_id
             except ValueError:
                 print('Not a valid option')
 

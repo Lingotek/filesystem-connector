@@ -120,7 +120,7 @@ class RequestAction(Action):
             elif self.to_cancel:
                 response = self.api.document_cancel_target(self.document_id, locale)
             else:
-                response = self.api.document_add_target(self.document_id, locale, self.workflow, self.due_date)
+                response = self.api.document_add_target(self.document_id, locale, self.workflow_id, self.due_date)
             if self.expected_code == 201: # Request target
                 if response.status_code == 202:
                     if 'next_document_id' in response.json():
