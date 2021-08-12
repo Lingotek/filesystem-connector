@@ -411,9 +411,6 @@ class ConfigAction(Action):
                 self.watch_locales = target_locales
 
     def set_workflow_id(self, workflow_id):
-        response = self.api.patch_project(self.project_id, workflow_id)
-        if response.status_code != 204:
-            raise_error(response.json(), 'Something went wrong trying to update workflow_id of project')
         self.workflow_id = workflow_id
         log_info = 'Project default workflow has been updated to {0}'.format(workflow_id)
         self.update_config_file('workflow_id', workflow_id, self.conf_parser, self.config_file_name, log_info)
