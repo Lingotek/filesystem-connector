@@ -172,7 +172,7 @@ class InitAction():
 
                 # get workflow
                 logger.info('---------------------------------------------------------------')
-                logger.info('SELECT WORKFLOW TEMPLATE TO COPY AS A NEW PROJECT WORKFLOW')
+                logger.info('SELECT WORKFLOW TO USE WHEN UPLOADING CONTENT')
                 logger.info('---------------------------------------------------------------')
                 workflow_id = self.set_workflow(community_id, project_id)
                 self.config_parser.set('main', 'workflow_id', workflow_id)
