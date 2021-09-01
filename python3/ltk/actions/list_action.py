@@ -196,14 +196,9 @@ class ListAction(Action):
     def list_workflows(self):
         try:
             response = self.api.list_workflows(self.community_id)
-            result = self.api.get_project(self.project_id)
             if response.status_code != 200:
                 raise_error(response.json(), "Failed to list workflows")
-            if result.status_code !=200:
-                raise_error(result.json(), "Failed to fetch the project default workflow")
-            default_workflow_id = result.json()['properties']['workflow_id']
             table = []
-            table.append(['Project Default', default_workflow_id])
             headers=["Workflow Name", "ID"]
             for entry in response.json()['entities']:
                 title = entry['properties']['title']
