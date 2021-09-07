@@ -411,14 +411,8 @@ class ConfigAction(Action):
                 self.watch_locales = target_locales
 
     def set_workflow_id(self, workflow_id):
-        result = self.api.get_project(self.project_id)
-        if result.status_code !=200:
-                raise_error(result.json(), "Failed to fetch the project default workflow")
-        default_workflow_id = result.json()['properties']['workflow_id']
         self.workflow_id = workflow_id
         log_info = 'Workflow used to upload content has been changed to {0}.'.format(workflow_id)
-        if workflow_id == 'project default':
-            workflow_id = default_workflow_id
         self.update_config_file('workflow_id', workflow_id, self.conf_parser, self.config_file_name, log_info)
         self.conf_parser.set('main', 'workflow_id', workflow_id)
 
