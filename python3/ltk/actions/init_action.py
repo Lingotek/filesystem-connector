@@ -172,7 +172,7 @@ class InitAction():
 
                 # get workflow
                 logger.info('---------------------------------------------------------------')
-                logger.info('SELECT WORKFLOW TEMPLATE TO COPY AS A NEW PROJECT WORKFLOW')
+                logger.info('SELECT WORKFLOW TO USE WHEN UPLOADING CONTENT')
                 logger.info('---------------------------------------------------------------')
                 workflow_id = self.set_workflow(community_id, project_id)
                 self.config_parser.set('main', 'workflow_id', workflow_id)
@@ -438,6 +438,8 @@ class InitAction():
 
     def set_workflow(self, community_id, project_id):
         response = self.api.list_workflows(community_id)
+        result = self.api.get_project(project_id)
+        default_workflow_id = result.json()['properties']['workflow_id']
         workflows = response.json()['entities']
         workflow_info = {}
 
@@ -457,9 +459,9 @@ class InitAction():
             # End Python 3
             try:
                 if choice == '':
-                    workflow_id, workflow_name = 'Project Default', 'Project Default'
+                    workflow_id, workflow_name =  default_workflow_id, 'Project Default'
                     logger.info('\nKept "{0}" {1}.\n'.format(workflow_name, 'workflow'))
-                    return workflow_id, False 
+                    return workflow_id 
                 else:
                     choice = int(choice)
                     for v in mapper[choice]:

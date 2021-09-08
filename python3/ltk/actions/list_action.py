@@ -198,7 +198,6 @@ class ListAction(Action):
             response = self.api.list_workflows(self.community_id)
             if response.status_code != 200:
                 raise_error(response.json(), "Failed to list workflows")
-
             table = []
             headers=["Workflow Name", "ID"]
             for entry in response.json()['entities']:

@@ -314,7 +314,7 @@ class ApiCalls:
         try:
             uri = (API_URI['document_translation'] % locals())
             payload = {'locale_code': locale, 'id': document_id}
-            if workflow_id:
+            if workflow_id and workflow_id != 'project default':
                 payload['workflow_id'] = workflow_id
             if due_date:
                 payload['due_date'] = due_date
