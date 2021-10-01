@@ -639,11 +639,10 @@ class Action:
         try:
             for entry in response.json()['entities']:
                 curr_locale = entry['properties']['locale_code']
-                curr_progress = int(entry['properties']['percent_complete'])
                 curr_status = entry['properties']['status']
                 curr_locale = curr_locale.replace('-', '_')
                 if include_cancelled or (curr_status.upper() != 'CANCELLED'):
-                    locale_progress[curr_locale] = curr_progress
+                    locale_progress[curr_locale] = curr_status
         except KeyError:
             pass
         return locale_progress

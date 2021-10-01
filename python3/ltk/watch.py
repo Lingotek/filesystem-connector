@@ -357,9 +357,9 @@ class WatchAction(Action):
                 # End Python 2
                 # Python 3
                 for locale in locale_progress:
-                    progress = locale_progress[locale]
+                    status = locale_progress[locale]
                 # End Python 3
-                    if progress == 100 and locale not in downloaded:
+                    if status in ["COMPLETE", "LATE"] and locale not in downloaded:
                         # document_added = False
                         # if (doc['name']+": ") not in git_commit_message:
                         #     if documents_downloaded: git_commit_message += '; '
@@ -385,11 +385,11 @@ class WatchAction(Action):
                                 download_file_path = self.download.download_action(doc_id, locale, autoFormat)
                         # This prevents recursion when clone option is off and download folder is set. 
                         self.download_file_paths.add(download_file_path)
-                    elif progress != 100 and locale in downloaded:
+                    elif status not in ["COMPLETE", "LATE"] and locale in downloaded:
                         # print("Locale "+str(locale)+" for document "+doc['name']+" is no longer completed.")
                         self.doc_manager.remove_element_in_prop(doc_id, 'downloaded', locale)
                 if set(locale_progress.keys()) == set(downloaded):
-                    if all(value == 100 for value in locale_progress.values()):
+                    if all(value in ["COMPLETE", "LATE"] for value in locale_progress.values()):
                         self.polled_list.add(file_name)
         ###
         ### Adding, committing, and pushing to Github has been moved to DownloadAction ###
