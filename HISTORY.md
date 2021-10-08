@@ -1,5 +1,9 @@
 # Changelog #
 
+# 1.3.13
+### CHANGES:
+* Removed the ability to change the Project Workflow
+* Clarified to only download documents when the status is COMPLETE or LATE
 # 1.3.12
 ### CHANGES:
 * Clarified set up with git
