@@ -365,6 +365,8 @@ class ApiCalls:
             uri = (API_URI['document_translation_locale'] % locals())
             r = requests.get(self.host + uri, headers=self.headers)
             log_api('GET', uri, r)
+            if r.status_code != 200:
+                raise RequestFailedError("Unable to get translation status")
         except requests.exceptions.ConnectionError:
             self.handleError()
         return r
