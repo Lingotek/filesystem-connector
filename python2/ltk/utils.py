@@ -129,7 +129,7 @@ def get_valid_locales(api, entered_locales, operation_text):
         logger.warning('No locales have been assigned to this document.  Please add them using \'ltk request\'.')
     else:
         for locale in entered_locales:
-            check_locale = locale.replace("-","_")
+            check_locale = locale.replace("_","-")
             if remote_check and check_locale not in valid_locales or not remote_check and not check_locale in locale_list:
                 logger.warning('The locale code "'+str(locale)+'" failed to be '+operation_text+' since it is invalid (see "ltk list -l" for the list of valid codes).')
             else:
