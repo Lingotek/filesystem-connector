@@ -10,10 +10,10 @@ elif sys.version_info[0] == 3:
 try:
     import pypandoc
 
-    if "convert" in dir(pypandoc) and callable(getattr(pypandoc, convert)):
-        long_description = pypandoc.convert('README.md', 'rst')
-    else:
+    if "convert_file" in dir(pypandoc) and callable(getattr(pypandoc, 'convert_file')):
         long_description = pypandoc.convert_file('README.md', 'rst')
+    else:
+        long_description = pypandoc.convert('README.md', 'rst')
     long_description = long_description.replace("\r", "")
 except (IOError, ImportError, OSError):
     long_description = open('README.md').read()
