@@ -1,12 +1,18 @@
 # Changelog #
 
+# 1.3.14
+### CHANGES:
+* Updated download process to initialize use ready_to_download flag in api response
+
 # 1.3.13
 ### CHANGES:
 * Removed the ability to change the Project Workflow
 * Clarified to only download documents when the status is COMPLETE or LATE
+
 # 1.3.12
 ### CHANGES:
 * Clarified set up with git
+
 # 1.3.11
 ### NEW FEATURES:
 * Added the ability to change project and workflow on document update without needing to disassociate

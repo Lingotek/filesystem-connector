@@ -1,4 +1,5 @@
 from ltk.actions.action import *
+from ltk.exceptions import RequestFailedError
 import json
 import re
 import tempfile
@@ -14,6 +15,7 @@ class DownloadAction(Action):
         self.current_doc = ''
         self.DEFAULT_COMMIT_MESSAGE  = "Translations updated for "
         self.documents_downloaded = False
+        self.boolean_filter = set(["1", "true", "on", "yes", "True", True])
 
     def download_by_path(self, file_path, locale_codes, locale_ext, no_ext, auto_format, xliff):
         docs = self.get_docs_in_path(file_path)
@@ -40,6 +42,16 @@ class DownloadAction(Action):
     def download_action(self, document_id, locale_code, auto_format, xliff=False, locale_ext=True):
         try:
             latest_document_id = self.get_latest_document_version(document_id) or document_id
+            try:
+                response = self.api.document_translation_locale_status(latest_document_id, locale_code)
+                # 'ready_to_download flag should exist before we check if it's truthy
+                # "true", and other truthy values, should evaluate to True, so we added a check for that
+                ready_to_download = response.json()['properties']['ready_to_download'] in self.boolean_filter if 'ready_to_download' in response.json().get('properties') else False
+            except RequestFailedError as e:
+                raise_error(response.json(), "Failed to download " + locale_code + ".", True)
+                return
+            if not ready_to_download:
+                return
             response = self.api.document_content(latest_document_id, locale_code, auto_format, xliff, self.finalized_file)
             entry = None
             entry = self.doc_manager.get_doc_by_prop('id', document_id)
