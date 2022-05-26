@@ -5,6 +5,7 @@ class StatusAction(Action):
     def __init__(self, path):
         Action.__init__(self, path)
         self.uploadWaitTime = 300
+        self.boolean_filter = set(["1", "true", "on", "yes", "True", True])
 
     def get_status(self, **kwargs):
         try:
@@ -146,7 +147,7 @@ class StatusAction(Action):
             if 'entities' in response.json():
                 for entry in response.json()['entities']:
                     curr_locale = entry['properties']['locale_code']
-                    ready_to_download = 'Ready to Download' if entry['properties']['ready_to_download'] else 'In Progress'
+                    ready_to_download = 'Ready to Download' if 'ready_to_download' in entry.get('properties') and entry['properties']['ready_to_download'] in self.boolean_filter else 'In Progress'
                     curr_statustext = entry['properties']['status']
                     # print ('\tlocale: {0} \t percent complete: {1}%'.format(curr_locale, curr_progress))
                     if 'entities' in entry:
