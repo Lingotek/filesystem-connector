@@ -1,4 +1,5 @@
 import os, sys
+import uuid
 from ltk.locales import default_locales, locale_list
 from ltk.logger import logger
 import time
@@ -413,3 +414,10 @@ def yes_no_prompt(prompt, default_yes=False):
             return default_yes
     except KeyboardInterrupt:
         raise
+
+def is_uuid4(retrieved_token):
+        try:
+            uuid_obj = uuid.UUID(retrieved_token, version=4)
+        except ValueError:
+            return False
+        return str(uuid_obj) == retrieved_token

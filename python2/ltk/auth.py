@@ -7,6 +7,8 @@ import sys
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 import urlparse
 import urllib
+from ltk.constants import (MY_ACCOUNT_APP_ID, CLONE_APP_ID)
+from python2.ltk.utils import is_uuid4
 # End Python 2
 
 # Python 3
@@ -121,26 +123,19 @@ def run_oauth(host, client_id):
     # Python 3
 #     payload_url = urllib.parse.urlencode(payload)
     # End Python 3
-    authorize_url = host + '/auth/authorize.html?' + payload_url
-
-    import webbrowser
-    webbrowser.open_new(authorize_url)
-    print ('Your browser has been opened to visit: \n{0}\n'.format(authorize_url))
-    print ('--------------------------------------')
-    httpd.handle_request()  # handle the GET redirect
-    httpd.handle_request()  # handle the POST for token info
-    print ('--------------------------------------\n')
-    if b'access_token' in httpd.query_params:
-        print ('Access token has been successfully stored!')
-        print ('(If you haven\'t already, you may close your browser.)\n')
-        init_token = httpd.query_params[b'access_token']
-        init_token = init_token.decode("utf-8")
-        print('init token',init_token)
-
-        token = init_token.split('&')[0]
-        # store the token because apparently it doesn't expire..
-        # webbrowser.open_new('https://www.youtube.com/watch?v=CbsvVar2rFs')
+    if 'myaccount.lingotek.com' in host:
+        authorize_url = host + '/connect/manage/' + MY_ACCOUNT_APP_ID
+    elif 'clone.lingotek.com' in host:
+        authorize_url = host + '/connect/manage/' + CLONE_APP_ID
+    print('Current token is invalid! Create new access token clicking on this URL and enter the token below: \n{0}\n'.format(authorize_url))
+    print('--------------------------------------')
+    token = input('API Token: ')
+    print('--------------------------------------\n')
+    if is_uuid4(token):
+        print('\nAuthentication successful\n')
+        print('Access token has been successfully stored!')
         return token
-    sys.exit('Something went wrong with the authentication request, please try again.')
-
+    else:
+        print('\nAccess Token format is not valid! Initialization cancelled.\n')
+        return None
 # run_oauth('https://cms.lingotek.com')

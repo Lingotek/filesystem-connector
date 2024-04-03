@@ -8,6 +8,8 @@ import subprocess
 from ltk.actions.action import *
 from ltk.actions.config_action import ConfigAction
 from ltk.git_auto import Git_Auto
+from ltk.constants import MY_ACCOUNT_APP_ID, CLONE_APP_ID
+from ltk.utils import is_uuid4
 
 ''' Globals '''
 HIDDEN_ATTRIBUTE = 0x02
@@ -44,31 +46,25 @@ class InitAction():
                         logger.info('CONNECT TO LINGOTEK')
                         logger.info('---------------------------')
                         self.api = ApiCalls(host, '')
-                        # Python 2
-                        username = raw_input('Username: ')
-                        # End Python 2
-                        # Python 3
-#                         username = input('Lingotek Username: ')
-                        # End Python 3
-                        password = getpass.getpass()
+                        logger.info(
+                            'To begin the setup of the cloud configuration, you need to setup your token and connect your Ray Enterprise account.' + '\n' +
+                            'You can generate a new token clicking on the following link and Enter the token below')
+                        logger.info('---------------------------')
                         if 'myaccount.lingotek.com' in host:
-                            login_host = 'https://sso.lingotek.com'
+                            logger.info('https://myaccount.lingotek.com/connect/manage/' + MY_ACCOUNT_APP_ID)
                         elif 'clone.lingotek.com' in host:
-                            login_host = 'https://clonesso.lingotek.com'
-                        else:
-                            if (host.find('sso') != -1):
-                                host_env = host.split('sso')[0]
-                                login_host = host_env + 'sso.lingotek.com'
-                            else:
-                                host_env = host.split('.')[0]
-                                login_host = host_env + 'sso.lingotek.com'
-                            print(login_host)
-                        if self.api.login(login_host, username, password):
-                            retrieved_token = self.api.authenticate(login_host)
-                            if retrieved_token:
+                            logger.info('https://clone.lingotek.com/connect/manage/' + CLONE_APP_ID)
+                        logger.info('---------------------------')
+                        token = input('API Token: ')
+                        retrieved_token = token
+                        if retrieved_token:
+                            if is_uuid4(retrieved_token):
                                 print('\nAuthentication successful\n')
                                 access_token = retrieved_token
                                 ran_oauth = True
+                            if not ran_oauth:
+                                print('\nAccess Token format is not valid.  Initialization cancelled.\n')
+                                return
                         if not ran_oauth:
                             print('Authentication failed.  Initialization canceled.')
                             return
@@ -123,6 +119,7 @@ class InitAction():
                 from ltk.auth import run_oauth
                 access_token = run_oauth(host, client_id)
                 self.create_global(access_token, host)
+                self.api = ApiCalls(host, access_token)
                 community_info = self.api.get_communities_info()
                 if not community_info:
                     raise exceptions.RequestFailedError("Unable to get user's list of communities")
